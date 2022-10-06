@@ -1,6 +1,6 @@
 import { SQSEvent, SQSRecord } from "aws-lambda";
 
-const writeEvent = async (record: SQSRecord): Promise<void> => {
+export const writeEvent = async (record: SQSRecord): Promise<void> => {
   console.log(record.body);
 };
 

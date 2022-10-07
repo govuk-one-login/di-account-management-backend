@@ -6,8 +6,12 @@
   "scripts": {
     "test": "jest"
   },
-  "author": "",
+  "author": "GDS",
   "license": "OGL",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/alphagov/di-account-management-backend.git"
+  },
   "devDependencies": {
     "@babel/core": "^7.19.3",
     "@babel/preset-env": "^7.19.3",

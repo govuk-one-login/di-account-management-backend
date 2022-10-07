@@ -1,4 +1,8 @@
-import { lambdaHandler, writeEvent, validateUserServices } from "../index";
+import {
+  lambdaHandler,
+  writeUserServices,
+  validateUserServices,
+} from "../index";
 import { UserServices } from "../models";
 
 import { mockClient } from "aws-sdk-client-mock";
@@ -39,7 +43,7 @@ const TEST_SQS_EVENT: SQSEvent = {
 
 const dynamoMock = mockClient(DynamoDBDocumentClient);
 
-describe("writeEvent", () => {
+describe("writeUserServices", () => {
   beforeEach(() => {
     dynamoMock.reset();
 
@@ -51,7 +55,7 @@ describe("writeEvent", () => {
   });
 
   test("writes to DynamoDB", async () => {
-    await writeEvent(TEST_USER_SERVICES);
+    await writeUserServices(TEST_USER_SERVICES);
     expect(dynamoMock.commandCalls(PutCommand).length).toEqual(1);
   });
 });

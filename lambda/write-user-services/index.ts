@@ -23,7 +23,7 @@ export const validateUserServices = (userServices: UserServices): boolean => {
   return true;
 };
 
-export const writeEvent = async (
+export const writeUserServices = async (
   userServices: UserServices
 ): Promise<PutCommandOutput> => {
   const command = new PutCommand({
@@ -40,7 +40,7 @@ export const lambdaHandler = async (event: SQSEvent): Promise<void> => {
   for (let i = 0; i < event.Records.length; i++) {
     const userServices: UserServices = JSON.parse(event.Records[i].body);
     if (validateUserServices(userServices)) {
-      await writeEvent(userServices);
+      await writeUserServices(userServices);
     }
   }
 };

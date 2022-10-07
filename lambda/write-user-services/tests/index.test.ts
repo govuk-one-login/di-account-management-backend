@@ -37,25 +37,17 @@ const TEST_SQS_EVENT: SQSEvent = {
   Records: [TEST_SQS_RECORD, TEST_SQS_RECORD],
 };
 
-let consoleMock: jest.SpyInstance;
 const dynamoMock = mockClient(DynamoDBDocumentClient);
 
 describe("writeEvent", () => {
   beforeEach(() => {
-    consoleMock = jest.spyOn(global.console, "log");
     dynamoMock.reset();
 
     process.env.TABLE_NAME = "TABLE_NAME";
   });
 
   afterEach(() => {
-    consoleMock.mockRestore();
     jest.clearAllMocks();
-  });
-
-  test("logs to the console", async () => {
-    await writeEvent(TEST_USER_SERVICES);
-    expect(consoleMock).toHaveBeenCalledTimes(1);
   });
 
   test("writes to DynamoDB", async () => {
@@ -72,20 +64,17 @@ describe("validateUserServices", () => {
 
 describe("lambdaHandler", () => {
   beforeEach(() => {
-    consoleMock = jest.spyOn(global.console, "log");
     dynamoMock.reset();
 
     process.env.TABLE_NAME = "TABLE_NAME";
   });
 
   afterEach(() => {
-    consoleMock.mockRestore();
     jest.clearAllMocks();
   });
 
   test("it iterates over each record in the batch", async () => {
     await lambdaHandler(TEST_SQS_EVENT);
-    expect(consoleMock).toHaveBeenCalledTimes(2);
     expect(dynamoMock.commandCalls(PutCommand).length).toEqual(2);
   });
 });

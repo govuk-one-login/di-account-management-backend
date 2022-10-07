@@ -33,7 +33,6 @@ export const writeEvent = async (
       services: userServices.services,
     },
   });
-  console.log(userServices);
   return await dynamoDocClient.send(command);
 };
 

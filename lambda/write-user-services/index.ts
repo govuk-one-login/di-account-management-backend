@@ -7,7 +7,7 @@ import {
 } from "@aws-sdk/lib-dynamodb";
 import { UserServices } from "./models";
 
-const TABLE_NAME = "process.env.TABLE_NAME";
+const TABLE_NAME = process.env.TABLE_NAME;
 const marshallOptions = {
   convertClassInstanceToMap: true,
 };
@@ -18,6 +18,10 @@ const dynamoDocClient = DynamoDBDocumentClient.from(
   dynamoClient,
   translateConfig
 );
+
+export const validateUserServices = (userServices: UserServices): boolean => {
+  return true;
+};
 
 export const writeEvent = async (
   userServices: UserServices
@@ -36,6 +40,8 @@ export const writeEvent = async (
 export const lambdaHandler = async (event: SQSEvent): Promise<void> => {
   for (let i = 0; i < event.Records.length; i++) {
     const userServices: UserServices = JSON.parse(event.Records[i].body);
-    await writeEvent(userServices);
+    if (validateUserServices(userServices)) {
+      await writeEvent(userServices);
+    }
   }
 };

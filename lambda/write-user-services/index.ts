@@ -20,6 +20,10 @@ const dynamoDocClient = DynamoDBDocumentClient.from(
   translateConfig
 );
 
+export const parseRecordBody = (body: string): UserServices => {
+  return JSON.parse(body) as UserServices;
+};
+
 export const validateUserServices = (userServices: UserServices): boolean => {
   return true;
 };
@@ -39,13 +43,12 @@ export const writeUserServices = async (
 
 export const lambdaHandler = async (event: SQSEvent): Promise<void> => {
   for (let i = 0; i < event.Records.length; i++) {
-    const userServices: UserServices = JSON.parse(event.Records[i].body);
-    if (validateUserServices(userServices)) {
-      try {
-        await writeUserServices(userServices);
-      } catch (err) {
-        console.error(`ERROR: ${getErrorMessage(err)}`);
-      }
+    try {
+      const userServices = parseRecordBody(event.Records[i].body);
+      validateUserServices(userServices);
+      await writeUserServices(userServices);
+    } catch (err) {
+      console.error(`ERROR: ${getErrorMessage(err)}`);
     }
   }
 };

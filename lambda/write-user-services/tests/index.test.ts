@@ -2,6 +2,7 @@ import {
   lambdaHandler,
   writeUserServices,
   validateUserServices,
+  parseRecordBody,
 } from "../index";
 import { UserServices } from "../models";
 
@@ -63,6 +64,14 @@ describe("writeUserServices", () => {
 describe("validateUserServices", () => {
   test("returns true", () => {
     expect(validateUserServices(TEST_USER_SERVICES)).toEqual(true);
+  });
+});
+
+describe("parseRecordBody", () => {
+  test("parses the event body", () => {
+    expect(parseRecordBody(JSON.stringify(TEST_SQS_RECORD))).toStrictEqual(
+      TEST_SQS_RECORD
+    );
   });
 });
 

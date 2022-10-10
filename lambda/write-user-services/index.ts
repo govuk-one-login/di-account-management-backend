@@ -6,6 +6,7 @@ import {
   PutCommandOutput,
 } from "@aws-sdk/lib-dynamodb";
 import { UserServices } from "./models";
+import { getErrorMessage } from "./errors";
 
 const TABLE_NAME = process.env.TABLE_NAME;
 const marshallOptions = {
@@ -40,7 +41,11 @@ export const lambdaHandler = async (event: SQSEvent): Promise<void> => {
   for (let i = 0; i < event.Records.length; i++) {
     const userServices: UserServices = JSON.parse(event.Records[i].body);
     if (validateUserServices(userServices)) {
-      await writeUserServices(userServices);
+      try {
+        await writeUserServices(userServices);
+      } catch (err) {
+        console.error(`ERROR: ${getErrorMessage(err)}`);
+      }
     }
   }
 };

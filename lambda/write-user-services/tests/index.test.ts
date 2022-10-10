@@ -81,4 +81,18 @@ describe("lambdaHandler", () => {
     await lambdaHandler(TEST_SQS_EVENT);
     expect(dynamoMock.commandCalls(PutCommand).length).toEqual(2);
   });
+
+  describe("error handling", () => {
+    test("logs the error message", async () => {
+      dynamoMock.rejectsOnce("mock error");
+      const consoleErrorMock = jest
+        .spyOn(global.console, "error")
+        .mockImplementation();
+
+      await lambdaHandler(TEST_SQS_EVENT);
+
+      expect(consoleErrorMock).toHaveBeenCalledTimes(1);
+      consoleErrorMock.mockRestore();
+    });
+  });
 });

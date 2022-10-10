@@ -1,9 +1,4 @@
-import {
-  lambdaHandler,
-  writeUserServices,
-  validateUserServices,
-  parseRecordBody,
-} from "../index";
+import { lambdaHandler, writeUserServices, parseRecordBody } from "../index";
 import { UserServices } from "../models";
 
 import { mockClient } from "aws-sdk-client-mock";
@@ -58,12 +53,6 @@ describe("writeUserServices", () => {
   test("writes to DynamoDB", async () => {
     await writeUserServices(TEST_USER_SERVICES);
     expect(dynamoMock.commandCalls(PutCommand).length).toEqual(1);
-  });
-});
-
-describe("validateUserServices", () => {
-  test("returns true", () => {
-    expect(validateUserServices(TEST_USER_SERVICES)).toEqual(true);
   });
 });
 

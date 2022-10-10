@@ -7,6 +7,7 @@ import {
 } from "@aws-sdk/lib-dynamodb";
 import { UserServices } from "./models";
 import { getErrorMessage } from "./errors";
+import { validateUserServices } from "./validate";
 
 const TABLE_NAME = process.env.TABLE_NAME;
 const marshallOptions = {
@@ -22,10 +23,6 @@ const dynamoDocClient = DynamoDBDocumentClient.from(
 
 export const parseRecordBody = (body: string): UserServices => {
   return JSON.parse(body) as UserServices;
-};
-
-export const validateUserServices = (userServices: UserServices): boolean => {
-  return true;
 };
 
 export const writeUserServices = async (

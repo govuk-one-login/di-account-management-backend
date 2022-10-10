@@ -7,3 +7,10 @@ export function getErrorMessage(err: unknown): string {
   }
   return message;
 }
+
+export class ValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    Object.setPrototypeOf(this, ValidationError.prototype);
+  }
+}

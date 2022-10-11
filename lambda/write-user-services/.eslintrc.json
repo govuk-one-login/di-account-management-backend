@@ -4,5 +4,13 @@
         "airbnb-typescript-prettier",
         "plugin:@typescript-eslint/recommended",
         "prettier"
-    ]
+    ],
+    "settings": {
+      "import/resolver": {
+            "typescript": {
+                "alwaysTryTypes": true,
+                "paths": "./tsconfig.json"
+            }
+        }
+    }
 }

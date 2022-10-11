@@ -48,3 +48,11 @@ Resources:
           Value: !Ref 'Environment'
         - Key: Source
           Value: "https://github.com/alphagov/di-account-management-backend/blob/main/infrastructre/template.yaml"
+
+  ######################################
+  # TxMA Event Queue (Dummy for now)
+  ######################################
+  TxMAInputDummyQueue:
+    Type: AWS::SQS::Queue
+    DeletionPolicy: !Join [ '', !If [IsDevelopmentEnvironment, "Delete", "Retain"] ]
+    UpdateReplacePolicy: !Join [ '', !If [IsDevelopmentEnvironment, "Delete", "Retain"] ]

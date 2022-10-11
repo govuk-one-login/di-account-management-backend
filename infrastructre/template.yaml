@@ -213,3 +213,76 @@ Resources:
     Type: AWS::SQS::Queue
     DeletionPolicy: !Join [ '', !If [IsDevelopmentEnvironment, "Delete", "Retain"] ]
     UpdateReplacePolicy: !Join [ '', !If [IsDevelopmentEnvironment, "Delete", "Retain"] ]
+
+  ###################
+  # Write the Record
+  ###################
+  WriteUserServicesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Architectures: ["x86_64"]
+      CodeUri: ../lambda/write-user-services/write-user-services.ts
+      Events:
+        UserServicesToFormatQueue:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt UserServicesToFormatQueue.Arn
+      DeadLetterQueue:
+        Type: SQS
+        TargetArn: !GetAtt WriteServicesDeadLetterQueue.Arn
+      Handler: store-service-record.handler
+      PackageType: Zip
+      MemorySize: 128
+      Runtime: nodejs16.x
+      Role: !GetAtt WriteServiceRecordRole.Arn
+      Timeout: 5
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref UserServicesStoreTableName
+          DLQ_ARN: !GetAtt WriteServicesDeadLetterQueue.Arn
+
+  WriteServicesDeadLetterQueue:
+    Type: AWS::SQS::Queue
+    DeletionPolicy: !Join [ '', !If [IsDevelopmentEnvironment, "Delete", "Retain"] ]
+    UpdateReplacePolicy: !Join [ '', !If [IsDevelopmentEnvironment, "Delete", "Retain"] ]
+
+  WriteServiceRecordRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+
+  WriteServiceRecordPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Roles:
+        - !Ref WriteServiceRecordRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action:
+          - sqs:ReceiveMessage
+          - sqs:DeleteMessage
+          - sqs:GetQueueAttributes
+          Resource: !GetAtt UserServicesToWriteQueue.Arn
+        - Effect: Allow
+          Action:
+          - sqs:SendMessage
+          Resource: !GetAtt WriteServicesDeadLetterQueue.Arn
+        - Effect: Allow
+          Action:
+          - dynamodb:PutItem
+          - dynamodb:UpdateItem
+          Resource:
+          - !GetAtt UserServicesStore.Arn
+          - !Sub
+            - '${Arn}/*'
+            - Arn: !GetAtt UserServicesStore.Arn

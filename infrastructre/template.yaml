@@ -140,3 +140,76 @@ Resources:
     Type: AWS::SQS::Queue
     DeletionPolicy: !Join [ '', !If [IsDevelopmentEnvironment, "Delete", "Retain"] ]
     UpdateReplacePolicy: !Join [ '', !If [IsDevelopmentEnvironment, "Delete", "Retain"] ]
+
+  #######################
+  # Formatting the Record
+  #######################
+  FormatUserServicesFuction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Architectures: ["x86_64"]
+      CodeUri: ../lambda/format-user-services/format-user-services.ts
+      Events:
+        UserServicesToFormatQueue:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt UserServicesToFormatQueue.Arn
+      DeadLetterQueue:
+        Type: SQS
+        TargetArn: !GetAtt FormatUserServicesDeadLetterQueue.Arn
+      Handler: format-user-services.handler
+      PackageType: Zip
+      MemorySize: 128
+      Runtime: nodejs16.x
+      Role: !GetAtt FormatUserServicesRole.Arn
+      Timeout: 5
+      Environment:
+        Variables:
+          DLQ_ARN: !GetAtt FormatUserServicesDeadLetterQueue.Arn
+          OUTPUT_QUEUE_ARN: !GetAtt UserServicesToWriteQueue.Arn
+
+  FormatUserServicesDeadLetterQueue:
+    Type: AWS::SQS::Queue
+    DeletionPolicy: !Join [ '', !If [IsDevelopmentEnvironment, "Delete", "Retain"] ]
+    UpdateReplacePolicy: !Join [ '', !If [IsDevelopmentEnvironment, "Delete", "Retain"] ]
+
+  FormatUserServicesRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+
+  FormatUserServicesPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Roles:
+        - !Ref FormatUserServicesRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action:
+          - sqs:ReceiveMessage
+          - sqs:DeleteMessage
+          - sqs:GetQueueAttributes
+          Resource: !GetAtt UserServicesToFormatQueue.Arn
+        - Effect: Allow
+          Action:
+          - sqs:SendMessage
+          Resource: !GetAtt FormatUserServicesDeadLetterQueue.Arn
+        - Effect: Allow
+          Action:
+          - sqs:SendMessage
+          Resource: !GetAtt UserServicesToWriteQueue.Arn
+
+  UserServicesToWriteQueue:
+    Type: AWS::SQS::Queue
+    DeletionPolicy: !Join [ '', !If [IsDevelopmentEnvironment, "Delete", "Retain"] ]
+    UpdateReplacePolicy: !Join [ '', !If [IsDevelopmentEnvironment, "Delete", "Retain"] ]

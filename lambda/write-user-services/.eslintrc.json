@@ -12,5 +12,8 @@
                 "paths": "./tsconfig.json"
             }
         }
+    },
+    "rules": {
+        "no-console": "off"
     }
 }

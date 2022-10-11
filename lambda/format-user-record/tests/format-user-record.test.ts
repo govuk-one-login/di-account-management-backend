@@ -1,11 +1,14 @@
 
 import { SQSEvent, SQSRecord } from "aws-lambda";
+import { SQSClient, SendMessageCommand } from '@aws-sdk/client-sqs'
 import { UserRecordEvent, TxmaEventBody, UserServices, Service } from '../models';
+import { mockClient } from 'aws-sdk-client-mock'  
 import {
     addNewService,
     createUserService,
     handler,
     matchService,
+    sendSqsMessage,
     updateServiceDetails,
     validateSQSRecord
   } from "../format-user-record";
@@ -81,6 +84,13 @@ const TEST_SQS_RECORD: SQSRecord = {
 const TEST_SQS_EVENT: SQSEvent = {
     Records: [TEST_SQS_RECORD],
 };
+
+const MOCK_MESSAGE_ID = 'MyMessageId';
+
+const MOCK_QUEUE_URL = 'http://my_queue_url';
+
+const sqsMock = mockClient(SQSClient);
+
 describe("validateSQSRecord", () => {  
   test("validate SQS record to true", async () => {
     expect(validateSQSRecord(TEST_SQS_RECORD)).toBeTruthy();
@@ -110,6 +120,7 @@ describe("createUserService", () => {
         expect(service1.last_accessed).toEqual(TEST_USER_RECORD.TxmaEventBody.timestamp);
     });
   });
+  
   describe("matchService", () => {
     test("Match false for the client Id from Service list to the one on TXMA event", async() => {
            const matched =  await matchService(service1,TEST_USER_RECORD);
@@ -123,7 +134,39 @@ describe("createUserService", () => {
     });
   });
 
+  describe("sendSqsMessage", () => {  
+    beforeEach(() => {
+      sqsMock.reset();
+    });
+    afterEach(() => {
+      jest.clearAllMocks();
+    });
+    test("Send the SQS event on the queue", async () => {
+      sqsMock.on(SendMessageCommand).resolves({ MessageId: MOCK_MESSAGE_ID });
+      const messageId = await sendSqsMessage(userService, MOCK_QUEUE_URL);
+      expect(messageId).toEqual(MOCK_MESSAGE_ID)
+      expect(sqsMock.commandCalls(SendMessageCommand,{
+        QueueUrl: MOCK_QUEUE_URL,
+        MessageBody: JSON.stringify(userService)
+      }));  
+    });
+  });
 
 
+describe("handler", () => {
+  beforeEach(() => {
+    sqsMock.reset();
+  });
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+  test("format method and send on SQS queue", async() => {
+      sqsMock.on(SendMessageCommand).resolves({ MessageId: MOCK_MESSAGE_ID });
+      await handler(TEST_SQS_EVENT);    
+      expect(sqsMock.commandCalls(SendMessageCommand,{
+        QueueUrl: MOCK_QUEUE_URL,
+        MessageBody: JSON.stringify(userService)
+      }));  
+  });
+});
 
-  

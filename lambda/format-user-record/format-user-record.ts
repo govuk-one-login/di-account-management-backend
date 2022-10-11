@@ -1,7 +1,6 @@
 import { SendMessageCommand, SendMessageRequest, SQSClient } from '@aws-sdk/client-sqs';
 import { SQSEvent, SQSRecord } from 'aws-lambda';
 import { UserRecordEvent, Service, UserServices } from './models';
-//import { sendSqsMessage } from './sendSqsMessage';
 
 const QUEUE_URL = "";
 const AWS_REGION = process.env.AWS_REGION;

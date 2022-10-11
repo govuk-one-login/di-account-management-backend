@@ -71,6 +71,7 @@ export const handler = async (event: SQSEvent): Promise<void> => {
     try {
       const userServices = parseRecordBody(event.Records[i].body);
       validateUserServices(userServices);
+      /* eslint no-await-in-loop: "off" */
       await writeUserServices(userServices);
     } catch (err) {
       console.error(`ERROR: ${getErrorMessage(err)}`);

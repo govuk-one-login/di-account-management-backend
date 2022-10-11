@@ -7,7 +7,8 @@ import {
     createUserService,
     handler,
     matchService,
-    updateServiceDetails
+    updateServiceDetails,
+    validateSQSRecord
   } from "../format-user-record";
 
 
@@ -87,6 +88,11 @@ const TEST_SQS_RECORD: SQSRecord = {
 const TEST_SQS_EVENT: SQSEvent = {
     Records: [TEST_SQS_RECORD],
 };
+describe("validateSQSRecord", () => {  
+  test("validate SQS record to true", async () => {
+    expect(validateSQSRecord(TEST_SQS_RECORD)).toBeTruthy();
+  });
+});
 
 describe("createUserService", () => {  
     test("creates a new user service", async () => {

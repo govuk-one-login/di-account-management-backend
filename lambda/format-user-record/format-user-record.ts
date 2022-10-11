@@ -1,6 +1,5 @@
 import { SQSEvent, SQSRecord } from 'aws-lambda';
 import { UserRecordEvent, Service, UserServices } from './models';
-import { ValidationService } from './validation-service';
 import { sendSqsMessage } from './sendSqsMessage';
 
 const QUEUE_URL = "";
@@ -8,7 +7,7 @@ const QUEUE_URL = "";
 export const handler = async (event: SQSEvent): Promise<void> => {
     for (const record of event.Records) {
         //validate the record
-        const validationResponse = await ValidationService.validateSQSRecord(record as SQSRecord);
+        const validationResponse = await validateSQSRecord(record as SQSRecord);
         if (!validationResponse) {
             console.log("[ERROR] Validation error ")
         }
@@ -56,3 +55,7 @@ export const createUserService = async (userRecordEvent: UserRecordEvent): Promi
 
     return userService;
 }
+
+export const validateSQSRecord = async(record: SQSRecord): Promise<Boolean> => {
+    return true;
+  };

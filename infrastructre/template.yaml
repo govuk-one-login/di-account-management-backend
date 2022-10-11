@@ -1,2 +1,50 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: "A template to create the GOV.UK One login Account backend infrastructure."
+
+Parameters:
+  UserServicesStoreTableName:
+    Type: String
+    Default: user_services
+  Environment:
+    Description: "The environment type"
+    Type: "String"
+    AllowedValues:
+      - "dev"
+      - "build"
+      - "staging"
+      - "integration"
+      - "production"
+    ConstraintDescription: must be dev, build, staging, integration or production
+Conditions:
+  IsDevelopmentEnvironment: !Equals
+    - !Ref Environment
+    - dev
+
+Resources:
+  ######################################
+  # Dynamo DB - Output target for system
+  ######################################
+  UserServicesStore:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: !Join [ '', !If [IsDevelopmentEnvironment, "Delete", "Retain"] ]
+    UpdateReplacePolicy: !Join [ '', !If [IsDevelopmentEnvironment, "Delete", "Retain"] ]
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: user_id
+          AttributeType: S
+      BillingMode: PAY_PER_REQUEST
+      TableName: !Ref UserServicesStoreTableName
+      KeySchema:
+        - AttributeName: user_id
+          KeyType: HASH
+      Tags:
+        - Key: Product
+          Value: GOV.UK Sign In
+        - Key: System
+          Value: Account Management Backend
+        - Key: Owner
+          Value: govuk-accounts-tech@digital.cabinet-office.gov.uk
+        - Key: Environment
+          Value: !Ref 'Environment'
+        - Key: Source
+          Value: "https://github.com/alphagov/di-account-management-backend/blob/main/infrastructre/template.yaml"

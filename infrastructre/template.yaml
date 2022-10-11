@@ -1,4 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
 Description: "A template to create the GOV.UK One login Account backend infrastructure."
 
 Parameters:
@@ -53,6 +54,89 @@ Resources:
   # TxMA Event Queue (Dummy for now)
   ######################################
   TxMAInputDummyQueue:
+    Type: AWS::SQS::Queue
+    DeletionPolicy: !Join [ '', !If [IsDevelopmentEnvironment, "Delete", "Retain"] ]
+    UpdateReplacePolicy: !Join [ '', !If [IsDevelopmentEnvironment, "Delete", "Retain"] ]
+
+  ######################
+  # Querying the Record
+  ######################
+  QueryUserServicesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Architectures: ["x86_64"]
+      CodeUri: ../lambda/query-user-services/query-user-services.ts
+      Events:
+        TxMAInputDummyQueue:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt TxMAInputDummyQueue.Arn
+      DeadLetterQueue:
+        Type: SQS
+        TargetArn: !GetAtt QueryUserServicesDeadLetterQueue.Arn
+      Handler: query-user-services.handler
+      PackageType: Zip
+      MemorySize: 128
+      Runtime: nodejs16.x
+      Role: !GetAtt QueryUserServicesRole.Arn
+      Timeout: 5
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref UserServicesStoreTableName
+          DLQ_ARN: !GetAtt QueryUserServicesDeadLetterQueue.Arn
+          OUTPUT_QUEUE_ARN: !GetAtt UserServicesToFormatQueue.Arn
+
+  QueryUserServicesDeadLetterQueue:
+    Type: AWS::SQS::Queue
+    DeletionPolicy: !Join [ '', !If [IsDevelopmentEnvironment, "Delete", "Retain"] ]
+    UpdateReplacePolicy: !Join [ '', !If [IsDevelopmentEnvironment, "Delete", "Retain"] ]
+
+  QueryUserServicesRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+
+  QueryUserServicesPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Roles:
+        - !Ref QueryUserServicesRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action:
+          - sqs:ReceiveMessage
+          - sqs:DeleteMessage
+          - sqs:GetQueueAttributes
+          Resource: !GetAtt TxMAInputDummyQueue.Arn
+        - Effect: Allow
+          Action:
+          - sqs:SendMessage
+          Resource: !GetAtt UserServicesToFormatQueue.Arn
+        - Effect: Allow
+          Action:
+          - sqs:SendMessage
+          Resource: !GetAtt QueryUserServicesDeadLetterQueue.Arn
+        - Effect: Allow
+          Action:
+          - dynamodb:Query
+          - dynamodb:GetItem
+          Resource:
+          - !GetAtt UserServicesStore.Arn
+          - !Sub
+            - '${Arn}/*'
+            - Arn: !GetAtt UserServicesStore.Arn
+
+  UserServicesToFormatQueue:
     Type: AWS::SQS::Queue
     DeletionPolicy: !Join [ '', !If [IsDevelopmentEnvironment, "Delete", "Retain"] ]
     UpdateReplacePolicy: !Join [ '', !If [IsDevelopmentEnvironment, "Delete", "Retain"] ]

@@ -1,3 +1,6 @@
+import { SQSEvent, SQSRecord } from "aws-lambda";
+import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
+import { mockClient } from "aws-sdk-client-mock";
 import {
   handler,
   writeUserServices,
@@ -7,10 +10,6 @@ import {
 } from "../write-user-services";
 import { Service, UserServices } from "../models";
 import { ValidationError } from "../errors";
-
-import { mockClient } from "aws-sdk-client-mock";
-import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
-import { SQSEvent, SQSRecord } from "aws-lambda";
 
 const TEST_USER_SERVICES: UserServices = {
   user_id: "user-id",
@@ -156,7 +155,7 @@ describe("validateUserServices", () => {
 });
 
 describe("validateServices", () => {
-  const parseServices = (service: any) => {
+  const parseServices = (service: string) => {
     return JSON.parse(service) as Service[];
   };
 

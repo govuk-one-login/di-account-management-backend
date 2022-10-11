@@ -1,8 +1,10 @@
+import { SendMessageCommand, SendMessageRequest, SQSClient } from '@aws-sdk/client-sqs';
 import { SQSEvent, SQSRecord } from 'aws-lambda';
 import { UserRecordEvent, Service, UserServices } from './models';
-import { sendSqsMessage } from './sendSqsMessage';
+//import { sendSqsMessage } from './sendSqsMessage';
 
 const QUEUE_URL = "";
+const AWS_REGION = process.env.AWS_REGION;
 
 export const handler = async (event: SQSEvent): Promise<void> => {
     for (const record of event.Records) {
@@ -58,4 +60,17 @@ export const createUserService = async (userRecordEvent: UserRecordEvent): Promi
 
 export const validateSQSRecord = async(record: SQSRecord): Promise<Boolean> => {
     return true;
-  };
+}
+export const sendSqsMessage = async (
+    messageBody: object,
+    queueUrl: string
+  ): Promise<string | undefined> => {
+    const client = new SQSClient({ region: AWS_REGION})
+    const message: SendMessageRequest = {
+      QueueUrl: queueUrl,
+      MessageBody: JSON.stringify(messageBody)
+    }
+    const result = await client.send(new SendMessageCommand(message))
+    return result.MessageId
+  }
+

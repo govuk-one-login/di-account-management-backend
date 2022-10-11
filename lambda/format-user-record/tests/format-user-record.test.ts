@@ -1,6 +1,5 @@
 
 import { SQSEvent, SQSRecord } from "aws-lambda";
-import { sendSqsMessage } from "../sendSqsMessage";
 import { UserRecordEvent, TxmaEventBody, UserServices, Service } from '../models';
 import {
     addNewService,
@@ -10,13 +9,7 @@ import {
     updateServiceDetails,
     validateSQSRecord
   } from "../format-user-record";
-
-
-jest.mock('../sendSqsMessage', () => ({
-    sendSqsMessage: jest.fn()
-  }))
-const mockSendSqsMessage = sendSqsMessage as jest.Mock<Promise<string | undefined>> 
-const MOCK_MESSAGE_ID = 'myMessageId'     
+ 
 const TXMA_EVENT_BODY: TxmaEventBody = {
     event_name: "event_1",
     timestamp: new Date(),

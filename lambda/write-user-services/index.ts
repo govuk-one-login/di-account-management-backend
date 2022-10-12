@@ -5,7 +5,8 @@ import {
   PutCommand,
   PutCommandOutput,
 } from "@aws-sdk/lib-dynamodb";
-import { UserServices } from "./models";
+import { Service, UserServices } from "./models";
+import { getErrorMessage, ValidationError } from "./errors";
 
 const TABLE_NAME = process.env.TABLE_NAME;
 const marshallOptions = {
@@ -19,8 +20,33 @@ const dynamoDocClient = DynamoDBDocumentClient.from(
   translateConfig
 );
 
-export const validateUserServices = (userServices: UserServices): boolean => {
-  return true;
+export const validateUserServices = (userServices: UserServices): void => {
+  if (userServices.user_id != undefined && userServices.services != undefined) {
+    validateServices(userServices.services);
+  } else {
+    throw new ValidationError(
+      `Could not validate UserServices ${userServices}`
+    );
+  }
+};
+
+export const validateServices = (services: Service[]): void => {
+  for (let i = 0; i < services.length; i++) {
+    const service = services[i];
+    if (
+      service.client_id != undefined &&
+      service.count_successful_logins &&
+      service.count_successful_logins >= 0 &&
+      service.last_accessed != undefined
+    ) {
+    } else {
+      throw new ValidationError(`Could not validate Service ${service}`);
+    }
+  }
+};
+
+export const parseRecordBody = (body: string): UserServices => {
+  return JSON.parse(body) as UserServices;
 };
 
 export const writeUserServices = async (
@@ -38,9 +64,12 @@ export const writeUserServices = async (
 
 export const lambdaHandler = async (event: SQSEvent): Promise<void> => {
   for (let i = 0; i < event.Records.length; i++) {
-    const userServices: UserServices = JSON.parse(event.Records[i].body);
-    if (validateUserServices(userServices)) {
+    try {
+      const userServices = parseRecordBody(event.Records[i].body);
+      validateUserServices(userServices);
       await writeUserServices(userServices);
+    } catch (err) {
+      console.error(`ERROR: ${getErrorMessage(err)}`);
     }
   }
 };

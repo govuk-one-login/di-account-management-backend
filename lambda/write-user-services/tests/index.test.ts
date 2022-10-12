@@ -1,9 +1,12 @@
 import {
   lambdaHandler,
   writeUserServices,
+  parseRecordBody,
+  validateServices,
   validateUserServices,
 } from "../index";
-import { UserServices } from "../models";
+import { Service, UserServices } from "../models";
+import { ValidationError } from "../errors";
 
 import { mockClient } from "aws-sdk-client-mock";
 import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
@@ -60,9 +63,11 @@ describe("writeUserServices", () => {
   });
 });
 
-describe("validateUserServices", () => {
-  test("returns true", () => {
-    expect(validateUserServices(TEST_USER_SERVICES)).toEqual(true);
+describe("parseRecordBody", () => {
+  test("parses the event body", () => {
+    expect(parseRecordBody(JSON.stringify(TEST_SQS_RECORD))).toStrictEqual(
+      TEST_SQS_RECORD
+    );
   });
 });
 
@@ -80,5 +85,150 @@ describe("lambdaHandler", () => {
   test("it iterates over each record in the batch", async () => {
     await lambdaHandler(TEST_SQS_EVENT);
     expect(dynamoMock.commandCalls(PutCommand).length).toEqual(2);
+  });
+
+  describe("error handling", () => {
+    test("logs the error message", async () => {
+      dynamoMock.rejectsOnce("mock error");
+      const consoleErrorMock = jest
+        .spyOn(global.console, "error")
+        .mockImplementation();
+
+      await lambdaHandler(TEST_SQS_EVENT);
+
+      expect(consoleErrorMock).toHaveBeenCalledTimes(1);
+      consoleErrorMock.mockRestore();
+    });
+  });
+});
+
+describe("validateUserServices", () => {
+  test("doesn't throw an error with valid data", () => {
+    expect(validateUserServices(TEST_USER_SERVICES)).toBe(undefined);
+  });
+
+  describe("throws an error", () => {
+    test("when user_id is missing", () => {
+      const userServices = parseRecordBody(
+        JSON.stringify({
+          services: [
+            {
+              client_id: "client_id",
+              last_accessed: new Date(),
+              count_successful_logins: 1,
+            },
+          ],
+        })
+      );
+      expect(() => {
+        validateUserServices(userServices);
+      }).toThrow(ValidationError);
+    });
+
+    test("when services is missing", () => {
+      const userServices = parseRecordBody(
+        JSON.stringify({
+          user_id: "user-id",
+        })
+      );
+      expect(() => {
+        validateUserServices(userServices);
+      }).toThrow(ValidationError);
+    });
+
+    test("when services is invalid", () => {
+      const userServices = parseRecordBody(
+        JSON.stringify({
+          user_id: "user-id",
+          services: [
+            {
+              last_accessed: new Date(),
+              count_successful_logins: 1,
+            },
+          ],
+        })
+      );
+      expect(() => {
+        validateUserServices(userServices);
+      }).toThrow(ValidationError);
+    });
+  });
+});
+
+describe("validateServices", () => {
+  const parseServices = (service: any) => {
+    return JSON.parse(service) as Service[];
+  };
+
+  test("doesn't throw an error with valid data", () => {
+    const services = parseServices(
+      JSON.stringify([
+        {
+          client_id: "client_id",
+          last_accessed: new Date(),
+          count_successful_logins: 1,
+        },
+      ])
+    );
+    expect(validateServices(services)).toBe(undefined);
+  });
+
+  describe("throws an error", () => {
+    test("when client_id is missing", () => {
+      const services = parseServices(
+        JSON.stringify([
+          {
+            last_accessed: new Date(),
+            count_successful_logins: 1,
+          },
+        ])
+      );
+      expect(() => {
+        validateServices(services);
+      }).toThrow(ValidationError);
+    });
+
+    test("when last_accessed is missing", () => {
+      const services = parseServices(
+        JSON.stringify([
+          {
+            client_id: "client-id",
+            count_successful_logins: 1,
+          },
+        ])
+      );
+      expect(() => {
+        validateServices(services);
+      }).toThrow(ValidationError);
+    });
+
+    test("when count_successful_logins is missing", () => {
+      const services = parseServices(
+        JSON.stringify([
+          {
+            client_id: "client-id",
+            last_accessed: new Date(),
+          },
+        ])
+      );
+      expect(() => {
+        validateServices(services);
+      }).toThrow(ValidationError);
+    });
+
+    test("when count_successful_logins less than 0", () => {
+      const services = parseServices(
+        JSON.stringify([
+          {
+            client_id: "client-id",
+            last_accessed: new Date(),
+            count_successful_logins: -1,
+          },
+        ])
+      );
+      expect(() => {
+        validateServices(services);
+      }).toThrow(ValidationError);
+    });
   });
 });

@@ -5,9 +5,8 @@ import {
   PutCommand,
   PutCommandOutput,
 } from "@aws-sdk/lib-dynamodb";
-import { UserServices } from "./models";
-import { getErrorMessage } from "./errors";
-import { validateUserServices } from "./validate";
+import { Service, UserServices } from "./models";
+import { getErrorMessage, ValidationError } from "./errors";
 
 const TABLE_NAME = process.env.TABLE_NAME;
 const marshallOptions = {
@@ -20,6 +19,31 @@ const dynamoDocClient = DynamoDBDocumentClient.from(
   dynamoClient,
   translateConfig
 );
+
+export const validateUserServices = (userServices: UserServices): void => {
+  if (userServices.user_id != undefined && userServices.services != undefined) {
+    validateServices(userServices.services);
+  } else {
+    throw new ValidationError(
+      `Could not validate UserServices ${userServices}`
+    );
+  }
+};
+
+export const validateServices = (services: Service[]): void => {
+  for (let i = 0; i < services.length; i++) {
+    const service = services[i];
+    if (
+      service.client_id != undefined &&
+      service.count_successful_logins &&
+      service.count_successful_logins >= 0 &&
+      service.last_accessed != undefined
+    ) {
+    } else {
+      throw new ValidationError(`Could not validate Service ${service}`);
+    }
+  }
+};
 
 export const parseRecordBody = (body: string): UserServices => {
   return JSON.parse(body) as UserServices;

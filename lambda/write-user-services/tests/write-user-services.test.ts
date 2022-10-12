@@ -4,7 +4,7 @@ import {
   parseRecordBody,
   validateServices,
   validateUserServices,
-} from "../index";
+} from "../write-user-services";
 import { Service, UserServices } from "../models";
 import { ValidationError } from "../errors";
 

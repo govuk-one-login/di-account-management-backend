@@ -1,5 +1,5 @@
 import {
-  lambdaHandler,
+  handler,
   writeUserServices,
   parseRecordBody,
   validateServices,
@@ -83,7 +83,7 @@ describe("lambdaHandler", () => {
   });
 
   test("it iterates over each record in the batch", async () => {
-    await lambdaHandler(TEST_SQS_EVENT);
+    await handler(TEST_SQS_EVENT);
     expect(dynamoMock.commandCalls(PutCommand).length).toEqual(2);
   });
 
@@ -94,7 +94,7 @@ describe("lambdaHandler", () => {
         .spyOn(global.console, "error")
         .mockImplementation();
 
-      await lambdaHandler(TEST_SQS_EVENT);
+      await handler(TEST_SQS_EVENT);
 
       expect(consoleErrorMock).toHaveBeenCalledTimes(1);
       consoleErrorMock.mockRestore();

@@ -62,7 +62,7 @@ export const writeUserServices = async (
   return await dynamoDocClient.send(command);
 };
 
-export const lambdaHandler = async (event: SQSEvent): Promise<void> => {
+export const handler = async (event: SQSEvent): Promise<void> => {
   for (let i = 0; i < event.Records.length; i++) {
     try {
       const userServices = parseRecordBody(event.Records[i].body);

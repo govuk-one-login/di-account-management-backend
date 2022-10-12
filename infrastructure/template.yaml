@@ -1,0 +1,288 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+Description: "A template to create the GOV.UK One login Account backend infrastructure."
+
+Parameters:
+  UserServicesStoreTableName:
+    Type: String
+    Default: user_services
+  Environment:
+    Description: "The environment type"
+    Type: "String"
+    AllowedValues:
+      - "dev"
+      - "build"
+      - "staging"
+      - "integration"
+      - "production"
+    ConstraintDescription: must be dev, build, staging, integration or production
+Conditions:
+  IsDevelopmentEnvironment: !Equals
+    - !Ref Environment
+    - dev
+
+Resources:
+  ######################################
+  # Dynamo DB - Output target for system
+  ######################################
+  UserServicesStore:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: !Join [ '', !If [IsDevelopmentEnvironment, "Delete", "Retain"] ]
+    UpdateReplacePolicy: !Join [ '', !If [IsDevelopmentEnvironment, "Delete", "Retain"] ]
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: user_id
+          AttributeType: S
+      BillingMode: PAY_PER_REQUEST
+      TableName: !Ref UserServicesStoreTableName
+      KeySchema:
+        - AttributeName: user_id
+          KeyType: HASH
+      Tags:
+        - Key: Product
+          Value: GOV.UK Sign In
+        - Key: System
+          Value: Account Management Backend
+        - Key: Owner
+          Value: govuk-accounts-tech@digital.cabinet-office.gov.uk
+        - Key: Environment
+          Value: !Ref 'Environment'
+        - Key: Source
+          Value: "https://github.com/alphagov/di-account-management-backend/blob/main/infrastructre/template.yaml"
+
+  ######################################
+  # TxMA Event Queue (Dummy for now)
+  ######################################
+  TxMAInputDummyQueue:
+    Type: AWS::SQS::Queue
+    DeletionPolicy: !Join [ '', !If [IsDevelopmentEnvironment, "Delete", "Retain"] ]
+    UpdateReplacePolicy: !Join [ '', !If [IsDevelopmentEnvironment, "Delete", "Retain"] ]
+
+  ######################
+  # Querying the Record
+  ######################
+  QueryUserServicesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Architectures: ["x86_64"]
+      CodeUri: ../lambda/query-user-services/query-user-services.ts
+      Events:
+        TxMAInputDummyQueue:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt TxMAInputDummyQueue.Arn
+      DeadLetterQueue:
+        Type: SQS
+        TargetArn: !GetAtt QueryUserServicesDeadLetterQueue.Arn
+      Handler: query-user-services.handler
+      PackageType: Zip
+      MemorySize: 128
+      Runtime: nodejs16.x
+      Role: !GetAtt QueryUserServicesRole.Arn
+      Timeout: 5
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref UserServicesStoreTableName
+          DLQ_ARN: !GetAtt QueryUserServicesDeadLetterQueue.Arn
+          OUTPUT_QUEUE_ARN: !GetAtt UserServicesToFormatQueue.Arn
+
+  QueryUserServicesDeadLetterQueue:
+    Type: AWS::SQS::Queue
+    DeletionPolicy: !Join [ '', !If [IsDevelopmentEnvironment, "Delete", "Retain"] ]
+    UpdateReplacePolicy: !Join [ '', !If [IsDevelopmentEnvironment, "Delete", "Retain"] ]
+
+  QueryUserServicesRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+
+  QueryUserServicesPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Roles:
+        - !Ref QueryUserServicesRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action:
+          - sqs:ReceiveMessage
+          - sqs:DeleteMessage
+          - sqs:GetQueueAttributes
+          Resource: !GetAtt TxMAInputDummyQueue.Arn
+        - Effect: Allow
+          Action:
+          - sqs:SendMessage
+          Resource: !GetAtt UserServicesToFormatQueue.Arn
+        - Effect: Allow
+          Action:
+          - sqs:SendMessage
+          Resource: !GetAtt QueryUserServicesDeadLetterQueue.Arn
+        - Effect: Allow
+          Action:
+          - dynamodb:Query
+          - dynamodb:GetItem
+          Resource:
+          - !GetAtt UserServicesStore.Arn
+          - !Sub
+            - '${Arn}/*'
+            - Arn: !GetAtt UserServicesStore.Arn
+
+  UserServicesToFormatQueue:
+    Type: AWS::SQS::Queue
+    DeletionPolicy: !Join [ '', !If [IsDevelopmentEnvironment, "Delete", "Retain"] ]
+    UpdateReplacePolicy: !Join [ '', !If [IsDevelopmentEnvironment, "Delete", "Retain"] ]
+
+  #######################
+  # Formatting the Record
+  #######################
+  FormatUserServicesFuction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Architectures: ["x86_64"]
+      CodeUri: ../lambda/format-user-services/format-user-services.ts
+      Events:
+        UserServicesToFormatQueue:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt UserServicesToFormatQueue.Arn
+      DeadLetterQueue:
+        Type: SQS
+        TargetArn: !GetAtt FormatUserServicesDeadLetterQueue.Arn
+      Handler: format-user-services.handler
+      PackageType: Zip
+      MemorySize: 128
+      Runtime: nodejs16.x
+      Role: !GetAtt FormatUserServicesRole.Arn
+      Timeout: 5
+      Environment:
+        Variables:
+          DLQ_ARN: !GetAtt FormatUserServicesDeadLetterQueue.Arn
+          OUTPUT_QUEUE_ARN: !GetAtt UserServicesToWriteQueue.Arn
+
+  FormatUserServicesDeadLetterQueue:
+    Type: AWS::SQS::Queue
+    DeletionPolicy: !Join [ '', !If [IsDevelopmentEnvironment, "Delete", "Retain"] ]
+    UpdateReplacePolicy: !Join [ '', !If [IsDevelopmentEnvironment, "Delete", "Retain"] ]
+
+  FormatUserServicesRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+
+  FormatUserServicesPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Roles:
+        - !Ref FormatUserServicesRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action:
+          - sqs:ReceiveMessage
+          - sqs:DeleteMessage
+          - sqs:GetQueueAttributes
+          Resource: !GetAtt UserServicesToFormatQueue.Arn
+        - Effect: Allow
+          Action:
+          - sqs:SendMessage
+          Resource: !GetAtt FormatUserServicesDeadLetterQueue.Arn
+        - Effect: Allow
+          Action:
+          - sqs:SendMessage
+          Resource: !GetAtt UserServicesToWriteQueue.Arn
+
+  UserServicesToWriteQueue:
+    Type: AWS::SQS::Queue
+    DeletionPolicy: !Join [ '', !If [IsDevelopmentEnvironment, "Delete", "Retain"] ]
+    UpdateReplacePolicy: !Join [ '', !If [IsDevelopmentEnvironment, "Delete", "Retain"] ]
+
+  ###################
+  # Write the Record
+  ###################
+  WriteUserServicesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Architectures: ["x86_64"]
+      CodeUri: ../lambda/write-user-services/write-user-services.ts
+      Events:
+        UserServicesToFormatQueue:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt UserServicesToFormatQueue.Arn
+      DeadLetterQueue:
+        Type: SQS
+        TargetArn: !GetAtt WriteServicesDeadLetterQueue.Arn
+      Handler: store-service-record.handler
+      PackageType: Zip
+      MemorySize: 128
+      Runtime: nodejs16.x
+      Role: !GetAtt WriteServiceRecordRole.Arn
+      Timeout: 5
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref UserServicesStoreTableName
+          DLQ_ARN: !GetAtt WriteServicesDeadLetterQueue.Arn
+
+  WriteServicesDeadLetterQueue:
+    Type: AWS::SQS::Queue
+    DeletionPolicy: !Join [ '', !If [IsDevelopmentEnvironment, "Delete", "Retain"] ]
+    UpdateReplacePolicy: !Join [ '', !If [IsDevelopmentEnvironment, "Delete", "Retain"] ]
+
+  WriteServiceRecordRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+
+  WriteServiceRecordPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Roles:
+        - !Ref WriteServiceRecordRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action:
+          - sqs:ReceiveMessage
+          - sqs:DeleteMessage
+          - sqs:GetQueueAttributes
+          Resource: !GetAtt UserServicesToWriteQueue.Arn
+        - Effect: Allow
+          Action:
+          - sqs:SendMessage
+          Resource: !GetAtt WriteServicesDeadLetterQueue.Arn
+        - Effect: Allow
+          Action:
+          - dynamodb:PutItem
+          - dynamodb:UpdateItem
+          Resource:
+          - !GetAtt UserServicesStore.Arn
+          - !Sub
+            - '${Arn}/*'
+            - Arn: !GetAtt UserServicesStore.Arn

@@ -235,10 +235,10 @@ Resources:
       Architectures: ["x86_64"]
       CodeUri: ../lambda/write-user-services/
       Events:
-        UserServicesToFormatQueue:
+        UserServicesToWriteQueue:
           Type: SQS
           Properties:
-            Queue: !GetAtt UserServicesToFormatQueue.Arn
+            Queue: !GetAtt UserServicesToWriteQueue.Arn
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt WriteServicesDeadLetterQueue.Arn

@@ -8,7 +8,7 @@ import {
 import { Service, UserServices } from "./models";
 import { getErrorMessage, ValidationError } from "./errors";
 
-const TABLE_NAME = process.env.TABLE_NAME;
+const { TABLE_NAME } = process.env;
 const marshallOptions = {
   convertClassInstanceToMap: true,
 };
@@ -20,28 +20,32 @@ const dynamoDocClient = DynamoDBDocumentClient.from(
   translateConfig
 );
 
+export const validateServices = (services: Service[]): void => {
+  for (let i = 0; i < services.length; i += 1) {
+    const service = services[i];
+    if (
+      !(
+        service.client_id !== undefined &&
+        service.count_successful_logins &&
+        service.count_successful_logins >= 0 &&
+        service.last_accessed !== undefined
+      )
+    ) {
+      throw new ValidationError(`Could not validate Service ${service}`);
+    }
+  }
+};
+
 export const validateUserServices = (userServices: UserServices): void => {
-  if (userServices.user_id != undefined && userServices.services != undefined) {
+  if (
+    userServices.user_id !== undefined &&
+    userServices.services !== undefined
+  ) {
     validateServices(userServices.services);
   } else {
     throw new ValidationError(
       `Could not validate UserServices ${userServices}`
     );
-  }
-};
-
-export const validateServices = (services: Service[]): void => {
-  for (let i = 0; i < services.length; i++) {
-    const service = services[i];
-    if (
-      service.client_id != undefined &&
-      service.count_successful_logins &&
-      service.count_successful_logins >= 0 &&
-      service.last_accessed != undefined
-    ) {
-    } else {
-      throw new ValidationError(`Could not validate Service ${service}`);
-    }
   }
 };
 
@@ -59,14 +63,15 @@ export const writeUserServices = async (
       services: userServices.services,
     },
   });
-  return await dynamoDocClient.send(command);
+  return dynamoDocClient.send(command);
 };
 
 export const handler = async (event: SQSEvent): Promise<void> => {
-  for (let i = 0; i < event.Records.length; i++) {
+  for (let i = 0; i < event.Records.length; i += 1) {
     try {
       const userServices = parseRecordBody(event.Records[i].body);
       validateUserServices(userServices);
+      /* eslint no-await-in-loop: "off" */
       await writeUserServices(userServices);
     } catch (err) {
       console.error(`ERROR: ${getErrorMessage(err)}`);

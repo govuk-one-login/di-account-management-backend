@@ -1,5 +1,5 @@
-type UrnFdnSub = String;
-type ClientId = String;
+type UrnFdnSub = string;
+type ClientId = string;
 
 export interface UserServices {
   user_id: UrnFdnSub;
@@ -8,6 +8,6 @@ export interface UserServices {
 
 export interface Service {
   client_id: ClientId;
-  count_successful_logins: Number;
+  count_successful_logins: number;
   last_accessed: Date;
 }

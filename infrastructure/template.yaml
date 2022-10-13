@@ -148,7 +148,7 @@ Resources:
   #######################
   # Formatting the Record
   #######################
-  FormatUserServicesFuction:
+  FormatUserServicesFunction:
     Type: AWS::Serverless::Function
     Properties:
       Architectures: ["x86_64"]

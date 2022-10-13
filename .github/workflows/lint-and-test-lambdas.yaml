@@ -1,0 +1,21 @@
+name: Lint and test lambdas
+
+on: pull_request
+
+jobs:
+  lint_and_test_write_user_services:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./lambda/write-user-services
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install write-user-services dependencies
+        run: npm ci
+
+      - name: Lint write-user-services
+        run: npm run lint
+
+      - name: Test write-user-services
+        run: npm test

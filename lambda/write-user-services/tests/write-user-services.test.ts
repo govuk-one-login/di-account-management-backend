@@ -1,5 +1,6 @@
 import { SQSEvent, SQSRecord } from "aws-lambda";
 import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
+import { SendMessageCommand, SQSClient } from "@aws-sdk/client-sqs";
 import { mockClient } from "aws-sdk-client-mock";
 import {
   handler,
@@ -44,6 +45,7 @@ const TEST_SQS_EVENT: SQSEvent = {
 };
 
 const dynamoMock = mockClient(DynamoDBDocumentClient);
+const sqsMock = mockClient(SQSClient);
 
 describe("writeUserServices", () => {
   beforeEach(() => {
@@ -73,7 +75,7 @@ describe("parseRecordBody", () => {
 describe("lambdaHandler", () => {
   beforeEach(() => {
     dynamoMock.reset();
-
+    sqsMock.reset();
     process.env.TABLE_NAME = "TABLE_NAME";
   });
 
@@ -87,16 +89,27 @@ describe("lambdaHandler", () => {
   });
 
   describe("error handling", () => {
-    test("logs the error message", async () => {
-      dynamoMock.rejectsOnce("mock error");
-      const consoleErrorMock = jest
+    let consoleErrorMock: jest.SpyInstance;
+
+    beforeEach(() => {
+      consoleErrorMock = jest
         .spyOn(global.console, "error")
         .mockImplementation();
+      dynamoMock.rejectsOnce("mock error");
+    });
 
-      await handler(TEST_SQS_EVENT);
-
-      expect(consoleErrorMock).toHaveBeenCalledTimes(1);
+    afterEach(() => {
       consoleErrorMock.mockRestore();
+    });
+
+    test("logs the error message", async () => {
+      await handler(TEST_SQS_EVENT);
+      expect(consoleErrorMock).toHaveBeenCalledTimes(1);
+    });
+
+    test("sends the event to the dead letter queue", async () => {
+      await handler(TEST_SQS_EVENT);
+      expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(1);
     });
   });
 });

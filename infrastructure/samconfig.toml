@@ -1,0 +1,82 @@
+version=0.1
+
+[default.build.parameters]
+beta_features = true
+[default.sync.parameters]
+beta_features = true
+
+[default.deploy.parameters]
+stack_name = "account-management-backend"
+region = "eu-west-2"
+s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-44r43ey3knwx"
+s3_prefix = "account-management-backend"
+capabilities = "CAPABILITY_NAMED_IAM"
+confirm_changeset = true
+disable_rollback = true
+tags = "project=\"account-management-backend\" stage=\"dev\""
+parameter_overrides=[
+    "Environment=dev",
+    "UserServicesStoreTableName=\"user_services\"",
+    "CodeSigningConfigArn=none",
+    "PermissionsBoundary=none"
+]
+
+[dev.deploy.parameters]
+stack_name = "account-management-backend"
+region = "eu-west-2"
+capabilities = "CAPABILITY_NAMED_IAM"
+tags = "project=\"account-management-backend\" stage=\"dev\""
+parameter_overrides=[
+    "Environment=dev",
+    "UserServicesStoreTableName=\"user_services\"",
+    "CodeSigningConfigArn=none",
+    "PermissionsBoundary=none"
+]
+
+[build.deploy.parameters]
+stack_name = "account-management-backend"
+region = "eu-west-2"
+capabilities = "CAPABILITY_NAMED_IAM"
+tags = "project=\"account-management-backend\" stage=\"build\""
+parameter_overrides=[
+    "Environment=build",
+    "UserServicesStoreTableName=\"user_services\"",
+    "CodeSigningConfigArn=none",
+    "PermissionsBoundary=none"
+]
+
+[staging.deploy.parameters]
+stack_name = "account-management-backend"
+region = "eu-west-2"
+capabilities = "CAPABILITY_NAMED_IAM"
+tags = "project=\"account-management-backend\" stage=\"staging\""
+parameter_overrides=[
+    "Environment=staging",
+    "UserServicesStoreTableName=\"user_services\"",
+    "CodeSigningConfigArn=none",
+    "PermissionsBoundary=none"
+]
+
+[integration.deploy.parameters]
+stack_name = "account-management-backend"
+region = "eu-west-2"
+capabilities = "CAPABILITY_NAMED_IAM"
+tags = "project=\"account-management-backend\" stage=\"integration\""
+parameter_overrides=[
+    "Environment=integration",
+    "UserServicesStoreTableName=\"user_services\"",
+    "CodeSigningConfigArn=none",
+    "PermissionsBoundary=none"
+]
+
+[production.deploy.parameters]
+stack_name = "account-management-backend"
+region = "eu-west-2"
+capabilities = "CAPABILITY_NAMED_IAM"
+tags = "project=\"account-management-backend\" stage=\"production\""
+parameter_overrides=[
+    "Environment=production",
+    "UserServicesStoreTableName=\"user_services\"",
+    "CodeSigningConfigArn=none",
+    "PermissionsBoundary=none"
+]

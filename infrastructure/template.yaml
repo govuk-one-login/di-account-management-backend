@@ -16,10 +16,6 @@ Parameters:
       - "integration"
       - "production"
     ConstraintDescription: must be dev, build, staging, integration or production
-Conditions:
-  IsDevelopmentEnvironment: !Equals
-    - !Ref Environment
-    - dev
 
 Resources:
   ######################################
@@ -27,8 +23,8 @@ Resources:
   ######################################
   UserServicesStore:
     Type: AWS::DynamoDB::Table
-    DeletionPolicy: !Join [ '', !If [IsDevelopmentEnvironment, "Delete", "Retain"] ]
-    UpdateReplacePolicy: !Join [ '', !If [IsDevelopmentEnvironment, "Delete", "Retain"] ]
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
     Properties:
       AttributeDefinitions:
         - AttributeName: user_id
@@ -55,8 +51,8 @@ Resources:
   ######################################
   TxMAInputDummyQueue:
     Type: AWS::SQS::Queue
-    DeletionPolicy: !Join [ '', !If [IsDevelopmentEnvironment, "Delete", "Retain"] ]
-    UpdateReplacePolicy: !Join [ '', !If [IsDevelopmentEnvironment, "Delete", "Retain"] ]
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
 
   ######################
   # Querying the Record
@@ -88,8 +84,8 @@ Resources:
 
   QueryUserServicesDeadLetterQueue:
     Type: AWS::SQS::Queue
-    DeletionPolicy: !Join [ '', !If [IsDevelopmentEnvironment, "Delete", "Retain"] ]
-    UpdateReplacePolicy: !Join [ '', !If [IsDevelopmentEnvironment, "Delete", "Retain"] ]
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
 
   QueryUserServicesRole:
     Type: AWS::IAM::Role
@@ -138,8 +134,8 @@ Resources:
 
   UserServicesToFormatQueue:
     Type: AWS::SQS::Queue
-    DeletionPolicy: !Join [ '', !If [IsDevelopmentEnvironment, "Delete", "Retain"] ]
-    UpdateReplacePolicy: !Join [ '', !If [IsDevelopmentEnvironment, "Delete", "Retain"] ]
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
 
   #######################
   # Formatting the Record
@@ -170,8 +166,8 @@ Resources:
 
   FormatUserServicesDeadLetterQueue:
     Type: AWS::SQS::Queue
-    DeletionPolicy: !Join [ '', !If [IsDevelopmentEnvironment, "Delete", "Retain"] ]
-    UpdateReplacePolicy: !Join [ '', !If [IsDevelopmentEnvironment, "Delete", "Retain"] ]
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
 
   FormatUserServicesRole:
     Type: AWS::IAM::Role
@@ -211,8 +207,8 @@ Resources:
 
   UserServicesToWriteQueue:
     Type: AWS::SQS::Queue
-    DeletionPolicy: !Join [ '', !If [IsDevelopmentEnvironment, "Delete", "Retain"] ]
-    UpdateReplacePolicy: !Join [ '', !If [IsDevelopmentEnvironment, "Delete", "Retain"] ]
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
 
   ###################
   # Write the Record
@@ -243,8 +239,8 @@ Resources:
 
   WriteServicesDeadLetterQueue:
     Type: AWS::SQS::Queue
-    DeletionPolicy: !Join [ '', !If [IsDevelopmentEnvironment, "Delete", "Retain"] ]
-    UpdateReplacePolicy: !Join [ '', !If [IsDevelopmentEnvironment, "Delete", "Retain"] ]
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
 
   WriteServiceRecordRole:
     Type: AWS::IAM::Role

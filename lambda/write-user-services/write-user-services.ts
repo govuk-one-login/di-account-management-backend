@@ -11,7 +11,6 @@ import {
   SQSClient,
 } from "@aws-sdk/client-sqs";
 import { Service, UserServices } from "./models";
-import { getErrorMessage, ValidationError } from "./errors";
 
 const { TABLE_NAME } = process.env;
 const marshallOptions = {
@@ -39,7 +38,7 @@ export const validateServices = (services: Service[]): void => {
         service.last_accessed !== undefined
       )
     ) {
-      throw new ValidationError(`Could not validate Service ${service}`);
+      throw new Error(`Could not validate Service ${service}`);
     }
   }
 };
@@ -51,9 +50,7 @@ export const validateUserServices = (userServices: UserServices): void => {
   ) {
     validateServices(userServices.services);
   } else {
-    throw new ValidationError(
-      `Could not validate UserServices ${userServices}`
-    );
+    throw new Error(`Could not validate UserServices ${userServices}`);
   }
 };
 
@@ -78,7 +75,7 @@ export const handler = async (event: SQSEvent): Promise<void> => {
       /* eslint no-await-in-loop: "off" */
       await writeUserServices(userServices);
     } catch (err) {
-      console.error(`ERROR: ${getErrorMessage(err)}`);
+      console.error(err);
       const message: SendMessageRequest = {
         QueueUrl: DLQ_URL,
         MessageBody: event.Records[i].body,

@@ -132,7 +132,7 @@ describe("matchService", () => {
     const matched = await matchService(service1, TEST_USER_RECORD);
     expect(matched).toBeFalsy();
   });
-  test("Match true forthe client Id from Service list to the one on TXMA event", async () => {
+  test("Match true for the client Id from Service list to the one on TXMA event", async () => {
     const matched = await matchService(service1, TEST_USER_RECORD_OTHER);
     expect(matched).toBeTruthy();
   });

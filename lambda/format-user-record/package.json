@@ -7,7 +7,7 @@
     "test": "jest",
     "lint": "eslint . --ext .ts"
   },
-  "author": "",
+  "author": "GDS",
   "license": "OGL",
   "devDependencies": {
     "@aws-sdk/client-sqs": "^3.186.0",

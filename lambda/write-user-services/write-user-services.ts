@@ -57,10 +57,6 @@ export const validateUserServices = (userServices: UserServices): void => {
   }
 };
 
-export const parseRecordBody = (body: string): UserServices => {
-  return JSON.parse(body) as UserServices;
-};
-
 export const writeUserServices = async (
   userServices: UserServices
 ): Promise<PutCommandOutput> => {
@@ -77,7 +73,7 @@ export const writeUserServices = async (
 export const handler = async (event: SQSEvent): Promise<void> => {
   for (let i = 0; i < event.Records.length; i += 1) {
     try {
-      const userServices = parseRecordBody(event.Records[i].body);
+      const userServices: UserServices = JSON.parse(event.Records[i].body);
       validateUserServices(userServices);
       /* eslint no-await-in-loop: "off" */
       await writeUserServices(userServices);

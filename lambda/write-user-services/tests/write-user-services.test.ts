@@ -5,7 +5,6 @@ import { mockClient } from "aws-sdk-client-mock";
 import {
   handler,
   writeUserServices,
-  parseRecordBody,
   validateServices,
   validateUserServices,
 } from "../write-user-services";
@@ -64,14 +63,6 @@ describe("writeUserServices", () => {
   });
 });
 
-describe("parseRecordBody", () => {
-  test("parses the event body", () => {
-    expect(parseRecordBody(JSON.stringify(TEST_SQS_RECORD))).toStrictEqual(
-      TEST_SQS_RECORD
-    );
-  });
-});
-
 describe("lambdaHandler", () => {
   beforeEach(() => {
     dynamoMock.reset();
@@ -121,7 +112,7 @@ describe("validateUserServices", () => {
 
   describe("throws an error", () => {
     test("when user_id is missing", () => {
-      const userServices = parseRecordBody(
+      const userServices = JSON.parse(
         JSON.stringify({
           services: [
             {
@@ -138,7 +129,7 @@ describe("validateUserServices", () => {
     });
 
     test("when services is missing", () => {
-      const userServices = parseRecordBody(
+      const userServices: UserServices = JSON.parse(
         JSON.stringify({
           user_id: "user-id",
         })
@@ -149,7 +140,7 @@ describe("validateUserServices", () => {
     });
 
     test("when services is invalid", () => {
-      const userServices = parseRecordBody(
+      const userServices: UserServices = JSON.parse(
         JSON.stringify({
           user_id: "user-id",
           services: [

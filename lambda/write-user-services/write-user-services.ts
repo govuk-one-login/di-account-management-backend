@@ -5,6 +5,11 @@ import {
   PutCommand,
   PutCommandOutput,
 } from "@aws-sdk/lib-dynamodb";
+import {
+  SendMessageCommand,
+  SendMessageRequest,
+  SQSClient,
+} from "@aws-sdk/client-sqs";
 import { Service, UserServices } from "./models";
 import { getErrorMessage, ValidationError } from "./errors";
 
@@ -19,6 +24,9 @@ const dynamoDocClient = DynamoDBDocumentClient.from(
   dynamoClient,
   translateConfig
 );
+
+const sqsClient = new SQSClient({});
+const { DLQ_URL } = process.env;
 
 export const validateServices = (services: Service[]): void => {
   for (let i = 0; i < services.length; i += 1) {
@@ -75,6 +83,11 @@ export const handler = async (event: SQSEvent): Promise<void> => {
       await writeUserServices(userServices);
     } catch (err) {
       console.error(`ERROR: ${getErrorMessage(err)}`);
+      const message: SendMessageRequest = {
+        QueueUrl: DLQ_URL,
+        MessageBody: event.Records[i].body,
+      };
+      await sqsClient.send(new SendMessageCommand(message));
     }
   }
 };

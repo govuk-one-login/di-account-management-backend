@@ -1,4 +1,4 @@
-AWSTemplateFormatVersion: 2010-09-09
+AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 Description: "A template to create the GOV.UK One login Account backend infrastructure."
 
@@ -16,10 +16,6 @@ Parameters:
       - "integration"
       - "production"
     ConstraintDescription: must be dev, build, staging, integration or production
-Conditions:
-  IsDevelopmentEnvironment: !Equals
-    - !Ref Environment
-    - dev
 
 Resources:
   ######################################
@@ -27,8 +23,8 @@ Resources:
   ######################################
   UserServicesStore:
     Type: AWS::DynamoDB::Table
-    DeletionPolicy: !Join [ '', !If [IsDevelopmentEnvironment, "Delete", "Retain"] ]
-    UpdateReplacePolicy: !Join [ '', !If [IsDevelopmentEnvironment, "Delete", "Retain"] ]
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
     Properties:
       AttributeDefinitions:
         - AttributeName: user_id
@@ -55,8 +51,8 @@ Resources:
   ######################################
   TxMAInputDummyQueue:
     Type: AWS::SQS::Queue
-    DeletionPolicy: !Join [ '', !If [IsDevelopmentEnvironment, "Delete", "Retain"] ]
-    UpdateReplacePolicy: !Join [ '', !If [IsDevelopmentEnvironment, "Delete", "Retain"] ]
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
 
   ######################
   # Querying the Record
@@ -65,7 +61,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Architectures: ["x86_64"]
-      CodeUri: ../lambda/query-user-services/query-user-services.ts
+      CodeUri: ../lambda/query-user-services/
       Events:
         TxMAInputDummyQueue:
           Type: SQS
@@ -85,11 +81,19 @@ Resources:
           TABLE_NAME: !Ref UserServicesStoreTableName
           DLQ_ARN: !GetAtt QueryUserServicesDeadLetterQueue.Arn
           OUTPUT_QUEUE_ARN: !GetAtt UserServicesToFormatQueue.Arn
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        Sourcemap: true
+        EntryPoints:
+        - query-user-services.ts
 
   QueryUserServicesDeadLetterQueue:
     Type: AWS::SQS::Queue
-    DeletionPolicy: !Join [ '', !If [IsDevelopmentEnvironment, "Delete", "Retain"] ]
-    UpdateReplacePolicy: !Join [ '', !If [IsDevelopmentEnvironment, "Delete", "Retain"] ]
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
 
   QueryUserServicesRole:
     Type: AWS::IAM::Role
@@ -138,17 +142,17 @@ Resources:
 
   UserServicesToFormatQueue:
     Type: AWS::SQS::Queue
-    DeletionPolicy: !Join [ '', !If [IsDevelopmentEnvironment, "Delete", "Retain"] ]
-    UpdateReplacePolicy: !Join [ '', !If [IsDevelopmentEnvironment, "Delete", "Retain"] ]
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
 
   #######################
   # Formatting the Record
   #######################
-  FormatUserServicesFuction:
+  FormatUserServicesFunction:
     Type: AWS::Serverless::Function
     Properties:
       Architectures: ["x86_64"]
-      CodeUri: ../lambda/format-user-services/format-user-services.ts
+      CodeUri: ../lambda/format-user-services/
       Events:
         UserServicesToFormatQueue:
           Type: SQS
@@ -167,11 +171,19 @@ Resources:
         Variables:
           DLQ_ARN: !GetAtt FormatUserServicesDeadLetterQueue.Arn
           OUTPUT_QUEUE_ARN: !GetAtt UserServicesToWriteQueue.Arn
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        Sourcemap: true
+        EntryPoints:
+        - format-user-services.ts
 
   FormatUserServicesDeadLetterQueue:
     Type: AWS::SQS::Queue
-    DeletionPolicy: !Join [ '', !If [IsDevelopmentEnvironment, "Delete", "Retain"] ]
-    UpdateReplacePolicy: !Join [ '', !If [IsDevelopmentEnvironment, "Delete", "Retain"] ]
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
 
   FormatUserServicesRole:
     Type: AWS::IAM::Role
@@ -211,8 +223,8 @@ Resources:
 
   UserServicesToWriteQueue:
     Type: AWS::SQS::Queue
-    DeletionPolicy: !Join [ '', !If [IsDevelopmentEnvironment, "Delete", "Retain"] ]
-    UpdateReplacePolicy: !Join [ '', !If [IsDevelopmentEnvironment, "Delete", "Retain"] ]
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
 
   ###################
   # Write the Record
@@ -221,12 +233,12 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Architectures: ["x86_64"]
-      CodeUri: ../lambda/write-user-services/write-user-services.ts
+      CodeUri: ../lambda/write-user-services/
       Events:
-        UserServicesToFormatQueue:
+        UserServicesToWriteQueue:
           Type: SQS
           Properties:
-            Queue: !GetAtt UserServicesToFormatQueue.Arn
+            Queue: !GetAtt UserServicesToWriteQueue.Arn
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt WriteServicesDeadLetterQueue.Arn
@@ -240,11 +252,19 @@ Resources:
         Variables:
           TABLE_NAME: !Ref UserServicesStoreTableName
           DLQ_ARN: !GetAtt WriteServicesDeadLetterQueue.Arn
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        Sourcemap: true
+        EntryPoints:
+        - write-user-services.ts
 
   WriteServicesDeadLetterQueue:
     Type: AWS::SQS::Queue
-    DeletionPolicy: !Join [ '', !If [IsDevelopmentEnvironment, "Delete", "Retain"] ]
-    UpdateReplacePolicy: !Join [ '', !If [IsDevelopmentEnvironment, "Delete", "Retain"] ]
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
 
   WriteServiceRecordRole:
     Type: AWS::IAM::Role

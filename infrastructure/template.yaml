@@ -83,8 +83,8 @@ Resources:
       Environment:
         Variables:
           TABLE_NAME: !Ref UserServicesStoreTableName
-          DLQ_ARN: !GetAtt QueryUserServicesDeadLetterQueue.Arn
-          OUTPUT_QUEUE_ARN: !GetAtt UserServicesToFormatQueue.Arn
+          DLQ_URL: !Ref QueryUserServicesDeadLetterQueue
+          OUTPUT_QUEUE_URL: !Ref UserServicesToFormatQueue
 
   QueryUserServicesDeadLetterQueue:
     Type: AWS::SQS::Queue
@@ -165,8 +165,8 @@ Resources:
       Timeout: 5
       Environment:
         Variables:
-          DLQ_ARN: !GetAtt FormatUserServicesDeadLetterQueue.Arn
-          OUTPUT_QUEUE_ARN: !GetAtt UserServicesToWriteQueue.Arn
+          DLQ_URL: !Ref FormatUserServicesDeadLetterQueue
+          OUTPUT_QUEUE_URL: !Ref UserServicesToWriteQueue
 
   FormatUserServicesDeadLetterQueue:
     Type: AWS::SQS::Queue
@@ -239,7 +239,7 @@ Resources:
       Environment:
         Variables:
           TABLE_NAME: !Ref UserServicesStoreTableName
-          DLQ_ARN: !GetAtt WriteServicesDeadLetterQueue.Arn
+          DLQ_URL: !Ref WriteServicesDeadLetterQueue
 
   WriteServicesDeadLetterQueue:
     Type: AWS::SQS::Queue

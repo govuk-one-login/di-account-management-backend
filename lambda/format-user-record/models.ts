@@ -1,5 +1,5 @@
-type UrnFdnSub = String;
-type ClientId = String;
+type UrnFdnSub = string;
+type ClientId = string;
 
 export interface UserRecordEvent {
   TxmaEventBody: TxmaEventBody;
@@ -8,15 +8,15 @@ export interface UserRecordEvent {
 
 export interface Service {
   client_id: ClientId;
-  count_successful_logins: Number;
+  count_successful_logins: number;
   last_accessed: Date;
 }
 
 export interface TxmaEventBody {
-  event_name: String;
+  event_name: string;
   timestamp: Date;
   client_id: ClientId;
-  component_id: String;
+  component_id: string;
   user: UserData;
 }
 

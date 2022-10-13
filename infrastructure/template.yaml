@@ -61,7 +61,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Architectures: ["x86_64"]
-      CodeUri: ../lambda/query-user-services/query-user-services.ts
+      CodeUri: ../lambda/query-user-services/
       Events:
         TxMAInputDummyQueue:
           Type: SQS
@@ -81,6 +81,14 @@ Resources:
           TABLE_NAME: !Ref UserServicesStoreTableName
           DLQ_ARN: !GetAtt QueryUserServicesDeadLetterQueue.Arn
           OUTPUT_QUEUE_ARN: !GetAtt UserServicesToFormatQueue.Arn
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        Sourcemap: true
+        EntryPoints:
+        - query-user-services.ts
 
   QueryUserServicesDeadLetterQueue:
     Type: AWS::SQS::Queue

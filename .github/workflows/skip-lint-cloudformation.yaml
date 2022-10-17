@@ -1,0 +1,13 @@
+name: CloudFormation Linter
+
+on: 
+  pull_request: 
+    paths-ingnore:
+      - 'infrastructure/**'
+
+jobs:
+  lint_cloudformation:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - run: 'echo "No changes to Cloudformation files - skipping checks"'

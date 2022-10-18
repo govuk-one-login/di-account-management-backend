@@ -9,7 +9,7 @@ import { DynamoDBDocumentClient, GetCommand } from "@aws-sdk/lib-dynamodb";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 
 const { TABLE_NAME, AWS_REGION } = process.env;
-const QUEUE_URL = "";
+
 const marshallOptions = {
   convertClassInstanceToMap: true,
 };
@@ -65,8 +65,8 @@ const createUserRecordEvent = (
 };
 
 export const sendSqsMessage = async (
-  messageBody: object,
-  queueUrl: string
+  messageBody: UserRecordEvent,
+  queueUrl: string | undefined
 ): Promise<string | undefined> => {
   const client = new SQSClient({ region: AWS_REGION });
   const message: SendMessageRequest = {
@@ -78,6 +78,8 @@ export const sendSqsMessage = async (
 };
 
 export const handler = async (event: SQSEvent): Promise<void> => {
+  const { QUEUE_URL } = process.env;
+
   for (const record of event.Records) {
     const txmaEvent: TxmaEvent = JSON.parse(record.body);
     validateTxmaEventBody(txmaEvent);

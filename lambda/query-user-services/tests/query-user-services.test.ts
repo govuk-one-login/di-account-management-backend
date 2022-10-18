@@ -3,6 +3,7 @@ import { DynamoDBDocumentClient, GetCommand } from "@aws-sdk/lib-dynamodb";
 import { SQSEvent, SQSRecord } from "aws-lambda";
 import { Service, TxmaEvent, UserData, UserRecordEvent } from "../models";
 import { mockClient } from "aws-sdk-client-mock";
+import "aws-sdk-client-mock-jest";
 import {
   handler,
   sendSqsMessage,
@@ -40,7 +41,7 @@ const TEST_SQS_RECORD: SQSRecord = {
 
 const MOCK_MESSAGE_ID = "MyMessageId";
 const MOCK_QUEUE_URL = "http://my_queue_url";
-const tableName = "TABLE_NAME";
+const TABLE_NAME = "TABLE_NAME";
 const dynamoMock = mockClient(DynamoDBDocumentClient);
 const sqsMock = mockClient(SQSClient);
 
@@ -59,7 +60,7 @@ describe("queryUserServices", () => {
   beforeEach(() => {
     dynamoMock.reset();
 
-    process.env.TABLE_NAME = "TABLE_NAME";
+    process.env.TABLE_NAME = TABLE_NAME;
 
     dynamoMock.on(GetCommand).resolves({ Item: serviceList });
   });
@@ -200,15 +201,26 @@ describe("validateUser", () => {
 });
 
 describe("sendSqsMessage", () => {
+  const userRecordEvents: UserRecordEvent = {
+    TxmaEvent: TEST_TXMA_EVENT,
+    ServiceList: [
+      {
+        client_id: "client_id",
+        count_successful_logins: 2,
+        last_accessed: new Date(),
+      },
+    ],
+  };
   beforeEach(() => {
     sqsMock.reset();
+    process.env.QUEUE_URL = MOCK_QUEUE_URL;
   });
   afterEach(() => {
     jest.clearAllMocks();
   });
   test("Send the SQS event on the queue", async () => {
     sqsMock.on(SendMessageCommand).resolves({ MessageId: MOCK_MESSAGE_ID });
-    const messageId = await sendSqsMessage(Object, MOCK_QUEUE_URL);
+    const messageId = await sendSqsMessage(userRecordEvents, MOCK_QUEUE_URL);
     expect(messageId).toEqual(MOCK_MESSAGE_ID);
     expect(
       sqsMock.commandCalls(SendMessageCommand, {
@@ -227,10 +239,12 @@ describe("handler", () => {
       last_accessed: new Date(),
     },
   ];
+
   beforeEach(() => {
     dynamoMock.reset();
     sqsMock.reset();
-    process.env.TABLE_NAME = "TABLE_NAME";
+    process.env.TABLE_NAME = TABLE_NAME;
+    process.env.QUEUE_URL = MOCK_QUEUE_URL;
     sqsMock.on(SendMessageCommand).resolves({ MessageId: MOCK_MESSAGE_ID });
     dynamoMock.on(GetCommand).resolves({ Item: serviceList });
   });
@@ -252,5 +266,9 @@ describe("handler", () => {
     await handler(TEST_SQS_EVENT);
     expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(2);
     expect(dynamoMock.commandCalls(GetCommand).length).toEqual(2);
+    expect(sqsMock).toHaveReceivedCommandWith(SendMessageCommand, {
+      QueueUrl: MOCK_QUEUE_URL,
+      MessageBody: JSON.stringify(userRecordEvents),
+    });
   });
 });

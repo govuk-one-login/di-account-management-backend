@@ -1,5 +1,4 @@
 import { SQSEvent, SQSRecord } from "aws-lambda";
-import { Service, TxmaEvent, UserData, UserRecordEvent } from "./models";
 import {
   SendMessageCommand,
   SendMessageRequest,
@@ -7,6 +6,7 @@ import {
 } from "@aws-sdk/client-sqs";
 import { DynamoDBDocumentClient, GetCommand } from "@aws-sdk/lib-dynamodb";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { Service, TxmaEvent, UserData, UserRecordEvent } from "./models";
 
 const { TABLE_NAME, AWS_REGION } = process.env;
 

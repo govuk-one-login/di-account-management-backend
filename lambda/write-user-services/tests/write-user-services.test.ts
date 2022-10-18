@@ -5,12 +5,10 @@ import { mockClient } from "aws-sdk-client-mock";
 import {
   handler,
   writeUserServices,
-  parseRecordBody,
   validateServices,
   validateUserServices,
 } from "../write-user-services";
 import { Service, UserServices } from "../models";
-import { ValidationError } from "../errors";
 
 const TEST_USER_SERVICES: UserServices = {
   user_id: "user-id",
@@ -64,14 +62,6 @@ describe("writeUserServices", () => {
   });
 });
 
-describe("parseRecordBody", () => {
-  test("parses the event body", () => {
-    expect(parseRecordBody(JSON.stringify(TEST_SQS_RECORD))).toStrictEqual(
-      TEST_SQS_RECORD
-    );
-  });
-});
-
 describe("lambdaHandler", () => {
   beforeEach(() => {
     dynamoMock.reset();
@@ -121,7 +111,7 @@ describe("validateUserServices", () => {
 
   describe("throws an error", () => {
     test("when user_id is missing", () => {
-      const userServices = parseRecordBody(
+      const userServices = JSON.parse(
         JSON.stringify({
           services: [
             {
@@ -134,22 +124,22 @@ describe("validateUserServices", () => {
       );
       expect(() => {
         validateUserServices(userServices);
-      }).toThrow(ValidationError);
+      }).toThrowError();
     });
 
     test("when services is missing", () => {
-      const userServices = parseRecordBody(
+      const userServices: UserServices = JSON.parse(
         JSON.stringify({
           user_id: "user-id",
         })
       );
       expect(() => {
         validateUserServices(userServices);
-      }).toThrow(ValidationError);
+      }).toThrowError();
     });
 
     test("when services is invalid", () => {
-      const userServices = parseRecordBody(
+      const userServices: UserServices = JSON.parse(
         JSON.stringify({
           user_id: "user-id",
           services: [
@@ -162,7 +152,7 @@ describe("validateUserServices", () => {
       );
       expect(() => {
         validateUserServices(userServices);
-      }).toThrow(ValidationError);
+      }).toThrowError();
     });
   });
 });
@@ -197,7 +187,7 @@ describe("validateServices", () => {
       );
       expect(() => {
         validateServices(services);
-      }).toThrow(ValidationError);
+      }).toThrowError();
     });
 
     test("when last_accessed is missing", () => {
@@ -211,7 +201,7 @@ describe("validateServices", () => {
       );
       expect(() => {
         validateServices(services);
-      }).toThrow(ValidationError);
+      }).toThrowError();
     });
 
     test("when count_successful_logins is missing", () => {
@@ -225,7 +215,7 @@ describe("validateServices", () => {
       );
       expect(() => {
         validateServices(services);
-      }).toThrow(ValidationError);
+      }).toThrowError();
     });
 
     test("when count_successful_logins less than 0", () => {
@@ -240,7 +230,7 @@ describe("validateServices", () => {
       );
       expect(() => {
         validateServices(services);
-      }).toThrow(ValidationError);
+      }).toThrowError();
     });
   });
 });

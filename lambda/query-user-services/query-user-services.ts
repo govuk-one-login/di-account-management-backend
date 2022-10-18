@@ -1,6 +1,5 @@
 import { SQSEvent, SQSRecord } from "aws-lambda";
 import { Service, TxmaEvent, UserData, UserRecordEvent } from "./models";
-import { ValidationError } from "./errors";
 import {
   SendMessageCommand,
   SendMessageRequest,
@@ -9,9 +8,8 @@ import {
 import { DynamoDBDocumentClient, GetCommand } from "@aws-sdk/lib-dynamodb";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 
-const { TABLE_NAME } = process.env;
+const { TABLE_NAME, AWS_REGION } = process.env;
 const QUEUE_URL = "";
-const { AWS_REGION } = process.env;
 const marshallOptions = {
   convertClassInstanceToMap: true,
 };
@@ -22,10 +20,6 @@ const dynamoDocClient = DynamoDBDocumentClient.from(
   dynamoClient,
   translateConfig
 );
-
-export const parseRecordBody = (body: string): TxmaEvent => {
-  return JSON.parse(body) as TxmaEvent;
-};
 
 export const queryUserServices = async (userId: string): Promise<Service[]> => {
   const command = new GetCommand({
@@ -41,7 +35,7 @@ export const queryUserServices = async (userId: string): Promise<Service[]> => {
 
 export const validateUser = (user: UserData): void => {
   if (user.user_id === undefined) {
-    throw new ValidationError(`Could not find User ${user}`);
+    throw new Error(`Could not find User ${user}`);
   }
 };
 
@@ -55,7 +49,7 @@ export const validateTxmaEventBody = (txmaEvent: TxmaEvent): void => {
   ) {
     validateUser(txmaEvent.user);
   } else {
-    throw new ValidationError(`Could not validate UserServices ${txmaEvent}`);
+    throw new Error(`Could not validate UserServices ${txmaEvent}`);
   }
 };
 
@@ -85,7 +79,7 @@ export const sendSqsMessage = async (
 
 export const handler = async (event: SQSEvent): Promise<void> => {
   for (const record of event.Records) {
-    const txmaEvent = parseRecordBody(record.body);
+    const txmaEvent: TxmaEvent = JSON.parse(record.body);
     validateTxmaEventBody(txmaEvent);
     const results = await queryUserServices(txmaEvent.user.user_id);
     const messageId = await sendSqsMessage(

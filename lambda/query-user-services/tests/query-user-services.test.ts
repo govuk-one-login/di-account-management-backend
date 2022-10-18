@@ -1,16 +1,14 @@
 import { SendMessageCommand, SQSClient } from "@aws-sdk/client-sqs";
 import { DynamoDBDocumentClient, GetCommand } from "@aws-sdk/lib-dynamodb";
 import { SQSEvent, SQSRecord } from "aws-lambda";
-import { Service, TxmaEvent, UserData } from "../models";
+import { Service, TxmaEvent, UserData, UserRecordEvent } from "../models";
 import { mockClient } from "aws-sdk-client-mock";
 import {
   handler,
-  parseRecordBody,
   sendSqsMessage,
   validateTxmaEventBody,
   validateUser,
 } from "../query-user-services";
-import { ValidationError } from "../errors";
 import { queryUserServices } from "../query-user-services";
 const userId = "user_id";
 const user: UserData = {
@@ -50,14 +48,6 @@ const TEST_SQS_EVENT: SQSEvent = {
   Records: [TEST_SQS_RECORD, TEST_SQS_RECORD],
 };
 
-describe("parseRecordBody", () => {
-  test("parses the event body", () => {
-    expect(parseRecordBody(JSON.stringify(TEST_TXMA_EVENT))).toStrictEqual(
-      TEST_TXMA_EVENT
-    );
-  });
-});
-
 describe("queryUserServices", () => {
   const serviceList: Service[] = [
     {
@@ -91,7 +81,7 @@ describe("validateTxmaEventBody", () => {
     expect(validateTxmaEventBody(TEST_TXMA_EVENT)).toBe(undefined);
   });
   test("throws error when client_id is missing", () => {
-    const txmaEvent = parseRecordBody(
+    const txmaEvent = JSON.parse(
       JSON.stringify({
         services: [
           {
@@ -107,10 +97,10 @@ describe("validateTxmaEventBody", () => {
     );
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrow(ValidationError);
+    }).toThrowError();
   });
   test("throws error when timestamp is missing", () => {
-    const txmaEvent = parseRecordBody(
+    const txmaEvent = JSON.parse(
       JSON.stringify({
         services: [
           {
@@ -126,10 +116,10 @@ describe("validateTxmaEventBody", () => {
     );
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrow(ValidationError);
+    }).toThrowError();
   });
   test("throws error when event name is missing", () => {
-    const txmaEvent = parseRecordBody(
+    const txmaEvent = JSON.parse(
       JSON.stringify({
         services: [
           {
@@ -145,10 +135,10 @@ describe("validateTxmaEventBody", () => {
     );
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrow(ValidationError);
+    }).toThrowError();
   });
   test("throws error when component_id is missing", () => {
-    const txmaEvent = parseRecordBody(
+    const txmaEvent = JSON.parse(
       JSON.stringify({
         services: [
           {
@@ -164,10 +154,10 @@ describe("validateTxmaEventBody", () => {
     );
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrow(ValidationError);
+    }).toThrowError();
   });
   test(" throws error when user is missing", () => {
-    const txmaEvent = parseRecordBody(
+    const txmaEvent = JSON.parse(
       JSON.stringify({
         services: [
           {
@@ -181,10 +171,10 @@ describe("validateTxmaEventBody", () => {
     );
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrow(ValidationError);
+    }).toThrowError();
   });
   test("throws error when user_id  is missing", () => {
-    const txmaEvent = parseRecordBody(
+    const txmaEvent = JSON.parse(
       JSON.stringify({
         services: [
           {
@@ -199,7 +189,7 @@ describe("validateTxmaEventBody", () => {
     );
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrow(ValidationError);
+    }).toThrowError();
   });
 });
 
@@ -239,7 +229,7 @@ describe("handler", () => {
   ];
   beforeEach(() => {
     dynamoMock.reset();
-
+    sqsMock.reset();
     process.env.TABLE_NAME = "TABLE_NAME";
     sqsMock.on(SendMessageCommand).resolves({ MessageId: MOCK_MESSAGE_ID });
     dynamoMock.on(GetCommand).resolves({ Item: serviceList });
@@ -248,6 +238,16 @@ describe("handler", () => {
   afterEach(() => {
     jest.clearAllMocks();
   });
+  const userRecordEvents: UserRecordEvent = {
+    TxmaEvent: TEST_TXMA_EVENT,
+    ServiceList: [
+      {
+        client_id: "client_id",
+        count_successful_logins: 2,
+        last_accessed: new Date(),
+      },
+    ],
+  };
   test("Queries the dynamo db and send an sqs event", async () => {
     await handler(TEST_SQS_EVENT);
     expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(2);

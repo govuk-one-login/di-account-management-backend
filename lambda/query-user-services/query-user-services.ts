@@ -79,8 +79,8 @@ export const sendSqsMessage = async (
 
 export const handler = async (event: SQSEvent): Promise<void> => {
   const { QUEUE_URL } = process.env;
-
-  for (const record of event.Records) {
+  const { Records } = event;
+  await Records.forEach(async (record) => {
     const txmaEvent: TxmaEvent = JSON.parse(record.body);
     validateTxmaEventBody(txmaEvent);
     const results = await queryUserServices(txmaEvent.user.user_id);
@@ -89,5 +89,5 @@ export const handler = async (event: SQSEvent): Promise<void> => {
       QUEUE_URL
     );
     console.log(`[Message sent to QUEUE] with message id = ${messageId}`);
-  }
+  });
 };

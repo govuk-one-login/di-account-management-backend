@@ -1,16 +1,17 @@
 import { SendMessageCommand, SQSClient } from "@aws-sdk/client-sqs";
 import { DynamoDBDocumentClient, GetCommand } from "@aws-sdk/lib-dynamodb";
 import { SQSEvent, SQSRecord } from "aws-lambda";
-import { Service, TxmaEvent, UserData, UserRecordEvent } from "../models";
 import { mockClient } from "aws-sdk-client-mock";
+import { Service, TxmaEvent, UserData, UserRecordEvent } from "../models";
 import "aws-sdk-client-mock-jest";
 import {
   handler,
   sendSqsMessage,
   validateTxmaEventBody,
   validateUser,
+  queryUserServices,
 } from "../query-user-services";
-import { queryUserServices } from "../query-user-services";
+
 const userId = "user_id";
 const user: UserData = {
   user_id: userId,
@@ -20,7 +21,7 @@ const TEST_TXMA_EVENT: TxmaEvent = {
   timestamp: new Date().toISOString(),
   client_id: "client_id",
   component_id: "component_id",
-  user: user,
+  user,
 };
 const TEST_SQS_RECORD: SQSRecord = {
   messageId: "19dd0b57-b21e-4ac1-bd88-01bbb068cb78",

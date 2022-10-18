@@ -1,5 +1,4 @@
-import { SQSEvent, SQSRecord } from "aws-lambda";
-import { Service, TxmaEvent, UserData, UserRecordEvent } from "./models";
+import { SQSEvent } from "aws-lambda";
 import {
   SendMessageCommand,
   SendMessageRequest,
@@ -7,6 +6,7 @@ import {
 } from "@aws-sdk/client-sqs";
 import { DynamoDBDocumentClient, GetCommand } from "@aws-sdk/lib-dynamodb";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { Service, TxmaEvent, UserData, UserRecordEvent } from "./models";
 
 const { TABLE_NAME, AWS_REGION } = process.env;
 
@@ -25,7 +25,7 @@ export const queryUserServices = async (userId: string): Promise<Service[]> => {
   const command = new GetCommand({
     TableName: TABLE_NAME,
     Key: {
-      userId: userId,
+      userId,
     },
   });
   const results = await dynamoDocClient.send(command);
@@ -79,8 +79,8 @@ export const sendSqsMessage = async (
 
 export const handler = async (event: SQSEvent): Promise<void> => {
   const { QUEUE_URL } = process.env;
-
-  for (const record of event.Records) {
+  const { Records } = event;
+  await Records.forEach(async (record) => {
     const txmaEvent: TxmaEvent = JSON.parse(record.body);
     validateTxmaEventBody(txmaEvent);
     const results = await queryUserServices(txmaEvent.user.user_id);
@@ -89,5 +89,5 @@ export const handler = async (event: SQSEvent): Promise<void> => {
       QUEUE_URL
     );
     console.log(`[Message sent to QUEUE] with message id = ${messageId}`);
-  }
+  });
 };

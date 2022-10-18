@@ -3,7 +3,44 @@ name: Lint and test lambdas
 on: pull_request
 
 jobs:
+  lint_and_test_query_user_services:
+    name: query-user-services
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./lambda/query-user-services
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm test
+
+  lint_and_test_format_user_services:
+    name: format-user-services
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./lambda/format-user-services
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm test
+
   lint_and_test_write_user_services:
+    name: write-user-services
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -11,11 +48,11 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Install write-user-services dependencies
+      - name: Install dependencies
         run: npm ci
 
-      - name: Lint write-user-services
+      - name: Lint
         run: npm run lint
 
-      - name: Test write-user-services
+      - name: Test
         run: npm test

@@ -100,6 +100,7 @@ Resources:
     Properties:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - !Ref QueryUserServicesPolicy
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -113,8 +114,6 @@ Resources:
   QueryUserServicesPolicy:
     Type: AWS::IAM::ManagedPolicy
     Properties:
-      Roles:
-        - !Ref QueryUserServicesRole
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -192,6 +191,7 @@ Resources:
     Properties:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - !Ref FormatUserServicesPolicy
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -205,8 +205,6 @@ Resources:
   FormatUserServicesPolicy:
     Type: AWS::IAM::ManagedPolicy
     Properties:
-      Roles:
-        - !Ref FormatUserServicesRole
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -275,6 +273,7 @@ Resources:
     Properties:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - !Ref WriteServiceRecordPolicy
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -288,8 +287,6 @@ Resources:
   WriteServiceRecordPolicy:
     Type: AWS::IAM::ManagedPolicy
     Properties:
-      Roles:
-        - !Ref WriteServiceRecordRole
       PolicyDocument:
         Version: '2012-10-17'
         Statement:

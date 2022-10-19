@@ -25,7 +25,7 @@ export const queryUserServices = async (userId: string): Promise<Service[]> => {
   const command = new GetCommand({
     TableName: TABLE_NAME,
     Key: {
-      userId,
+      user_id: userId,
     },
   });
   const results = await dynamoDocClient.send(command);

@@ -78,7 +78,7 @@ export const sendSqsMessage = async (
 };
 
 export const handler = async (event: SQSEvent): Promise<void> => {
-  const { QUEUE_URL } = process.env;
+  const { OUTPUT_QUEUE_URL } = process.env;
   const { Records } = event;
   await Promise.all(
     Records.map(async (record) => {
@@ -87,7 +87,7 @@ export const handler = async (event: SQSEvent): Promise<void> => {
       const results = await queryUserServices(txmaEvent.user.user_id);
       const messageId = await sendSqsMessage(
         createUserRecordEvent(txmaEvent, results),
-        QUEUE_URL
+        OUTPUT_QUEUE_URL
       );
       console.log(`[Message sent to QUEUE] with message id = ${messageId}`);
     })

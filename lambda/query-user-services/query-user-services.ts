@@ -6,7 +6,13 @@ import {
 } from "@aws-sdk/client-sqs";
 import { DynamoDBDocumentClient, GetCommand } from "@aws-sdk/lib-dynamodb";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { Service, TxmaEvent, UserData, UserRecordEvent } from "./models";
+import {
+  Service,
+  TxmaEvent,
+  UserData,
+  UserRecordEvent,
+  UserServices,
+} from "./models";
 
 const { TABLE_NAME, AWS_REGION } = process.env;
 
@@ -30,7 +36,7 @@ export const queryUserServices = async (userId: string): Promise<Service[]> => {
   });
   const results = await dynamoDocClient.send(command);
 
-  return results.Item ? (results.Item as Service[]) : [];
+  return results.Item ? (results.Item as UserServices).services : [];
 };
 
 export const validateUser = (user: UserData): void => {

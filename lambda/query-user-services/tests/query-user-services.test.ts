@@ -2,7 +2,13 @@ import { SendMessageCommand, SQSClient } from "@aws-sdk/client-sqs";
 import { DynamoDBDocumentClient, GetCommand } from "@aws-sdk/lib-dynamodb";
 import { SQSEvent, SQSRecord } from "aws-lambda";
 import { mockClient } from "aws-sdk-client-mock";
-import { Service, TxmaEvent, UserData, UserRecordEvent } from "../models";
+import {
+  Service,
+  TxmaEvent,
+  UserData,
+  UserRecordEvent,
+  UserServices,
+} from "../models";
 import "aws-sdk-client-mock-jest";
 import {
   handler,
@@ -58,12 +64,18 @@ describe("queryUserServices", () => {
       last_accessed: new Date(),
     },
   ];
+
+  const userServices: UserServices = {
+    user_id: "user-id",
+    services: serviceList,
+  };
+
   beforeEach(() => {
     dynamoMock.reset();
 
     process.env.TABLE_NAME = TABLE_NAME;
 
-    dynamoMock.on(GetCommand).resolves({ Item: serviceList });
+    dynamoMock.on(GetCommand).resolves({ Item: userServices });
   });
 
   afterEach(() => {
@@ -241,13 +253,18 @@ describe("handler", () => {
     },
   ];
 
+  const userServices: UserServices = {
+    user_id: "user-id",
+    services: serviceList,
+  };
+
   beforeEach(() => {
     dynamoMock.reset();
     sqsMock.reset();
     process.env.TABLE_NAME = TABLE_NAME;
-    process.env.QUEUE_URL = MOCK_QUEUE_URL;
+    process.env.OUTPUT_QUEUE_URL = MOCK_QUEUE_URL;
     sqsMock.on(SendMessageCommand).resolves({ MessageId: MOCK_MESSAGE_ID });
-    dynamoMock.on(GetCommand).resolves({ Item: serviceList });
+    dynamoMock.on(GetCommand).resolves({ Item: userServices });
   });
 
   afterEach(() => {

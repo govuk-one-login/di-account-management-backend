@@ -2,7 +2,7 @@ type UrnFdnSub = string;
 type ClientId = string;
 
 export interface UserRecordEvent {
-  TxmaEventBody: TxmaEventBody;
+  TxmaEvent: TxmaEvent;
   ServiceList: Service[];
 }
 
@@ -12,7 +12,7 @@ export interface Service {
   last_accessed: string;
 }
 
-export interface TxmaEventBody {
+export interface TxmaEvent {
   event_name: string;
   timestamp: string;
   client_id: ClientId;

@@ -246,7 +246,7 @@ Resources:
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt WriteServicesDeadLetterQueue.Arn
-      Handler: store-service-record.handler
+      Handler: write-user-services.handler
       PackageType: Zip
       MemorySize: 128
       Runtime: nodejs16.x

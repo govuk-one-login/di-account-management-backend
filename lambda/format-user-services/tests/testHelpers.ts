@@ -4,7 +4,7 @@ import type {
   Service,
   UserRecordEvent,
   UserServices,
-  TxmaEventBody,
+  TxmaEvent,
 } from "../models";
 
 export const makeServiceRecord = (
@@ -36,10 +36,7 @@ export const makeSQSEventFixture = (
   awsRegion: "us-east-1",
 });
 
-export const makeTxmaEventBody = (
-  clientId: string,
-  userId: string
-): TxmaEventBody => ({
+export const makeTxmaEvent = (clientId: string, userId: string): TxmaEvent => ({
   event_name: "event_1",
   timestamp: "2022-01-01T12:00:00.000Z",
   client_id: clientId,

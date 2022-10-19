@@ -14,7 +14,7 @@ import {
 } from "../format-user-services";
 
 import {
-  makeTxmaEventBody,
+  makeTxmaEvent,
   makeServiceRecord,
   makeSQSInputFixture,
 } from "./testHelpers";
@@ -23,10 +23,10 @@ import { UserServices, Service } from "../models";
 const sqsMock = mockClient(SQSClient);
 
 describe("newServicePresenter", () => {
-  const TXMA_EVENT_BODY = makeTxmaEventBody("clientID1234", "userID1234");
+  const TXMA_EVENT = makeTxmaEvent("clientID1234", "userID1234");
 
-  test("presents txmaEventBody data as a Service", () => {
-    expect(newServicePresenter(TXMA_EVENT_BODY)).toEqual({
+  test("presents TxmaEvent data as a Service", () => {
+    expect(newServicePresenter(TXMA_EVENT)).toEqual({
       client_id: "clientID1234",
       count_successful_logins: 1,
       last_accessed: "2022-01-01T12:00:00.000Z",
@@ -57,7 +57,7 @@ describe("existingServicePresenter", () => {
 describe("validateAndParseSQSRecord", () => {
   test("returns a valid SQS fixture as a parsed UserRecord", () => {
     const userRecord = {
-      TxmaEventBody: makeTxmaEventBody("clientID1234", "userID1234"),
+      TxmaEvent: makeTxmaEvent("clientID1234", "userID1234"),
       ServiceList: [makeServiceRecord("clientID1234", 1)],
     };
     const validSQSFixture: SQSRecord = makeSQSInputFixture([userRecord])[0];
@@ -68,7 +68,7 @@ describe("validateAndParseSQSRecord", () => {
   test("throws if txmaEvent is invalid", () => {
     const invalidUserRecord = JSON.parse(
       JSON.stringify({
-        TxmaEventBody: {},
+        TxmaEvent: {},
         ServiceList: [makeServiceRecord("clientID1234", 1)],
       })
     );
@@ -77,18 +77,18 @@ describe("validateAndParseSQSRecord", () => {
     ])[0];
 
     expect(() => validateAndParseSQSRecord(invalidSQSFixture)).toThrowError(
-      `Could not validate txmaEvent ${invalidUserRecord.TxmaEventBody}`
+      `Could not validate txmaEvent ${invalidUserRecord.TxmaEvent}`
     );
   });
 
   test("throws if txmaEvent's user is invalid", () => {
     const invalidTxmaEvent = {
-      ...makeTxmaEventBody("clientID1234", "userID1234"),
+      ...makeTxmaEvent("clientID1234", "userID1234"),
       user: {},
     };
     const invalidUserRecord = JSON.parse(
       JSON.stringify({
-        TxmaEventBody: invalidTxmaEvent,
+        TxmaEvent: invalidTxmaEvent,
         ServiceList: [makeServiceRecord("clientID1234", 1)],
       })
     );
@@ -103,7 +103,7 @@ describe("validateAndParseSQSRecord", () => {
 
   test("throws if a present service record is a duplicate", () => {
     const invalidUserRecord = {
-      TxmaEventBody: makeTxmaEventBody("clientID1234", "userID1234"),
+      TxmaEvent: makeTxmaEvent("clientID1234", "userID1234"),
       ServiceList: [
         makeServiceRecord("clientID1234", 1),
         makeServiceRecord("clientID1234", 1),
@@ -125,7 +125,7 @@ describe("validateAndParseSQSRecord", () => {
     };
     const invalidUserRecord = JSON.parse(
       JSON.stringify({
-        TxmaEventBody: makeTxmaEventBody("clientID1234", "userID1234"),
+        TxmaEvent: makeTxmaEvent("clientID1234", "userID1234"),
         ServiceList: [invalidServiceRecord],
       })
     );
@@ -141,58 +141,54 @@ describe("validateAndParseSQSRecord", () => {
 
 describe("conditionallyUpsertServiceList", () => {
   const matchedService = makeServiceRecord("clientID1234", 1);
-  const TxmaEventBody = makeTxmaEventBody("clientID1234", "userID1234");
+  const TxmaEvent = makeTxmaEvent("clientID1234", "userID1234");
 
   test("it updates existing records when there are matches", () => {
-    expect(
-      conditionallyUpsertServiceList(matchedService, TxmaEventBody)
-    ).toEqual(
-      existingServicePresenter(matchedService, TxmaEventBody.timestamp)
+    expect(conditionallyUpsertServiceList(matchedService, TxmaEvent)).toEqual(
+      existingServicePresenter(matchedService, TxmaEvent.timestamp)
     );
   });
 
   it("it creates a new record from TxMA body when there are not matches", () => {
-    expect(conditionallyUpsertServiceList(undefined, TxmaEventBody)).toEqual(
-      newServicePresenter(TxmaEventBody)
+    expect(conditionallyUpsertServiceList(undefined, TxmaEvent)).toEqual(
+      newServicePresenter(TxmaEvent)
     );
   });
 });
 
 describe("formatRecord", () => {
   test("it creates an initial service when there are none for that user", () => {
-    const TxmaEventBody = makeTxmaEventBody("clientID1234", "userID1234");
+    const TxmaEvent = makeTxmaEvent("clientID1234", "userID1234");
 
-    expect(formatRecord({ TxmaEventBody, ServiceList: [] })).toEqual({
+    expect(formatRecord({ TxmaEvent, ServiceList: [] })).toEqual({
       user_id: "userID1234",
-      services: [makeServiceRecord("clientID1234", 1, TxmaEventBody.timestamp)],
+      services: [makeServiceRecord("clientID1234", 1, TxmaEvent.timestamp)],
     });
   });
 
   test("it incriments the count_successful_logins for an existing service", () => {
-    const TxmaEventBody = makeTxmaEventBody("clientID1234", "userID1234");
+    const TxmaEvent = makeTxmaEvent("clientID1234", "userID1234");
     const ServiceList = [
-      makeServiceRecord("clientID1234", 10, TxmaEventBody.timestamp),
+      makeServiceRecord("clientID1234", 10, TxmaEvent.timestamp),
     ];
 
-    expect(formatRecord({ TxmaEventBody, ServiceList })).toEqual({
+    expect(formatRecord({ TxmaEvent, ServiceList })).toEqual({
       user_id: "userID1234",
-      services: [
-        makeServiceRecord("clientID1234", 11, TxmaEventBody.timestamp),
-      ],
+      services: [makeServiceRecord("clientID1234", 11, TxmaEvent.timestamp)],
     });
   });
 
   test("it adds a new service alongside existing services", () => {
-    const TxmaEventBody = makeTxmaEventBody("clientID1234", "userID1234");
+    const TxmaEvent = makeTxmaEvent("clientID1234", "userID1234");
     const ServiceList = [
-      makeServiceRecord("clientID5678", 10, TxmaEventBody.timestamp),
+      makeServiceRecord("clientID5678", 10, TxmaEvent.timestamp),
     ];
 
-    expect(formatRecord({ TxmaEventBody, ServiceList })).toEqual({
+    expect(formatRecord({ TxmaEvent, ServiceList })).toEqual({
       user_id: "userID1234",
       services: [
-        makeServiceRecord("clientID1234", 1, TxmaEventBody.timestamp),
-        makeServiceRecord("clientID5678", 10, TxmaEventBody.timestamp),
+        makeServiceRecord("clientID1234", 1, TxmaEvent.timestamp),
+        makeServiceRecord("clientID5678", 10, TxmaEvent.timestamp),
       ],
     });
   });
@@ -234,7 +230,7 @@ describe("handler", () => {
   beforeEach(() => {
     sqsMock.reset();
     process.env.OUTPUT_SQS_NAME = sqsQueueName;
-    process.env.QUEUE_URL = queueURL;
+    process.env.OUTPUT_QUEUE_URL = queueURL;
     sqsMock.on(SendMessageCommand).resolves({ MessageId: messageID });
   });
 
@@ -246,7 +242,7 @@ describe("handler", () => {
     const emptyServiceList = [] as Service[];
     const inputSQSEvent = makeSQSInputFixture([
       {
-        TxmaEventBody: makeTxmaEventBody(serviceClientID, userId),
+        TxmaEvent: makeTxmaEvent(serviceClientID, userId),
         ServiceList: emptyServiceList,
       },
     ]);
@@ -269,7 +265,7 @@ describe("handler", () => {
     ] as Service[];
     const inputSQSEvent = makeSQSInputFixture([
       {
-        TxmaEventBody: makeTxmaEventBody(serviceClientID, userId),
+        TxmaEvent: makeTxmaEvent(serviceClientID, userId),
         ServiceList: serviceListWithExistingService,
       },
     ]);
@@ -295,7 +291,7 @@ describe("handler", () => {
 
     const inputSQSEvent = makeSQSInputFixture([
       {
-        TxmaEventBody: makeTxmaEventBody(serviceClientID, userId),
+        TxmaEvent: makeTxmaEvent(serviceClientID, userId),
         ServiceList: [anotherService],
       },
     ]);

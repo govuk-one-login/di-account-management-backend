@@ -9,7 +9,7 @@ import type {
   UserRecordEvent,
   UserServices,
   Service,
-  TxmaEventBody,
+  TxmaEvent,
 } from "./models";
 
 const { AWS_REGION } = process.env;
@@ -47,7 +47,7 @@ const validateUser = (user: UserData): void => {
   }
 };
 
-const validateTxmaEventBody = (txmaEvent: TxmaEventBody): void => {
+const validateTxmaEvent = (txmaEvent: TxmaEvent): void => {
   if (
     txmaEvent.client_id !== undefined &&
     txmaEvent.timestamp !== undefined &&
@@ -65,16 +65,16 @@ export const validateAndParseSQSRecord = (
   record: SQSRecord
 ): UserRecordEvent => {
   const parsedRecord = JSON.parse(record.body);
-  const { TxmaEventBody, ServiceList } = parsedRecord;
-  validateTxmaEventBody(TxmaEventBody);
+  const { TxmaEvent, ServiceList } = parsedRecord;
+  validateTxmaEvent(TxmaEvent);
   validateUserServices(ServiceList);
   return parsedRecord;
 };
 
-export const newServicePresenter = (txmaEventBody: TxmaEventBody): Service => ({
-  client_id: txmaEventBody.client_id,
+export const newServicePresenter = (TxmaEvent: TxmaEvent): Service => ({
+  client_id: TxmaEvent.client_id,
   count_successful_logins: 1,
-  last_accessed: txmaEventBody.timestamp,
+  last_accessed: TxmaEvent.timestamp,
 });
 
 export const existingServicePresenter = (
@@ -88,26 +88,26 @@ export const existingServicePresenter = (
 
 export const conditionallyUpsertServiceList = (
   matchingService: Service | undefined,
-  TxmaEventBody: TxmaEventBody
+  TxmaEvent: TxmaEvent
 ): Service => ({
   ...(!matchingService
-    ? newServicePresenter(TxmaEventBody)
-    : existingServicePresenter(matchingService, TxmaEventBody.timestamp)),
+    ? newServicePresenter(TxmaEvent)
+    : existingServicePresenter(matchingService, TxmaEvent.timestamp)),
 });
 
 export const formatRecord = (record: UserRecordEvent) => {
-  const { TxmaEventBody, ServiceList } = record;
+  const { TxmaEvent, ServiceList } = record;
   const matchingRecord = ServiceList.find(
-    (service) => TxmaEventBody.client_id === service.client_id
+    (service) => TxmaEvent.client_id === service.client_id
   );
   const nonMatchingRecords = ServiceList.filter(
-    (service) => TxmaEventBody.client_id !== service.client_id
+    (service) => TxmaEvent.client_id !== service.client_id
   );
 
   return {
-    user_id: TxmaEventBody.user.user_id,
+    user_id: TxmaEvent.user.user_id,
     services: [
-      ...[conditionallyUpsertServiceList(matchingRecord, TxmaEventBody)],
+      ...[conditionallyUpsertServiceList(matchingRecord, TxmaEvent)],
       ...nonMatchingRecords,
     ],
   };
@@ -127,12 +127,14 @@ export const sendSqsMessage = async (
 };
 
 export const handler = async (event: SQSEvent): Promise<void> => {
-  const { QUEUE_URL } = process.env;
+  const { OUTPUT_QUEUE_URL } = process.env;
   const { Records } = event;
 
-  Records.forEach(async (record) => {
-    const formattedRecord = formatRecord(validateAndParseSQSRecord(record));
-    const messageId = await sendSqsMessage(formattedRecord, QUEUE_URL);
-    console.log(`[Message sent to QUEUE] with message id = ${messageId}`);
-  });
+  await Promise.all(
+    Records.map(async (record) => {
+      const formattedRecord = formatRecord(validateAndParseSQSRecord(record));
+      const messageId = await sendSqsMessage(formattedRecord, OUTPUT_QUEUE_URL);
+      console.log(`[Message sent to QUEUE] with message id = ${messageId}`);
+    })
+  );
 };

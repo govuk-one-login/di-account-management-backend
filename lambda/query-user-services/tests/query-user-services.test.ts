@@ -290,3 +290,30 @@ describe("handler", () => {
     });
   });
 });
+
+describe("handler error handing ", () => {
+  let consoleErrorMock: jest.SpyInstance;
+
+  beforeEach(() => {
+    consoleErrorMock = jest.spyOn(global.console, "error").mockImplementation();
+    dynamoMock.reset();
+    sqsMock.reset();
+    process.env.TABLE_NAME = TABLE_NAME;
+    process.env.OUTPUT_QUEUE_URL = MOCK_QUEUE_URL;
+    sqsMock.on(SendMessageCommand).resolves({ MessageId: MOCK_MESSAGE_ID });
+    dynamoMock.rejectsOnce("mock error");
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+    consoleErrorMock.mockRestore();
+  });
+  test("logs the error message", async () => {
+    await handler(TEST_SQS_EVENT);
+    expect(consoleErrorMock).toHaveBeenCalledTimes(2);
+  });
+  test("sends the event to dead letter queue", async () => {
+    await handler(TEST_SQS_EVENT);
+    expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(2);
+  });
+});

@@ -18,7 +18,7 @@ import {
   makeServiceRecord,
   makeSQSInputFixture,
 } from "./testHelpers";
-import { UserServices, Service, TxmaEvent } from "../models";
+import { UserServices, Service } from "../models";
 
 const sqsMock = mockClient(SQSClient);
 
@@ -314,8 +314,6 @@ describe("handler error handling ", () => {
   const messageID = "MyMessageId";
   const sqsQueueName = "ToWriteSQS";
   const queueURL = "http://my_queue_url";
-  const userId = "userID1234";
-  const serviceClientID = "clientID1234";
   let consoleErrorMock: jest.SpyInstance;
   beforeEach(() => {
     consoleErrorMock = jest.spyOn(global.console, "error").mockImplementation();

@@ -4,6 +4,16 @@ The backend and data store that serves the account management application.
 
 This is a serverless application for AWS. It's built and deployed using the [SAM CLI](https://aws.amazon.com/serverless/sam/).
 
+## Prerequisites
+
+We recommend using [`nvm`](https://github.com/nvm-sh/nvm) to install and manage Node.js versions. Run
+
+```
+nvm install
+```
+
+from the root of the repository or in any `lambda/` folder to install the correct version on Node.
+
 ## Testing
 
 Each Lambda function is a separate NPM application and has its own unit tests.

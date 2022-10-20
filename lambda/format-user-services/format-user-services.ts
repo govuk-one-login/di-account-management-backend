@@ -127,14 +127,22 @@ export const sendSqsMessage = async (
 };
 
 export const handler = async (event: SQSEvent): Promise<void> => {
-  const { OUTPUT_QUEUE_URL } = process.env;
+  const { OUTPUT_QUEUE_URL, DLQ_URL } = process.env;
   const { Records } = event;
 
   await Promise.all(
     Records.map(async (record) => {
-      const formattedRecord = formatRecord(validateAndParseSQSRecord(record));
-      const messageId = await sendSqsMessage(formattedRecord, OUTPUT_QUEUE_URL);
-      console.log(`[Message sent to QUEUE] with message id = ${messageId}`);
+      try {
+        const formattedRecord = formatRecord(validateAndParseSQSRecord(record));
+        const messageId = await sendSqsMessage(
+          formattedRecord,
+          OUTPUT_QUEUE_URL
+        );
+        console.log(`[Message sent to QUEUE] with message id = ${messageId}`);
+      } catch (err) {
+        console.error(err);
+        await sendSqsMessage(JSON.parse(record.body), DLQ_URL);
+      }
     })
   );
 };

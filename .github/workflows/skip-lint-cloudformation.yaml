@@ -2,7 +2,7 @@ name: CloudFormation Linter
 
 on: 
   pull_request: 
-    paths-ingnore:
+    paths-ignore:
       - 'infrastructure/**'
 
 jobs:

@@ -94,6 +94,8 @@ Resources:
     Type: AWS::SQS::Queue
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
+    Properties:
+      MessageRetentionPeriod: 1209600
 
   QueryUserServicesRole:
     Type: AWS::IAM::Role
@@ -199,6 +201,8 @@ Resources:
     Type: AWS::SQS::Queue
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
+    Properties:
+      MessageRetentionPeriod: 1209600
 
   FormatUserServicesRole:
     Type: AWS::IAM::Role
@@ -295,6 +299,8 @@ Resources:
     Type: AWS::SQS::Queue
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
+    Properties:
+      MessageRetentionPeriod: 1209600
 
   WriteServiceRecordRole:
     Type: AWS::IAM::Role

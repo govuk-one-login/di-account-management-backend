@@ -233,7 +233,10 @@ describe("sendSqsMessage", () => {
   });
   test("Send the SQS event on the queue", async () => {
     sqsMock.on(SendMessageCommand).resolves({ MessageId: MOCK_MESSAGE_ID });
-    const messageId = await sendSqsMessage(userRecordEvents, MOCK_QUEUE_URL);
+    const messageId = await sendSqsMessage(
+      JSON.stringify(userRecordEvents),
+      MOCK_QUEUE_URL
+    );
     expect(messageId).toEqual(MOCK_MESSAGE_ID);
     expect(
       sqsMock.commandCalls(SendMessageCommand, {

@@ -71,13 +71,13 @@ const createUserRecordEvent = (
 };
 
 export const sendSqsMessage = async (
-  messageBody: object,
+  messageBody: string,
   queueUrl: string | undefined
 ): Promise<string | undefined> => {
   const client = new SQSClient({ region: AWS_REGION });
   const message: SendMessageRequest = {
     QueueUrl: queueUrl,
-    MessageBody: JSON.stringify(messageBody),
+    MessageBody: messageBody,
   };
   const result = await client.send(new SendMessageCommand(message));
   return result.MessageId;
@@ -93,13 +93,13 @@ export const handler = async (event: SQSEvent): Promise<void> => {
         validateTxmaEventBody(txmaEvent);
         const results = await queryUserServices(txmaEvent.user.user_id);
         const messageId = await sendSqsMessage(
-          createUserRecordEvent(txmaEvent, results),
+          JSON.stringify(createUserRecordEvent(txmaEvent, results)),
           OUTPUT_QUEUE_URL
         );
         console.log(`[Message sent to QUEUE] with message id = ${messageId}`);
       } catch (err) {
         console.error(err);
-        await sendSqsMessage(JSON.parse(record.body), DLQ_URL);
+        await sendSqsMessage(record.body, DLQ_URL);
       }
     })
   );

@@ -94,6 +94,8 @@ Resources:
     Type: AWS::SQS::Queue
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
+    Properties:
+      MessageRetentionPeriod: 1209600
 
   QueryUserServicesRole:
     Type: AWS::IAM::Role
@@ -146,6 +148,20 @@ Resources:
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
 
+  QueryDeadLetterQueueAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      Namespace: "AWS/SQS"
+      MetricName: "ApproximateNumberOfMessagesVisible"
+      Dimensions:
+        - Name: "QueueName"
+          Value: !GetAtt QueryUserServicesDeadLetterQueue.QueueName
+      Statistic: "Sum"
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: "GreaterThanOrEqualToThreshold"
+
   #######################
   # Formatting the Record
   #######################
@@ -185,6 +201,8 @@ Resources:
     Type: AWS::SQS::Queue
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
+    Properties:
+      MessageRetentionPeriod: 1209600
 
   FormatUserServicesRole:
     Type: AWS::IAM::Role
@@ -228,6 +246,20 @@ Resources:
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
 
+  FormatDeadLetterQueueAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      Namespace: "AWS/SQS"
+      MetricName: "ApproximateNumberOfMessagesVisible"
+      Dimensions:
+        - Name: "QueueName"
+          Value: !GetAtt FormatUserServicesDeadLetterQueue.QueueName
+      Statistic: "Sum"
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: "GreaterThanOrEqualToThreshold"
+
   ###################
   # Write the Record
   ###################
@@ -243,7 +275,7 @@ Resources:
             Queue: !GetAtt UserServicesToWriteQueue.Arn
       DeadLetterQueue:
         Type: SQS
-        TargetArn: !GetAtt WriteServicesDeadLetterQueue.Arn
+        TargetArn: !GetAtt WriteUserServicesDeadLetterQueue.Arn
       Handler: write-user-services.handler
       PackageType: Zip
       MemorySize: 128
@@ -253,7 +285,7 @@ Resources:
       Environment:
         Variables:
           TABLE_NAME: !Ref UserServicesStoreTableName
-          DLQ_URL: !Ref WriteServicesDeadLetterQueue
+          DLQ_URL: !Ref WriteUserServicesDeadLetterQueue
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -263,10 +295,12 @@ Resources:
         EntryPoints:
         - write-user-services.ts
 
-  WriteServicesDeadLetterQueue:
+  WriteUserServicesDeadLetterQueue:
     Type: AWS::SQS::Queue
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
+    Properties:
+      MessageRetentionPeriod: 1209600
 
   WriteServiceRecordRole:
     Type: AWS::IAM::Role
@@ -299,7 +333,7 @@ Resources:
         - Effect: Allow
           Action:
           - sqs:SendMessage
-          Resource: !GetAtt WriteServicesDeadLetterQueue.Arn
+          Resource: !GetAtt WriteUserServicesDeadLetterQueue.Arn
         - Effect: Allow
           Action:
           - dynamodb:PutItem
@@ -309,3 +343,17 @@ Resources:
           - !Sub
             - '${Arn}/*'
             - Arn: !GetAtt UserServicesStore.Arn
+
+  WriteDeadLetterQueueAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      Namespace: "AWS/SQS"
+      MetricName: "ApproximateNumberOfMessagesVisible"
+      Dimensions:
+        - Name: "QueueName"
+          Value: !GetAtt WriteUserServicesDeadLetterQueue.QueueName
+      Statistic: "Sum"
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: "GreaterThanOrEqualToThreshold"

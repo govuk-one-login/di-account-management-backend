@@ -71,31 +71,36 @@ const createUserRecordEvent = (
 };
 
 export const sendSqsMessage = async (
-  messageBody: UserRecordEvent,
+  messageBody: string,
   queueUrl: string | undefined
 ): Promise<string | undefined> => {
   const client = new SQSClient({ region: AWS_REGION });
   const message: SendMessageRequest = {
     QueueUrl: queueUrl,
-    MessageBody: JSON.stringify(messageBody),
+    MessageBody: messageBody,
   };
   const result = await client.send(new SendMessageCommand(message));
   return result.MessageId;
 };
 
 export const handler = async (event: SQSEvent): Promise<void> => {
-  const { OUTPUT_QUEUE_URL } = process.env;
+  const { OUTPUT_QUEUE_URL, DLQ_URL } = process.env;
   const { Records } = event;
   await Promise.all(
     Records.map(async (record) => {
-      const txmaEvent: TxmaEvent = JSON.parse(record.body);
-      validateTxmaEventBody(txmaEvent);
-      const results = await queryUserServices(txmaEvent.user.user_id);
-      const messageId = await sendSqsMessage(
-        createUserRecordEvent(txmaEvent, results),
-        OUTPUT_QUEUE_URL
-      );
-      console.log(`[Message sent to QUEUE] with message id = ${messageId}`);
+      try {
+        const txmaEvent: TxmaEvent = JSON.parse(record.body);
+        validateTxmaEventBody(txmaEvent);
+        const results = await queryUserServices(txmaEvent.user.user_id);
+        const messageId = await sendSqsMessage(
+          JSON.stringify(createUserRecordEvent(txmaEvent, results)),
+          OUTPUT_QUEUE_URL
+        );
+        console.log(`[Message sent to QUEUE] with message id = ${messageId}`);
+      } catch (err) {
+        console.error(err);
+        await sendSqsMessage(record.body, DLQ_URL);
+      }
     })
   );
 };

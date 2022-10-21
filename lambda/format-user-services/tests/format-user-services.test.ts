@@ -206,16 +206,16 @@ describe("sendSqsMessage", () => {
     jest.clearAllMocks();
   });
 
-  const userRecordEvents: UserServices = {
+  const userRecordEvents: string = JSON.stringify({
     user_id: "user1234",
     services: [makeServiceRecord("client1234", 1)],
-  };
+  });
   test("Send the SQS event on the queue", async () => {
     const messageId = await sendSqsMessage(userRecordEvents, queueURL);
     expect(messageId).toEqual(messageID);
     expect(sqsMock).toHaveReceivedCommandWith(SendMessageCommand, {
       QueueUrl: queueURL,
-      MessageBody: JSON.stringify(userRecordEvents),
+      MessageBody: userRecordEvents,
     });
   });
 });
@@ -307,5 +307,50 @@ describe("handler", () => {
       QueueUrl: queueURL,
       MessageBody: JSON.stringify(outputSQSEventMessageBodies),
     });
+  });
+});
+
+describe("handler error handling ", () => {
+  const messageID = "MyMessageId";
+  const sqsQueueName = "ToWriteSQS";
+  const queueURL = "http://my_queue_url";
+  let consoleErrorMock: jest.SpyInstance;
+  beforeEach(() => {
+    consoleErrorMock = jest.spyOn(global.console, "error").mockImplementation();
+    sqsMock.reset();
+    process.env.OUTPUT_SQS_NAME = sqsQueueName;
+    process.env.OUTPUT_QUEUE_URL = queueURL;
+    sqsMock.on(SendMessageCommand).resolves({ MessageId: messageID });
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  test("write to a dead letter queue when an error is thrown", async () => {
+    const emptyServiceList = [] as Service[];
+    const invalidTxmaEvent = JSON.parse(
+      JSON.stringify({
+        services: [
+          {
+            client_id: "client_id",
+            timestamp: new Date().toISOString,
+            event_name: "event_name",
+            user: {
+              user_id: "user_id",
+            },
+          },
+        ],
+      })
+    );
+    const inputSQSEvent = makeSQSInputFixture([
+      {
+        TxmaEvent: invalidTxmaEvent,
+        ServiceList: emptyServiceList,
+      },
+    ]);
+    await handler({ Records: inputSQSEvent });
+    expect(consoleErrorMock).toHaveBeenCalledTimes(1);
+    expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(1);
   });
 });

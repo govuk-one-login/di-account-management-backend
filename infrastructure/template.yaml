@@ -243,7 +243,7 @@ Resources:
             Queue: !GetAtt UserServicesToWriteQueue.Arn
       DeadLetterQueue:
         Type: SQS
-        TargetArn: !GetAtt WriteServicesDeadLetterQueue.Arn
+        TargetArn: !GetAtt WriteUserServicesDeadLetterQueue.Arn
       Handler: write-user-services.handler
       PackageType: Zip
       MemorySize: 128
@@ -253,7 +253,7 @@ Resources:
       Environment:
         Variables:
           TABLE_NAME: !Ref UserServicesStoreTableName
-          DLQ_URL: !Ref WriteServicesDeadLetterQueue
+          DLQ_URL: !Ref WriteUserServicesDeadLetterQueue
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -263,7 +263,7 @@ Resources:
         EntryPoints:
         - write-user-services.ts
 
-  WriteServicesDeadLetterQueue:
+  WriteUserServicesDeadLetterQueue:
     Type: AWS::SQS::Queue
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
@@ -299,7 +299,7 @@ Resources:
         - Effect: Allow
           Action:
           - sqs:SendMessage
-          Resource: !GetAtt WriteServicesDeadLetterQueue.Arn
+          Resource: !GetAtt WriteUserServicesDeadLetterQueue.Arn
         - Effect: Allow
           Action:
           - dynamodb:PutItem

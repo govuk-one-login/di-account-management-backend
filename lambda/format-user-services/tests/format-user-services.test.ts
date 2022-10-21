@@ -206,16 +206,16 @@ describe("sendSqsMessage", () => {
     jest.clearAllMocks();
   });
 
-  const userRecordEvents: UserServices = {
+  const userRecordEvents: string = JSON.stringify({
     user_id: "user1234",
     services: [makeServiceRecord("client1234", 1)],
-  };
+  });
   test("Send the SQS event on the queue", async () => {
     const messageId = await sendSqsMessage(userRecordEvents, queueURL);
     expect(messageId).toEqual(messageID);
     expect(sqsMock).toHaveReceivedCommandWith(SendMessageCommand, {
       QueueUrl: queueURL,
-      MessageBody: JSON.stringify(userRecordEvents),
+      MessageBody: userRecordEvents,
     });
   });
 });

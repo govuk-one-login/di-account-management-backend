@@ -167,6 +167,7 @@ Resources:
   QueryDeadLetterQueueAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
+      AlarmName: !Join [ "-", [ !Ref AWS::StackName, !Ref Environment, QueryDeadLetterQueueAlarm ] ]
       Namespace: "AWS/SQS"
       MetricName: "ApproximateNumberOfMessagesVisible"
       Dimensions:
@@ -177,6 +178,9 @@ Resources:
       EvaluationPeriods: 1
       Threshold: 1
       ComparisonOperator: "GreaterThanOrEqualToThreshold"
+      AlarmActions:
+        - !Ref AlarmNotificationTopic
+      ActionsEnabled: true
 
   #######################
   # Formatting the Record
@@ -265,6 +269,7 @@ Resources:
   FormatDeadLetterQueueAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
+      AlarmName: !Join [ "-", [ !Ref AWS::StackName, !Ref Environment, FormatDeadLetterQueueAlarm ] ]
       Namespace: "AWS/SQS"
       MetricName: "ApproximateNumberOfMessagesVisible"
       Dimensions:
@@ -275,6 +280,9 @@ Resources:
       EvaluationPeriods: 1
       Threshold: 1
       ComparisonOperator: "GreaterThanOrEqualToThreshold"
+      AlarmActions:
+        - !Ref AlarmNotificationTopic
+      ActionsEnabled: true
 
   ###################
   # Write the Record
@@ -363,6 +371,7 @@ Resources:
   WriteDeadLetterQueueAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
+      AlarmName: !Join [ "-", [ !Ref AWS::StackName, !Ref Environment, WriteDeadLetterQueueAlarm ] ]
       Namespace: "AWS/SQS"
       MetricName: "ApproximateNumberOfMessagesVisible"
       Dimensions:
@@ -373,6 +382,9 @@ Resources:
       EvaluationPeriods: 1
       Threshold: 1
       ComparisonOperator: "GreaterThanOrEqualToThreshold"
+      AlarmActions:
+        - !Ref AlarmNotificationTopic
+      ActionsEnabled: true
 
   #######################
   # Monitoring

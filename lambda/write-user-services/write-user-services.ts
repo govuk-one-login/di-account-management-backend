@@ -68,19 +68,20 @@ export const writeUserServices = async (
 };
 
 export const handler = async (event: SQSEvent): Promise<void> => {
-  for (let i = 0; i < event.Records.length; i += 1) {
-    try {
-      const userServices: UserServices = JSON.parse(event.Records[i].body);
-      validateUserServices(userServices);
-      /* eslint no-await-in-loop: "off" */
-      await writeUserServices(userServices);
-    } catch (err) {
-      console.error(err);
-      const message: SendMessageRequest = {
-        QueueUrl: DLQ_URL,
-        MessageBody: event.Records[i].body,
-      };
-      await sqsClient.send(new SendMessageCommand(message));
-    }
-  }
+  await Promise.all(
+    event.Records.map(async (record) => {
+      try {
+        const userServices: UserServices = JSON.parse(record.body);
+        validateUserServices(userServices);
+        await writeUserServices(userServices);
+      } catch (err) {
+        console.error(err);
+        const message: SendMessageRequest = {
+          QueueUrl: DLQ_URL,
+          MessageBody: record.body,
+        };
+        await sqsClient.send(new SendMessageCommand(message));
+      }
+    })
+  );
 };

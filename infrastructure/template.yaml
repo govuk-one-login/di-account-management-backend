@@ -16,6 +16,22 @@ Parameters:
       - "integration"
       - "production"
     ConstraintDescription: must be dev, build, staging, integration or production
+  SlackWorkspaceId:
+    Description: >
+      The ID of the Slack workspace where build notification messages are
+      posted. This is retrieved from the AWS Chatbot integration.
+    Type: String
+    Default: "T8GT9416G"
+    AllowedPattern: "\\w+"
+    ConstraintDescription: "must be an AWS Chatbot Slack workspace ID"
+
+  SlackChannelId:
+    Description: >
+      The ID of the Slack channel where build notification messages are posted.
+      This is taken from the channel details in Slack.
+    Type: String
+    AllowedPattern: "\\w+"
+    ConstraintDescription: "must be a Slack channel ID"
 
 Resources:
   ######################################
@@ -357,3 +373,44 @@ Resources:
       EvaluationPeriods: 1
       Threshold: 1
       ComparisonOperator: "GreaterThanOrEqualToThreshold"
+
+  #######################
+  # Monitoring
+  #######################
+  AlarmNotificationTopic:
+    Type: AWS::SNS::Topic
+
+  AlarmNotificationTopicPolicy:
+    Type: AWS::SNS::TopicPolicy
+    Properties:
+      Topics:
+        - !Ref AlarmNotificationTopic
+      PolicyDocument:
+        Statement:
+          - Action: "sns:Publish"
+            Effect: Allow
+            Resource: !Ref AlarmNotificationTopic
+            Principal:
+              Service: cloudwatch.amazonaws.com
+
+  ChatbotRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service: "chatbot.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+
+  ChatbotChannelConfiguration:
+    Type: AWS::Chatbot::SlackChannelConfiguration
+    Properties:
+      ConfigurationName: !Sub "${AWS::StackName}-slack-notifications"
+      IamRoleArn: !GetAtt ChatbotRole.Arn
+      SlackChannelId: !Ref SlackChannelId
+      SlackWorkspaceId: !Ref SlackWorkspaceId
+      SnsTopicArns:
+        - !Ref AlarmNotificationTopic

@@ -24,7 +24,6 @@ Parameters:
     Default: "T8GT9416G"
     AllowedPattern: "\\w+"
     ConstraintDescription: "must be an AWS Chatbot Slack workspace ID"
-
   SlackChannelId:
     Description: >
       The ID of the Slack channel where build notification messages are posted.
@@ -32,6 +31,40 @@ Parameters:
     Type: String
     AllowedPattern: "\\w+"
     ConstraintDescription: "must be a Slack channel ID"
+  CodeSigningConfigArn:
+    Type: String
+    Description: >
+      The ARN of the Code Signing Config to use, provided by the deployment pipeline
+    Default: "none"
+  PermissionsBoundary:
+    Type: String
+    Description: >
+      The ARN of the permissions boundary to apply to any role created by the template
+    Default: "none"
+
+Conditions:
+  UseCodeSigning:
+    Fn::Not:
+      - Fn::Equals:
+          - !Ref CodeSigningConfigArn
+          - "none"
+
+  UsePermissionsBoundary:
+    Fn::Not:
+      - Fn::Equals:
+          - !Ref PermissionsBoundary
+          - "none"
+
+Globals:
+  Function:
+    CodeSigningConfigArn: !If
+      - UseCodeSigning
+      - !Ref CodeSigningConfigArn
+      - !Ref AWS::NoValue
+    PermissionsBoundary: !If
+      - UsePermissionsBoundary
+      - !Ref PermissionsBoundary
+      - !Ref AWS::NoValue
 
 Resources:
   ######################################

@@ -31,6 +31,7 @@ Parameters:
     Type: String
     AllowedPattern: "\\w+"
     ConstraintDescription: "must be a Slack channel ID"
+    Default: C011Y5SAY3U
   CodeSigningConfigArn:
     Type: String
     Description: >

@@ -17,8 +17,7 @@ parameter_overrides=[
     "Environment=dev",
     "UserServicesStoreTableName=\"user_services\"",
     "CodeSigningConfigArn=none",
-    "PermissionsBoundary=none",
-    "SlackChannelId=C011Y5SAY3U"
+    "PermissionsBoundary=none"
 ]
 
 [dev.deploy.parameters]

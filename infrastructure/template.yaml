@@ -95,6 +95,12 @@ Resources:
           Value: !Ref 'Environment'
         - Key: Source
           Value: "https://github.com/alphagov/di-account-management-backend/blob/main/infrastructre/template.yaml"
+      PointInTimeRecoverySpecification:
+              PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+        SSEType: KMS
+        KMSMasterKeyId: !GetAtt DatabaseKmsKey.Arn
 
   ######################################
   # TxMA Event Queue (Dummy for now)
@@ -262,6 +268,7 @@ Resources:
     UpdateReplacePolicy: Delete
     Properties:
       MessageRetentionPeriod: 1209600
+      KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
 
   FormatUserServicesRole:
     Type: AWS::IAM::Role
@@ -470,6 +477,7 @@ Resources:
       SlackWorkspaceId: !Ref SlackWorkspaceId
       SnsTopicArns:
         - !Ref AlarmNotificationTopic
+
   QueueKmsKey:
       Type: AWS::KMS::Key
       Properties:
@@ -480,12 +488,7 @@ Resources:
             - Effect: Allow
               Principal:
                 AWS: !Sub arn:aws:iam::${AWS::AccountId}:root
-              Action:
-                - kms:CreateGrant
-                - kms:Decrypt
-                - kms:DescribeKey
-                - kms:GenerateDataKey*
-                - kms:ReEncrypt*
+              Action: kms:*
               Resource:
                 - '*'
             - Effect: Allow
@@ -495,3 +498,18 @@ Resources:
                 - kms:*
               Resource:
                 - '*'
+
+  DatabaseKmsKey:
+    Type: AWS::KMS::Key
+    Properties:
+      EnableKeyRotation: true
+      KeyPolicy:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub arn:aws:iam::${AWS::AccountId}:root
+            Action:
+              - kms:*
+            Resource:
+              - '*'

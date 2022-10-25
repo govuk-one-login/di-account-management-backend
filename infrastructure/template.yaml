@@ -101,9 +101,11 @@ Resources:
   ######################################
   TxMAInputDummyQueue:
     Type: AWS::SQS::Queue
+    Properties:
+      KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
-
+    
   ######################
   # Querying the Record
   ######################
@@ -146,6 +148,7 @@ Resources:
     UpdateReplacePolicy: Delete
     Properties:
       MessageRetentionPeriod: 1209600
+      KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
 
   QueryUserServicesRole:
     Type: AWS::IAM::Role
@@ -195,6 +198,8 @@ Resources:
 
   UserServicesToFormatQueue:
     Type: AWS::SQS::Queue
+    Properties:
+      KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
 
@@ -297,6 +302,8 @@ Resources:
 
   UserServicesToWriteQueue:
     Type: AWS::SQS::Queue
+    Properties:
+      KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
 
@@ -359,6 +366,7 @@ Resources:
     UpdateReplacePolicy: Delete
     Properties:
       MessageRetentionPeriod: 1209600
+      KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
 
   WriteServiceRecordRole:
     Type: AWS::IAM::Role
@@ -425,6 +433,8 @@ Resources:
   #######################
   AlarmNotificationTopic:
     Type: AWS::SNS::Topic
+    Properties:
+      KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
 
   AlarmNotificationTopicPolicy:
     Type: AWS::SNS::TopicPolicy
@@ -460,3 +470,28 @@ Resources:
       SlackWorkspaceId: !Ref SlackWorkspaceId
       SnsTopicArns:
         - !Ref AlarmNotificationTopic
+  QueueKmsKey:
+      Type: AWS::KMS::Key
+      Properties:
+        EnableKeyRotation: true
+        KeyPolicy:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal:
+                AWS: !Sub arn:aws:iam::${AWS::AccountId}:root
+              Action:
+                - kms:CreateGrant
+                - kms:Decrypt
+                - kms:DescribeKey
+                - kms:GenerateDataKey*
+                - kms:ReEncrypt*
+              Resource:
+                - '*'
+            - Effect: Allow
+              Principal:
+                AWS: !Sub arn:aws:iam::${AWS::AccountId}:root
+              Action:
+                - kms:*
+              Resource:
+                - '*'

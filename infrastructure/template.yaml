@@ -74,6 +74,8 @@ Resources:
   # Querying the Record
   ######################
   QueryUserServicesFunction:
+    DependsOn:
+      - QueryUserServicesFunctionLogGroup
     Type: AWS::Serverless::Function
     Properties:
       Architectures: ["x86_64"]
@@ -105,6 +107,12 @@ Resources:
         Sourcemap: true
         EntryPoints:
         - query-user-services.ts
+
+  QueryUserServicesFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "${AWS::StackName}-query-user-service-log-group"
+      RetentionInDays: 30
 
   QueryUserServicesDeadLetterQueue:
     Type: AWS::SQS::Queue
@@ -186,6 +194,8 @@ Resources:
   # Formatting the Record
   #######################
   FormatUserServicesFunction:
+    DependsOn:
+      - FormatUserServicesFunctionLogGroup
     Type: AWS::Serverless::Function
     Properties:
       Architectures: ["x86_64"]
@@ -216,6 +226,12 @@ Resources:
         Sourcemap: true
         EntryPoints:
         - format-user-services.ts
+
+  FormatUserServicesFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "${AWS::StackName}-format-user-service-log-group"
+      RetentionInDays: 30
 
   FormatUserServicesDeadLetterQueue:
     Type: AWS::SQS::Queue
@@ -288,6 +304,8 @@ Resources:
   # Write the Record
   ###################
   WriteUserServicesFunction:
+    DependsOn:
+      - WriteUserServicesFunctionLogGroup
     Type: AWS::Serverless::Function
     Properties:
       Architectures: ["x86_64"]
@@ -318,6 +336,12 @@ Resources:
         Sourcemap: true
         EntryPoints:
         - write-user-services.ts
+
+  WriteUserServicesFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "${AWS::StackName}-write-user-service-log-group"
+      RetentionInDays: 30
 
   WriteUserServicesDeadLetterQueue:
     Type: AWS::SQS::Queue

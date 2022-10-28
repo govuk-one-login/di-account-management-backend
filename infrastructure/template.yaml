@@ -113,6 +113,7 @@ Resources:
         Type: SQS
         TargetArn: !GetAtt QueryUserServicesDeadLetterQueue.Arn
       Handler: query-user-services.handler
+      KmsKeyArn: !GetAtt EnvVarKey.Arn
       PackageType: Zip
       MemorySize: 128
       Runtime: nodejs16.x
@@ -232,6 +233,7 @@ Resources:
         Type: SQS
         TargetArn: !GetAtt FormatUserServicesDeadLetterQueue.Arn
       Handler: format-user-services.handler
+      KmsKeyArn: !GetAtt EnvVarKey.Arn
       PackageType: Zip
       MemorySize: 128
       Runtime: nodejs16.x
@@ -341,6 +343,7 @@ Resources:
         Type: SQS
         TargetArn: !GetAtt WriteUserServicesDeadLetterQueue.Arn
       Handler: write-user-services.handler
+      KmsKeyArn: !GetAtt EnvVarKey.Arn
       PackageType: Zip
       MemorySize: 128
       Runtime: nodejs16.x
@@ -493,6 +496,20 @@ Resources:
               - kms:*
             Resource:
               - '*'
+  EnvVarKey:
+    Type: AWS::KMS::Key
+    Properties:
+      EnableKeyRotation: true
+      KeyPolicy:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              AWS: !Sub arn:aws:iam::${AWS::AccountId}:root
+            Action:
+              - "kms:*"
+            Resource:
+              - "*"
 
   DeadLetterEmailSubscriptions:
     Type: AWS::SNS::Subscription

@@ -16,22 +16,6 @@ Parameters:
       - "integration"
       - "production"
     ConstraintDescription: must be dev, build, staging, integration or production
-  SlackWorkspaceId:
-    Description: >
-      The ID of the Slack workspace where build notification messages are
-      posted. This is retrieved from the AWS Chatbot integration.
-    Type: String
-    Default: "T8GT9416G"
-    AllowedPattern: "\\w+"
-    ConstraintDescription: "must be an AWS Chatbot Slack workspace ID"
-  SlackChannelId:
-    Description: >
-      The ID of the Slack channel where build notification messages are posted.
-      This is taken from the channel details in Slack.
-    Type: String
-    AllowedPattern: "\\w+"
-    ConstraintDescription: "must be a Slack channel ID"
-    Default: C011Y5SAY3U
   CodeSigningConfigArn:
     Type: String
     Description: >
@@ -468,32 +452,6 @@ Resources:
             Principal:
               Service: cloudwatch.amazonaws.com
 
-  ChatbotRole:
-    Type: AWS::IAM::Role
-    Properties:
-      PermissionsBoundary: !If
-        - UsePermissionsBoundary
-        - !Ref PermissionsBoundary
-        - !Ref AWS::NoValue
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: "Allow"
-            Principal:
-              Service: "chatbot.amazonaws.com"
-            Action:
-              - "sts:AssumeRole"
-
-  ChatbotChannelConfiguration:
-    Type: AWS::Chatbot::SlackChannelConfiguration
-    Properties:
-      ConfigurationName: !Sub "${AWS::StackName}-slack-notifications"
-      IamRoleArn: !GetAtt ChatbotRole.Arn
-      SlackChannelId: !Ref SlackChannelId
-      SlackWorkspaceId: !Ref SlackWorkspaceId
-      SnsTopicArns:
-        - !Ref AlarmNotificationTopic
-
   QueueKmsKey:
       Type: AWS::KMS::Key
       Properties:
@@ -514,6 +472,12 @@ Resources:
                 - kms:*
               Resource:
                 - '*'
+            - Effect: Allow
+              Principal:
+                Service: cloudwatch.amazonaws.com
+              Action: kms:*
+              Resource:
+                - '*'    
 
   DatabaseKmsKey:
     Type: AWS::KMS::Key
@@ -529,3 +493,10 @@ Resources:
               - kms:*
             Resource:
               - '*'
+
+  DeadLetterEmailSubscriptions:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Endpoint: govuk-accounts-developers@digital.cabinet-office.gov.uk
+      Protocol: email
+      TopicArn: !Ref AlarmNotificationTopic

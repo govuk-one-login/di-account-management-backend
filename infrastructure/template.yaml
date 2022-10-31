@@ -270,6 +270,7 @@ Resources:
       RetentionInDays: 30
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
+
   FormatUserServicesDeadLetterQueue:
     Type: AWS::SQS::Queue
     DeletionPolicy: Delete
@@ -388,6 +389,7 @@ Resources:
       LogGroupName: !Sub "${AWS::StackName}-write-user-service-log-group"
       RetentionInDays: 30
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
+
 
   WriteUserServicesDeadLetterQueue:
     Type: AWS::SQS::Queue

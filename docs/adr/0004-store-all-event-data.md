@@ -1,6 +1,6 @@
 # Store all event data unmodified
 
-## Summary
+## Decision
 
 We will store all events we receive from TxMA unmodified.
 
@@ -11,7 +11,17 @@ This will allow us replay past events to:
 
 We will also be able to use this data to debug any problems with the events that TxMA send us.
 
-The method for how we do this is outside of the scope of this ADR, but it must follow the same best practices as our other work.
+### Architecture
+
+We will insert a new compenent before the existing pipeline to process a user's services.
+There will be a new lambda function which writes the unmodified event from TxMA to a new DynamoDB table.
+We'll then subscribe the lambda function at the start of the user services pipeline to the DynamoDB Stream for this new table.
+
+![Diagram showing events coming from TxMA being written to DynamoDB. The lambdas which ingest data for feature pipelines are triggered by the DynamoDB stream of that table.](images/adr-0004-architecture.png)
+
+We can only subscribe two lambda functions to a DynamoDB stream.
+In the future when we have more feature pipelines we'll need to create a 'fan-out' system probably with SNS or EventBridge to subscribe more than two lambdas.
+We'll design this system and add it in when we need it.
 
 ## Context
 
@@ -32,3 +42,4 @@ This could cause delays in releasing new features if we have to wait to collect 
 - We create a new store of user data
 - We'll need to update our systems for deleteing accounts and SARs to cover this new data store
 - We need to add a new system before our current pipeline to store the events
+- We'll need to design and build an event fan-out system when we need to subscribe more than two lambdas to the DynamoDB stream.

@@ -80,7 +80,7 @@ Resources:
         - Key: Source
           Value: "https://github.com/alphagov/di-account-management-backend/blob/main/infrastructre/template.yaml"
       PointInTimeRecoverySpecification:
-              PointInTimeRecoveryEnabled: true
+        PointInTimeRecoveryEnabled: true
       SSESpecification:
         SSEEnabled: true
         SSEType: KMS
@@ -133,7 +133,7 @@ Resources:
         Target: "es2020"
         Sourcemap: true
         EntryPoints:
-        - query-user-services.ts
+          - query-user-services.ts
 
   QueryUserServicesFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -176,45 +176,45 @@ Resources:
       PolicyDocument:
         Version: "2012-10-17"
         Statement:
-        - Effect: Allow
-          Action:
-          - sqs:ReceiveMessage
-          - sqs:DeleteMessage
-          - sqs:GetQueueAttributes
-          Resource: !GetAtt TxMAInputDummyQueue.Arn
-        - Effect: Allow
-          Action:
-          - sqs:SendMessage
-          Resource: !GetAtt UserServicesToFormatQueue.Arn
-        - Effect: Allow
-          Action:
-          - sqs:SendMessage
-          Resource: !GetAtt QueryUserServicesDeadLetterQueue.Arn
-        - Effect: Allow
-          Action:
-          - dynamodb:Query
-          - dynamodb:GetItem
-          Resource:
-          - !GetAtt UserServicesStore.Arn
-          - !Sub
+          - Effect: Allow
+            Action:
+              - sqs:ReceiveMessage
+              - sqs:DeleteMessage
+              - sqs:GetQueueAttributes
+            Resource: !GetAtt TxMAInputDummyQueue.Arn
+          - Effect: Allow
+            Action:
+              - sqs:SendMessage
+            Resource: !GetAtt UserServicesToFormatQueue.Arn
+          - Effect: Allow
+            Action:
+              - sqs:SendMessage
+            Resource: !GetAtt QueryUserServicesDeadLetterQueue.Arn
+          - Effect: Allow
+            Action:
+              - dynamodb:Query
+              - dynamodb:GetItem
+            Resource:
+              - !GetAtt UserServicesStore.Arn
+              - !Sub
                 - "${Arn}/*"
-            - Arn: !GetAtt UserServicesStore.Arn
-        - Effect: Allow
-          Action:
-          - kms:*
-          Resource: !GetAtt QueueKmsKey.Arn
-        - Effect: Allow
-          Action:
-          - kms:*
-          Resource: !GetAtt LoggingKmsKey.Arn
-        - Effect: Allow
-          Action:
-          - kms:*
-          Resource: !GetAtt LambdaKMSKey.Arn
-        - Effect: Allow
-          Action:
-          - kms:*
-          Resource: !GetAtt DatabaseKmsKey.Arn
+                - Arn: !GetAtt UserServicesStore.Arn
+          - Effect: Allow
+            Action:
+              - kms:*
+            Resource: !GetAtt QueueKmsKey.Arn
+          - Effect: Allow
+            Action:
+              - kms:*
+            Resource: !GetAtt LoggingKmsKey.Arn
+          - Effect: Allow
+            Action:
+              - kms:*
+            Resource: !GetAtt LambdaKMSKey.Arn
+          - Effect: Allow
+            Action:
+              - kms:*
+            Resource: !GetAtt DatabaseKmsKey.Arn
 
   UserServicesToFormatQueue:
     Type: AWS::SQS::Queue
@@ -281,7 +281,7 @@ Resources:
         Target: "es2020"
         Sourcemap: true
         EntryPoints:
-        - format-user-services.ts
+          - format-user-services.ts
 
   FormatUserServicesFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -289,7 +289,6 @@ Resources:
       LogGroupName: !Sub "${AWS::StackName}-format-user-service-log-group"
       RetentionInDays: 30
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
-
 
   FormatUserServicesDeadLetterQueue:
     Type: AWS::SQS::Queue
@@ -325,32 +324,32 @@ Resources:
       PolicyDocument:
         Version: "2012-10-17"
         Statement:
-        - Effect: Allow
-          Action:
-          - sqs:ReceiveMessage
-          - sqs:DeleteMessage
-          - sqs:GetQueueAttributes
-          Resource: !GetAtt UserServicesToFormatQueue.Arn
-        - Effect: Allow
-          Action:
-          - sqs:SendMessage
-          Resource: !GetAtt FormatUserServicesDeadLetterQueue.Arn
-        - Effect: Allow
-          Action:
-          - sqs:SendMessage
-          Resource: !GetAtt UserServicesToWriteQueue.Arn
-        - Effect: Allow
-          Action:
-          - kms:*
-          Resource: !GetAtt QueueKmsKey.Arn
-        - Effect: Allow
-          Action:
-          - kms:*
-          Resource: !GetAtt LoggingKmsKey.Arn
-        - Effect: Allow
-          Action:
-          - kms:*
-          Resource: !GetAtt LambdaKMSKey.Arn
+          - Effect: Allow
+            Action:
+              - sqs:ReceiveMessage
+              - sqs:DeleteMessage
+              - sqs:GetQueueAttributes
+            Resource: !GetAtt UserServicesToFormatQueue.Arn
+          - Effect: Allow
+            Action:
+              - sqs:SendMessage
+            Resource: !GetAtt FormatUserServicesDeadLetterQueue.Arn
+          - Effect: Allow
+            Action:
+              - sqs:SendMessage
+            Resource: !GetAtt UserServicesToWriteQueue.Arn
+          - Effect: Allow
+            Action:
+              - kms:*
+            Resource: !GetAtt QueueKmsKey.Arn
+          - Effect: Allow
+            Action:
+              - kms:*
+            Resource: !GetAtt LoggingKmsKey.Arn
+          - Effect: Allow
+            Action:
+              - kms:*
+            Resource: !GetAtt LambdaKMSKey.Arn
 
   UserServicesToWriteQueue:
     Type: AWS::SQS::Queue
@@ -417,7 +416,7 @@ Resources:
         Target: "es2020"
         Sourcemap: true
         EntryPoints:
-        - write-user-services.ts
+          - write-user-services.ts
 
   WriteUserServicesFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -425,7 +424,6 @@ Resources:
       LogGroupName: !Sub "${AWS::StackName}-write-user-service-log-group"
       RetentionInDays: 30
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
-
 
   WriteUserServicesDeadLetterQueue:
     Type: AWS::SQS::Queue
@@ -461,41 +459,41 @@ Resources:
       PolicyDocument:
         Version: "2012-10-17"
         Statement:
-        - Effect: Allow
-          Action:
-          - sqs:ReceiveMessage
-          - sqs:DeleteMessage
-          - sqs:GetQueueAttributes
-          Resource: !GetAtt UserServicesToWriteQueue.Arn
-        - Effect: Allow
-          Action:
-          - sqs:SendMessage
-          Resource: !GetAtt WriteUserServicesDeadLetterQueue.Arn
-        - Effect: Allow
-          Action:
-          - dynamodb:PutItem
-          - dynamodb:UpdateItem
-          Resource:
-          - !GetAtt UserServicesStore.Arn
-          - !Sub
+          - Effect: Allow
+            Action:
+              - sqs:ReceiveMessage
+              - sqs:DeleteMessage
+              - sqs:GetQueueAttributes
+            Resource: !GetAtt UserServicesToWriteQueue.Arn
+          - Effect: Allow
+            Action:
+              - sqs:SendMessage
+            Resource: !GetAtt WriteUserServicesDeadLetterQueue.Arn
+          - Effect: Allow
+            Action:
+              - dynamodb:PutItem
+              - dynamodb:UpdateItem
+            Resource:
+              - !GetAtt UserServicesStore.Arn
+              - !Sub
                 - "${Arn}/*"
-            - Arn: !GetAtt UserServicesStore.Arn
-        - Effect: Allow
-          Action:
-          - kms:*
-          Resource: !GetAtt QueueKmsKey.Arn
-        - Effect: Allow
-          Action:
-          - kms:*
-          Resource: !GetAtt LoggingKmsKey.Arn
-        - Effect: Allow
-          Action:
-          - kms:*
-          Resource: !GetAtt LambdaKMSKey.Arn
-        - Effect: Allow
-          Action:
-          - kms:*
-          Resource: !GetAtt DatabaseKmsKey.Arn
+                - Arn: !GetAtt UserServicesStore.Arn
+          - Effect: Allow
+            Action:
+              - kms:*
+            Resource: !GetAtt QueueKmsKey.Arn
+          - Effect: Allow
+            Action:
+              - kms:*
+            Resource: !GetAtt LoggingKmsKey.Arn
+          - Effect: Allow
+            Action:
+              - kms:*
+            Resource: !GetAtt LambdaKMSKey.Arn
+          - Effect: Allow
+            Action:
+              - kms:*
+            Resource: !GetAtt DatabaseKmsKey.Arn
 
   WriteDeadLetterQueueAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -541,36 +539,36 @@ Resources:
               Service: cloudwatch.amazonaws.com
 
   QueueKmsKey:
-      Type: AWS::KMS::Key
-      Properties:
-        EnableKeyRotation: true
-        KeyPolicy:
+    Type: AWS::KMS::Key
+    Properties:
+      EnableKeyRotation: true
+      KeyPolicy:
         Version: "2012-10-17"
-          Statement:
-            - Effect: Allow
-              Principal:
-                AWS: !Sub arn:aws:iam::${AWS::AccountId}:root
-              Action: kms:*
-              Resource:
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub arn:aws:iam::${AWS::AccountId}:root
+            Action: kms:*
+            Resource:
               - "*"
-            - Effect: Allow
-              Principal:
-                AWS: !Sub arn:aws:iam::${AWS::AccountId}:root
-              Action:
-                - kms:*
-              Resource:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub arn:aws:iam::${AWS::AccountId}:root
+            Action:
+              - kms:*
+            Resource:
               - "*"
-            - Effect: Allow
-              Principal:
-                Service: cloudwatch.amazonaws.com
-              Action: kms:*
-              Resource:
+          - Effect: Allow
+            Principal:
+              Service: cloudwatch.amazonaws.com
+            Action: kms:*
+            Resource:
               - "*"
-            - Effect: Allow
-              Principal:
-                Service: lambda.amazonaws.com
-              Action: kms:*
-              Resource:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: kms:*
+            Resource:
               - "*"
 
   QueueKmsKeyAlias:

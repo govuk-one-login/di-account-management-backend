@@ -95,7 +95,7 @@ Resources:
       KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
-    
+
   ######################
   # Querying the Record
   ######################
@@ -115,7 +115,7 @@ Resources:
         Type: SQS
         TargetArn: !GetAtt QueryUserServicesDeadLetterQueue.Arn
       Handler: query-user-services.handler
-      KmsKeyArn: !GetAtt EnvVarKey.Arn
+      KmsKeyArn: !GetAtt LambdaKMSKey.Arn
       PackageType: Zip
       MemorySize: 128
       Runtime: nodejs16.x
@@ -199,6 +199,22 @@ Resources:
           - !Sub
             - '${Arn}/*'
             - Arn: !GetAtt UserServicesStore.Arn
+        - Effect: Allow
+          Action:
+          - kms:*
+          Resource: !GetAtt QueueKmsKey.Arn
+        - Effect: Allow
+          Action:
+          - kms:*
+          Resource: !GetAtt LoggingKmsKey.Arn
+        - Effect: Allow
+          Action:
+          - kms:*
+          Resource: !GetAtt LambdaKMSKey.Arn
+        - Effect: Allow
+          Action:
+          - kms:*
+          Resource: !GetAtt DatabaseKmsKey.Arn
 
   UserServicesToFormatQueue:
     Type: AWS::SQS::Queue
@@ -244,7 +260,7 @@ Resources:
         Type: SQS
         TargetArn: !GetAtt FormatUserServicesDeadLetterQueue.Arn
       Handler: format-user-services.handler
-      KmsKeyArn: !GetAtt EnvVarKey.Arn
+      KmsKeyArn: !GetAtt LambdaKMSKey.Arn
       PackageType: Zip
       MemorySize: 128
       Runtime: nodejs16.x
@@ -319,6 +335,18 @@ Resources:
           Action:
           - sqs:SendMessage
           Resource: !GetAtt UserServicesToWriteQueue.Arn
+        - Effect: Allow
+          Action:
+          - kms:*
+          Resource: !GetAtt QueueKmsKey.Arn
+        - Effect: Allow
+          Action:
+          - kms:*
+          Resource: !GetAtt LoggingKmsKey.Arn
+        - Effect: Allow
+          Action:
+          - kms:*
+          Resource: !GetAtt LambdaKMSKey.Arn
 
   UserServicesToWriteQueue:
     Type: AWS::SQS::Queue
@@ -364,7 +392,7 @@ Resources:
         Type: SQS
         TargetArn: !GetAtt WriteUserServicesDeadLetterQueue.Arn
       Handler: write-user-services.handler
-      KmsKeyArn: !GetAtt EnvVarKey.Arn
+      KmsKeyArn: !GetAtt LambdaKMSKey.Arn
       PackageType: Zip
       MemorySize: 128
       Runtime: nodejs16.x
@@ -444,6 +472,22 @@ Resources:
           - !Sub
             - '${Arn}/*'
             - Arn: !GetAtt UserServicesStore.Arn
+        - Effect: Allow
+          Action:
+          - kms:*
+          Resource: !GetAtt QueueKmsKey.Arn
+        - Effect: Allow
+          Action:
+          - kms:*
+          Resource: !GetAtt LoggingKmsKey.Arn
+        - Effect: Allow
+          Action:
+          - kms:*
+          Resource: !GetAtt LambdaKMSKey.Arn
+        - Effect: Allow
+          Action:
+          - kms:*
+          Resource: !GetAtt DatabaseKmsKey.Arn
 
   WriteDeadLetterQueueAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -509,7 +553,19 @@ Resources:
                 Service: cloudwatch.amazonaws.com
               Action: kms:*
               Resource:
-                - '*'    
+                - '*'
+            - Effect: Allow
+              Principal:
+                Service: lambda.amazonaws.com
+              Action: kms:*
+              Resource:
+                - '*'
+
+  QueueKmsKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub "alias/${AWS::StackName}/${Environment}/QueueKmsKey"
+      TargetKeyId: !Ref QueueKmsKey
 
   DatabaseKmsKey:
     Type: AWS::KMS::Key
@@ -525,7 +581,20 @@ Resources:
               - kms:*
             Resource:
               - '*'
-  EnvVarKey:
+          - Effect: "Allow"
+            Principal:
+              Service: "lambda.amazonaws.com"
+            Action:
+              - 'kms:*'
+            Resource: '*'
+
+  DatabaseKmsKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub "alias/${AWS::StackName}/${Environment}/DatabaseKmsKey"
+      TargetKeyId: !Ref DatabaseKmsKey
+
+  LambdaKMSKey:
     Type: AWS::KMS::Key
     Properties:
       EnableKeyRotation: true
@@ -539,6 +608,18 @@ Resources:
               - "kms:*"
             Resource:
               - "*"
+          - Effect: "Allow"
+            Principal:
+              Service: "lambda.amazonaws.com"
+            Action:
+              - 'kms:*'
+            Resource: '*'
+
+  LambdaKMSKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub "alias/${AWS::StackName}/${Environment}/LambdaKMSKey"
+      TargetKeyId: !Ref LambdaKMSKey
 
   LoggingKmsKey:
     Type: AWS::KMS::Key
@@ -555,6 +636,12 @@ Resources:
             Resource: "*"
           - Effect: Allow
             Principal:
+              Service: lambda.amazonaws.com
+            Action:
+              - kms:*
+            Resource: "*"
+          - Effect: Allow
+            Principal:
               Service: !Sub "logs.${AWS::Region}.amazonaws.com"
             Action:
               - "kms:Encrypt*"
@@ -566,6 +653,12 @@ Resources:
             Condition:
               ArnLike:
                 "kms:EncryptionContext:aws:logs:arn": !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*"
+
+  LoggingKmsKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub "alias/${AWS::StackName}/${Environment}/LoggingKmsKey"
+      TargetKeyId: !Ref LoggingKmsKey
 
   DeadLetterEmailSubscriptions:
     Type: AWS::SNS::Subscription

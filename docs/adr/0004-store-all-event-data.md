@@ -19,7 +19,7 @@ We'll then subscribe the lambda function at the start of the user services pipel
 
 ![Diagram showing events coming from TxMA being written to DynamoDB. The lambdas which ingest data for feature pipelines are triggered by the DynamoDB stream of that table.](images/adr-0004-architecture.png)
 
-We can only subscribe two lambda functions to a DynamoDB stream.
+We can [only subscribe two lambda functions to a DynamoDB stream](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Streams.Lambda.html).
 In the future when we have more feature pipelines we'll need to create a 'fan-out' system probably with SNS or EventBridge to subscribe more than two lambdas.
 We'll design this system and add it in when we need it.
 

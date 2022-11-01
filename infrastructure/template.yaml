@@ -226,7 +226,11 @@ Resources:
   QueryDeadLetterQueueAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      AlarmName: !Join [ "-", [ !Ref AWS::StackName, !Ref Environment, QueryDeadLetterQueueAlarm ] ]
+      AlarmName:
+        !Join [
+          "-",
+          [!Ref AWS::StackName, !Ref Environment, QueryDeadLetterQueueAlarm],
+        ]
       Namespace: "AWS/SQS"
       MetricName: "ApproximateNumberOfMessagesVisible"
       Dimensions:
@@ -358,7 +362,11 @@ Resources:
   FormatDeadLetterQueueAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      AlarmName: !Join [ "-", [ !Ref AWS::StackName, !Ref Environment, FormatDeadLetterQueueAlarm ] ]
+      AlarmName:
+        !Join [
+          "-",
+          [!Ref AWS::StackName, !Ref Environment, FormatDeadLetterQueueAlarm],
+        ]
       Namespace: "AWS/SQS"
       MetricName: "ApproximateNumberOfMessagesVisible"
       Dimensions:
@@ -492,7 +500,11 @@ Resources:
   WriteDeadLetterQueueAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      AlarmName: !Join [ "-", [ !Ref AWS::StackName, !Ref Environment, WriteDeadLetterQueueAlarm ] ]
+      AlarmName:
+        !Join [
+          "-",
+          [!Ref AWS::StackName, !Ref Environment, WriteDeadLetterQueueAlarm],
+        ]
       Namespace: "AWS/SQS"
       MetricName: "ApproximateNumberOfMessagesVisible"
       Dimensions:

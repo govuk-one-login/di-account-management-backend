@@ -76,7 +76,7 @@ Resources:
         - Key: Owner
           Value: govuk-accounts-tech@digital.cabinet-office.gov.uk
         - Key: Environment
-          Value: !Ref 'Environment'
+          Value: !Ref "Environment"
         - Key: Source
           Value: "https://github.com/alphagov/di-account-management-backend/blob/main/infrastructre/template.yaml"
       PointInTimeRecoverySpecification:
@@ -168,13 +168,13 @@ Resources:
               Service:
                 - lambda.amazonaws.com
             Action:
-              - 'sts:AssumeRole'
+              - "sts:AssumeRole"
 
   QueryUserServicesPolicy:
     Type: AWS::IAM::ManagedPolicy
     Properties:
       PolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
         - Effect: Allow
           Action:
@@ -197,7 +197,7 @@ Resources:
           Resource:
           - !GetAtt UserServicesStore.Arn
           - !Sub
-            - '${Arn}/*'
+                - "${Arn}/*"
             - Arn: !GetAtt UserServicesStore.Arn
         - Effect: Allow
           Action:
@@ -313,13 +313,13 @@ Resources:
               Service:
                 - lambda.amazonaws.com
             Action:
-              - 'sts:AssumeRole'
+              - "sts:AssumeRole"
 
   FormatUserServicesPolicy:
     Type: AWS::IAM::ManagedPolicy
     Properties:
       PolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
         - Effect: Allow
           Action:
@@ -445,13 +445,13 @@ Resources:
               Service:
                 - lambda.amazonaws.com
             Action:
-              - 'sts:AssumeRole'
+              - "sts:AssumeRole"
 
   WriteServiceRecordPolicy:
     Type: AWS::IAM::ManagedPolicy
     Properties:
       PolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
         - Effect: Allow
           Action:
@@ -470,7 +470,7 @@ Resources:
           Resource:
           - !GetAtt UserServicesStore.Arn
           - !Sub
-            - '${Arn}/*'
+                - "${Arn}/*"
             - Arn: !GetAtt UserServicesStore.Arn
         - Effect: Allow
           Action:
@@ -533,33 +533,33 @@ Resources:
       Properties:
         EnableKeyRotation: true
         KeyPolicy:
-          Version: '2012-10-17'
+        Version: "2012-10-17"
           Statement:
             - Effect: Allow
               Principal:
                 AWS: !Sub arn:aws:iam::${AWS::AccountId}:root
               Action: kms:*
               Resource:
-                - '*'
+              - "*"
             - Effect: Allow
               Principal:
                 AWS: !Sub arn:aws:iam::${AWS::AccountId}:root
               Action:
                 - kms:*
               Resource:
-                - '*'
+              - "*"
             - Effect: Allow
               Principal:
                 Service: cloudwatch.amazonaws.com
               Action: kms:*
               Resource:
-                - '*'
+              - "*"
             - Effect: Allow
               Principal:
                 Service: lambda.amazonaws.com
               Action: kms:*
               Resource:
-                - '*'
+              - "*"
 
   QueueKmsKeyAlias:
     Type: AWS::KMS::Alias
@@ -572,7 +572,7 @@ Resources:
     Properties:
       EnableKeyRotation: true
       KeyPolicy:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
@@ -580,13 +580,13 @@ Resources:
             Action:
               - kms:*
             Resource:
-              - '*'
+              - "*"
           - Effect: "Allow"
             Principal:
               Service: "lambda.amazonaws.com"
             Action:
-              - 'kms:*'
-            Resource: '*'
+              - "kms:*"
+            Resource: "*"
 
   DatabaseKmsKeyAlias:
     Type: AWS::KMS::Alias
@@ -612,8 +612,8 @@ Resources:
             Principal:
               Service: "lambda.amazonaws.com"
             Action:
-              - 'kms:*'
-            Resource: '*'
+              - "kms:*"
+            Resource: "*"
 
   LambdaKMSKeyAlias:
     Type: AWS::KMS::Alias

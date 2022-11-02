@@ -576,6 +576,13 @@ Resources:
             Principal:
               Service: cloudwatch.amazonaws.com
 
+  DeadLetterEmailSubscriptions:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Endpoint: govuk-accounts-developers@digital.cabinet-office.gov.uk
+      Protocol: email
+      TopicArn: !Ref AlarmNotificationTopic
+
   #######################
   # Encryption
   #######################
@@ -686,10 +693,3 @@ Resources:
     Properties:
       AliasName: !Sub "alias/${AWS::StackName}/${Environment}/LoggingKmsKey"
       TargetKeyId: !Ref LoggingKmsKey
-
-  DeadLetterEmailSubscriptions:
-    Type: AWS::SNS::Subscription
-    Properties:
-      Endpoint: govuk-accounts-developers@digital.cabinet-office.gov.uk
-      Protocol: email
-      TopicArn: !Ref AlarmNotificationTopic

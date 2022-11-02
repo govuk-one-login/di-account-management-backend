@@ -576,6 +576,10 @@ Resources:
             Principal:
               Service: cloudwatch.amazonaws.com
 
+  #######################
+  # Encryption
+  #######################
+
   QueueKmsKey:
     Type: AWS::KMS::Key
     Properties:

@@ -14,6 +14,12 @@ nvm install
 
 from the root of the repository or in any `lambda/` folder to install the correct version on Node.
 
+We transpile and package the Lambda functions using `sam build`. This needs `esbuild` installed globally:
+
+```
+npm install -g esbuild
+```
+
 ## Testing
 
 Each Lambda function is a separate NPM application and has its own unit tests.

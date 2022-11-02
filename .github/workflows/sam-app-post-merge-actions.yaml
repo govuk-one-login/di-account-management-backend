@@ -3,6 +3,8 @@ name: SAM app test and build and deploy
 on:
   workflow_dispatch:
   push:
+    branches:
+      - main
 
 defaults:
   run:

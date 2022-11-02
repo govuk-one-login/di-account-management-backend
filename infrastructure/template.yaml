@@ -555,6 +555,157 @@ Resources:
         - !Ref AlarmNotificationTopic
       ActionsEnabled: true
 
+  ######################
+  # Deleting the Record
+  ######################
+
+  UserAccountDeletionTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: UserAccountDeletionTopic
+      KmsMasterKeyId: !Ref SnsKmsKey
+      TopicName: UserAccountDeletion
+
+  DeleteUserServicesSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Endpoint: !GetAtt DeleteUserServicesFunction.Arn
+      Protocol: lambda
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt UserAccountDeletionTopicDeadLetterQueue.Arn
+      TopicArn: !Ref UserAccountDeletionTopic
+
+  DeleteUserServicesFunction:
+    DependsOn:
+      - DeleteUserServicesFunctionLogGroup
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${Environment}-${AWS::StackName}-delete-user-services
+      Architectures: ["x86_64"]
+      CodeUri: ../lambda/delete-user-services/
+      DeadLetterQueue:
+        Type: SQS
+        TargetArn: !GetAtt DeleteUserServicesDeadLetterQueue.Arn
+      Handler: delete-user-services.handler
+      KmsKeyArn: !GetAtt LambdaKMSKey.Arn
+      PackageType: Zip
+      MemorySize: 128
+      Runtime: nodejs16.x
+      Role: !GetAtt DeleteUserServicesRole.Arn
+      Timeout: 5
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref UserServicesStoreTableName
+          DLQ_URL: !Ref DeleteUserServicesDeadLetterQueue
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        Sourcemap: true
+        EntryPoints:
+          - delete-user-services.ts
+
+  DeleteUserServicesRole:
+    Type: AWS::IAM::Role
+    Properties:
+      PermissionsBoundary: !If
+        - UsePermissionsBoundary
+        - !Ref PermissionsBoundary
+        - !Ref AWS::NoValue
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - !Ref DeleteUserServicesPolicy
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+
+  DeleteUserServicesPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - sqs:SendMessage
+            Resource: !GetAtt DeleteUserServicesDeadLetterQueue.Arn
+          - Effect: Allow
+            Action:
+              - dynamodb:DeleteItem
+            Resource:
+              - !GetAtt UserServicesStore.Arn
+              - !Sub
+                - "${Arn}/*"
+                - Arn: !GetAtt UserServicesStore.Arn
+          - Effect: Allow
+            Action:
+              - kms:*
+            Resource: !GetAtt QueueKmsKey.Arn
+          - Effect: Allow
+            Action:
+              - kms:*
+            Resource: !GetAtt LoggingKmsKey.Arn
+          - Effect: Allow
+            Action:
+              - kms:*
+            Resource: !GetAtt LambdaKMSKey.Arn
+          - Effect: Allow
+            Action:
+              - kms:*
+            Resource: !GetAtt DatabaseKmsKey.Arn
+
+  DeleteUserServicesFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "${AWS::StackName}-delete-user-service-log-group"
+      RetentionInDays: 30
+      KmsKeyId: !GetAtt LoggingKmsKey.Arn
+
+  DeleteUserServicesDeadLetterQueue:
+    Type: AWS::SQS::Queue
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      MessageRetentionPeriod: 1209600
+      KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
+
+  UserAccountDeletionTopicDeadLetterQueue:
+    Type: AWS::SQS::Queue
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      MessageRetentionPeriod: 1209600
+      KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
+
+  DeleteDeadLetterQueueAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [!Ref AWS::StackName, !Ref Environment, DeleteDeadLetterQueueAlarm],
+        ]
+      Namespace: "AWS/SQS"
+      MetricName: "ApproximateNumberOfMessagesVisible"
+      Dimensions:
+        - Name: "QueueName"
+          Value: !GetAtt DeleteUserServicesDeadLetterQueue.QueueName
+      Statistic: "Sum"
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: "GreaterThanOrEqualToThreshold"
+      AlarmActions:
+        - !Ref AlarmNotificationTopic
+      ActionsEnabled: true
+
   #######################
   # Monitoring
   #######################
@@ -693,3 +844,35 @@ Resources:
     Properties:
       AliasName: !Sub "alias/${AWS::StackName}/${Environment}/LoggingKmsKey"
       TargetKeyId: !Ref LoggingKmsKey
+
+  SnsKmsKey:
+    Type: AWS::KMS::Key
+    Properties:
+      EnableKeyRotation: true
+      KeyPolicy:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub arn:aws:iam::${AWS::AccountId}:root
+            Action: kms:*
+            Resource:
+              - "*"
+          - Effect: Allow
+            Principal:
+              Service: cloudwatch.amazonaws.com
+            Action: kms:*
+            Resource:
+              - "*"
+          - Effect: Allow
+            Principal:
+              Service: sns.amazonaws.com
+            Action: kms:*
+            Resource:
+              - "*"
+
+  SnsKmsKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub "alias/${AWS::StackName}/${Environment}/SnsKmsKey"
+      TargetKeyId: !Ref SnsKmsKey

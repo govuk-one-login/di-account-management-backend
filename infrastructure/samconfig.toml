@@ -6,7 +6,7 @@ beta_features = true
 beta_features = true
 
 [default.deploy.parameters]
-stack_name = "account-management-backend"
+stack_name = "account-mgmt-backend"
 region = "eu-west-2"
 s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-44r43ey3knwx"
 s3_prefix = "account-management-backend"
@@ -21,7 +21,7 @@ parameter_overrides=[
 ]
 
 [dev.deploy.parameters]
-stack_name = "account-management-backend"
+stack_name = "account-mgmt-backend"
 region = "eu-west-2"
 capabilities = "CAPABILITY_NAMED_IAM"
 tags = "project=\"account-management-backend\" stage=\"dev\""
@@ -33,7 +33,7 @@ parameter_overrides=[
 ]
 
 [build.deploy.parameters]
-stack_name = "account-management-backend"
+stack_name = "account-mgmt-backend"
 region = "eu-west-2"
 capabilities = "CAPABILITY_NAMED_IAM"
 tags = "project=\"account-management-backend\" stage=\"build\""
@@ -45,7 +45,7 @@ parameter_overrides=[
 ]
 
 [staging.deploy.parameters]
-stack_name = "account-management-backend"
+stack_name = "account-mgmt-backend"
 region = "eu-west-2"
 capabilities = "CAPABILITY_NAMED_IAM"
 tags = "project=\"account-management-backend\" stage=\"staging\""
@@ -57,7 +57,7 @@ parameter_overrides=[
 ]
 
 [integration.deploy.parameters]
-stack_name = "account-management-backend"
+stack_name = "account-mgmt-backend"
 region = "eu-west-2"
 capabilities = "CAPABILITY_NAMED_IAM"
 tags = "project=\"account-management-backend\" stage=\"integration\""
@@ -69,7 +69,7 @@ parameter_overrides=[
 ]
 
 [production.deploy.parameters]
-stack_name = "account-management-backend"
+stack_name = "account-mgmt-backend"
 region = "eu-west-2"
 capabilities = "CAPABILITY_NAMED_IAM"
 tags = "project=\"account-management-backend\" stage=\"production\""

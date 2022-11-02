@@ -1,0 +1,71 @@
+name: SAM app test and build and deploy
+
+on:
+  workflow_dispatch:
+  push:
+
+defaults:
+  run:
+    shell: bash
+    working-directory: ./infrastructure
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Install Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version-file: '.nvmrc' 
+
+      - name: Install ESbuild
+        run: npm install -g esbuild@0.15.12
+
+      - name: Test query-user-services
+        run: npm ci && npm test
+        working-directory: ./lambda/query-user-services
+
+      - name: Test format-user-services
+        run: npm ci && npm test
+        working-directory: ./lambda/format-user-services
+        
+      - name: Test write-user-services
+        run: npm ci && npm test
+        working-directory: ./lambda/write-user-services
+
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.8"
+
+      - name: Set up SAM cli
+        uses: aws-actions/setup-sam@v1
+
+      - name: Set up AWS creds
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: ${{ secrets.GH_ACTIONS_ROLE_ARN }}
+          aws-region: eu-west-2
+
+      - name: SAM validate
+        run: sam validate
+
+      - name: SAM build 
+        run: sam build
+
+      - name: Deploy SAM app
+        uses: alphagov/di-devplatform-upload-action@v2
+        with:
+          artifact-bucket-name: ${{ secrets.ARTIFACT_BUCKET_NAME }}
+          signing-profile-name: ${{ secrets.SIGNING_PROFILE_NAME }}
+          working-directory: ./infrastructure

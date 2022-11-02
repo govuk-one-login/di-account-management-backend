@@ -12,14 +12,12 @@ s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-44r43ey3knwx"
 s3_prefix = "account-management-backend"
 capabilities = "CAPABILITY_NAMED_IAM"
 confirm_changeset = true
-disable_rollback = true
 tags = "project=\"account-management-backend\" stage=\"dev\""
 parameter_overrides=[
     "Environment=dev",
     "UserServicesStoreTableName=\"user_services\"",
     "CodeSigningConfigArn=none",
-    "PermissionsBoundary=none",
-    "SlackChannelId=C011Y5SAY3U"
+    "PermissionsBoundary=none"
 ]
 
 [dev.deploy.parameters]

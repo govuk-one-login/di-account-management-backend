@@ -16,22 +16,40 @@ Parameters:
       - "integration"
       - "production"
     ConstraintDescription: must be dev, build, staging, integration or production
-  SlackWorkspaceId:
-    Description: >
-      The ID of the Slack workspace where build notification messages are
-      posted. This is retrieved from the AWS Chatbot integration.
+  CodeSigningConfigArn:
     Type: String
-    Default: "T8GT9416G"
-    AllowedPattern: "\\w+"
-    ConstraintDescription: "must be an AWS Chatbot Slack workspace ID"
+    Description: >
+      The ARN of the Code Signing Config to use, provided by the deployment pipeline
+    Default: "none"
+  PermissionsBoundary:
+    Type: String
+    Description: >
+      The ARN of the permissions boundary to apply to any role created by the template
+    Default: "none"
 
-  SlackChannelId:
-    Description: >
-      The ID of the Slack channel where build notification messages are posted.
-      This is taken from the channel details in Slack.
-    Type: String
-    AllowedPattern: "\\w+"
-    ConstraintDescription: "must be a Slack channel ID"
+Conditions:
+  UseCodeSigning:
+    Fn::Not:
+      - Fn::Equals:
+          - !Ref CodeSigningConfigArn
+          - "none"
+
+  UsePermissionsBoundary:
+    Fn::Not:
+      - Fn::Equals:
+          - !Ref PermissionsBoundary
+          - "none"
+
+Globals:
+  Function:
+    CodeSigningConfigArn: !If
+      - UseCodeSigning
+      - !Ref CodeSigningConfigArn
+      - !Ref AWS::NoValue
+    PermissionsBoundary: !If
+      - UsePermissionsBoundary
+      - !Ref PermissionsBoundary
+      - !Ref AWS::NoValue
 
 Resources:
   ######################################
@@ -58,15 +76,23 @@ Resources:
         - Key: Owner
           Value: govuk-accounts-tech@digital.cabinet-office.gov.uk
         - Key: Environment
-          Value: !Ref 'Environment'
+          Value: !Ref "Environment"
         - Key: Source
           Value: "https://github.com/alphagov/di-account-management-backend/blob/main/infrastructre/template.yaml"
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+        SSEType: KMS
+        KMSMasterKeyId: !GetAtt DatabaseKmsKey.Arn
 
   ######################################
   # TxMA Event Queue (Dummy for now)
   ######################################
   TxMAInputDummyQueue:
     Type: AWS::SQS::Queue
+    Properties:
+      KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
 
@@ -89,6 +115,7 @@ Resources:
         Type: SQS
         TargetArn: !GetAtt QueryUserServicesDeadLetterQueue.Arn
       Handler: query-user-services.handler
+      KmsKeyArn: !GetAtt LambdaKMSKey.Arn
       PackageType: Zip
       MemorySize: 128
       Runtime: nodejs16.x
@@ -106,13 +133,14 @@ Resources:
         Target: "es2020"
         Sourcemap: true
         EntryPoints:
-        - query-user-services.ts
+          - query-user-services.ts
 
   QueryUserServicesFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "${AWS::StackName}-query-user-service-log-group"
       RetentionInDays: 30
+      KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   QueryUserServicesDeadLetterQueue:
     Type: AWS::SQS::Queue
@@ -120,10 +148,15 @@ Resources:
     UpdateReplacePolicy: Delete
     Properties:
       MessageRetentionPeriod: 1209600
+      KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
 
   QueryUserServicesRole:
     Type: AWS::IAM::Role
     Properties:
+      PermissionsBoundary: !If
+        - UsePermissionsBoundary
+        - !Ref PermissionsBoundary
+        - !Ref AWS::NoValue
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - !Ref QueryUserServicesPolicy
@@ -135,47 +168,69 @@ Resources:
               Service:
                 - lambda.amazonaws.com
             Action:
-              - 'sts:AssumeRole'
+              - "sts:AssumeRole"
 
   QueryUserServicesPolicy:
     Type: AWS::IAM::ManagedPolicy
     Properties:
       PolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
-        - Effect: Allow
-          Action:
-          - sqs:ReceiveMessage
-          - sqs:DeleteMessage
-          - sqs:GetQueueAttributes
-          Resource: !GetAtt TxMAInputDummyQueue.Arn
-        - Effect: Allow
-          Action:
-          - sqs:SendMessage
-          Resource: !GetAtt UserServicesToFormatQueue.Arn
-        - Effect: Allow
-          Action:
-          - sqs:SendMessage
-          Resource: !GetAtt QueryUserServicesDeadLetterQueue.Arn
-        - Effect: Allow
-          Action:
-          - dynamodb:Query
-          - dynamodb:GetItem
-          Resource:
-          - !GetAtt UserServicesStore.Arn
-          - !Sub
-            - '${Arn}/*'
-            - Arn: !GetAtt UserServicesStore.Arn
+          - Effect: Allow
+            Action:
+              - sqs:ReceiveMessage
+              - sqs:DeleteMessage
+              - sqs:GetQueueAttributes
+            Resource: !GetAtt TxMAInputDummyQueue.Arn
+          - Effect: Allow
+            Action:
+              - sqs:SendMessage
+            Resource: !GetAtt UserServicesToFormatQueue.Arn
+          - Effect: Allow
+            Action:
+              - sqs:SendMessage
+            Resource: !GetAtt QueryUserServicesDeadLetterQueue.Arn
+          - Effect: Allow
+            Action:
+              - dynamodb:Query
+              - dynamodb:GetItem
+            Resource:
+              - !GetAtt UserServicesStore.Arn
+              - !Sub
+                - "${Arn}/*"
+                - Arn: !GetAtt UserServicesStore.Arn
+          - Effect: Allow
+            Action:
+              - kms:*
+            Resource: !GetAtt QueueKmsKey.Arn
+          - Effect: Allow
+            Action:
+              - kms:*
+            Resource: !GetAtt LoggingKmsKey.Arn
+          - Effect: Allow
+            Action:
+              - kms:*
+            Resource: !GetAtt LambdaKMSKey.Arn
+          - Effect: Allow
+            Action:
+              - kms:*
+            Resource: !GetAtt DatabaseKmsKey.Arn
 
   UserServicesToFormatQueue:
     Type: AWS::SQS::Queue
+    Properties:
+      KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
 
   QueryDeadLetterQueueAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      AlarmName: !Join [ "-", [ !Ref AWS::StackName, !Ref Environment, QueryDeadLetterQueueAlarm ] ]
+      AlarmName:
+        !Join [
+          "-",
+          [!Ref AWS::StackName, !Ref Environment, QueryDeadLetterQueueAlarm],
+        ]
       Namespace: "AWS/SQS"
       MetricName: "ApproximateNumberOfMessagesVisible"
       Dimensions:
@@ -209,6 +264,7 @@ Resources:
         Type: SQS
         TargetArn: !GetAtt FormatUserServicesDeadLetterQueue.Arn
       Handler: format-user-services.handler
+      KmsKeyArn: !GetAtt LambdaKMSKey.Arn
       PackageType: Zip
       MemorySize: 128
       Runtime: nodejs16.x
@@ -225,13 +281,14 @@ Resources:
         Target: "es2020"
         Sourcemap: true
         EntryPoints:
-        - format-user-services.ts
+          - format-user-services.ts
 
   FormatUserServicesFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "${AWS::StackName}-format-user-service-log-group"
       RetentionInDays: 30
+      KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   FormatUserServicesDeadLetterQueue:
     Type: AWS::SQS::Queue
@@ -239,10 +296,15 @@ Resources:
     UpdateReplacePolicy: Delete
     Properties:
       MessageRetentionPeriod: 1209600
+      KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
 
   FormatUserServicesRole:
     Type: AWS::IAM::Role
     Properties:
+      PermissionsBoundary: !If
+        - UsePermissionsBoundary
+        - !Ref PermissionsBoundary
+        - !Ref AWS::NoValue
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - !Ref FormatUserServicesPolicy
@@ -254,38 +316,56 @@ Resources:
               Service:
                 - lambda.amazonaws.com
             Action:
-              - 'sts:AssumeRole'
+              - "sts:AssumeRole"
 
   FormatUserServicesPolicy:
     Type: AWS::IAM::ManagedPolicy
     Properties:
       PolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
-        - Effect: Allow
-          Action:
-          - sqs:ReceiveMessage
-          - sqs:DeleteMessage
-          - sqs:GetQueueAttributes
-          Resource: !GetAtt UserServicesToFormatQueue.Arn
-        - Effect: Allow
-          Action:
-          - sqs:SendMessage
-          Resource: !GetAtt FormatUserServicesDeadLetterQueue.Arn
-        - Effect: Allow
-          Action:
-          - sqs:SendMessage
-          Resource: !GetAtt UserServicesToWriteQueue.Arn
+          - Effect: Allow
+            Action:
+              - sqs:ReceiveMessage
+              - sqs:DeleteMessage
+              - sqs:GetQueueAttributes
+            Resource: !GetAtt UserServicesToFormatQueue.Arn
+          - Effect: Allow
+            Action:
+              - sqs:SendMessage
+            Resource: !GetAtt FormatUserServicesDeadLetterQueue.Arn
+          - Effect: Allow
+            Action:
+              - sqs:SendMessage
+            Resource: !GetAtt UserServicesToWriteQueue.Arn
+          - Effect: Allow
+            Action:
+              - kms:*
+            Resource: !GetAtt QueueKmsKey.Arn
+          - Effect: Allow
+            Action:
+              - kms:*
+            Resource: !GetAtt LoggingKmsKey.Arn
+          - Effect: Allow
+            Action:
+              - kms:*
+            Resource: !GetAtt LambdaKMSKey.Arn
 
   UserServicesToWriteQueue:
     Type: AWS::SQS::Queue
+    Properties:
+      KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
 
   FormatDeadLetterQueueAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      AlarmName: !Join [ "-", [ !Ref AWS::StackName, !Ref Environment, FormatDeadLetterQueueAlarm ] ]
+      AlarmName:
+        !Join [
+          "-",
+          [!Ref AWS::StackName, !Ref Environment, FormatDeadLetterQueueAlarm],
+        ]
       Namespace: "AWS/SQS"
       MetricName: "ApproximateNumberOfMessagesVisible"
       Dimensions:
@@ -319,6 +399,7 @@ Resources:
         Type: SQS
         TargetArn: !GetAtt WriteUserServicesDeadLetterQueue.Arn
       Handler: write-user-services.handler
+      KmsKeyArn: !GetAtt LambdaKMSKey.Arn
       PackageType: Zip
       MemorySize: 128
       Runtime: nodejs16.x
@@ -335,13 +416,14 @@ Resources:
         Target: "es2020"
         Sourcemap: true
         EntryPoints:
-        - write-user-services.ts
+          - write-user-services.ts
 
   WriteUserServicesFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "${AWS::StackName}-write-user-service-log-group"
       RetentionInDays: 30
+      KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   WriteUserServicesDeadLetterQueue:
     Type: AWS::SQS::Queue
@@ -349,10 +431,15 @@ Resources:
     UpdateReplacePolicy: Delete
     Properties:
       MessageRetentionPeriod: 1209600
+      KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
 
   WriteServiceRecordRole:
     Type: AWS::IAM::Role
     Properties:
+      PermissionsBoundary: !If
+        - UsePermissionsBoundary
+        - !Ref PermissionsBoundary
+        - !Ref AWS::NoValue
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - !Ref WriteServiceRecordPolicy
@@ -364,38 +451,58 @@ Resources:
               Service:
                 - lambda.amazonaws.com
             Action:
-              - 'sts:AssumeRole'
+              - "sts:AssumeRole"
 
   WriteServiceRecordPolicy:
     Type: AWS::IAM::ManagedPolicy
     Properties:
       PolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
-        - Effect: Allow
-          Action:
-          - sqs:ReceiveMessage
-          - sqs:DeleteMessage
-          - sqs:GetQueueAttributes
-          Resource: !GetAtt UserServicesToWriteQueue.Arn
-        - Effect: Allow
-          Action:
-          - sqs:SendMessage
-          Resource: !GetAtt WriteUserServicesDeadLetterQueue.Arn
-        - Effect: Allow
-          Action:
-          - dynamodb:PutItem
-          - dynamodb:UpdateItem
-          Resource:
-          - !GetAtt UserServicesStore.Arn
-          - !Sub
-            - '${Arn}/*'
-            - Arn: !GetAtt UserServicesStore.Arn
+          - Effect: Allow
+            Action:
+              - sqs:ReceiveMessage
+              - sqs:DeleteMessage
+              - sqs:GetQueueAttributes
+            Resource: !GetAtt UserServicesToWriteQueue.Arn
+          - Effect: Allow
+            Action:
+              - sqs:SendMessage
+            Resource: !GetAtt WriteUserServicesDeadLetterQueue.Arn
+          - Effect: Allow
+            Action:
+              - dynamodb:PutItem
+              - dynamodb:UpdateItem
+            Resource:
+              - !GetAtt UserServicesStore.Arn
+              - !Sub
+                - "${Arn}/*"
+                - Arn: !GetAtt UserServicesStore.Arn
+          - Effect: Allow
+            Action:
+              - kms:*
+            Resource: !GetAtt QueueKmsKey.Arn
+          - Effect: Allow
+            Action:
+              - kms:*
+            Resource: !GetAtt LoggingKmsKey.Arn
+          - Effect: Allow
+            Action:
+              - kms:*
+            Resource: !GetAtt LambdaKMSKey.Arn
+          - Effect: Allow
+            Action:
+              - kms:*
+            Resource: !GetAtt DatabaseKmsKey.Arn
 
   WriteDeadLetterQueueAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      AlarmName: !Join [ "-", [ !Ref AWS::StackName, !Ref Environment, WriteDeadLetterQueueAlarm ] ]
+      AlarmName:
+        !Join [
+          "-",
+          [!Ref AWS::StackName, !Ref Environment, WriteDeadLetterQueueAlarm],
+        ]
       Namespace: "AWS/SQS"
       MetricName: "ApproximateNumberOfMessagesVisible"
       Dimensions:
@@ -415,6 +522,8 @@ Resources:
   #######################
   AlarmNotificationTopic:
     Type: AWS::SNS::Topic
+    Properties:
+      KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
 
   AlarmNotificationTopicPolicy:
     Type: AWS::SNS::TopicPolicy
@@ -429,24 +538,141 @@ Resources:
             Principal:
               Service: cloudwatch.amazonaws.com
 
-  ChatbotRole:
-    Type: AWS::IAM::Role
+  QueueKmsKey:
+    Type: AWS::KMS::Key
     Properties:
-      AssumeRolePolicyDocument:
+      EnableKeyRotation: true
+      KeyPolicy:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub arn:aws:iam::${AWS::AccountId}:root
+            Action: kms:*
+            Resource:
+              - "*"
+          - Effect: Allow
+            Principal:
+              AWS: !Sub arn:aws:iam::${AWS::AccountId}:root
+            Action:
+              - kms:*
+            Resource:
+              - "*"
+          - Effect: Allow
+            Principal:
+              Service: cloudwatch.amazonaws.com
+            Action: kms:*
+            Resource:
+              - "*"
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: kms:*
+            Resource:
+              - "*"
+
+  QueueKmsKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub "alias/${AWS::StackName}/${Environment}/QueueKmsKey"
+      TargetKeyId: !Ref QueueKmsKey
+
+  DatabaseKmsKey:
+    Type: AWS::KMS::Key
+    Properties:
+      EnableKeyRotation: true
+      KeyPolicy:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub arn:aws:iam::${AWS::AccountId}:root
+            Action:
+              - kms:*
+            Resource:
+              - "*"
+          - Effect: "Allow"
+            Principal:
+              Service: "lambda.amazonaws.com"
+            Action:
+              - "kms:*"
+            Resource: "*"
+
+  DatabaseKmsKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub "alias/${AWS::StackName}/${Environment}/DatabaseKmsKey"
+      TargetKeyId: !Ref DatabaseKmsKey
+
+  LambdaKMSKey:
+    Type: AWS::KMS::Key
+    Properties:
+      EnableKeyRotation: true
+      KeyPolicy:
         Version: "2012-10-17"
         Statement:
           - Effect: "Allow"
             Principal:
-              Service: "chatbot.amazonaws.com"
+              AWS: !Sub arn:aws:iam::${AWS::AccountId}:root
             Action:
-              - "sts:AssumeRole"
+              - "kms:*"
+            Resource:
+              - "*"
+          - Effect: "Allow"
+            Principal:
+              Service: "lambda.amazonaws.com"
+            Action:
+              - "kms:*"
+            Resource: "*"
 
-  ChatbotChannelConfiguration:
-    Type: AWS::Chatbot::SlackChannelConfiguration
+  LambdaKMSKeyAlias:
+    Type: AWS::KMS::Alias
     Properties:
-      ConfigurationName: !Sub "${AWS::StackName}-slack-notifications"
-      IamRoleArn: !GetAtt ChatbotRole.Arn
-      SlackChannelId: !Ref SlackChannelId
-      SlackWorkspaceId: !Ref SlackWorkspaceId
-      SnsTopicArns:
-        - !Ref AlarmNotificationTopic
+      AliasName: !Sub "alias/${AWS::StackName}/${Environment}/LambdaKMSKey"
+      TargetKeyId: !Ref LambdaKMSKey
+
+  LoggingKmsKey:
+    Type: AWS::KMS::Key
+    Properties:
+      EnableKeyRotation: true
+      KeyPolicy:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action:
+              - kms:*
+            Resource: "*"
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action:
+              - kms:*
+            Resource: "*"
+          - Effect: Allow
+            Principal:
+              Service: !Sub "logs.${AWS::Region}.amazonaws.com"
+            Action:
+              - "kms:Encrypt*"
+              - "kms:Decrypt*"
+              - "kms:ReEncrypt*"
+              - "kms:GenerateDataKey*"
+              - "kms:Describe*"
+            Resource: "*"
+            Condition:
+              ArnLike:
+                "kms:EncryptionContext:aws:logs:arn": !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*"
+
+  LoggingKmsKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub "alias/${AWS::StackName}/${Environment}/LoggingKmsKey"
+      TargetKeyId: !Ref LoggingKmsKey
+
+  DeadLetterEmailSubscriptions:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Endpoint: govuk-accounts-developers@digital.cabinet-office.gov.uk
+      Protocol: email
+      TopicArn: !Ref AlarmNotificationTopic

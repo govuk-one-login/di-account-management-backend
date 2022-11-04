@@ -18,22 +18,23 @@ We must ensure that when a user deletes their account their service data is also
 
 ## Decision
 
-We will set up a serverless infrastructure, triggered upon a user deleting their account.
+We will set up an SNS topic for a delete event, triggered upon a user deleting their account.
 
 The event will contain a user_id matching the desired record in the data store.
 
-We will write through a series of queues to a lambda which will issue a delete command for that record.
+Failure of the SNS queue to deliver an event to subscribers will invoke an [SNS Dead Letter queue](https://docs.aws.amazon.com/sns/latest/dg/sns-dead-letter-queues.html).
+
+We will subscribe a lambda to the topic which will issue a delete command for the relevant record.
 
 Failure of the delete lambda will lead to the population of a dead letter queue, triggering an alert.
 
-We have decided to add complexity with an SNS Queue and components needed to populate it.
-Whilst this feature will be the sole consumer of delete events, we recognise other stores of user data may appear around the program. Using SNS means others can choose to subscribe to this event in future for their own actions.
+Whilst this feature will be the sole consumer of the SNS delete topic, we recognise other stores of user data may appear around the program. Using SNS means others can choose to subscribe to this event in future for their own actions.
 
 Alternatively the SNS component could be delegated to another account in future, perhaps TxMA.
 
 ### Diagram
 
-![Architecture diagram showing a delete event, passing through SNS to a lambda and ending at a dynamoDB or a dead letter queue](./images/2022-Delete-Account-Data.png)
+![Architecture diagram showing a delete event recorded as an SNS Topic, notifying a subscribing lambda, and deleting an item from a dynamoDB or a dead letter queue](./images/2022-Delete-Account-Data.png)
 
 ## Other options considered
 

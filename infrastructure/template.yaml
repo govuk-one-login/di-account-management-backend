@@ -100,8 +100,6 @@ Resources:
   # Querying the Record
   ######################
   QueryUserServicesFunction:
-    DependsOn:
-      - QueryUserServicesFunctionLogGroup
     Type: AWS::Serverless::Function
     Properties:
       Architectures: ["x86_64"]
@@ -134,13 +132,6 @@ Resources:
         Sourcemap: true
         EntryPoints:
           - query-user-services.ts
-
-  QueryUserServicesFunctionLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub "${AWS::StackName}-query-user-service-log-group"
-      RetentionInDays: 30
-      KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   QueryUserServicesDeadLetterQueue:
     Type: AWS::SQS::Queue
@@ -215,6 +206,20 @@ Resources:
             Action:
               - kms:*
             Resource: !GetAtt DatabaseKmsKey.Arn
+          - Effect: Allow
+            Action:
+              - logs:CreateLogGroup
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+              - cloudwatch:PutMetricData
+            Resource: !GetAtt QueryUserServicesFunctionLogGroup.Arn
+
+  QueryUserServicesFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-query-user-services"
+      RetentionInDays: 30
+      KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   UserServicesToFormatQueue:
     Type: AWS::SQS::Queue
@@ -249,8 +254,6 @@ Resources:
   # Formatting the Record
   #######################
   FormatUserServicesFunction:
-    DependsOn:
-      - FormatUserServicesFunctionLogGroup
     Type: AWS::Serverless::Function
     Properties:
       Architectures: ["x86_64"]
@@ -282,13 +285,6 @@ Resources:
         Sourcemap: true
         EntryPoints:
           - format-user-services.ts
-
-  FormatUserServicesFunctionLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub "${AWS::StackName}-format-user-service-log-group"
-      RetentionInDays: 30
-      KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   FormatUserServicesDeadLetterQueue:
     Type: AWS::SQS::Queue
@@ -350,6 +346,20 @@ Resources:
             Action:
               - kms:*
             Resource: !GetAtt LambdaKMSKey.Arn
+          - Effect: Allow
+            Action:
+              - logs:CreateLogGroup
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+              - cloudwatch:PutMetricData
+            Resource: !GetAtt FormatUserServicesFunctionLogGroup.Arn
+
+  FormatUserServicesFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-format-user-services"
+      RetentionInDays: 30
+      KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   UserServicesToWriteQueue:
     Type: AWS::SQS::Queue
@@ -384,8 +394,6 @@ Resources:
   # Write the Record
   ###################
   WriteUserServicesFunction:
-    DependsOn:
-      - WriteUserServicesFunctionLogGroup
     Type: AWS::Serverless::Function
     Properties:
       Architectures: ["x86_64"]
@@ -417,13 +425,6 @@ Resources:
         Sourcemap: true
         EntryPoints:
           - write-user-services.ts
-
-  WriteUserServicesFunctionLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub "${AWS::StackName}-write-user-service-log-group"
-      RetentionInDays: 30
-      KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   WriteUserServicesDeadLetterQueue:
     Type: AWS::SQS::Queue
@@ -494,6 +495,20 @@ Resources:
             Action:
               - kms:*
             Resource: !GetAtt DatabaseKmsKey.Arn
+          - Effect: Allow
+            Action:
+              - logs:CreateLogGroup
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+              - cloudwatch:PutMetricData
+            Resource: !GetAtt WriteUserServicesFunctionLogGroup.Arn
+
+  WriteUserServicesFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-write-user-services"
+      RetentionInDays: 30
+      KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   WriteDeadLetterQueueAlarm:
     Type: AWS::CloudWatch::Alarm

@@ -209,13 +209,6 @@ Resources:
             Action:
               - kms:*
             Resource: !GetAtt DatabaseKmsKey.Arn
-          - Effect: Allow
-            Action:
-              - logs:CreateLogGroup
-              - logs:CreateLogStream
-              - logs:PutLogEvents
-              - cloudwatch:PutMetricData
-            Resource: !GetAtt QueryUserServicesFunctionLogGroup.Arn
 
   QueryUserServicesFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -352,13 +345,6 @@ Resources:
             Action:
               - kms:*
             Resource: !GetAtt LambdaKMSKey.Arn
-          - Effect: Allow
-            Action:
-              - logs:CreateLogGroup
-              - logs:CreateLogStream
-              - logs:PutLogEvents
-              - cloudwatch:PutMetricData
-            Resource: !GetAtt FormatUserServicesFunctionLogGroup.Arn
 
   FormatUserServicesFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -504,13 +490,6 @@ Resources:
             Action:
               - kms:*
             Resource: !GetAtt DatabaseKmsKey.Arn
-          - Effect: Allow
-            Action:
-              - logs:CreateLogGroup
-              - logs:CreateLogStream
-              - logs:PutLogEvents
-              - cloudwatch:PutMetricData
-            Resource: !GetAtt WriteUserServicesFunctionLogGroup.Arn
 
   WriteUserServicesFunctionLogGroup:
     Type: AWS::Logs::LogGroup

@@ -556,20 +556,7 @@ Resources:
               - "*"
           - Effect: Allow
             Principal:
-              AWS: !Sub arn:aws:iam::${AWS::AccountId}:root
-            Action:
-              - kms:*
-            Resource:
-              - "*"
-          - Effect: Allow
-            Principal:
               Service: cloudwatch.amazonaws.com
-            Action: kms:*
-            Resource:
-              - "*"
-          - Effect: Allow
-            Principal:
-              Service: lambda.amazonaws.com
             Action: kms:*
             Resource:
               - "*"
@@ -594,12 +581,6 @@ Resources:
               - kms:*
             Resource:
               - "*"
-          - Effect: "Allow"
-            Principal:
-              Service: "lambda.amazonaws.com"
-            Action:
-              - "kms:*"
-            Resource: "*"
 
   DatabaseKmsKeyAlias:
     Type: AWS::KMS::Alias
@@ -625,7 +606,7 @@ Resources:
             Principal:
               Service: "lambda.amazonaws.com"
             Action:
-              - "kms:*"
+              - "kms:Decrypt"
             Resource: "*"
 
   LambdaKMSKeyAlias:
@@ -644,12 +625,6 @@ Resources:
           - Effect: Allow
             Principal:
               AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
-            Action:
-              - kms:*
-            Resource: "*"
-          - Effect: Allow
-            Principal:
-              Service: lambda.amazonaws.com
             Action:
               - kms:*
             Resource: "*"

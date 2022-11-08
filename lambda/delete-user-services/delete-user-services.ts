@@ -1,4 +1,4 @@
-import { SQSEvent } from "aws-lambda";
+import { SNSEvent } from "aws-lambda";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import {
   DynamoDBDocumentClient,
@@ -44,18 +44,18 @@ export const deleteUserData = async (
   return dynamoDocClient.send(command);
 };
 
-export const handler = async (event: SQSEvent): Promise<void> => {
+export const handler = async (event: SNSEvent): Promise<void> => {
   await Promise.all(
     event.Records.map(async (record) => {
       try {
-        const userData: UserData = JSON.parse(record.body);
+        const userData: UserData = JSON.parse(record.Sns.Message);
         validateUserData(userData);
         await deleteUserData(userData);
       } catch (err) {
         console.error(err);
         const message: SendMessageRequest = {
           QueueUrl: DLQ_URL,
-          MessageBody: record.body,
+          MessageBody: record.Sns.Message,
         };
         await sqsClient.send(new SendMessageCommand(message));
       }

@@ -7,7 +7,7 @@ import {
   deleteUserData,
 } from "../delete-user-services";
 
-import { TEST_USER_DATA, TEST_SQS_EVENT } from "./testHelpers";
+import { TEST_USER_DATA, TEST_SNS_EVENT } from "./testHelpers";
 
 const dynamoMock = mockClient(DynamoDBDocumentClient);
 const sqsMock = mockClient(SQSClient);
@@ -41,7 +41,7 @@ describe("handler", () => {
   });
 
   test("it iterates over each record in the batch", async () => {
-    await handler(TEST_SQS_EVENT);
+    await handler(TEST_SNS_EVENT);
     expect(dynamoMock.commandCalls(DeleteCommand).length).toEqual(2);
   });
 
@@ -60,12 +60,12 @@ describe("handler", () => {
     });
 
     test("logs the error message", async () => {
-      await handler(TEST_SQS_EVENT);
+      await handler(TEST_SNS_EVENT);
       expect(consoleErrorMock).toHaveBeenCalledTimes(1);
     });
 
     test("sends the event to the dead letter queue", async () => {
-      await handler(TEST_SQS_EVENT);
+      await handler(TEST_SNS_EVENT);
       expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(1);
     });
   });

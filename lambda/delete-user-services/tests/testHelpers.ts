@@ -1,26 +1,30 @@
-import type { SQSEvent, SQSRecord } from "aws-lambda";
+import type { SNSEvent, SNSMessage, SNSEventRecord } from "aws-lambda";
 
 export const TEST_USER_DATA = {
   user_id: "user-id",
 };
 
-const TEST_SQS_RECORD: SQSRecord = {
-  messageId: "19dd0b57-b21e-4ac1-bd88-01bbb068cb78",
-  receiptHandle: "MessageReceiptHandle",
-  body: JSON.stringify(TEST_USER_DATA),
-  attributes: {
-    ApproximateReceiveCount: "1",
-    SentTimestamp: "1523232000000",
-    SenderId: "123456789012",
-    ApproximateFirstReceiveTimestamp: "1523232000001",
-  },
-  messageAttributes: {},
-  md5OfBody: "7b270e59b47ff90a553787216d55d91d",
-  eventSource: "aws:sqs",
-  eventSourceARN: "arn:aws:sqs:us-east-1:123456789012:MyQueue",
-  awsRegion: "us-east-1",
+const TEST_SNS_MESSAGE: SNSMessage = {
+  SignatureVersion: "SignatureVersion",
+  Timestamp: "Timestamp",
+  Signature: "Signature",
+  SigningCertUrl: "SigningCertUrl",
+  MessageId: "MessageId",
+  Message: JSON.stringify(TEST_USER_DATA),
+  MessageAttributes: {},
+  Type: "Type",
+  UnsubscribeUrl: "unsubscribeUrl",
+  TopicArn: "TopicArn",
+  Subject: "Subject",
 };
 
-export const TEST_SQS_EVENT: SQSEvent = {
-  Records: [TEST_SQS_RECORD, TEST_SQS_RECORD],
+const TEST_SNS_EVENT_RECORD: SNSEventRecord = {
+  EventVersion: "1",
+  EventSubscriptionArn: "arn",
+  EventSource: "source",
+  Sns: TEST_SNS_MESSAGE,
+};
+
+export const TEST_SNS_EVENT: SNSEvent = {
+  Records: [TEST_SNS_EVENT_RECORD, TEST_SNS_EVENT_RECORD],
 };

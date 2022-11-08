@@ -195,20 +195,12 @@ Resources:
                 - Arn: !GetAtt UserServicesStore.Arn
           - Effect: Allow
             Action:
-              - kms:*
-            Resource: !GetAtt QueueKmsKey.Arn
-          - Effect: Allow
-            Action:
-              - kms:*
-            Resource: !GetAtt LoggingKmsKey.Arn
-          - Effect: Allow
-            Action:
-              - kms:*
-            Resource: !GetAtt LambdaKMSKey.Arn
-          - Effect: Allow
-            Action:
-              - kms:*
-            Resource: !GetAtt DatabaseKmsKey.Arn
+              - kms:Decrypt
+              - kms:GenerateDataKey*
+              - kms:ReEncrypt*
+            Resource:
+            - !GetAtt QueueKmsKey.Arn
+            - !GetAtt DatabaseKmsKey.Arn
 
   QueryUserServicesFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -335,16 +327,10 @@ Resources:
             Resource: !GetAtt UserServicesToWriteQueue.Arn
           - Effect: Allow
             Action:
-              - kms:*
+              - kms:Decrypt
+              - kms:GenerateDataKey*
+              - kms:ReEncrypt*
             Resource: !GetAtt QueueKmsKey.Arn
-          - Effect: Allow
-            Action:
-              - kms:*
-            Resource: !GetAtt LoggingKmsKey.Arn
-          - Effect: Allow
-            Action:
-              - kms:*
-            Resource: !GetAtt LambdaKMSKey.Arn
 
   FormatUserServicesFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -476,20 +462,12 @@ Resources:
                 - Arn: !GetAtt UserServicesStore.Arn
           - Effect: Allow
             Action:
-              - kms:*
-            Resource: !GetAtt QueueKmsKey.Arn
-          - Effect: Allow
-            Action:
-              - kms:*
-            Resource: !GetAtt LoggingKmsKey.Arn
-          - Effect: Allow
-            Action:
-              - kms:*
-            Resource: !GetAtt LambdaKMSKey.Arn
-          - Effect: Allow
-            Action:
-              - kms:*
-            Resource: !GetAtt DatabaseKmsKey.Arn
+              - kms:Decrypt
+              - kms:GenerateDataKey*
+              - kms:ReEncrypt*
+            Resource:
+            - !GetAtt QueueKmsKey.Arn
+            - !GetAtt DatabaseKmsKey.Arn
 
   WriteUserServicesFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -556,20 +534,7 @@ Resources:
               - "*"
           - Effect: Allow
             Principal:
-              AWS: !Sub arn:aws:iam::${AWS::AccountId}:root
-            Action:
-              - kms:*
-            Resource:
-              - "*"
-          - Effect: Allow
-            Principal:
               Service: cloudwatch.amazonaws.com
-            Action: kms:*
-            Resource:
-              - "*"
-          - Effect: Allow
-            Principal:
-              Service: lambda.amazonaws.com
             Action: kms:*
             Resource:
               - "*"
@@ -594,12 +559,6 @@ Resources:
               - kms:*
             Resource:
               - "*"
-          - Effect: "Allow"
-            Principal:
-              Service: "lambda.amazonaws.com"
-            Action:
-              - "kms:*"
-            Resource: "*"
 
   DatabaseKmsKeyAlias:
     Type: AWS::KMS::Alias
@@ -625,7 +584,7 @@ Resources:
             Principal:
               Service: "lambda.amazonaws.com"
             Action:
-              - "kms:*"
+              - "kms:Decrypt"
             Resource: "*"
 
   LambdaKMSKeyAlias:
@@ -644,12 +603,6 @@ Resources:
           - Effect: Allow
             Principal:
               AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
-            Action:
-              - kms:*
-            Resource: "*"
-          - Effect: Allow
-            Principal:
-              Service: lambda.amazonaws.com
             Action:
               - kms:*
             Resource: "*"

@@ -101,7 +101,10 @@ Resources:
   ######################
   QueryUserServicesFunction:
     Type: AWS::Serverless::Function
+    DependsOn:
+      - QueryUserServicesFunctionLogGroup
     Properties:
+      FunctionName: !Sub ${Environment}-${AWS::StackName}-query-user-services
       Architectures: ["x86_64"]
       CodeUri: ../lambda/query-user-services/
       Events:
@@ -255,7 +258,10 @@ Resources:
   #######################
   FormatUserServicesFunction:
     Type: AWS::Serverless::Function
+    DependsOn:
+      - FormatUserServicesFunctionLogGroup
     Properties:
+      FunctionName: !Sub ${Environment}-${AWS::StackName}-format-user-services
       Architectures: ["x86_64"]
       CodeUri: ../lambda/format-user-services/
       Events:
@@ -395,7 +401,10 @@ Resources:
   ###################
   WriteUserServicesFunction:
     Type: AWS::Serverless::Function
+    DependsOn:
+      - WriteUserServicesFunctionLogGroup
     Properties:
+      FunctionName: !Sub ${Environment}-${AWS::StackName}-write-user-services
       Architectures: ["x86_64"]
       CodeUri: ../lambda/write-user-services/
       Events:

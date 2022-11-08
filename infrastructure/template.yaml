@@ -100,10 +100,11 @@ Resources:
   # Querying the Record
   ######################
   QueryUserServicesFunction:
+    Type: AWS::Serverless::Function
     DependsOn:
       - QueryUserServicesFunctionLogGroup
-    Type: AWS::Serverless::Function
     Properties:
+      FunctionName: !Sub ${Environment}-${AWS::StackName}-query-user-services
       Architectures: ["x86_64"]
       CodeUri: ../lambda/query-user-services/
       Events:
@@ -134,13 +135,6 @@ Resources:
         Sourcemap: true
         EntryPoints:
           - query-user-services.ts
-
-  QueryUserServicesFunctionLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub "${AWS::StackName}-query-user-service-log-group"
-      RetentionInDays: 30
-      KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   QueryUserServicesDeadLetterQueue:
     Type: AWS::SQS::Queue
@@ -216,6 +210,13 @@ Resources:
               - kms:*
             Resource: !GetAtt DatabaseKmsKey.Arn
 
+  QueryUserServicesFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-query-user-services"
+      RetentionInDays: 30
+      KmsKeyId: !GetAtt LoggingKmsKey.Arn
+
   UserServicesToFormatQueue:
     Type: AWS::SQS::Queue
     Properties:
@@ -249,10 +250,11 @@ Resources:
   # Formatting the Record
   #######################
   FormatUserServicesFunction:
+    Type: AWS::Serverless::Function
     DependsOn:
       - FormatUserServicesFunctionLogGroup
-    Type: AWS::Serverless::Function
     Properties:
+      FunctionName: !Sub ${Environment}-${AWS::StackName}-format-user-services
       Architectures: ["x86_64"]
       CodeUri: ../lambda/format-user-services/
       Events:
@@ -282,13 +284,6 @@ Resources:
         Sourcemap: true
         EntryPoints:
           - format-user-services.ts
-
-  FormatUserServicesFunctionLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub "${AWS::StackName}-format-user-service-log-group"
-      RetentionInDays: 30
-      KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   FormatUserServicesDeadLetterQueue:
     Type: AWS::SQS::Queue
@@ -351,6 +346,13 @@ Resources:
               - kms:*
             Resource: !GetAtt LambdaKMSKey.Arn
 
+  FormatUserServicesFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-format-user-services"
+      RetentionInDays: 30
+      KmsKeyId: !GetAtt LoggingKmsKey.Arn
+
   UserServicesToWriteQueue:
     Type: AWS::SQS::Queue
     Properties:
@@ -384,10 +386,11 @@ Resources:
   # Write the Record
   ###################
   WriteUserServicesFunction:
+    Type: AWS::Serverless::Function
     DependsOn:
       - WriteUserServicesFunctionLogGroup
-    Type: AWS::Serverless::Function
     Properties:
+      FunctionName: !Sub ${Environment}-${AWS::StackName}-write-user-services
       Architectures: ["x86_64"]
       CodeUri: ../lambda/write-user-services/
       Events:
@@ -417,13 +420,6 @@ Resources:
         Sourcemap: true
         EntryPoints:
           - write-user-services.ts
-
-  WriteUserServicesFunctionLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub "${AWS::StackName}-write-user-service-log-group"
-      RetentionInDays: 30
-      KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   WriteUserServicesDeadLetterQueue:
     Type: AWS::SQS::Queue
@@ -494,6 +490,13 @@ Resources:
             Action:
               - kms:*
             Resource: !GetAtt DatabaseKmsKey.Arn
+
+  WriteUserServicesFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-write-user-services"
+      RetentionInDays: 30
+      KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   WriteDeadLetterQueueAlarm:
     Type: AWS::CloudWatch::Alarm

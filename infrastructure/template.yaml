@@ -39,6 +39,12 @@ Conditions:
       - Fn::Equals:
           - !Ref PermissionsBoundary
           - "none"
+    
+  IsNotDevelopment:
+    Fn::Not:
+      - Fn::Equals:
+            - !Ref Environment
+            - "dev"
 
 Globals:
   Function:
@@ -209,6 +215,14 @@ Resources:
       RetentionInDays: 30
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
+  QueryUserServicesCSLSSubscription:
+    Condition: IsNotDevelopment
+    Type: AWS::Logs::SubscriptionFilter
+    Properties:
+      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
+      FilterPattern: ""
+      LogGroupName: !Ref QueryUserServicesFunctionLogGroup
+
   UserServicesToFormatQueue:
     Type: AWS::SQS::Queue
     Properties:
@@ -338,6 +352,14 @@ Resources:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-format-user-services"
       RetentionInDays: 30
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
+
+  FormatUserServicesCSLSSubscription:
+    Condition: IsNotDevelopment
+    Type: AWS::Logs::SubscriptionFilter
+    Properties:
+      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
+      FilterPattern: ""
+      LogGroupName: !Ref FormatUserServicesFunctionLogGroup
 
   UserServicesToWriteQueue:
     Type: AWS::SQS::Queue
@@ -475,6 +497,14 @@ Resources:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-write-user-services"
       RetentionInDays: 30
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
+
+  WriteUserServicesCSLSSubscription:
+    Condition: IsNotDevelopment
+    Type: AWS::Logs::SubscriptionFilter
+    Properties:
+      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
+      FilterPattern: ""
+      LogGroupName: !Ref WriteUserServicesFunctionLogGroup
 
   WriteDeadLetterQueueAlarm:
     Type: AWS::CloudWatch::Alarm

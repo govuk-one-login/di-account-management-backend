@@ -49,8 +49,8 @@ Conditions:
   IsNotDevelopment:
     Fn::Not:
       - Fn::Equals:
-            - !Ref Environment
-            - "dev"
+          - !Ref Environment
+          - "dev"
 
 Globals:
   Function:
@@ -218,8 +218,8 @@ Resources:
               - kms:GenerateDataKey*
               - kms:ReEncrypt*
             Resource:
-            - !GetAtt QueueKmsKey.Arn
-            - !GetAtt DatabaseKmsKey.Arn
+              - !GetAtt QueueKmsKey.Arn
+              - !GetAtt DatabaseKmsKey.Arn
 
   QueryUserServicesFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -515,8 +515,8 @@ Resources:
               - kms:GenerateDataKey*
               - kms:ReEncrypt*
             Resource:
-            - !GetAtt QueueKmsKey.Arn
-            - !GetAtt DatabaseKmsKey.Arn
+              - !GetAtt QueueKmsKey.Arn
+              - !GetAtt DatabaseKmsKey.Arn
 
   WriteUserServicesFunctionLogGroup:
     Type: AWS::Logs::LogGroup

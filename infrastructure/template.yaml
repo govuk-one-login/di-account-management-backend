@@ -646,20 +646,14 @@ Resources:
                 - Arn: !GetAtt UserServicesStore.Arn
           - Effect: Allow
             Action:
-              - kms:*
-            Resource: !GetAtt QueueKmsKey.Arn
-          - Effect: Allow
-            Action:
-              - kms:*
-            Resource: !GetAtt LoggingKmsKey.Arn
-          - Effect: Allow
-            Action:
-              - kms:*
-            Resource: !GetAtt LambdaKMSKey.Arn
-          - Effect: Allow
-            Action:
-              - kms:*
-            Resource: !GetAtt DatabaseKmsKey.Arn
+              - kms:Decrypt
+              - kms:GenerateDataKey*
+              - kms:ReEncrypt*
+            Resource:
+              - !GetAtt QueueKmsKey.Arn
+              - !GetAtt DatabaseKmsKey.Arn
+              - !GetAtt LoggingKmsKey.Arn
+              - !GetAtt LambdaKMSKey.Arn
 
   DeleteUserServicesFunctionLogGroup:
     Type: AWS::Logs::LogGroup

@@ -668,6 +668,14 @@ Resources:
       RetentionInDays: 30
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
+  DeleteUserServicesCSLSSubscription:
+    Condition: IsNotDevelopment
+    Type: AWS::Logs::SubscriptionFilter
+    Properties:
+      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
+      FilterPattern: ""
+      LogGroupName: !Ref DeleteUserServicesFunctionLogGroup
+
   DeleteUserServicesDeadLetterQueue:
     Type: AWS::SQS::Queue
     DeletionPolicy: Delete

@@ -702,6 +702,22 @@ Resources:
       MessageRetentionPeriod: 1209600
       KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
 
+  UserAccountDeletionTopicDeadLetterQueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues:
+        - !Ref UserAccountDeletionTopicDeadLetterQueue
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: sns.amazonaws.com
+            Action: "sqs:SendMessage"
+            Resource: !Ref UserAccountDeletionTopicDeadLetterQueue
+            Condition:
+              ArnEquals:
+                "aws:SourceArn": !Ref UserAccountDeletionTopic
+
   DeleteDeadLetterQueueAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:

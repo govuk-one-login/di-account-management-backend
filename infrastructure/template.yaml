@@ -718,6 +718,32 @@ Resources:
               ArnEquals:
                 "aws:SourceArn": !Ref UserAccountDeletionTopic
 
+  UserAccountDeletionTopicDeadLetterQueueAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            UserAccountDeletionTopicDeadLetterQueueAlarm,
+          ],
+        ]
+      Namespace: "AWS/SQS"
+      MetricName: "ApproximateNumberOfMessagesVisible"
+      Dimensions:
+        - Name: "QueueName"
+          Value: !GetAtt UserAccountDeletionTopicDeadLetterQueue.QueueName
+      Statistic: "Sum"
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: "GreaterThanOrEqualToThreshold"
+      AlarmActions:
+        - !Ref AlarmNotificationTopic
+      ActionsEnabled: true
+
   DeleteDeadLetterQueueAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:

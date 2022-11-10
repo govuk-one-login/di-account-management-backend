@@ -575,6 +575,15 @@ Resources:
         deadLetterTargetArn: !GetAtt UserAccountDeletionTopicDeadLetterQueue.Arn
       TopicArn: !Ref UserAccountDeletionTopic
 
+  DeleteUserServicesLambdaInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      Principal: sns.amazonaws.com
+      SourceArn:
+        Ref: UserAccountDeletionTopic
+      FunctionName: !GetAtt DeleteUserServicesFunction.Arn
+
   DeleteUserServicesFunction:
     DependsOn:
       - DeleteUserServicesFunctionLogGroup

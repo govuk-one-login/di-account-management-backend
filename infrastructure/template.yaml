@@ -16,6 +16,12 @@ Parameters:
       - "integration"
       - "production"
     ConstraintDescription: must be dev, build, staging, integration or production
+  VpcStackName:
+    Description: >
+      The name of the stack that defines the VPC in which this container will
+      run.
+    Type: String
+    Default: vpc-enhanced
   CodeSigningConfigArn:
     Type: String
     Description: >
@@ -39,7 +45,7 @@ Conditions:
       - Fn::Equals:
           - !Ref PermissionsBoundary
           - "none"
-    
+
   IsNotDevelopment:
     Fn::Not:
       - Fn::Equals:
@@ -133,6 +139,12 @@ Resources:
           TABLE_NAME: !Ref UserServicesStoreTableName
           DLQ_URL: !Ref QueryUserServicesDeadLetterQueue
           OUTPUT_QUEUE_URL: !Ref UserServicesToFormatQueue
+      VpcConfig:
+        SubnetIds:
+          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdA
+          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdB
+        SecurityGroupIds:
+          - Fn::ImportValue: !Sub ${VpcStackName}-AWSServicesEndpointSecurityGroupId
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -159,6 +171,7 @@ Resources:
         - !Ref AWS::NoValue
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
         - !Ref QueryUserServicesPolicy
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -282,6 +295,12 @@ Resources:
         Variables:
           DLQ_URL: !Ref FormatUserServicesDeadLetterQueue
           OUTPUT_QUEUE_URL: !Ref UserServicesToWriteQueue
+      VpcConfig:
+        SubnetIds:
+          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdA
+          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdB
+        SecurityGroupIds:
+          - Fn::ImportValue: !Sub ${VpcStackName}-AWSServicesEndpointSecurityGroupId
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -308,6 +327,7 @@ Resources:
         - !Ref AWS::NoValue
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
         - !Ref FormatUserServicesPolicy
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -420,6 +440,12 @@ Resources:
         Variables:
           TABLE_NAME: !Ref UserServicesStoreTableName
           DLQ_URL: !Ref WriteUserServicesDeadLetterQueue
+      VpcConfig:
+        SubnetIds:
+          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdA
+          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdB
+        SecurityGroupIds:
+          - Fn::ImportValue: !Sub ${VpcStackName}-AWSServicesEndpointSecurityGroupId
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -446,6 +472,7 @@ Resources:
         - !Ref AWS::NoValue
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
         - !Ref WriteServiceRecordPolicy
       AssumeRolePolicyDocument:
         Version: "2012-10-17"

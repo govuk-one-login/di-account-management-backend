@@ -28,7 +28,7 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@v3
         with:
-          node-version-file: '.nvmrc' 
+          node-version-file: '.nvmrc'
 
       - name: Install ESbuild
         run: npm install -g esbuild@0.15.12
@@ -40,10 +40,14 @@ jobs:
       - name: Test format-user-services
         run: npm ci && npm test
         working-directory: ./lambda/format-user-services
-        
+
       - name: Test write-user-services
         run: npm ci && npm test
         working-directory: ./lambda/write-user-services
+
+      - name: Test save-raw-events
+        run: npm ci && npm test
+        working-directory: ./lambda/save-raw-events
 
       - name: Set up Python 3.8
         uses: actions/setup-python@v2
@@ -62,7 +66,7 @@ jobs:
       - name: SAM validate
         run: sam validate
 
-      - name: SAM build 
+      - name: SAM build
         run: sam build
 
       - name: Deploy SAM app

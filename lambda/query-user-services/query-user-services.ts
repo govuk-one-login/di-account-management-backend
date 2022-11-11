@@ -14,8 +14,6 @@ import {
   UserServices,
 } from "./models";
 
-const { TABLE_NAME, AWS_REGION } = process.env;
-
 const marshallOptions = {
   convertClassInstanceToMap: true,
 };
@@ -28,6 +26,8 @@ const dynamoDocClient = DynamoDBDocumentClient.from(
 );
 
 export const queryUserServices = async (userId: string): Promise<Service[]> => {
+  const { TABLE_NAME } = process.env;
+
   const command = new GetCommand({
     TableName: TABLE_NAME,
     Key: {
@@ -74,6 +74,7 @@ export const sendSqsMessage = async (
   messageBody: string,
   queueUrl: string | undefined
 ): Promise<string | undefined> => {
+  const { AWS_REGION } = process.env;
   const client = new SQSClient({ region: AWS_REGION });
   const message: SendMessageRequest = {
     QueueUrl: queueUrl,

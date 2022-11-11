@@ -6,8 +6,6 @@ import {
 import { SQSEvent, SQSRecord } from "aws-lambda";
 import type { UserData, UserRecordEvent, Service, TxmaEvent } from "./models";
 
-const { AWS_REGION } = process.env;
-
 const validateUserService = (service: Service): void => {
   if (
     !(
@@ -111,6 +109,7 @@ export const sendSqsMessage = async (
   messageBody: string,
   queueUrl: string | undefined
 ): Promise<string | undefined> => {
+  const { AWS_REGION } = process.env;
   const client = new SQSClient({ region: AWS_REGION });
   const message: SendMessageRequest = {
     QueueUrl: queueUrl,

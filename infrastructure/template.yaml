@@ -6,6 +6,9 @@ Parameters:
   UserServicesStoreTableName:
     Type: String
     Default: user_services
+  RawEventsStoreTableName:
+    Type: String
+    Default: raw_events
   Environment:
     Description: "The environment type"
     Type: "String"
@@ -65,7 +68,50 @@ Globals:
 
 Resources:
   ######################################
-  # Dynamo DB - Output target for system
+  # Raw events store
+  ######################################
+  RawEventsStore:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: timestamp
+          AttributeType: N
+      BillingMode: PAY_PER_REQUEST
+      TableName: !Ref RawEventsStoreTableName
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: timestamp
+          KeyType: RANGE
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+        SSEType: KMS
+        KMSMasterKeyId: !GetAtt DatabaseKmsKey.Arn
+      StreamSpecification:
+        StreamViewType: NEW_IMAGE
+      TimeToLiveSpecification:
+        AttributeName: remove_at
+        Enabled: true
+      Tags:
+        - Key: Product
+          Value: GOV.UK Sign In
+        - Key: System
+          Value: Account Management Backend
+        - Key: Owner
+          Value: govuk-accounts-tech@digital.cabinet-office.gov.uk
+        - Key: Environment
+          Value: !Ref "Environment"
+        - Key: Source
+          Value: "https://github.com/alphagov/di-account-management-backend/blob/main/infrastructure/template.yaml"
+
+  ######################################
+  # User services store
   ######################################
   UserServicesStore:
     Type: AWS::DynamoDB::Table

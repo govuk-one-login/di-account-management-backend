@@ -12,7 +12,6 @@ import {
 } from "@aws-sdk/client-sqs";
 import { Service, UserServices } from "./models";
 
-const { TABLE_NAME } = process.env;
 const marshallOptions = {
   convertClassInstanceToMap: true,
 };
@@ -25,7 +24,6 @@ const dynamoDocClient = DynamoDBDocumentClient.from(
 );
 
 const sqsClient = new SQSClient({});
-const { DLQ_URL } = process.env;
 
 export const validateServices = (services: Service[]): void => {
   for (let i = 0; i < services.length; i += 1) {
@@ -57,6 +55,7 @@ export const validateUserServices = (userServices: UserServices): void => {
 export const writeUserServices = async (
   userServices: UserServices
 ): Promise<PutCommandOutput> => {
+  const { TABLE_NAME } = process.env;
   const command = new PutCommand({
     TableName: TABLE_NAME,
     Item: {
@@ -68,6 +67,7 @@ export const writeUserServices = async (
 };
 
 export const handler = async (event: SQSEvent): Promise<void> => {
+  const { DLQ_URL } = process.env;
   await Promise.all(
     event.Records.map(async (record) => {
       try {

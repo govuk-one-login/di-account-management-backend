@@ -1,3 +1,4 @@
+import "aws-sdk-client-mock-jest";
 import { DynamoDBDocumentClient, DeleteCommand } from "@aws-sdk/lib-dynamodb";
 import { SendMessageCommand, SQSClient } from "@aws-sdk/client-sqs";
 import { mockClient } from "aws-sdk-client-mock";
@@ -25,7 +26,10 @@ describe("deleteUserData", () => {
 
   test("deletes item from DynamoDB", async () => {
     await deleteUserData(TEST_USER_DATA);
-    expect(dynamoMock.commandCalls(DeleteCommand).length).toEqual(1);
+    expect(dynamoMock).toHaveReceivedCommandWith(DeleteCommand, {
+      TableName: process.env.TABLE_NAME,
+      Key: { user_id: TEST_USER_DATA.user_id },
+    });
   });
 });
 

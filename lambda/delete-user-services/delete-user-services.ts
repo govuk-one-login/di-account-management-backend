@@ -12,7 +12,6 @@ import {
 } from "@aws-sdk/client-sqs";
 import { UserData } from "./models";
 
-const { TABLE_NAME } = process.env;
 const marshallOptions = {
   convertClassInstanceToMap: true,
 };
@@ -25,7 +24,6 @@ const dynamoDocClient = DynamoDBDocumentClient.from(
 );
 
 const sqsClient = new SQSClient({});
-const { DLQ_URL } = process.env;
 
 export const validateUserData = (userData: UserData): UserData => {
   if (userData.user_id) {
@@ -37,6 +35,8 @@ export const validateUserData = (userData: UserData): UserData => {
 export const deleteUserData = async (
   userData: UserData
 ): Promise<DeleteCommandOutput> => {
+  const { TABLE_NAME } = process.env;
+
   const command = new DeleteCommand({
     TableName: TABLE_NAME,
     Key: { user_id: userData.user_id },
@@ -45,6 +45,8 @@ export const deleteUserData = async (
 };
 
 export const handler = async (event: SNSEvent): Promise<void> => {
+  const { DLQ_URL } = process.env;
+
   await Promise.all(
     event.Records.map(async (record) => {
       try {

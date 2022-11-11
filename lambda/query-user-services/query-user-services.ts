@@ -1,4 +1,4 @@
-import { SQSEvent } from "aws-lambda";
+import { DynamoDBStreamEvent } from "aws-lambda";
 import {
   SendMessageCommand,
   SendMessageRequest,
@@ -83,13 +83,14 @@ export const sendSqsMessage = async (
   return result.MessageId;
 };
 
-export const handler = async (event: SQSEvent): Promise<void> => {
+export const handler = async (event: DynamoDBStreamEvent): Promise<void> => {
   const { OUTPUT_QUEUE_URL, DLQ_URL } = process.env;
   const { Records } = event;
   await Promise.all(
     Records.map(async (record) => {
       try {
-        const txmaEvent: TxmaEvent = JSON.parse(record.body);
+        const eventBody = record.dynamodb?.NewImage?.event.S as string;
+        const txmaEvent: TxmaEvent = JSON.parse(eventBody);
         validateTxmaEventBody(txmaEvent);
         const results = await queryUserServices(txmaEvent.user.user_id);
         const messageId = await sendSqsMessage(
@@ -99,7 +100,7 @@ export const handler = async (event: SQSEvent): Promise<void> => {
         console.log(`[Message sent to QUEUE] with message id = ${messageId}`);
       } catch (err) {
         console.error(err);
-        await sendSqsMessage(record.body, DLQ_URL);
+        await sendSqsMessage(JSON.stringify(record), DLQ_URL);
       }
     })
   );

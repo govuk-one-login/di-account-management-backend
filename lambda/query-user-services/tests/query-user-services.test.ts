@@ -1,6 +1,6 @@
 import { SendMessageCommand, SQSClient } from "@aws-sdk/client-sqs";
 import { DynamoDBDocumentClient, GetCommand } from "@aws-sdk/lib-dynamodb";
-import { SQSEvent, SQSRecord } from "aws-lambda";
+import { DynamoDBStreamEvent, DynamoDBRecord } from "aws-lambda";
 import { mockClient } from "aws-sdk-client-mock";
 import {
   Service,
@@ -29,21 +29,17 @@ const TEST_TXMA_EVENT: TxmaEvent = {
   component_id: "component_id",
   user,
 };
-const TEST_SQS_RECORD: SQSRecord = {
-  messageId: "19dd0b57-b21e-4ac1-bd88-01bbb068cb78",
-  receiptHandle: "MessageReceiptHandle",
-  body: JSON.stringify(TEST_TXMA_EVENT),
-  attributes: {
-    ApproximateReceiveCount: "1",
-    SentTimestamp: "1523232000000",
-    SenderId: "123456789012",
-    ApproximateFirstReceiveTimestamp: "1523232000001",
+
+const TEST_DYNAMO_STREAM_RECORD: DynamoDBRecord = {
+  eventName: "INSERT",
+  dynamodb: {
+    ApproximateCreationDateTime: Date.now(),
+    NewImage: {
+      id: { S: "event-id" },
+      timestamp: { N: `${Date.now()}` },
+      event: { S: JSON.stringify(TEST_TXMA_EVENT) },
+    },
   },
-  messageAttributes: {},
-  md5OfBody: "7b270e59b47ff90a553787216d55d91d",
-  eventSource: "aws:sqs",
-  eventSourceARN: "arn:aws:sqs:us-east-1:123456789012:MyQueue",
-  awsRegion: "us-east-1",
 };
 
 const MOCK_MESSAGE_ID = "MyMessageId";
@@ -52,8 +48,8 @@ const TABLE_NAME = "TABLE_NAME";
 const dynamoMock = mockClient(DynamoDBDocumentClient);
 const sqsMock = mockClient(SQSClient);
 
-const TEST_SQS_EVENT: SQSEvent = {
-  Records: [TEST_SQS_RECORD, TEST_SQS_RECORD],
+const TEST_DYNAMO_STREAM_EVENT: DynamoDBStreamEvent = {
+  Records: [TEST_DYNAMO_STREAM_RECORD, TEST_DYNAMO_STREAM_RECORD],
 };
 
 describe("queryUserServices", () => {
@@ -284,7 +280,7 @@ describe("handler", () => {
     ],
   };
   test("Queries the dynamo db and send an sqs event", async () => {
-    await handler(TEST_SQS_EVENT);
+    await handler(TEST_DYNAMO_STREAM_EVENT);
     expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(2);
     expect(dynamoMock.commandCalls(GetCommand).length).toEqual(2);
     expect(sqsMock).toHaveReceivedCommandWith(SendMessageCommand, {
@@ -312,11 +308,11 @@ describe("handler error handing ", () => {
     consoleErrorMock.mockRestore();
   });
   test("logs the error message", async () => {
-    await handler(TEST_SQS_EVENT);
+    await handler(TEST_DYNAMO_STREAM_EVENT);
     expect(consoleErrorMock).toHaveBeenCalledTimes(2);
   });
   test("sends the event to dead letter queue", async () => {
-    await handler(TEST_SQS_EVENT);
+    await handler(TEST_DYNAMO_STREAM_EVENT);
     expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(2);
   });
 });

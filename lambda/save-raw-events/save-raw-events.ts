@@ -13,7 +13,6 @@ import {
 } from "@aws-sdk/client-sqs";
 import { TxmaEvent, UserData } from "./models";
 
-const { TABLE_NAME } = process.env;
 const marshallOptions = {
   convertClassInstanceToMap: true,
 };
@@ -25,13 +24,12 @@ const dynamoDocClient = DynamoDBDocumentClient.from(
   translateConfig
 );
 const sqsClient = new SQSClient({});
-const { DLQ_URL } = process.env;
 
-const getEventId = (): string => {
+export const getEventId = (): string => {
   return `${crypto.randomUUID}`;
 };
 
-const getTTLDate = (): number => {
+export const getTTLDate = (): number => {
   const SECONDS_IN_AN_DAY = 60 * 60 * 24;
   const secondsSinceEpoch = Math.round(Date.now() / 1000);
   const expirationTime = secondsSinceEpoch + 90 * SECONDS_IN_AN_DAY;
@@ -61,6 +59,8 @@ export const validateTxmaEventBody = (txmaEvent: TxmaEvent): void => {
 export const writeRawTxmaEvent = async (
   txmaEvent: TxmaEvent
 ): Promise<PutCommandOutput> => {
+  const { TABLE_NAME } = process.env;
+
   const command = new PutCommand({
     TableName: TABLE_NAME,
     Item: {
@@ -74,6 +74,8 @@ export const writeRawTxmaEvent = async (
 };
 
 export const handler = async (event: SQSEvent): Promise<void> => {
+  const { DLQ_URL } = process.env;
+
   await Promise.all(
     event.Records.map(async (record) => {
       try {

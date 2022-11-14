@@ -1,4 +1,5 @@
 import { SQSEvent } from "aws-lambda";
+import crypto from "crypto";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import {
   DynamoDBDocumentClient,
@@ -27,7 +28,8 @@ const sqsClient = new SQSClient({});
 const { DLQ_URL } = process.env;
 
 const getEventId = (): string => {
-  return `${Date.now()}-${Math.floor(Math.random() * 100000)}`;
+  const array = new Uint16Array(10);
+  return `${Date.now()}-${crypto.getRandomValues(array)[0]}`;
 };
 
 const getTTLDate = (): number => {

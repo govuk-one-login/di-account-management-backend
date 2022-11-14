@@ -262,15 +262,22 @@ Resources:
             Action:
               - dynamodb:Query
               - dynamodb:GetItem
-              - dynamodb:DescribeStream
-              - dynamodb:GetRecords
-              - dynamodb:GetShardIterator
-              - dynamodb:ListStreams
             Resource:
               - !GetAtt UserServicesStore.Arn
               - !Sub
                 - "${Arn}/*"
                 - Arn: !GetAtt UserServicesStore.Arn
+          - Effect: Allow
+            Action:
+              - dynamodb:DescribeStream
+              - dynamodb:GetRecords
+              - dynamodb:GetShardIterator
+              - dynamodb:ListStreams
+            Resource:
+              - !GetAtt RawEventsStore.StreamArn
+              - !Sub
+                - "${Arn}/*"
+                - Arn: !GetAtt RawEventsStore.StreamArn
           - Effect: Allow
             Action:
               - kms:Decrypt

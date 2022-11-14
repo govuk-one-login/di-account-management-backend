@@ -178,7 +178,7 @@ Resources:
             StartingPosition: LATEST
             FilterCriteria:
               Filters:
-                - Pattern: '{ "eventName": ["INSERT"]'
+                - Pattern: '{ "eventName": ["INSERT"] }'
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt QueryUserServicesDeadLetterQueue.Arn

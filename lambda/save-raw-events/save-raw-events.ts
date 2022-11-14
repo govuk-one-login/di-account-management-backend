@@ -28,8 +28,7 @@ const sqsClient = new SQSClient({});
 const { DLQ_URL } = process.env;
 
 const getEventId = (): string => {
-  const array = new Uint16Array(10);
-  return `${Date.now()}-${crypto.getRandomValues(array)[0]}`;
+  return `${crypto.randomUUID}`;
 };
 
 const getTTLDate = (): number => {

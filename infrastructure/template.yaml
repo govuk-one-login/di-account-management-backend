@@ -166,10 +166,19 @@ Resources:
       Architectures: ["x86_64"]
       CodeUri: ../lambda/query-user-services/
       Events:
-        TxMAInputDummyQueue:
-          Type: SQS
+        DynamoStream:
+          Type: DynamoDB
           Properties:
-            Queue: !GetAtt TxMAInputDummyQueue.Arn
+            BatchSize: 1
+            Stream: !GetAtt RawEventsStore.StreamArn
+            Enabled: true
+            DestinationConfig:
+              OnFailure:
+                Destination: !GetAtt QueryUserServicesDeadLetterQueue.Arn
+            StartingPosition: LATEST
+            FilterCriteria:
+              Filters:
+                - Pattern: '{ "eventName": ["INSERT"] }'
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt QueryUserServicesDeadLetterQueue.Arn
@@ -258,6 +267,17 @@ Resources:
               - !Sub
                 - "${Arn}/*"
                 - Arn: !GetAtt UserServicesStore.Arn
+          - Effect: Allow
+            Action:
+              - dynamodb:DescribeStream
+              - dynamodb:GetRecords
+              - dynamodb:GetShardIterator
+              - dynamodb:ListStreams
+            Resource:
+              - !GetAtt RawEventsStore.StreamArn
+              - !Sub
+                - "${Arn}/*"
+                - Arn: !GetAtt RawEventsStore.StreamArn
           - Effect: Allow
             Action:
               - kms:Decrypt

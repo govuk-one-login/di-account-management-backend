@@ -3,11 +3,11 @@ import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
 import { SQSEvent, SQSRecord } from "aws-lambda";
 import { mockClient } from "aws-sdk-client-mock";
 import { TxmaEvent, UserData } from "../models";
-import { validateUser } from "../save-raw-events";
 import {
   handler,
   validateTxmaEventBody,
   writeRawTxmaEvent,
+  validateUser,
 } from "../save-raw-events";
 
 const dynamoMock = mockClient(DynamoDBDocumentClient);

@@ -72,6 +72,28 @@ jobs:
       - name: Test
         run: npm test
 
+  lint_and_test_delete_user_services:
+    name: delete-user-services
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./lambda/delete-user-services
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm test
   lint_and_test_save_raw_events:
     name: save-raw-events
     runs-on: ubuntu-latest

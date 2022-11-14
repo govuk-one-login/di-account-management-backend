@@ -1,6 +1,5 @@
 type UrnFdnSub = string;
 type ClientId = string;
-type EventId = string;
 
 export interface TxmaEvent {
   event_name: string;
@@ -12,10 +11,4 @@ export interface TxmaEvent {
 
 export interface UserData {
   user_id: UrnFdnSub;
-}
-
-interface RawEventDocument {
-  id: EventId;
-  timestamp: number;
-  event: string;
 }

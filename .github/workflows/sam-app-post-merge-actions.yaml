@@ -45,6 +45,10 @@ jobs:
         run: npm ci && npm test
         working-directory: ./lambda/write-user-services
 
+      - name: Test delete-user-services
+        run: npm ci && npm test
+        working-directory: ./lambda/delete-user-services
+
       - name: Test save-raw-events
         run: npm ci && npm test
         working-directory: ./lambda/save-raw-events

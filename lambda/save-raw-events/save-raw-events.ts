@@ -26,7 +26,7 @@ const dynamoDocClient = DynamoDBDocumentClient.from(
 const sqsClient = new SQSClient({});
 
 export const getEventId = (): string => {
-  return `${crypto.randomUUID}`;
+  return `${crypto.randomUUID()}`;
 };
 
 export const getTTLDate = (): number => {

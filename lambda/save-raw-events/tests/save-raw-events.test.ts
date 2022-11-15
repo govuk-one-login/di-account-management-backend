@@ -1,3 +1,5 @@
+import "aws-sdk-client-mock-jest";
+import crypto from "crypto";
 import { SendMessageCommand, SQSClient } from "@aws-sdk/client-sqs";
 import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
 import { SQSEvent, SQSRecord } from "aws-lambda";
@@ -51,14 +53,27 @@ describe("writeRawTxmaEvent", () => {
   beforeEach(() => {
     dynamoMock.reset();
     process.env.TABLE_NAME = TABLE_NAME;
+    jest.spyOn(Date, "now").mockImplementation(() => 1668505677);
+    jest.spyOn(crypto, "randomUUID").mockImplementation(() => "12345");
   });
 
   afterEach(() => {
     jest.clearAllMocks();
+    jest.spyOn(Date, "now").mockRestore();
+    jest.spyOn(crypto, "randomUUID").mockRestore();
   });
   test("writes raw events to DynamoDB", async () => {
     await writeRawTxmaEvent(TEST_TXMA_EVENT);
     expect(dynamoMock.commandCalls(PutCommand).length).toEqual(1);
+    expect(dynamoMock).toHaveReceivedCommandWith(PutCommand, {
+      TableName: process.env.TABLE_NAME,
+      Item: {
+        id: "12345",
+        timestamp: 1668505677,
+        event: TEST_TXMA_EVENT,
+        remove_at: 9444506,
+      },
+    });
   });
 });
 describe("validateUser", () => {
@@ -192,15 +207,28 @@ describe("handler", () => {
     dynamoMock.reset();
     sqsMock.reset();
     process.env.TABLE_NAME = "TABLE_NAME";
+    jest.spyOn(Date, "now").mockImplementation(() => 1668505677);
+    jest.spyOn(crypto, "randomUUID").mockImplementation(() => "12345");
   });
 
   afterEach(() => {
     jest.clearAllMocks();
+    jest.spyOn(Date, "now").mockRestore();
+    jest.spyOn(crypto, "randomUUID").mockRestore();
   });
 
   test("Adds raw event to the table", async () => {
     await handler(TEST_SQS_EVENT);
     expect(dynamoMock.commandCalls(PutCommand).length).toEqual(1);
+    expect(dynamoMock).toHaveReceivedCommandWith(PutCommand, {
+      TableName: process.env.TABLE_NAME,
+      Item: {
+        id: "12345",
+        timestamp: 1668505677,
+        event: TEST_TXMA_EVENT,
+        remove_at: 9444506,
+      },
+    });
   });
 });
 

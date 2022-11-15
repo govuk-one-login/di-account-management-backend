@@ -239,6 +239,7 @@ describe("handler error handling", () => {
     dynamoMock.reset();
     sqsMock.reset();
     process.env.TABLE_NAME = "TABLE_NAME";
+    process.env.DLQ_URL = "DLQ_URL";
     consoleErrorMock = jest.spyOn(global.console, "error").mockImplementation();
     dynamoMock.rejectsOnce("mock error");
   });
@@ -253,5 +254,9 @@ describe("handler error handling", () => {
   test("sends the event to the dead letter queue", async () => {
     await handler(TEST_SQS_EVENT);
     expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(1);
+    expect(sqsMock).toHaveReceivedCommandWith(SendMessageCommand, {
+      QueueUrl: "DLQ_URL",
+      MessageBody: JSON.stringify(TEST_TXMA_EVENT),
+    });
   });
 });

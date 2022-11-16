@@ -1,4 +1,5 @@
 import { DynamoDBStreamEvent } from "aws-lambda";
+import { DynamoDB } from "aws-sdk";
 import {
   SendMessageCommand,
   SendMessageRequest,
@@ -7,6 +8,7 @@ import {
 import { DynamoDBDocumentClient, GetCommand } from "@aws-sdk/lib-dynamodb";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import {
+  RawTxmaEvent,
   Service,
   TxmaEvent,
   UserData,
@@ -90,12 +92,16 @@ export const handler = async (event: DynamoDBStreamEvent): Promise<void> => {
   await Promise.all(
     Records.map(async (record) => {
       try {
-        const eventBody = record.dynamodb?.NewImage?.event.S as string;
-        const txmaEvent: TxmaEvent = JSON.parse(eventBody);
-        validateTxmaEventBody(txmaEvent);
-        const results = await queryUserServices(txmaEvent.user.user_id);
+        const rawTxmaEvent = DynamoDB.Converter.unmarshall(
+          record.dynamodb?.NewImage || {}
+        ) as RawTxmaEvent;
+        console.log(`RAW TXMA : ${JSON.stringify(rawTxmaEvent)}`);
+        validateTxmaEventBody(rawTxmaEvent.event);
+        const results = await queryUserServices(
+          rawTxmaEvent.event.user.user_id
+        );
         const messageId = await sendSqsMessage(
-          JSON.stringify(createUserRecordEvent(txmaEvent, results)),
+          JSON.stringify(createUserRecordEvent(rawTxmaEvent.event, results)),
           OUTPUT_QUEUE_URL
         );
         console.log(`[Message sent to QUEUE] with message id = ${messageId}`);

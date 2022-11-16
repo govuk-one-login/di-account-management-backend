@@ -31,13 +31,42 @@ const TEST_TXMA_EVENT: TxmaEvent = {
 };
 
 const TEST_DYNAMO_STREAM_RECORD: DynamoDBRecord = {
+  eventID: "5252d174cdeec31d845ae013964dcaff",
   eventName: "INSERT",
+  eventVersion: "1.1",
+  awsRegion: "eu-west-2",
+  eventSource: "aws:dynamodb",
   dynamodb: {
     ApproximateCreationDateTime: Date.now(),
     NewImage: {
+      remove_at: {
+        N: "1676378763",
+      },
       id: { S: "event-id" },
       timestamp: { N: `${Date.now()}` },
-      event: { S: JSON.stringify(TEST_TXMA_EVENT) },
+      event: {
+        M: {
+          component_id: {
+            S: "component-id",
+          },
+          event_name: {
+            S: "event-name",
+          },
+          user: {
+            M: {
+              user_id: {
+                S: "user_id",
+              },
+            },
+          },
+          client_id: {
+            S: "client-id",
+          },
+          timestamp: {
+            N: "1666169856",
+          },
+        },
+      },
     },
   },
 };

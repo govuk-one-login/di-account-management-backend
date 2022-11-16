@@ -24,10 +24,3 @@ export interface UserRecordEvent {
   TxmaEvent: TxmaEvent;
   ServiceList: Service[];
 }
-
-export interface RawTxmaEvent {
-  remove_at: number;
-  id: string;
-  timestamp: number;
-  event: TxmaEvent;
-}

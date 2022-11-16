@@ -8,7 +8,6 @@ import {
 import { DynamoDBDocumentClient, GetCommand } from "@aws-sdk/lib-dynamodb";
 import { AttributeValue, DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import {
-  RawTxmaEvent,
   Service,
   TxmaEvent,
   UserData,

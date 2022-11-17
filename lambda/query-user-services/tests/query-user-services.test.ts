@@ -19,23 +19,21 @@ import {
 } from "../query-user-services";
 
 const userId = "user_id";
+const timestamp = new Date().valueOf().toString();
 const user: UserData = {
   user_id: userId,
 };
 const TEST_TXMA_EVENT: TxmaEvent = {
-  event_name: "event_1",
-  timestamp: new Date().toISOString(),
+  event_name: "event_name",
+  timestamp,
   client_id: "client_id",
   component_id: "component_id",
   user,
 };
 
 const TEST_DYNAMO_STREAM_RECORD: DynamoDBRecord = {
-  eventID: "5252d174cdeec31d845ae013964dcaff",
+  eventID: "1234567",
   eventName: "INSERT",
-  eventVersion: "1.1",
-  awsRegion: "eu-west-2",
-  eventSource: "aws:dynamodb",
   dynamodb: {
     ApproximateCreationDateTime: Date.now(),
     NewImage: {
@@ -46,24 +44,24 @@ const TEST_DYNAMO_STREAM_RECORD: DynamoDBRecord = {
       timestamp: { N: `${Date.now()}` },
       event: {
         M: {
-          component_id: {
-            S: "component-id",
-          },
           event_name: {
-            S: "event-name",
+            S: "event_name",
+          },
+          timestamp: {
+            S: timestamp,
+          },
+          client_id: {
+            S: "client_id",
+          },
+          component_id: {
+            S: "component_id",
           },
           user: {
             M: {
               user_id: {
-                S: "user_id",
+                S: userId,
               },
             },
-          },
-          client_id: {
-            S: "client-id",
-          },
-          timestamp: {
-            N: "1666169856",
           },
         },
       },

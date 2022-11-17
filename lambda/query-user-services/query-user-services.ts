@@ -91,14 +91,11 @@ export const handler = async (event: DynamoDBStreamEvent): Promise<void> => {
   await Promise.all(
     Records.map(async (record) => {
       try {
-        const eventBody = JSON.stringify(
-          unmarshall(
-            record.dynamodb?.NewImage?.event.M as {
-              [key: string]: AttributeValue;
-            }
-          )
-        );
-        const txmaEvent: TxmaEvent = JSON.parse(eventBody);
+        const txmaEvent = unmarshall(
+          record.dynamodb?.NewImage?.event.M as {
+            [key: string]: AttributeValue;
+          }
+        ) as TxmaEvent;
         validateTxmaEventBody(txmaEvent);
         const results = await queryUserServices(txmaEvent.user.user_id);
         const messageId = await sendSqsMessage(

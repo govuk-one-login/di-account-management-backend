@@ -19,25 +19,52 @@ import {
 } from "../query-user-services";
 
 const userId = "user_id";
+const timestamp = new Date().valueOf().toString();
 const user: UserData = {
   user_id: userId,
 };
 const TEST_TXMA_EVENT: TxmaEvent = {
-  event_name: "event_1",
-  timestamp: new Date().toISOString(),
+  event_name: "event_name",
+  timestamp,
   client_id: "client_id",
   component_id: "component_id",
   user,
 };
 
 const TEST_DYNAMO_STREAM_RECORD: DynamoDBRecord = {
+  eventID: "1234567",
   eventName: "INSERT",
   dynamodb: {
     ApproximateCreationDateTime: Date.now(),
     NewImage: {
+      remove_at: {
+        N: "1676378763",
+      },
       id: { S: "event-id" },
       timestamp: { N: `${Date.now()}` },
-      event: { S: JSON.stringify(TEST_TXMA_EVENT) },
+      event: {
+        M: {
+          event_name: {
+            S: "event_name",
+          },
+          timestamp: {
+            S: timestamp,
+          },
+          client_id: {
+            S: "client_id",
+          },
+          component_id: {
+            S: "component_id",
+          },
+          user: {
+            M: {
+              user_id: {
+                S: userId,
+              },
+            },
+          },
+        },
+      },
     },
   },
 };

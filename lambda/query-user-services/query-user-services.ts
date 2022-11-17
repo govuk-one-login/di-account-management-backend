@@ -1,11 +1,12 @@
 import { DynamoDBStreamEvent } from "aws-lambda";
+import { unmarshall } from "@aws-sdk/util-dynamodb";
 import {
   SendMessageCommand,
   SendMessageRequest,
   SQSClient,
 } from "@aws-sdk/client-sqs";
 import { DynamoDBDocumentClient, GetCommand } from "@aws-sdk/lib-dynamodb";
-import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { AttributeValue, DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import {
   Service,
   TxmaEvent,
@@ -90,8 +91,11 @@ export const handler = async (event: DynamoDBStreamEvent): Promise<void> => {
   await Promise.all(
     Records.map(async (record) => {
       try {
-        const eventBody = record.dynamodb?.NewImage?.event.S as string;
-        const txmaEvent: TxmaEvent = JSON.parse(eventBody);
+        const txmaEvent = unmarshall(
+          record.dynamodb?.NewImage?.event.M as {
+            [key: string]: AttributeValue;
+          }
+        ) as TxmaEvent;
         validateTxmaEventBody(txmaEvent);
         const results = await queryUserServices(txmaEvent.user.user_id);
         const messageId = await sendSqsMessage(

@@ -265,7 +265,10 @@ Resources:
               - sqs:ReceiveMessage
               - sqs:DeleteMessage
               - sqs:GetQueueAttributes
-            Resource: !GetAtt TxMAInputDummyQueue.Arn
+            Resource: !If
+              - UseInternalEvents
+              - !GetAtt TxMAInputDummyQueue.Arn
+              - !FindInMap [InputQueue, !Ref Environment, QueueArn]
           - Effect: Allow
             Action:
               - sqs:SendMessage
@@ -287,6 +290,10 @@ Resources:
             Resource:
               - !GetAtt QueueKmsKey.Arn
               - !GetAtt DatabaseKmsKey.Arn
+              - !If
+                - UseInternalEvents
+                - !Ref AWS::NoValue
+                - !FindInMap [InputQueue, !Ref Environment, KeyArn]
 
   SaveRawEventsFunctionLogGroup:
     Type: AWS::Logs::LogGroup

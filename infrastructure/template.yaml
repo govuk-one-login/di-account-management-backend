@@ -55,6 +55,10 @@ Conditions:
           - !Ref Environment
           - "dev"
 
+  UseInternalEvents: !Or
+    - !Equals [ !Ref Environment, dev ]
+    - !Equals [ !Ref Environment, build ]
+
 Globals:
   Function:
     CodeSigningConfigArn: !If
@@ -65,6 +69,11 @@ Globals:
       - UsePermissionsBoundary
       - !Ref PermissionsBoundary
       - !Ref AWS::NoValue
+
+Mappings:
+  InputQueue:
+    staging: 
+      QueueArn: "arn:aws:sqs:eu-west-2:178023842775:PublishToAccountsSQSQueue-staging"
 
 Resources:
   ######################################
@@ -165,10 +174,13 @@ Resources:
       Architectures: ["x86_64"]
       CodeUri: ../lambda/save-raw-events/
       Events:
-        TxMAInputDummyQueue:
+        InputQueue:
           Type: SQS
           Properties:
-            Queue: !GetAtt TxMAInputDummyQueue.Arn
+            Queue: !If
+              - UseInternalEvents
+              - !GetAtt TxMAInputDummyQueue.Arn
+              - !FindInMap [InputQueue, !Ref Environment, QueueArn]
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt SaveRawEventsDeadLetterQueue.Arn

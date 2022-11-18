@@ -76,14 +76,19 @@ Mappings:
   InputQueue:
     dev: 
       QueueArn: ""
+      KeyArn: ""
     build: 
       QueueArn: ""
+      KeyArn: ""
     staging: 
       QueueArn: "arn:aws:sqs:eu-west-2:178023842775:PublishToAccountsSQSQueue-staging"
+      KeyArn: "arn:aws:kms:eu-west-2:178023842775:key/0b1e15d0-ea22-440e-b153-3842d60293ad"
     integration: 
       QueueArn: ""
+      KeyArn: ""
     production: 
       QueueArn: ""
+      KeyArn: ""
 
 Resources:
   ######################################
@@ -260,7 +265,10 @@ Resources:
               - sqs:ReceiveMessage
               - sqs:DeleteMessage
               - sqs:GetQueueAttributes
-            Resource: !GetAtt TxMAInputDummyQueue.Arn
+            Resource: !If
+              - UseInternalEvents
+              - !GetAtt TxMAInputDummyQueue.Arn
+              - !FindInMap [InputQueue, !Ref Environment, QueueArn]
           - Effect: Allow
             Action:
               - sqs:SendMessage
@@ -282,6 +290,10 @@ Resources:
             Resource:
               - !GetAtt QueueKmsKey.Arn
               - !GetAtt DatabaseKmsKey.Arn
+              - !If
+                - UseInternalEvents
+                - !Ref AWS::NoValue
+                - !FindInMap [InputQueue, !Ref Environment, KeyArn]
 
   SaveRawEventsFunctionLogGroup:
     Type: AWS::Logs::LogGroup

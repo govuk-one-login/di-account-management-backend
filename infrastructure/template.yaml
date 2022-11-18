@@ -58,6 +58,8 @@ Conditions:
   UseInternalEvents: !Or
     - !Equals [ !Ref Environment, dev ]
     - !Equals [ !Ref Environment, build ]
+    - !Equals [ !Ref Environment, integration ]
+    - !Equals [ !Ref Environment, production ]
 
 Globals:
   Function:

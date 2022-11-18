@@ -76,14 +76,19 @@ Mappings:
   InputQueue:
     dev: 
       QueueArn: ""
+      KeyArn: ""
     build: 
       QueueArn: ""
+      KeyArn: ""
     staging: 
       QueueArn: "arn:aws:sqs:eu-west-2:178023842775:PublishToAccountsSQSQueue-staging"
+      KeyArn: "arn:aws:kms:eu-west-2:178023842775:key/0b1e15d0-ea22-440e-b153-3842d60293ad"
     integration: 
       QueueArn: ""
+      KeyArn: ""
     production: 
       QueueArn: ""
+      KeyArn: ""
 
 Resources:
   ######################################

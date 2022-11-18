@@ -74,8 +74,16 @@ Globals:
 
 Mappings:
   InputQueue:
+    dev: 
+      QueueArn: ""
+    build: 
+      QueueArn: ""
     staging: 
       QueueArn: "arn:aws:sqs:eu-west-2:178023842775:PublishToAccountsSQSQueue-staging"
+    integration: 
+      QueueArn: ""
+    production: 
+      QueueArn: ""
 
 Resources:
   ######################################

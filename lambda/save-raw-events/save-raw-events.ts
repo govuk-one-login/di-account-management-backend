@@ -84,6 +84,7 @@ export const handler = async (event: SQSEvent): Promise<void> => {
         await writeRawTxmaEvent(txmaEvent);
       } catch (err) {
         console.error(err);
+        console.log(record);
         const message: SendMessageRequest = {
           QueueUrl: DLQ_URL,
           MessageBody: record.body,

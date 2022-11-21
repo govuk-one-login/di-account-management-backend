@@ -234,6 +234,7 @@ describe("handler", () => {
 
 describe("handler error handling", () => {
   let consoleErrorMock: jest.SpyInstance;
+  let consoleLogMock: jest.SpyInstance;
 
   beforeEach(() => {
     dynamoMock.reset();
@@ -241,15 +242,21 @@ describe("handler error handling", () => {
     process.env.TABLE_NAME = "TABLE_NAME";
     process.env.DLQ_URL = "DLQ_URL";
     consoleErrorMock = jest.spyOn(global.console, "error").mockImplementation();
+    consoleLogMock = jest.spyOn(global.console, "log").mockImplementation();
     dynamoMock.rejectsOnce("mock error");
   });
   afterEach(() => {
     consoleErrorMock.mockRestore();
+    consoleLogMock.mockRestore();
     jest.clearAllMocks();
   });
   test("logs the error message", async () => {
     await handler(TEST_SQS_EVENT);
     expect(consoleErrorMock).toHaveBeenCalledTimes(1);
+  });
+  test("logs the record", async () => {
+    await handler(TEST_SQS_EVENT);
+    expect(consoleLogMock).toHaveBeenCalledTimes(1);
   });
   test("sends the event to the dead letter queue", async () => {
     await handler(TEST_SQS_EVENT);

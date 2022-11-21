@@ -819,6 +819,14 @@ Resources:
         deadLetterTargetArn: !GetAtt UserAccountDeletionTopicDeadLetterQueue.Arn
       TopicArn: !Ref UserAccountDeletionTopic
 
+  DeleteTopicArnParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Description: The ARN of the Delete Event Topic
+      Name: !Sub "/${AWS::StackName}/SNS/DeleteTopic/ARN"
+      Type: String
+      Value: !Ref UserAccountDeletionTopic
+
   DeleteUserServicesLambdaInvokePermission:
     Type: AWS::Lambda::Permission
     Properties:

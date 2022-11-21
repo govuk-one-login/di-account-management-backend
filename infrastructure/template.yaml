@@ -56,10 +56,10 @@ Conditions:
           - "dev"
 
   UseInternalEvents: !Or
-    - !Equals [ !Ref Environment, dev ]
-    - !Equals [ !Ref Environment, build ]
-    - !Equals [ !Ref Environment, integration ]
-    - !Equals [ !Ref Environment, production ]
+    - !Equals [!Ref Environment, dev]
+    - !Equals [!Ref Environment, build]
+    - !Equals [!Ref Environment, integration]
+    - !Equals [!Ref Environment, production]
 
 Globals:
   Function:
@@ -74,19 +74,19 @@ Globals:
 
 Mappings:
   InputQueue:
-    dev: 
+    dev:
       QueueArn: ""
       KeyArn: ""
-    build: 
+    build:
       QueueArn: ""
       KeyArn: ""
-    staging: 
+    staging:
       QueueArn: "arn:aws:sqs:eu-west-2:178023842775:PublishToAccountsSQSQueue-staging"
       KeyArn: "arn:aws:kms:eu-west-2:178023842775:key/0b1e15d0-ea22-440e-b153-3842d60293ad"
-    integration: 
+    integration:
       QueueArn: ""
       KeyArn: ""
-    production: 
+    production:
       QueueArn: ""
       KeyArn: ""
 
@@ -818,6 +818,14 @@ Resources:
       RedrivePolicy:
         deadLetterTargetArn: !GetAtt UserAccountDeletionTopicDeadLetterQueue.Arn
       TopicArn: !Ref UserAccountDeletionTopic
+
+  DeleteTopicArnParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Description: The ARN of the Delete Event Topic
+      Name: !Sub "/${AWS::StackName}/SNS/DeleteTopic/ARN"
+      Type: String
+      Value: !Ref UserAccountDeletionTopic
 
   DeleteUserServicesLambdaInvokePermission:
     Type: AWS::Lambda::Permission

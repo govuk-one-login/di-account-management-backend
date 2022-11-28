@@ -632,6 +632,14 @@ Resources:
       KmsMasterKeyId: !Ref SnsKmsKey
       TopicName: UserAccountDeletion
 
+  UserAccountDeletionTopicArnParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Description: !Sub "The ARN of the ${AWS::StackName} UserAccountDeletionTopic"
+      Name: !Sub "/${AWS::StackName}/SNS/DeleteTopic/ARN"
+      Type: String
+      Value: !Ref UserAccountDeletionTopic
+
   DeleteUserServicesSubscription:
     Type: AWS::SNS::Subscription
     Properties:

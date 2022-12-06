@@ -29,7 +29,7 @@ export const validateUserData = (userData: UserData): UserData => {
   if (userData.user_id) {
     return userData;
   }
-  throw new Error(`userData did not have a user_id ${userData}`);
+  throw new Error(`userData did not have a user_id: ${JSON.stringify(userData)}`);
 };
 
 export const deleteUserData = async (

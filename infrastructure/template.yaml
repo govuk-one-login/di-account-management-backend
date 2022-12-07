@@ -1188,3 +1188,11 @@ Resources:
     Properties:
       AliasName: !Sub "alias/${AWS::StackName}/${Environment}/SnsKmsKey"
       TargetKeyId: !Ref SnsKmsKey
+
+  SnsKmsKeyIDParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Description: The ID of the SNS KMS Key
+      Name: !Sub "/${AWS::StackName}/KMS/SnsKmsKey/ID"
+      Type: String
+      Value: !Ref SnsKmsKey

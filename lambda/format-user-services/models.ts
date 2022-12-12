@@ -9,18 +9,21 @@ export interface UserRecordEvent {
 export interface Service {
   client_id: ClientId;
   count_successful_logins: number;
-  last_accessed: string;
+  last_accessed: number;
 }
 
 export interface TxmaEvent {
+  event_id: string;
+  timestamp: number;
+  timestamp_formatted: string;
   event_name: string;
-  timestamp: string;
   client_id: ClientId;
   user: UserData;
 }
 
 export interface UserData {
   user_id: UrnFdnSub;
+  govuk_signin_journey_id: string;
 }
 
 export interface UserServices {

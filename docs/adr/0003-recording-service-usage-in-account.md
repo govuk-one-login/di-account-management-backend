@@ -81,7 +81,7 @@ export interface UserServices {
 export interface Service {
   client_id: ClientId;
   count_successful_logins: number;
-  last_accessed: Date;
+  last_accessed: number;
 }
 ```
 

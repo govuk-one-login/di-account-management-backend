@@ -18,14 +18,20 @@ const sqsMock = mockClient(SQSClient);
 const userId = "user_id";
 const user: UserData = {
   user_id: userId,
+  govuk_signin_journey_id: "govuk_signin_journey_id",
 };
+
+const date = new Date();
+
 const TEST_TXMA_EVENT: TxmaEvent = {
-  event_name: "event_1",
-  timestamp: new Date().toISOString(),
+  event_id: "ab12345a-a12b-3ced-ef12-12a3b4cd5678",
+  timestamp: date.getTime(),
+  timestamp_formatted: date.toISOString(),
+  event_name: "AUTH_AUTH_CODE_ISSUED",
   client_id: "client_id",
-  component_id: "component_id",
   user,
 };
+
 const TEST_SQS_RECORD: SQSRecord = {
   messageId: "19dd0b57-b21e-4ac1-bd88-01bbb068cb78",
   receiptHandle: "MessageReceiptHandle",
@@ -94,11 +100,12 @@ describe("validateTxmaEventBody", () => {
       JSON.stringify({
         services: [
           {
-            timestamp: new Date().toISOString,
+            timestamp: date.valueOf(),
+            timestamp_formatted: date.toISOString(),
             event_name: "event_name",
-            component_id: "component_id",
             user: {
               user_id: "user_id",
+              govuk_signin_journey_id: "abc123",
             },
           },
         ],
@@ -114,10 +121,11 @@ describe("validateTxmaEventBody", () => {
         services: [
           {
             client_id: "client_id",
+            timestamp_formatted: date.toISOString(),
             event_name: "event_name",
-            component_id: "component_id",
             user: {
               user_id: "user_id",
+              govuk_signin_journey_id: "abc123",
             },
           },
         ],
@@ -133,29 +141,11 @@ describe("validateTxmaEventBody", () => {
         services: [
           {
             client_id: "client_id",
-            timestamp: new Date().toISOString,
-            component_id: "component_id",
+            timestamp: date.valueOf(),
+            timestamp_formatted: date.toISOString(),
             user: {
               user_id: "user_id",
-            },
-          },
-        ],
-      })
-    );
-    expect(() => {
-      validateTxmaEventBody(txmaEvent);
-    }).toThrowError();
-  });
-  test("throws error when component_id is missing", () => {
-    const txmaEvent = JSON.parse(
-      JSON.stringify({
-        services: [
-          {
-            client_id: "client_id",
-            timestamp: new Date().toISOString,
-            event_name: "event_name",
-            user: {
-              user_id: "user_id",
+              govuk_signin_journey_id: "abc123",
             },
           },
         ],
@@ -171,9 +161,9 @@ describe("validateTxmaEventBody", () => {
         services: [
           {
             client_id: "client_id",
-            timestamp: new Date().toISOString,
+            timestamp: date.valueOf(),
+            timestamp_formatted: date.toISOString(),
             event_name: "event_name",
-            component_id: "component_id",
           },
         ],
       })
@@ -182,15 +172,15 @@ describe("validateTxmaEventBody", () => {
       validateTxmaEventBody(txmaEvent);
     }).toThrowError();
   });
-  test("throws error when user_id  is missing", () => {
+  test("throws error when user_id is missing", () => {
     const txmaEvent = JSON.parse(
       JSON.stringify({
         services: [
           {
             client_id: "client_id",
-            timestamp: new Date().toISOString,
+            timestamp: date.valueOf(),
+            timestamp_formatted: date.toISOString(),
             event_name: "event_name",
-            component_id: "component_id",
             user: {},
           },
         ],

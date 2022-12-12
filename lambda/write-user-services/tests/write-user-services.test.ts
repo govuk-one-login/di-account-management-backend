@@ -15,7 +15,7 @@ const TEST_USER_SERVICES: UserServices = {
   services: [
     {
       client_id: "client_id",
-      last_accessed: new Date(),
+      last_accessed: new Date().valueOf().valueOf(),
       count_successful_logins: 1,
     },
   ],
@@ -116,7 +116,7 @@ describe("validateUserServices", () => {
           services: [
             {
               client_id: "client_id",
-              last_accessed: new Date(),
+              last_accessed: new Date().valueOf().valueOf(),
               count_successful_logins: 1,
             },
           ],
@@ -144,7 +144,7 @@ describe("validateUserServices", () => {
           user_id: "user-id",
           services: [
             {
-              last_accessed: new Date(),
+              last_accessed: new Date().valueOf(),
               count_successful_logins: 1,
             },
           ],
@@ -167,7 +167,7 @@ describe("validateServices", () => {
       JSON.stringify([
         {
           client_id: "client_id",
-          last_accessed: new Date(),
+          last_accessed: new Date().valueOf(),
           count_successful_logins: 1,
         },
       ])
@@ -180,7 +180,7 @@ describe("validateServices", () => {
       const services = parseServices(
         JSON.stringify([
           {
-            last_accessed: new Date(),
+            last_accessed: new Date().valueOf(),
             count_successful_logins: 1,
           },
         ])
@@ -209,7 +209,7 @@ describe("validateServices", () => {
         JSON.stringify([
           {
             client_id: "client-id",
-            last_accessed: new Date(),
+            last_accessed: new Date().valueOf(),
           },
         ])
       );
@@ -223,7 +223,7 @@ describe("validateServices", () => {
         JSON.stringify([
           {
             client_id: "client-id",
-            last_accessed: new Date(),
+            last_accessed: new Date().valueOf(),
             count_successful_logins: -1,
           },
         ])

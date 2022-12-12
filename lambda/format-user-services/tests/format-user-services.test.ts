@@ -29,7 +29,7 @@ describe("newServicePresenter", () => {
     expect(newServicePresenter(TXMA_EVENT)).toEqual({
       client_id: "clientID1234",
       count_successful_logins: 1,
-      last_accessed: "2022-01-01T12:00:00.000Z",
+      last_accessed: 1670850655485,
     });
   });
 });
@@ -38,9 +38,9 @@ describe("existingServicePresenter", () => {
   const existingServiceRecord = makeServiceRecord(
     "clientID1234",
     4,
-    "2022-01-01T12:00:00.000Z"
+    1670850655485
   );
-  const lastAccessed = "2022-02-01T12:00:00.000Z";
+  const lastAccessed = 1670850655485;
 
   test("modifies existing Service record", () => {
     expect(
@@ -248,9 +248,7 @@ describe("handler", () => {
     ]);
     const outputSQSEventMessageBodies: UserServices = {
       user_id: userId,
-      services: [
-        makeServiceRecord(serviceClientID, 1, "2022-01-01T12:00:00.000Z"),
-      ],
+      services: [makeServiceRecord(serviceClientID, 1, 1670850655485)],
     };
     await handler({ Records: inputSQSEvent });
     expect(sqsMock).toHaveReceivedCommandWith(SendMessageCommand, {
@@ -261,7 +259,7 @@ describe("handler", () => {
 
   test("it writes a formatted SQS event when TxMA event matched a stored user service", async () => {
     const serviceListWithExistingService = [
-      makeServiceRecord(serviceClientID, 10, "2022-01-01T12:00:00.000Z"),
+      makeServiceRecord(serviceClientID, 10, 1670850655485),
     ] as Service[];
     const inputSQSEvent = makeSQSInputFixture([
       {
@@ -271,9 +269,7 @@ describe("handler", () => {
     ]);
     const outputSQSEventMessageBodies: UserServices = {
       user_id: userId,
-      services: [
-        makeServiceRecord(serviceClientID, 11, "2022-01-01T12:00:00.000Z"),
-      ],
+      services: [makeServiceRecord(serviceClientID, 11, 1670850655485)],
     };
     await handler({ Records: inputSQSEvent });
     expect(sqsMock).toHaveReceivedCommandWith(SendMessageCommand, {
@@ -286,7 +282,7 @@ describe("handler", () => {
     const anotherService = makeServiceRecord(
       "anotherClientId",
       10,
-      "2022-01-01T12:00:00.000Z"
+      1670850655485
     );
 
     const inputSQSEvent = makeSQSInputFixture([
@@ -298,7 +294,7 @@ describe("handler", () => {
     const outputSQSEventMessageBodies: UserServices = {
       user_id: userId,
       services: [
-        makeServiceRecord(serviceClientID, 1, "2022-01-01T12:00:00.000Z"),
+        makeServiceRecord(serviceClientID, 1, 1670850655485),
         anotherService,
       ],
     };

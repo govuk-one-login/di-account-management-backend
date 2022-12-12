@@ -41,10 +41,9 @@ const validateUser = (user: UserData): void => {
 
 const validateTxmaEvent = (txmaEvent: TxmaEvent): void => {
   if (
-    txmaEvent.client_id !== undefined &&
     txmaEvent.timestamp !== undefined &&
     txmaEvent.event_name !== undefined &&
-    txmaEvent.component_id !== undefined &&
+    txmaEvent.client_id !== undefined &&
     txmaEvent.user !== undefined
   ) {
     validateUser(txmaEvent.user);
@@ -71,7 +70,7 @@ export const newServicePresenter = (TxmaEvent: TxmaEvent): Service => ({
 
 export const existingServicePresenter = (
   service: Service,
-  lastAccessed: string
+  lastAccessed: number
 ): Service => ({
   client_id: service.client_id,
   count_successful_logins: service.count_successful_logins + 1,

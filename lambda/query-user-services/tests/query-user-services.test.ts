@@ -19,15 +19,20 @@ import {
 } from "../query-user-services";
 
 const userId = "user_id";
-const timestamp = new Date().valueOf().toString();
+const date = new Date();
+const timestamp = date.valueOf();
+const timestampFormatted = date.toISOString();
+const govukSigninJourneyId = "abc123";
 const user: UserData = {
   user_id: userId,
+  govuk_signin_journey_id: govukSigninJourneyId,
 };
 const TEST_TXMA_EVENT: TxmaEvent = {
+  event_id: "event_id",
   event_name: "event_name",
   timestamp,
+  timestamp_formatted: timestampFormatted,
   client_id: "client_id",
-  component_id: "component_id",
   user,
 };
 
@@ -44,22 +49,28 @@ const TEST_DYNAMO_STREAM_RECORD: DynamoDBRecord = {
       timestamp: { N: `${Date.now()}` },
       event: {
         M: {
+          event_id: {
+            S: "event_id",
+          },
           event_name: {
             S: "event_name",
           },
           timestamp: {
-            S: timestamp,
+            N: `${timestamp}`,
+          },
+          timestamp_formatted: {
+            S: timestampFormatted,
           },
           client_id: {
             S: "client_id",
-          },
-          component_id: {
-            S: "component_id",
           },
           user: {
             M: {
               user_id: {
                 S: userId,
+              },
+              govuk_signin_journey_id: {
+                S: govukSigninJourneyId,
               },
             },
           },
@@ -84,7 +95,7 @@ describe("queryUserServices", () => {
     {
       client_id: "client_id",
       count_successful_logins: 2,
-      last_accessed: new Date(),
+      last_accessed: new Date().valueOf(),
     },
   ];
 
@@ -124,7 +135,6 @@ describe("validateTxmaEventBody", () => {
           {
             timestamp: new Date().toISOString,
             event_name: "event_name",
-            component_id: "component_id",
             user: {
               user_id: "user_id",
             },
@@ -143,7 +153,6 @@ describe("validateTxmaEventBody", () => {
           {
             client_id: "client_id",
             event_name: "event_name",
-            component_id: "component_id",
             user: {
               user_id: "user_id",
             },
@@ -162,26 +171,6 @@ describe("validateTxmaEventBody", () => {
           {
             client_id: "client_id",
             timestamp: new Date().toISOString,
-            component_id: "component_id",
-            user: {
-              user_id: "user_id",
-            },
-          },
-        ],
-      })
-    );
-    expect(() => {
-      validateTxmaEventBody(txmaEvent);
-    }).toThrowError();
-  });
-  test("throws error when component_id is missing", () => {
-    const txmaEvent = JSON.parse(
-      JSON.stringify({
-        services: [
-          {
-            client_id: "client_id",
-            timestamp: new Date().toISOString,
-            event_name: "event_name",
             user: {
               user_id: "user_id",
             },
@@ -201,7 +190,6 @@ describe("validateTxmaEventBody", () => {
             client_id: "client_id",
             timestamp: new Date().toISOString,
             event_name: "event_name",
-            component_id: "component_id",
           },
         ],
       })
@@ -218,7 +206,6 @@ describe("validateTxmaEventBody", () => {
             client_id: "client_id",
             timestamp: new Date().toISOString,
             event_name: "event_name",
-            component_id: "component_id",
             user: {},
           },
         ],
@@ -243,7 +230,7 @@ describe("sendSqsMessage", () => {
       {
         client_id: "client_id",
         count_successful_logins: 2,
-        last_accessed: new Date(),
+        last_accessed: new Date().valueOf(),
       },
     ],
   };
@@ -275,7 +262,7 @@ describe("handler", () => {
     {
       client_id: "client_id",
       count_successful_logins: 2,
-      last_accessed: new Date(),
+      last_accessed: new Date().valueOf(),
     },
   ];
 
@@ -302,7 +289,7 @@ describe("handler", () => {
       {
         client_id: "client_id",
         count_successful_logins: 2,
-        last_accessed: new Date(),
+        last_accessed: new Date().valueOf(),
       },
     ],
   };

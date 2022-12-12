@@ -52,5 +52,5 @@ Once the application is deployed to `dev` we can test it by adding a fake event 
 ```bash
 gds aws di-account-dev -- aws sqs send-message \
   --queue-url QUEUE_URL \
-  --message-body '{"event_name":"event-name","timestamp":1666169856,"client_id":"client-id","component_id":"component-id","user":{"user_id":"user_id"}}'
+  --message-body '{"event_name":"event-name","timestamp":1666169856,"client_id":"client-id","user":{"user_id":"user_id"}}'
 ```

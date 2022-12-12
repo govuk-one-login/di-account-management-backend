@@ -19,13 +19,19 @@ import {
 } from "../query-user-services";
 
 const userId = "user_id";
-const timestamp = new Date().valueOf().toString();
+const date = new Date();
+const timestamp = date.valueOf();
+const timestampFormatted = date.toISOString();
+const govukSigninJourneyId = "abc123";
 const user: UserData = {
   user_id: userId,
+  govuk_signin_journey_id: govukSigninJourneyId,
 };
 const TEST_TXMA_EVENT: TxmaEvent = {
+  event_id: "event_id",
   event_name: "event_name",
   timestamp,
+  timestamp_formatted: timestampFormatted,
   client_id: "client_id",
   user,
 };
@@ -43,11 +49,17 @@ const TEST_DYNAMO_STREAM_RECORD: DynamoDBRecord = {
       timestamp: { N: `${Date.now()}` },
       event: {
         M: {
+          event_id: {
+            S: "event_id",
+          },
           event_name: {
             S: "event_name",
           },
           timestamp: {
-            S: timestamp,
+            N: `${timestamp}`,
+          },
+          timestamp_formatted: {
+            S: timestampFormatted,
           },
           client_id: {
             S: "client_id",
@@ -56,6 +68,9 @@ const TEST_DYNAMO_STREAM_RECORD: DynamoDBRecord = {
             M: {
               user_id: {
                 S: userId,
+              },
+              govuk_signin_journey_id: {
+                S: govukSigninJourneyId,
               },
             },
           },

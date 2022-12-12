@@ -15,7 +15,7 @@ const validateUserService = (service: Service): void => {
       service.last_accessed !== undefined
     )
   ) {
-    throw new Error(`Could not validate Service ${service}`);
+    throw new Error(`Could not validate Service ${JSON.stringify(service)}`);
   }
 };
 
@@ -29,13 +29,15 @@ const validateUserServices = (services: Service[]): void => {
     const duplicateServices = filteredServices.filter((service) =>
       filteredServices.includes(service)
     );
-    throw new Error(`Duplicate service client_ids found: ${duplicateServices}`);
+    throw new Error(
+      `Duplicate service client_ids found: ${JSON.stringify(duplicateServices)}`
+    );
   }
 };
 
 const validateUser = (user: UserData): void => {
   if (user.user_id === undefined) {
-    throw new Error(`Could not find User ${user}`);
+    throw new Error(`Could not find User ${JSON.stringify(user)}`);
   }
 };
 

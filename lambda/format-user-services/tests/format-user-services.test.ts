@@ -97,7 +97,7 @@ describe("validateAndParseSQSRecord", () => {
     ])[0];
 
     expect(() => validateAndParseSQSRecord(invalidSQSFixture)).toThrowError(
-      `Could not find User ${{}}`
+      `Could not find User ${JSON.stringify({})}`
     );
   });
 
@@ -114,7 +114,7 @@ describe("validateAndParseSQSRecord", () => {
     ])[0];
 
     expect(() => validateAndParseSQSRecord(invalidSQSFixture)).toThrowError(
-      `Duplicate service client_ids found: clientID1234`
+      `Duplicate service client_ids found: ["clientID1234"]`
     );
   });
 
@@ -134,7 +134,9 @@ describe("validateAndParseSQSRecord", () => {
     ])[0];
 
     expect(() => validateAndParseSQSRecord(invalidSQSFixture)).toThrowError(
-      `Could not validate Service ${invalidUserRecord.ServiceList[0]}`
+      `Could not validate Service ${JSON.stringify(
+        invalidUserRecord.ServiceList[0]
+      )}`
     );
   });
 });

@@ -95,7 +95,10 @@ describe("queryUserServices", () => {
     {
       client_id: "client_id",
       count_successful_logins: 2,
-      last_accessed: new Date().valueOf(),
+      last_accessed: date.valueOf(),
+      last_accessed_pretty: new Intl.DateTimeFormat("en-GB", {
+        dateStyle: "long",
+      }).format(date),
     },
   ];
 
@@ -230,7 +233,10 @@ describe("sendSqsMessage", () => {
       {
         client_id: "client_id",
         count_successful_logins: 2,
-        last_accessed: new Date().valueOf(),
+        last_accessed: date.valueOf(),
+        last_accessed_pretty: new Intl.DateTimeFormat("en-GB", {
+          dateStyle: "long",
+        }).format(date),
       },
     ],
   };
@@ -262,7 +268,10 @@ describe("handler", () => {
     {
       client_id: "client_id",
       count_successful_logins: 2,
-      last_accessed: new Date().valueOf(),
+      last_accessed: date.valueOf(),
+      last_accessed_pretty: new Intl.DateTimeFormat("en-GB", {
+        dateStyle: "long",
+      }).format(date),
     },
   ];
 
@@ -289,7 +298,10 @@ describe("handler", () => {
       {
         client_id: "client_id",
         count_successful_logins: 2,
-        last_accessed: new Date().valueOf(),
+        last_accessed: date.valueOf(),
+        last_accessed_pretty: new Intl.DateTimeFormat("en-GB", {
+          dateStyle: "long",
+        }).format(date),
       },
     ],
   };

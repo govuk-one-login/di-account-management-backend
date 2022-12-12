@@ -18,6 +18,7 @@ export interface Service {
   client_id: ClientId;
   count_successful_logins: number;
   last_accessed: number;
+  last_accessed_pretty: string;
 }
 
 export interface UserData {

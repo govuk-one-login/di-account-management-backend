@@ -10,12 +10,17 @@ import {
 } from "../write-user-services";
 import { Service, UserServices } from "../models";
 
+const date = new Date();
+
 const TEST_USER_SERVICES: UserServices = {
   user_id: "user-id",
   services: [
     {
       client_id: "client_id",
-      last_accessed: new Date().valueOf().valueOf(),
+      last_accessed: date.valueOf(),
+      last_accessed_pretty: new Intl.DateTimeFormat("en-GB", {
+        dateStyle: "long",
+      }).format(date),
       count_successful_logins: 1,
     },
   ],
@@ -167,7 +172,10 @@ describe("validateServices", () => {
       JSON.stringify([
         {
           client_id: "client_id",
-          last_accessed: new Date().valueOf(),
+          last_accessed: date.valueOf(),
+          last_accessed_pretty: new Intl.DateTimeFormat("en-GB", {
+            dateStyle: "long",
+          }).format(date),
           count_successful_logins: 1,
         },
       ])
@@ -180,7 +188,10 @@ describe("validateServices", () => {
       const services = parseServices(
         JSON.stringify([
           {
-            last_accessed: new Date().valueOf(),
+            last_accessed: date.valueOf(),
+            last_accessed_pretty: new Intl.DateTimeFormat("en-GB", {
+              dateStyle: "long",
+            }).format(date),
             count_successful_logins: 1,
           },
         ])
@@ -194,6 +205,24 @@ describe("validateServices", () => {
       const services = parseServices(
         JSON.stringify([
           {
+            client_id: "client-id",
+            count_successful_logins: 1,
+            last_accessed_pretty: new Intl.DateTimeFormat("en-GB", {
+              dateStyle: "long",
+            }).format(date),
+          },
+        ])
+      );
+      expect(() => {
+        validateServices(services);
+      }).toThrowError();
+    });
+
+    test("when last_accessed_pretty is missing", () => {
+      const services = parseServices(
+        JSON.stringify([
+          {
+            last_accessed: date.valueOf(),
             client_id: "client-id",
             count_successful_logins: 1,
           },

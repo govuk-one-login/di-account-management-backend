@@ -100,10 +100,12 @@ describe("validateTxmaEventBody", () => {
       JSON.stringify({
         services: [
           {
-            timestamp: new Date().toISOString,
+            timestamp: date.valueOf(),
+            timestamp_formatted: date.toISOString(),
             event_name: "event_name",
             user: {
               user_id: "user_id",
+              govuk_signin_journey_id: "abc123",
             },
           },
         ],
@@ -119,9 +121,11 @@ describe("validateTxmaEventBody", () => {
         services: [
           {
             client_id: "client_id",
+            timestamp_formatted: date.toISOString(),
             event_name: "event_name",
             user: {
               user_id: "user_id",
+              govuk_signin_journey_id: "abc123",
             },
           },
         ],
@@ -137,9 +141,11 @@ describe("validateTxmaEventBody", () => {
         services: [
           {
             client_id: "client_id",
-            timestamp: new Date().toISOString,
+            timestamp: date.valueOf(),
+            timestamp_formatted: date.toISOString(),
             user: {
               user_id: "user_id",
+              govuk_signin_journey_id: "abc123",
             },
           },
         ],
@@ -155,7 +161,8 @@ describe("validateTxmaEventBody", () => {
         services: [
           {
             client_id: "client_id",
-            timestamp: new Date().toISOString,
+            timestamp: date.valueOf(),
+            timestamp_formatted: date.toISOString(),
             event_name: "event_name",
           },
         ],
@@ -165,13 +172,14 @@ describe("validateTxmaEventBody", () => {
       validateTxmaEventBody(txmaEvent);
     }).toThrowError();
   });
-  test("throws error when user_id  is missing", () => {
+  test("throws error when user_id is missing", () => {
     const txmaEvent = JSON.parse(
       JSON.stringify({
         services: [
           {
             client_id: "client_id",
-            timestamp: new Date().toISOString,
+            timestamp: date.valueOf(),
+            timestamp_formatted: date.toISOString(),
             event_name: "event_name",
             user: {},
           },

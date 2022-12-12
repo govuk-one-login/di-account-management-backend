@@ -27,7 +27,6 @@ const TEST_TXMA_EVENT: TxmaEvent = {
   event_name: "event_name",
   timestamp,
   client_id: "client_id",
-  component_id: "component_id",
   user,
 };
 
@@ -52,9 +51,6 @@ const TEST_DYNAMO_STREAM_RECORD: DynamoDBRecord = {
           },
           client_id: {
             S: "client_id",
-          },
-          component_id: {
-            S: "component_id",
           },
           user: {
             M: {
@@ -124,7 +120,6 @@ describe("validateTxmaEventBody", () => {
           {
             timestamp: new Date().toISOString,
             event_name: "event_name",
-            component_id: "component_id",
             user: {
               user_id: "user_id",
             },
@@ -143,7 +138,6 @@ describe("validateTxmaEventBody", () => {
           {
             client_id: "client_id",
             event_name: "event_name",
-            component_id: "component_id",
             user: {
               user_id: "user_id",
             },
@@ -162,26 +156,6 @@ describe("validateTxmaEventBody", () => {
           {
             client_id: "client_id",
             timestamp: new Date().toISOString,
-            component_id: "component_id",
-            user: {
-              user_id: "user_id",
-            },
-          },
-        ],
-      })
-    );
-    expect(() => {
-      validateTxmaEventBody(txmaEvent);
-    }).toThrowError();
-  });
-  test("throws error when component_id is missing", () => {
-    const txmaEvent = JSON.parse(
-      JSON.stringify({
-        services: [
-          {
-            client_id: "client_id",
-            timestamp: new Date().toISOString,
-            event_name: "event_name",
             user: {
               user_id: "user_id",
             },
@@ -201,7 +175,6 @@ describe("validateTxmaEventBody", () => {
             client_id: "client_id",
             timestamp: new Date().toISOString,
             event_name: "event_name",
-            component_id: "component_id",
           },
         ],
       })
@@ -218,7 +191,6 @@ describe("validateTxmaEventBody", () => {
             client_id: "client_id",
             timestamp: new Date().toISOString,
             event_name: "event_name",
-            component_id: "component_id",
             user: {},
           },
         ],

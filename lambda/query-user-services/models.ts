@@ -9,7 +9,6 @@ export interface TxmaEvent {
   event_name: string;
   timestamp: string;
   client_id: ClientId;
-  component_id: string;
   user: UserData;
 }
 export interface Service {

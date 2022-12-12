@@ -1097,6 +1097,14 @@ Resources:
       AliasName: !Sub "alias/${AWS::StackName}/${Environment}/DatabaseKmsKey"
       TargetKeyId: !Ref DatabaseKmsKey
 
+  DatabaseKmsKeyIDParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Description: The ID of the Database KMS Key
+      Name: !Sub "/${AWS::StackName}/KMS/DatabaseKmsKey/ID"
+      Type: String
+      Value: !Ref DatabaseKmsKey
+
   LambdaKMSKey:
     Type: AWS::KMS::Key
     Properties:

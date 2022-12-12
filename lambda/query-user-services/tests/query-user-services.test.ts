@@ -95,7 +95,7 @@ describe("queryUserServices", () => {
     {
       client_id: "client_id",
       count_successful_logins: 2,
-      last_accessed: new Date(),
+      last_accessed: new Date().valueOf(),
     },
   ];
 
@@ -230,7 +230,7 @@ describe("sendSqsMessage", () => {
       {
         client_id: "client_id",
         count_successful_logins: 2,
-        last_accessed: new Date(),
+        last_accessed: new Date().valueOf(),
       },
     ],
   };
@@ -262,7 +262,7 @@ describe("handler", () => {
     {
       client_id: "client_id",
       count_successful_logins: 2,
-      last_accessed: new Date(),
+      last_accessed: new Date().valueOf(),
     },
   ];
 
@@ -289,7 +289,7 @@ describe("handler", () => {
       {
         client_id: "client_id",
         count_successful_logins: 2,
-        last_accessed: new Date(),
+        last_accessed: new Date().valueOf(),
       },
     ],
   };

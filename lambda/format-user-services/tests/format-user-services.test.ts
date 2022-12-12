@@ -10,6 +10,7 @@ import {
   sendSqsMessage,
   conditionallyUpsertServiceList,
   formatRecord,
+  prettifyDate,
   handler,
 } from "../format-user-services";
 
@@ -219,6 +220,13 @@ describe("sendSqsMessage", () => {
       QueueUrl: queueURL,
       MessageBody: userRecordEvents,
     });
+  });
+});
+
+describe("prettifyDate", () => {
+  test("It takes a date Epoch as a number and returns a pretty formatted date", async () => {
+    const date = new Date(2022, 0, 1);
+    expect(prettifyDate(date.valueOf())).toEqual("1 January 2022");
   });
 });
 

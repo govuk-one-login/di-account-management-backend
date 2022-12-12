@@ -54,6 +54,12 @@ const validateTxmaEvent = (txmaEvent: TxmaEvent): void => {
   }
 };
 
+export const prettifyDate = (dateEpoch: number): string => {
+  return new Intl.DateTimeFormat("en-GB", { dateStyle: "long" }).format(
+    new Date(dateEpoch)
+  );
+};
+
 export const validateAndParseSQSRecord = (
   record: SQSRecord
 ): UserRecordEvent => {

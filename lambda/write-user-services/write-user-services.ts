@@ -36,7 +36,7 @@ export const validateServices = (services: Service[]): void => {
         service.last_accessed !== undefined
       )
     ) {
-      throw new Error(`Could not validate Service ${service}`);
+      throw new Error(`Could not validate Service ${JSON.stringify(service)}`);
     }
   }
 };
@@ -48,7 +48,9 @@ export const validateUserServices = (userServices: UserServices): void => {
   ) {
     validateServices(userServices.services);
   } else {
-    throw new Error(`Could not validate UserServices ${userServices}`);
+    throw new Error(
+      `Could not validate UserServices ${JSON.stringify(userServices)}`
+    );
   }
 };
 

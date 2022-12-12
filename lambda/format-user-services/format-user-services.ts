@@ -44,7 +44,6 @@ const validateTxmaEvent = (txmaEvent: TxmaEvent): void => {
     txmaEvent.client_id !== undefined &&
     txmaEvent.timestamp !== undefined &&
     txmaEvent.event_name !== undefined &&
-    txmaEvent.component_id !== undefined &&
     txmaEvent.user !== undefined
   ) {
     validateUser(txmaEvent.user);

@@ -40,7 +40,6 @@ export const makeTxmaEvent = (clientId: string, userId: string): TxmaEvent => ({
   event_name: "event_1",
   timestamp: "2022-01-01T12:00:00.000Z",
   client_id: clientId,
-  component_id: "component_id",
   user: {
     user_id: userId,
   },

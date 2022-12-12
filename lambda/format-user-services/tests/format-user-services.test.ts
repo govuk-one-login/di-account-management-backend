@@ -31,6 +31,7 @@ describe("newServicePresenter", () => {
       client_id: "clientID1234",
       count_successful_logins: 1,
       last_accessed: 1670850655485,
+      last_accessed_pretty: "12 December 2022",
     });
   });
 });
@@ -42,6 +43,9 @@ describe("existingServicePresenter", () => {
     1670850655485
   );
   const lastAccessed = 1670850655485;
+  const formattedDate = new Intl.DateTimeFormat("en-GB", {
+    dateStyle: "long",
+  }).format(new Date(lastAccessed));
 
   test("modifies existing Service record", () => {
     expect(
@@ -51,6 +55,7 @@ describe("existingServicePresenter", () => {
       count_successful_logins:
         existingServiceRecord.count_successful_logins + 1,
       last_accessed: lastAccessed,
+      last_accessed_pretty: formattedDate,
     });
   });
 });

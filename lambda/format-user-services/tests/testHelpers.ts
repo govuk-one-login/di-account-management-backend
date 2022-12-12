@@ -11,11 +11,18 @@ export const makeServiceRecord = (
   clientId: string,
   count: number,
   date?: number
-): Service => ({
-  client_id: clientId,
-  count_successful_logins: count,
-  last_accessed: date || new Date().valueOf(),
-});
+): Service => {
+  const fallbackDate = new Date(2022, 0, 1).valueOf();
+  const formattedDate = new Intl.DateTimeFormat("en-GB", {
+    dateStyle: "long",
+  }).format(new Date(date || fallbackDate));
+  return {
+    client_id: clientId,
+    count_successful_logins: count,
+    last_accessed: date || fallbackDate,
+    last_accessed_pretty: formattedDate,
+  };
+};
 
 export const makeSQSEventFixture = (
   payloadBody: UserRecordEvent | UserServices

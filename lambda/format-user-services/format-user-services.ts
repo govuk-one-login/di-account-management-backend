@@ -12,7 +12,8 @@ const validateUserService = (service: Service): void => {
       service.client_id !== undefined &&
       service.count_successful_logins &&
       service.count_successful_logins >= 0 &&
-      service.last_accessed !== undefined
+      service.last_accessed !== undefined &&
+      service.last_accessed_pretty !== undefined
     )
   ) {
     throw new Error(`Could not validate Service ${JSON.stringify(service)}`);
@@ -54,6 +55,12 @@ const validateTxmaEvent = (txmaEvent: TxmaEvent): void => {
   }
 };
 
+export const prettifyDate = (dateEpoch: number): string => {
+  return new Intl.DateTimeFormat("en-GB", { dateStyle: "long" }).format(
+    new Date(dateEpoch)
+  );
+};
+
 export const validateAndParseSQSRecord = (
   record: SQSRecord
 ): UserRecordEvent => {
@@ -68,6 +75,7 @@ export const newServicePresenter = (TxmaEvent: TxmaEvent): Service => ({
   client_id: TxmaEvent.client_id,
   count_successful_logins: 1,
   last_accessed: TxmaEvent.timestamp,
+  last_accessed_pretty: prettifyDate(TxmaEvent.timestamp),
 });
 
 export const existingServicePresenter = (
@@ -77,6 +85,7 @@ export const existingServicePresenter = (
   client_id: service.client_id,
   count_successful_logins: service.count_successful_logins + 1,
   last_accessed: lastAccessed,
+  last_accessed_pretty: prettifyDate(lastAccessed),
 });
 
 export const conditionallyUpsertServiceList = (

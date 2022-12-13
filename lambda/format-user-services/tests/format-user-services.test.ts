@@ -10,6 +10,7 @@ import {
   sendSqsMessage,
   conditionallyUpsertServiceList,
   formatRecord,
+  prettifyDate,
   handler,
 } from "../format-user-services";
 
@@ -30,6 +31,7 @@ describe("newServicePresenter", () => {
       client_id: "clientID1234",
       count_successful_logins: 1,
       last_accessed: 1670850655485,
+      last_accessed_pretty: "12 December 2022",
     });
   });
 });
@@ -41,6 +43,9 @@ describe("existingServicePresenter", () => {
     1670850655485
   );
   const lastAccessed = 1670850655485;
+  const formattedDate = new Intl.DateTimeFormat("en-GB", {
+    dateStyle: "long",
+  }).format(new Date(lastAccessed));
 
   test("modifies existing Service record", () => {
     expect(
@@ -50,6 +55,7 @@ describe("existingServicePresenter", () => {
       count_successful_logins:
         existingServiceRecord.count_successful_logins + 1,
       last_accessed: lastAccessed,
+      last_accessed_pretty: formattedDate,
     });
   });
 });
@@ -219,6 +225,13 @@ describe("sendSqsMessage", () => {
       QueueUrl: queueURL,
       MessageBody: userRecordEvents,
     });
+  });
+});
+
+describe("prettifyDate", () => {
+  test("It takes a date Epoch as a number and returns a pretty formatted date", async () => {
+    const date = new Date(2022, 0, 1);
+    expect(prettifyDate(date.valueOf())).toEqual("1 January 2022");
   });
 });
 

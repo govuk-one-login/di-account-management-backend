@@ -33,7 +33,8 @@ export const validateServices = (services: Service[]): void => {
         service.client_id !== undefined &&
         service.count_successful_logins &&
         service.count_successful_logins >= 0 &&
-        service.last_accessed !== undefined
+        service.last_accessed !== undefined &&
+        service.last_accessed_pretty !== undefined
       )
     ) {
       throw new Error(`Could not validate Service ${JSON.stringify(service)}`);

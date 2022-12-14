@@ -84,11 +84,11 @@ Mappings:
       QueueArn: "arn:aws:sqs:eu-west-2:178023842775:PublishToAccountsSQSQueue-staging"
       KeyArn: "arn:aws:kms:eu-west-2:178023842775:key/0b1e15d0-ea22-440e-b153-3842d60293ad"
     integration:
-      QueueArn: ""
-      KeyArn: ""
+      QueueArn: "arn:aws:sqs:eu-west-2:729485541398:PublishToAccountsSQSQueue-integration"
+      KeyArn: "arn:aws:kms:eu-west-2:729485541398:key/6e41cb14-5506-4a03-9115-c21999575dda"
     production:
-      QueueArn: ""
-      KeyArn: ""
+      QueueArn: "arn:aws:sqs:eu-west-2:451773080033:PublishToAccountsSQSQueue-production"
+      KeyArn: "arn:aws:kms:eu-west-2:451773080033:key/3ece5761-145f-43c7-ae2e-4485c91fe6bd`"
 
 Resources:
   ######################################

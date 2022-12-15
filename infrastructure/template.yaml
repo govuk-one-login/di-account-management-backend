@@ -58,8 +58,6 @@ Conditions:
   UseInternalEvents: !Or
     - !Equals [!Ref Environment, dev]
     - !Equals [!Ref Environment, build]
-    - !Equals [!Ref Environment, integration]
-    - !Equals [!Ref Environment, production]
 
 Globals:
   Function:
@@ -88,7 +86,7 @@ Mappings:
       KeyArn: "arn:aws:kms:eu-west-2:729485541398:key/6e41cb14-5506-4a03-9115-c21999575dda"
     production:
       QueueArn: "arn:aws:sqs:eu-west-2:451773080033:PublishToAccountsSQSQueue-production"
-      KeyArn: "arn:aws:kms:eu-west-2:451773080033:key/3ece5761-145f-43c7-ae2e-4485c91fe6bd`"
+      KeyArn: "arn:aws:kms:eu-west-2:451773080033:key/3ece5761-145f-43c7-ae2e-4485c91fe6bd"
 
 Resources:
   ######################################

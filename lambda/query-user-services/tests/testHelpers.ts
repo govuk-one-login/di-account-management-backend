@@ -11,7 +11,7 @@ const timestamp = date.valueOf();
 const timestampFormatted = date.toISOString();
 const govukSigninJourneyId = "abc123";
 
-export const user: UserData = {
+const user: UserData = {
   user_id: userId,
   govuk_signin_journey_id: govukSigninJourneyId,
 };

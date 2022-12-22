@@ -71,6 +71,13 @@ describe("queryUserServices", () => {
     expect(services.length).toEqual(1);
     expect(services.sort).toEqual(serviceList.sort);
   });
+
+  test("Query user service empty list", async () => {
+    dynamoMock.on(GetCommand).resolves({ Item: undefined });
+    const services: Service[] = await queryUserServices(userId);
+    expect(services).not.toBeNull();
+    expect(services.length).toEqual(0);
+  });
 });
 
 describe("validateTxmaEventBody", () => {

@@ -10,7 +10,7 @@ import {
   writeRawTxmaEvent,
   validateUser,
 } from "../save-raw-events";
-import { TEST_TXMA_EVENT, TEST_SQS_EVENT, date } from "./testHelpers";
+import { TEST_SQS_EVENT, makeTxmaEvent } from "./testHelpers";
 
 const dynamoMock = mockClient(DynamoDBDocumentClient);
 const sqsMock = mockClient(SQSClient);
@@ -33,14 +33,14 @@ describe("writeRawTxmaEvent", () => {
     jest.spyOn(crypto, "randomUUID").mockRestore();
   });
   test("writes raw events to DynamoDB", async () => {
-    await writeRawTxmaEvent(TEST_TXMA_EVENT);
+    await writeRawTxmaEvent(makeTxmaEvent());
     expect(dynamoMock.commandCalls(PutCommand).length).toEqual(1);
     expect(dynamoMock).toHaveReceivedCommandWith(PutCommand, {
       TableName: process.env.TABLE_NAME,
       Item: {
         id: UUID,
         timestamp: TIMESTAMP,
-        event: TEST_TXMA_EVENT,
+        event: makeTxmaEvent(),
         remove_at: 9444506,
       },
     });
@@ -57,22 +57,16 @@ describe("validateUser", () => {
 
 describe("validateTxmaEventBody", () => {
   test("doesn't throw an error with valid txma data", () => {
-    expect(validateTxmaEventBody(TEST_TXMA_EVENT)).toBe(undefined);
+    expect(validateTxmaEventBody(makeTxmaEvent())).toBe(undefined);
   });
   test("throws error when client_id is missing", () => {
+    const invalidTxmaEvent = {
+      ...makeTxmaEvent(),
+      clientId: undefined,
+    };
     const txmaEvent = JSON.parse(
       JSON.stringify({
-        services: [
-          {
-            timestamp: date.valueOf(),
-            timestamp_formatted: date.toISOString(),
-            event_name: "event_name",
-            user: {
-              user_id: "user_id",
-              govuk_signin_journey_id: "abc123",
-            },
-          },
-        ],
+        services: [invalidTxmaEvent],
       })
     );
     expect(() => {
@@ -80,19 +74,13 @@ describe("validateTxmaEventBody", () => {
     }).toThrowError();
   });
   test("throws error when timestamp is missing", () => {
+    const invalidTxmaEvent = {
+      ...makeTxmaEvent(),
+      timestamp: undefined,
+    };
     const txmaEvent = JSON.parse(
       JSON.stringify({
-        services: [
-          {
-            client_id: "client_id",
-            timestamp_formatted: date.toISOString(),
-            event_name: "event_name",
-            user: {
-              user_id: "user_id",
-              govuk_signin_journey_id: "abc123",
-            },
-          },
-        ],
+        services: [invalidTxmaEvent],
       })
     );
     expect(() => {
@@ -100,19 +88,13 @@ describe("validateTxmaEventBody", () => {
     }).toThrowError();
   });
   test("throws error when event name is missing", () => {
+    const invalidTxmaEvent = {
+      ...makeTxmaEvent(),
+      event_name: undefined,
+    };
     const txmaEvent = JSON.parse(
       JSON.stringify({
-        services: [
-          {
-            client_id: "client_id",
-            timestamp: date.valueOf(),
-            timestamp_formatted: date.toISOString(),
-            user: {
-              user_id: "user_id",
-              govuk_signin_journey_id: "abc123",
-            },
-          },
-        ],
+        services: [invalidTxmaEvent],
       })
     );
     expect(() => {
@@ -120,16 +102,13 @@ describe("validateTxmaEventBody", () => {
     }).toThrowError();
   });
   test(" throws error when user is missing", () => {
+    const invalidTxmaEvent = {
+      ...makeTxmaEvent(),
+      user: undefined,
+    };
     const txmaEvent = JSON.parse(
       JSON.stringify({
-        services: [
-          {
-            client_id: "client_id",
-            timestamp: date.valueOf(),
-            timestamp_formatted: date.toISOString(),
-            event_name: "event_name",
-          },
-        ],
+        services: [invalidTxmaEvent],
       })
     );
     expect(() => {
@@ -137,17 +116,13 @@ describe("validateTxmaEventBody", () => {
     }).toThrowError();
   });
   test("throws error when user_id is missing", () => {
+    const invalidTxmaEvent = {
+      ...makeTxmaEvent(),
+      user: {},
+    };
     const txmaEvent = JSON.parse(
       JSON.stringify({
-        services: [
-          {
-            client_id: "client_id",
-            timestamp: date.valueOf(),
-            timestamp_formatted: date.toISOString(),
-            event_name: "event_name",
-            user: {},
-          },
-        ],
+        services: [invalidTxmaEvent],
       })
     );
     expect(() => {
@@ -179,7 +154,7 @@ describe("handler", () => {
       Item: {
         id: UUID,
         timestamp: TIMESTAMP,
-        event: TEST_TXMA_EVENT,
+        event: makeTxmaEvent(),
         remove_at: 9444506,
       },
     });
@@ -210,7 +185,7 @@ describe("handler error handling", () => {
     expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(1);
     expect(sqsMock).toHaveReceivedCommandWith(SendMessageCommand, {
       QueueUrl: "DLQ_URL",
-      MessageBody: JSON.stringify(TEST_TXMA_EVENT),
+      MessageBody: JSON.stringify(makeTxmaEvent()),
     });
   });
 });

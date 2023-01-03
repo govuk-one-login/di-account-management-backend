@@ -18,7 +18,7 @@ import {
   makeTxmaEvent,
   makeServiceRecord,
   makeSQSInputFixture,
-} from "./testHelpers";
+} from "./test-helpers";
 import { UserServices, Service } from "../models";
 
 const sqsMock = mockClient(SQSClient);

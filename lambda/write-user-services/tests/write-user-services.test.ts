@@ -1,4 +1,3 @@
-import { SQSEvent, SQSRecord } from "aws-lambda";
 import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
 import { SendMessageCommand, SQSClient } from "@aws-sdk/client-sqs";
 import { mockClient } from "aws-sdk-client-mock";
@@ -9,43 +8,14 @@ import {
   validateUserServices,
 } from "../write-user-services";
 import { Service, UserServices } from "../models";
-
-const date = new Date();
-
-const TEST_USER_SERVICES: UserServices = {
-  user_id: "user-id",
-  services: [
-    {
-      client_id: "client_id",
-      last_accessed: date.valueOf(),
-      last_accessed_pretty: new Intl.DateTimeFormat("en-GB", {
-        dateStyle: "long",
-      }).format(date),
-      count_successful_logins: 1,
-    },
-  ],
-};
-
-const TEST_SQS_RECORD: SQSRecord = {
-  messageId: "19dd0b57-b21e-4ac1-bd88-01bbb068cb78",
-  receiptHandle: "MessageReceiptHandle",
-  body: JSON.stringify(TEST_USER_SERVICES),
-  attributes: {
-    ApproximateReceiveCount: "1",
-    SentTimestamp: "1523232000000",
-    SenderId: "123456789012",
-    ApproximateFirstReceiveTimestamp: "1523232000001",
-  },
-  messageAttributes: {},
-  md5OfBody: "7b270e59b47ff90a553787216d55d91d",
-  eventSource: "aws:sqs",
-  eventSourceARN: "arn:aws:sqs:us-east-1:123456789012:MyQueue",
-  awsRegion: "us-east-1",
-};
-
-const TEST_SQS_EVENT: SQSEvent = {
-  Records: [TEST_SQS_RECORD, TEST_SQS_RECORD],
-};
+import {
+  TEST_USER_SERVICES,
+  TEST_SQS_EVENT,
+  date,
+  tableName,
+  clientId,
+  userId,
+} from "./test-helpers";
 
 const dynamoMock = mockClient(DynamoDBDocumentClient);
 const sqsMock = mockClient(SQSClient);
@@ -54,7 +24,7 @@ describe("writeUserServices", () => {
   beforeEach(() => {
     dynamoMock.reset();
 
-    process.env.TABLE_NAME = "TABLE_NAME";
+    process.env.TABLE_NAME = tableName;
   });
 
   afterEach(() => {
@@ -71,7 +41,7 @@ describe("lambdaHandler", () => {
   beforeEach(() => {
     dynamoMock.reset();
     sqsMock.reset();
-    process.env.TABLE_NAME = "TABLE_NAME";
+    process.env.TABLE_NAME = tableName;
   });
 
   afterEach(() => {
@@ -120,7 +90,7 @@ describe("validateUserServices", () => {
         JSON.stringify({
           services: [
             {
-              client_id: "client_id",
+              client_id: clientId,
               last_accessed: new Date().valueOf().valueOf(),
               count_successful_logins: 1,
             },
@@ -135,7 +105,7 @@ describe("validateUserServices", () => {
     test("when services is missing", () => {
       const userServices: UserServices = JSON.parse(
         JSON.stringify({
-          user_id: "user-id",
+          user_id: userId,
         })
       );
       expect(() => {
@@ -146,7 +116,7 @@ describe("validateUserServices", () => {
     test("when services is invalid", () => {
       const userServices: UserServices = JSON.parse(
         JSON.stringify({
-          user_id: "user-id",
+          user_id: userId,
           services: [
             {
               last_accessed: new Date().valueOf(),
@@ -171,7 +141,7 @@ describe("validateServices", () => {
     const services = parseServices(
       JSON.stringify([
         {
-          client_id: "client_id",
+          client_id: clientId,
           last_accessed: date.valueOf(),
           last_accessed_pretty: new Intl.DateTimeFormat("en-GB", {
             dateStyle: "long",
@@ -205,7 +175,7 @@ describe("validateServices", () => {
       const services = parseServices(
         JSON.stringify([
           {
-            client_id: "client-id",
+            client_id: clientId,
             count_successful_logins: 1,
             last_accessed_pretty: new Intl.DateTimeFormat("en-GB", {
               dateStyle: "long",
@@ -223,7 +193,7 @@ describe("validateServices", () => {
         JSON.stringify([
           {
             last_accessed: date.valueOf(),
-            client_id: "client-id",
+            client_id: clientId,
             count_successful_logins: 1,
           },
         ])
@@ -237,7 +207,7 @@ describe("validateServices", () => {
       const services = parseServices(
         JSON.stringify([
           {
-            client_id: "client-id",
+            client_id: clientId,
             last_accessed: new Date().valueOf(),
           },
         ])
@@ -251,7 +221,7 @@ describe("validateServices", () => {
       const services = parseServices(
         JSON.stringify([
           {
-            client_id: "client-id",
+            client_id: clientId,
             last_accessed: new Date().valueOf(),
             count_successful_logins: -1,
           },

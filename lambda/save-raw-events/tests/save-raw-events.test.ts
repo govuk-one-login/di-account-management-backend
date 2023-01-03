@@ -10,7 +10,7 @@ import {
   writeRawTxmaEvent,
   validateUser,
 } from "../save-raw-events";
-import { TEST_SQS_EVENT, makeTxmaEvent } from "./testHelpers";
+import { TEST_SQS_EVENT, makeTxmaEvent } from "./test-helpers";
 
 const dynamoMock = mockClient(DynamoDBDocumentClient);
 const sqsMock = mockClient(SQSClient);

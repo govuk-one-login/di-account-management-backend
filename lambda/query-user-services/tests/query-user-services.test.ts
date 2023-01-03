@@ -19,7 +19,7 @@ import {
   date,
   userId,
   clientId,
-} from "./testHelpers";
+} from "./test-helpers";
 
 const dynamoMock = mockClient(DynamoDBDocumentClient);
 const sqsMock = mockClient(SQSClient);

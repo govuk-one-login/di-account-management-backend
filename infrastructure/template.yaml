@@ -201,6 +201,7 @@ Resources:
       KmsKeyArn: !GetAtt LambdaKMSKey.Arn
       PackageType: Zip
       MemorySize: 128
+      ReservedConcurrentExecutions: 10
       Runtime: nodejs16.x
       Role: !GetAtt SaveRawEventsRole.Arn
       Timeout: 5
@@ -362,6 +363,7 @@ Resources:
       KmsKeyArn: !GetAtt LambdaKMSKey.Arn
       PackageType: Zip
       MemorySize: 128
+      ReservedConcurrentExecutions: 10
       Runtime: nodejs16.x
       Role: !GetAtt QueryUserServicesRole.Arn
       Timeout: 5
@@ -530,6 +532,7 @@ Resources:
       KmsKeyArn: !GetAtt LambdaKMSKey.Arn
       PackageType: Zip
       MemorySize: 128
+      ReservedConcurrentExecutions: 10
       Runtime: nodejs16.x
       Role: !GetAtt FormatUserServicesRole.Arn
       Timeout: 5
@@ -675,6 +678,7 @@ Resources:
       KmsKeyArn: !GetAtt LambdaKMSKey.Arn
       PackageType: Zip
       MemorySize: 128
+      ReservedConcurrentExecutions: 10
       Runtime: nodejs16.x
       Role: !GetAtt WriteServiceRecordRole.Arn
       Timeout: 5
@@ -849,6 +853,7 @@ Resources:
       KmsKeyArn: !GetAtt LambdaKMSKey.Arn
       PackageType: Zip
       MemorySize: 128
+      ReservedConcurrentExecutions: 10
       Runtime: nodejs16.x
       Role: !GetAtt DeleteUserServicesRole.Arn
       Timeout: 5

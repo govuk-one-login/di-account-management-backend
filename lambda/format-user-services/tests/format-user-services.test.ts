@@ -229,9 +229,14 @@ describe("sendSqsMessage", () => {
 });
 
 describe("prettifyDate", () => {
-  test("It takes a date Epoch as a number and returns a pretty formatted date", async () => {
-    const date = new Date(2022, 0, 1);
-    expect(prettifyDate(date.valueOf())).toEqual("1 January 2022");
+  test("It takes a date epoch in seconds and returns a pretty formatted date", async () => {
+    const dateEpoochInSeconds = 1673358736;
+    expect(prettifyDate(dateEpoochInSeconds)).toEqual("10 January 2023");
+  });
+
+  test("It takes a date epoch in milliseconds and returns a pretty formatted date", async () => {
+    const dateEpoochInSeconds = 2382450028987;
+    expect(prettifyDate(dateEpoochInSeconds)).toEqual("30 June 2045");
   });
 });
 

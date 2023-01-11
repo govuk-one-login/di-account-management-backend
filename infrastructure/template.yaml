@@ -185,6 +185,7 @@ Resources:
     Properties:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-save-raw-events
       Architectures: ["x86_64"]
+      ReservedConcurrentExecutions: 1
       CodeUri: ../lambda/save-raw-events/
       Events:
         InputQueue:
@@ -340,6 +341,7 @@ Resources:
     Properties:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-query-user-services
       Architectures: ["x86_64"]
+      ReservedConcurrentExecutions: 1
       CodeUri: ../lambda/query-user-services/
       Events:
         DynamoStream:
@@ -517,6 +519,7 @@ Resources:
     Properties:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-format-user-services
       Architectures: ["x86_64"]
+      ReservedConcurrentExecutions: 1
       CodeUri: ../lambda/format-user-services/
       Events:
         UserServicesToFormatQueue:
@@ -662,6 +665,7 @@ Resources:
     Properties:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-write-user-services
       Architectures: ["x86_64"]
+      ReservedConcurrentExecutions: 1
       CodeUri: ../lambda/write-user-services/
       Events:
         UserServicesToWriteQueue:
@@ -841,6 +845,7 @@ Resources:
     Properties:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-delete-user-services
       Architectures: ["x86_64"]
+      ReservedConcurrentExecutions: 1
       CodeUri: ../lambda/delete-user-services/
       DeadLetterQueue:
         Type: SQS
@@ -1016,6 +1021,132 @@ Resources:
         - !Ref AlarmNotificationTopic
       ActionsEnabled: true
 
+
+    ###########################################
+    # Send request to Auth to delete Account
+    ###########################################
+
+  DeleteAccountAuthSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Endpoint: !GetAtt DeleteAccountAuthFunction.Arn
+      Protocol: lambda
+      TopicArn: !Ref UserAccountDeletionTopic
+
+  DeleteAccountAuthLambdaInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      Principal: sns.amazonaws.com
+      SourceArn:
+        Ref: UserAccountDeletionTopic
+      FunctionName: !GetAtt DeleteAccountAuthFunction.Arn
+
+  DeleteAccountAuthFunction:
+    DependsOn:
+      - DeleteAccountAuthFunctionLogGroup
+    Type: AWS::Serverless::Function
+    Properties:
+      # CKV_AWS_116: Ensure that AWS Lambda function is configured for a Dead Letter Queue(DLQ) 
+      FunctionName: !Sub ${Environment}-${AWS::StackName}-delete-account-auth
+      Architectures: [ "x86_64" ]
+      ReservedConcurrentExecutions: 1
+      CodeUri: ../lambda/delete-account-auth/
+      Handler: delete-account-auth.handler
+      KmsKeyArn: !GetAtt LambdaKMSKey.Arn
+      PackageType: Zip
+      MemorySize: 128
+      Runtime: nodejs16.x
+      Role: !GetAtt DeleteAccountAuthRole.Arn
+      Timeout: 5
+#      Environment:
+#        Variables:
+#          TABLE_NAME: !Ref UserServicesStoreTableName
+#          DLQ_URL: !Ref DeleteUserServicesDeadLetterQueue
+      VpcConfig:
+        SubnetIds:
+          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdA
+          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdB
+        SecurityGroupIds:
+          - Fn::ImportValue: !Sub ${VpcStackName}-AWSServicesEndpointSecurityGroupId
+      Tags:
+        CheckovRulesToSkip: CKV_AWS_116
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        Sourcemap: true
+        EntryPoints:
+          - delete-account-auth.ts
+
+  DeleteAccountAuthRole:
+    Type: AWS::IAM::Role
+    Properties:
+      PermissionsBoundary: !If
+        - UsePermissionsBoundary
+        - !Ref PermissionsBoundary
+        - !Ref AWS::NoValue
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+        - !Ref DeleteAccountAuthPolicy
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+
+  DeleteAccountAuthPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+#          - Effect: Allow
+#            Action:
+#              - sqs:SendMessage
+#            Resource: !GetAtt DeleteUserServicesDeadLetterQueue.Arn
+#          - Effect: Allow
+#            Action:
+#              - dynamodb:DeleteItem
+#            Resource:
+#              - !GetAtt UserServicesStore.Arn
+#              - !Sub
+#                - "${Arn}/*"
+#                - Arn: !GetAtt UserServicesStore.Arn
+          - Effect: Allow
+            Action:
+              - kms:Decrypt
+              - kms:GenerateDataKey*
+              - kms:ReEncrypt*
+            Resource:
+              - !GetAtt LoggingKmsKey.Arn
+              - !GetAtt LambdaKMSKey.Arn
+
+  DeleteAccountAuthFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "${AWS::StackName}-delete-account-auth-log-group"
+      RetentionInDays: 30
+      KmsKeyId: !GetAtt LoggingKmsKey.Arn
+
+#  DeleteAccountAuthCSLSSubscription:
+#    Condition: IsNotDevelopment
+#    Type: AWS::Logs::SubscriptionFilter
+#    Properties:
+#      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
+#      FilterPattern: ""
+#      LogGroupName: !Ref DeleteAccountAuthFunctionLogGroup
+
+    
+    
+    
+  
   #######################
   # Monitoring
   #######################

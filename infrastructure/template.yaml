@@ -56,8 +56,8 @@ Conditions:
           - "dev"
 
   UseInternalEvents: !Or
-    - !Equals [!Ref Environment, dev]
-    - !Equals [!Ref Environment, build]
+    - !Equals [ !Ref Environment, dev ]
+    - !Equals [ !Ref Environment, build ]
 
 Globals:
   Function:
@@ -184,7 +184,7 @@ Resources:
       - SaveRawEventsFunctionLogGroup
     Properties:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-save-raw-events
-      Architectures: ["x86_64"]
+      Architectures: [ "x86_64" ]
       ReservedConcurrentExecutions: 1
       CodeUri: ../lambda/save-raw-events/
       Events:
@@ -194,7 +194,7 @@ Resources:
             Queue: !If
               - UseInternalEvents
               - !GetAtt TxMAInputDummyQueue.Arn
-              - !FindInMap [InputQueue, !Ref Environment, QueueArn]
+              - !FindInMap [ InputQueue, !Ref Environment, QueueArn ]
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt SaveRawEventsDeadLetterQueue.Arn
@@ -267,7 +267,7 @@ Resources:
             Resource: !If
               - UseInternalEvents
               - !GetAtt TxMAInputDummyQueue.Arn
-              - !FindInMap [InputQueue, !Ref Environment, QueueArn]
+              - !FindInMap [ InputQueue, !Ref Environment, QueueArn ]
           - Effect: Allow
             Action:
               - sqs:SendMessage
@@ -292,7 +292,7 @@ Resources:
               - !If
                 - UseInternalEvents
                 - !Ref AWS::NoValue
-                - !FindInMap [InputQueue, !Ref Environment, KeyArn]
+                - !FindInMap [ InputQueue, !Ref Environment, KeyArn ]
 
   SaveRawEventsFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -315,7 +315,7 @@ Resources:
       AlarmName:
         !Join [
           "-",
-          [!Ref AWS::StackName, !Ref Environment, SaveDeadLetterQueueAlarm],
+          [ !Ref AWS::StackName, !Ref Environment, SaveDeadLetterQueueAlarm ],
         ]
       Namespace: "AWS/SQS"
       MetricName: "ApproximateNumberOfMessagesVisible"
@@ -340,7 +340,7 @@ Resources:
       - QueryUserServicesFunctionLogGroup
     Properties:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-query-user-services
-      Architectures: ["x86_64"]
+      Architectures: [ "x86_64" ]
       ReservedConcurrentExecutions: 1
       CodeUri: ../lambda/query-user-services/
       Events:
@@ -493,7 +493,7 @@ Resources:
       AlarmName:
         !Join [
           "-",
-          [!Ref AWS::StackName, !Ref Environment, QueryDeadLetterQueueAlarm],
+          [ !Ref AWS::StackName, !Ref Environment, QueryDeadLetterQueueAlarm ],
         ]
       Namespace: "AWS/SQS"
       MetricName: "ApproximateNumberOfMessagesVisible"
@@ -518,7 +518,7 @@ Resources:
       - FormatUserServicesFunctionLogGroup
     Properties:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-format-user-services
-      Architectures: ["x86_64"]
+      Architectures: [ "x86_64" ]
       ReservedConcurrentExecutions: 1
       CodeUri: ../lambda/format-user-services/
       Events:
@@ -639,7 +639,7 @@ Resources:
       AlarmName:
         !Join [
           "-",
-          [!Ref AWS::StackName, !Ref Environment, FormatDeadLetterQueueAlarm],
+          [ !Ref AWS::StackName, !Ref Environment, FormatDeadLetterQueueAlarm ],
         ]
       Namespace: "AWS/SQS"
       MetricName: "ApproximateNumberOfMessagesVisible"
@@ -664,7 +664,7 @@ Resources:
       - WriteUserServicesFunctionLogGroup
     Properties:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-write-user-services
-      Architectures: ["x86_64"]
+      Architectures: [ "x86_64" ]
       ReservedConcurrentExecutions: 1
       CodeUri: ../lambda/write-user-services/
       Events:
@@ -785,7 +785,7 @@ Resources:
       AlarmName:
         !Join [
           "-",
-          [!Ref AWS::StackName, !Ref Environment, WriteDeadLetterQueueAlarm],
+          [ !Ref AWS::StackName, !Ref Environment, WriteDeadLetterQueueAlarm ],
         ]
       Namespace: "AWS/SQS"
       MetricName: "ApproximateNumberOfMessagesVisible"
@@ -844,7 +844,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-delete-user-services
-      Architectures: ["x86_64"]
+      Architectures: [ "x86_64" ]
       ReservedConcurrentExecutions: 1
       CodeUri: ../lambda/delete-user-services/
       DeadLetterQueue:
@@ -1005,7 +1005,7 @@ Resources:
       AlarmName:
         !Join [
           "-",
-          [!Ref AWS::StackName, !Ref Environment, DeleteDeadLetterQueueAlarm],
+          [ !Ref AWS::StackName, !Ref Environment, DeleteDeadLetterQueueAlarm ],
         ]
       Namespace: "AWS/SQS"
       MetricName: "ApproximateNumberOfMessagesVisible"
@@ -1059,10 +1059,10 @@ Resources:
       Runtime: nodejs16.x
       Role: !GetAtt DeleteAccountAuthRole.Arn
       Timeout: 5
-#      Environment:
-#        Variables:
-#          TABLE_NAME: !Ref UserServicesStoreTableName
-#          DLQ_URL: !Ref DeleteUserServicesDeadLetterQueue
+      #      Environment:
+      #        Variables:
+      #          TABLE_NAME: !Ref UserServicesStoreTableName
+      #          DLQ_URL: !Ref DeleteUserServicesDeadLetterQueue
       VpcConfig:
         SubnetIds:
           - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdA
@@ -1107,18 +1107,6 @@ Resources:
       PolicyDocument:
         Version: "2012-10-17"
         Statement:
-#          - Effect: Allow
-#            Action:
-#              - sqs:SendMessage
-#            Resource: !GetAtt DeleteUserServicesDeadLetterQueue.Arn
-#          - Effect: Allow
-#            Action:
-#              - dynamodb:DeleteItem
-#            Resource:
-#              - !GetAtt UserServicesStore.Arn
-#              - !Sub
-#                - "${Arn}/*"
-#                - Arn: !GetAtt UserServicesStore.Arn
           - Effect: Allow
             Action:
               - kms:Decrypt
@@ -1135,18 +1123,123 @@ Resources:
       RetentionInDays: 30
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
-#  DeleteAccountAuthCSLSSubscription:
-#    Condition: IsNotDevelopment
-#    Type: AWS::Logs::SubscriptionFilter
-#    Properties:
-#      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
-#      FilterPattern: ""
-#      LogGroupName: !Ref DeleteAccountAuthFunctionLogGroup
+    #  DeleteAccountAuthCSLSSubscription:
+    #    Condition: IsNotDevelopment
+    #    Type: AWS::Logs::SubscriptionFilter
+    #    Properties:
+    #      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
+    #      FilterPattern: ""
+    #      LogGroupName: !Ref DeleteAccountAuthFunctionLogGroup
 
-    
-    
-    
-  
+    ###########################################
+    # Send request to gov.uk to delete Account
+    ###########################################
+
+  DeleteAccountPublishingSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Endpoint: !GetAtt DeleteAccountPublishingFunction.Arn
+      Protocol: lambda
+      TopicArn: !Ref UserAccountDeletionTopic
+
+  DeleteAccountPublishingLambdaInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      Principal: sns.amazonaws.com
+      SourceArn:
+        Ref: UserAccountDeletionTopic
+      FunctionName: !GetAtt DeleteAccountPublishingFunction.Arn
+
+  DeleteAccountPublishingFunction:
+    DependsOn:
+      - DeleteAccountPublishingFunctionLogGroup
+    Type: AWS::Serverless::Function
+    Properties:
+      # CKV_AWS_116: Ensure that AWS Lambda function is configured for a Dead Letter Queue(DLQ)
+      FunctionName: !Sub ${Environment}-${AWS::StackName}-delete-account-publishing
+      Architectures: [ "x86_64" ]
+      ReservedConcurrentExecutions: 1
+      CodeUri: ../lambda/delete-account-publishing/
+      Handler: delete-account-publishing.handler
+      KmsKeyArn: !GetAtt LambdaKMSKey.Arn
+      PackageType: Zip
+      MemorySize: 128
+      Runtime: nodejs16.x
+      Role: !GetAtt DeleteAccountPublishingRole.Arn
+      Timeout: 5
+      #      Environment:
+      #        Variables:
+      #          TABLE_NAME: !Ref UserServicesStoreTableName
+      #          DLQ_URL: !Ref DeleteUserServicesDeadLetterQueue
+      VpcConfig:
+        SubnetIds:
+          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdA
+          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdB
+        SecurityGroupIds:
+          - Fn::ImportValue: !Sub ${VpcStackName}-AWSServicesEndpointSecurityGroupId
+      Tags:
+        CheckovRulesToSkip: CKV_AWS_116
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        Sourcemap: true
+        EntryPoints:
+          - delete-account-publishing.ts
+
+  DeleteAccountPublishingRole:
+    Type: AWS::IAM::Role
+    Properties:
+      PermissionsBoundary: !If
+        - UsePermissionsBoundary
+        - !Ref PermissionsBoundary
+        - !Ref AWS::NoValue
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+        - !Ref DeleteAccountAuthPolicy
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+
+  DeleteAccountPublishingPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - kms:Decrypt
+              - kms:GenerateDataKey*
+              - kms:ReEncrypt*
+            Resource:
+              - !GetAtt LoggingKmsKey.Arn
+              - !GetAtt LambdaKMSKey.Arn
+
+  DeleteAccountPublishingFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "${AWS::StackName}-delete-account-publishing-log-group"
+      RetentionInDays: 30
+      KmsKeyId: !GetAtt LoggingKmsKey.Arn
+
+    #  DeleteAccountPublishingCSLSSubscription:
+    #    Condition: IsNotDevelopment
+    #    Type: AWS::Logs::SubscriptionFilter
+    #    Properties:
+    #      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
+    #      FilterPattern: ""
+    #      LogGroupName: !Ref DeleteAccountPublishingFunctionLogGroup
+
   #######################
   # Monitoring
   #######################

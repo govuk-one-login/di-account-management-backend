@@ -1,8 +1,5 @@
-type UrnFdnSub = string;
+type email = string;
 
-// Add new properties to the model
-
-export interface UserData {
-  user_id: UrnFdnSub;
+export interface SNSMessage {
+  email: string;
 }
-

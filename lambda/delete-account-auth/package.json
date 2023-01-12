@@ -25,6 +25,8 @@
     "typescript": "^4.8.4"
   },
   "dependencies": {
-    "@types/aws-lambda": "^8.10.106"
+    "@types/aws-lambda": "^8.10.106",
+    "aws4-axios": "^2.4.9",
+    "axios": "^1.2.2"
   }
 }

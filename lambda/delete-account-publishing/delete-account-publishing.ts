@@ -1,5 +1,5 @@
 import { SNSEvent } from "aws-lambda";
-import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
+import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
 import { aws4Interceptor } from "aws4-axios";
 import { SNSMessage } from "./models";
 
@@ -13,8 +13,8 @@ export function getRequestConfig(token: string): AxiosRequestConfig {
   return config;
 }
 
-async function sendRequestWithAxios(snsMessage: SNSMessage) {
-  console.log(`Sending DELETE request with axios.`);
+async function sendRequest(snsMessage: SNSMessage) {
+  console.log("Sending DELETE request to GOV.UK.");
 
   const interceptor = aws4Interceptor({
     region: "eu-west-2",
@@ -22,53 +22,45 @@ async function sendRequestWithAxios(snsMessage: SNSMessage) {
   });
 
   axios.interceptors.request.use(interceptor);
+
   const token: string = process.env.GOV_ACCOUNTS_PUBLISHING_API_TOKEN!;
   const requestConfig = getRequestConfig(token);
-
-  console.log("Request config:", requestConfig);
-
   let deleteUrl = `account-api.staging.publishing.service.gov.uk/api/oidc-users/${snsMessage.publicSubjectId}`;
   if (snsMessage.legacySubjectId) {
     deleteUrl = `${deleteUrl}?legacy_sub=${snsMessage.legacySubjectId}`;
   }
 
-  let responseObject;
+  console.log(`Request config: ${requestConfig}, URL: ${deleteUrl}`);
+
   try {
     const response: AxiosResponse = await axios.delete(
-      deleteUrl,
       // "https://w91dhcuqij.execute-api.eu-west-2.amazonaws.com/dev/api/oidc-users/ana-test-user",
+      deleteUrl,
       requestConfig
     );
-
-    responseObject = {
+    return {
       status: response.status,
       statusText: response.statusText,
     };
-  } catch (error: any | AxiosError) {
-    console.log(error);
-    if (axios.isAxiosError(error)) {
-      responseObject = {
-        message: error.message,
-        name: error.name,
-        status: error.status,
-      };
-    }
+  } catch (error) {
+    console.log(
+      `Unable to send delete account request to GOV.UK. Error:${error}`
+    );
   }
-  console.log("Done. Returning the response:", responseObject);
-  return responseObject;
+  return undefined;
 }
 
 export const handler = async (event: SNSEvent): Promise<void> => {
-  console.log("SNS Event: ", JSON.stringify(event));
+  console.log("SNS Event:", JSON.stringify(event));
 
   await Promise.all(
     event.Records.map(async (record) => {
       try {
         const snsMessage: SNSMessage = JSON.parse(record.Sns.Message);
-        console.log("Parsed snsMessage:", snsMessage);
-        await sendRequestWithAxios(snsMessage);
-      } catch (err) {
-        console.error(err);
+        console.log("Parsed SNS Message:", snsMessage);
+        await sendRequest(snsMessage);
+      } catch (error) {
+        console.error(error);
       }
     })
   );

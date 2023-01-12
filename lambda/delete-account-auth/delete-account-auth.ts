@@ -1,11 +1,11 @@
 import { SNSEvent } from "aws-lambda";
-import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
+import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
 import { aws4Interceptor } from "aws4-axios";
 import { SNSMessage } from "./models";
 
 export function getRequestConfig(
   token: string,
-  validationStatues?: number[] | null,
+  validationStatus?: number[] | null,
   sourceIp?: string,
   persistentSessionId?: string,
   sessionId?: string,
@@ -18,9 +18,9 @@ export function getRequestConfig(
     proxy: false,
   };
 
-  if (validationStatues) {
+  if (validationStatus) {
     config.validateStatus = function (status: number) {
-      return validationStatues.includes(status);
+      return validationStatus.includes(status);
     };
   }
 
@@ -52,7 +52,7 @@ export const validateSNSMessage = (snsMessage: SNSMessage): SNSMessage => {
     !snsMessage.sessionId
   ) {
     throw new Error(
-      `SNS Message is missing a required attribute. ${JSON.stringify(
+      `SNS Message is missing one or more required attribute/s. ${JSON.stringify(
         snsMessage
       )}`
     );
@@ -60,8 +60,8 @@ export const validateSNSMessage = (snsMessage: SNSMessage): SNSMessage => {
   return snsMessage;
 };
 
-async function sendRequestWithAxios(snsMessage: SNSMessage) {
-  console.log(`Sending a POST request with axios.`);
+async function sendRequest(snsMessage: SNSMessage) {
+  console.log("Sending POST request to Auth.");
 
   const interceptor = aws4Interceptor({
     region: "eu-west-2",
@@ -77,39 +77,31 @@ async function sendRequestWithAxios(snsMessage: SNSMessage) {
     snsMessage.persistentSessionId,
     snsMessage.sessionId
   );
+  const deleteUrl = "https://home.dev.account.gov.uk/delete-account";
 
-  console.log("Request config:", requestConfig);
+  console.log(`Request config: ${requestConfig}, URL: ${deleteUrl}`);
 
-  let responseObject;
   try {
     const response: AxiosResponse = await axios.post(
-      "https://home.dev.account.gov.uk/delete-account",
+      deleteUrl,
       { email: snsMessage.email },
       requestConfig
     );
-
-    responseObject = {
+    return {
       status: response.status,
       statusText: response.statusText,
       data: response.data,
     };
-    
-  } catch (error: any | AxiosError) {
-    console.log(error);
-    if (axios.isAxiosError(error)) {
-      responseObject = {
-        message: error.message,
-        name: error.name,
-        status: error.status,
-      };
-    }
+  } catch (error) {
+    console.log(
+      `Unable to send delete account POST request to Auth. Error:${error}`
+    );
   }
-  console.log("Returning the response:", responseObject);
-  return responseObject;
+  return undefined;
 }
 
 export const handler = async (event: SNSEvent): Promise<void> => {
-  console.log("SNS Event: ", JSON.stringify(event));
+  console.log("SNS Event:", JSON.stringify(event));
 
   await Promise.all(
     event.Records.map(async (record) => {
@@ -117,9 +109,9 @@ export const handler = async (event: SNSEvent): Promise<void> => {
         const snsMessage: SNSMessage = JSON.parse(record.Sns.Message);
         console.log("Parsed SNS Message:", snsMessage);
         validateSNSMessage(snsMessage);
-        await sendRequestWithAxios(snsMessage);
-      } catch (err) {
-        console.error(err);
+        await sendRequest(snsMessage);
+      } catch (error) {
+        console.error(error);
       }
     })
   );

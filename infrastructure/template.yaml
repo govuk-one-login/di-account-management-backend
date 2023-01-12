@@ -35,6 +35,9 @@ Parameters:
     Description: >
       The ARN of the permissions boundary to apply to any role created by the template
     Default: "none"
+  AccountManagementFrontendStackName:
+    Type: String
+    Default: account-mgmt-frontend
 
 Conditions:
   UseCodeSigning:
@@ -1181,10 +1184,10 @@ Resources:
       Runtime: nodejs16.x
       Role: !GetAtt DeleteAccountPublishingRole.Arn
       Timeout: 5
-      #      Environment:
-      #        Variables:
-      #          TABLE_NAME: !Ref UserServicesStoreTableName
-      #          DLQ_URL: !Ref DeleteUserServicesDeadLetterQueue
+      Environment:
+        Variables:
+          GOV_ACCOUNTS_PUBLISHING_API_TOKEN: !Sub "{{resolve:secretsmanager:/${AccountManagementFrontendStackName}/Config/Publishing/API/Key}}"
+
       VpcConfig:
         SubnetIds:
           - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdA

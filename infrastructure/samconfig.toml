@@ -3,7 +3,7 @@ version = 0.1
 [default.deploy]
 [default.deploy.parameters]
 stack_name = "account-mgmt-backend"
-s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-44r43ey3knwx"
+s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-1cbhe3g6hqlgb"
 s3_prefix = "account-mgmt-backend"
 region = "eu-west-2"
 confirm_changeset = true

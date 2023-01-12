@@ -1199,7 +1199,7 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
-        - !Ref DeleteAccountAuthPolicy
+        - !Ref DeleteAccountPublishingPolicy
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:

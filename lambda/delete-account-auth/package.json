@@ -27,6 +27,6 @@
   "dependencies": {
     "@types/aws-lambda": "^8.10.106",
     "aws4-axios": "^2.4.9",
-    "axios": "^1.2.2"
+    "axios": "^0.27.2"
   }
 }

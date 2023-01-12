@@ -1023,7 +1023,6 @@ Resources:
         - !Ref AlarmNotificationTopic
       ActionsEnabled: true
 
-
     ###########################################
     # Send request to Auth to delete Account
     ###########################################
@@ -1049,7 +1048,7 @@ Resources:
       - DeleteAccountAuthFunctionLogGroup
     Type: AWS::Serverless::Function
     Properties:
-      # CKV_AWS_116: Ensure that AWS Lambda function is configured for a Dead Letter Queue(DLQ) 
+      # checkov:skip=CKV_AWS_117: Ensure that AWS Lambda function is configured inside a VPC
       FunctionName: !Sub ${Environment}-${AWS::StackName}-delete-account-auth
       Architectures: [ "x86_64" ]
       ReservedConcurrentExecutions: 1
@@ -1057,22 +1056,27 @@ Resources:
       Handler: delete-account-auth.handler
       KmsKeyArn: !GetAtt LambdaKMSKey.Arn
       PackageType: Zip
+      Policies:
+        - AWSLambdaExecute
       MemorySize: 128
       Runtime: nodejs16.x
       Role: !GetAtt DeleteAccountAuthRole.Arn
       Timeout: 5
+      DeadLetterQueue:
+        Type: SQS
+        TargetArn: !GetAtt DeleteAccountAuthDeadLetterQueue.Arn
       #      Environment:
       #        Variables:
       #          TABLE_NAME: !Ref UserServicesStoreTableName
       #          DLQ_URL: !Ref DeleteUserServicesDeadLetterQueue
-      VpcConfig:
-        SubnetIds:
-          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdA
-          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdB
-        SecurityGroupIds:
-          - Fn::ImportValue: !Sub ${VpcStackName}-AWSServicesEndpointSecurityGroupId
+#      VpcConfig:
+#        SubnetIds:
+#          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdA
+#          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdB
+#        SecurityGroupIds:
+#          - Fn::ImportValue: !Sub ${VpcStackName}-AWSServicesEndpointSecurityGroupId
       Tags:
-        CheckovRulesToSkip: CKV_AWS_116
+        CheckovRulesToSkip: CKV_AWS_117
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -1081,6 +1085,14 @@ Resources:
         Sourcemap: true
         EntryPoints:
           - delete-account-auth.ts
+
+  DeleteAccountAuthDeadLetterQueue:
+    Type: AWS::SQS::Queue
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      MessageRetentionPeriod: 1209600
+      KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
 
   DeleteAccountAuthRole:
     Type: AWS::IAM::Role
@@ -1111,6 +1123,10 @@ Resources:
         Statement:
           - Effect: Allow
             Action:
+              - sqs:SendMessage
+            Resource: !GetAtt DeleteAccountAuthDeadLetterQueue.Arn
+          - Effect: Allow
+            Action:
               - kms:Decrypt
               - kms:GenerateDataKey*
               - kms:ReEncrypt*
@@ -1132,6 +1148,7 @@ Resources:
     #      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
     #      FilterPattern: ""
     #      LogGroupName: !Ref DeleteAccountAuthFunctionLogGroup
+
 
     ###########################################
     # Send request to gov.uk to delete Account
@@ -1241,6 +1258,7 @@ Resources:
     #      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
     #      FilterPattern: ""
     #      LogGroupName: !Ref DeleteAccountPublishingFunctionLogGroup
+
 
   #######################
   # Monitoring

@@ -43,8 +43,25 @@ export function getRequestConfig(
   return config;
 }
 
+export const validateSNSMessage = (snsMessage: SNSMessage): SNSMessage => {
+  if (
+    !snsMessage.email ||
+    !snsMessage.token ||
+    !snsMessage.sourceIp ||
+    !snsMessage.persistentSessionId ||
+    !snsMessage.sessionId
+  ) {
+    throw new Error(
+      `SNS Message is missing a required attribute. ${JSON.stringify(
+        snsMessage
+      )}`
+    );
+  }
+  return snsMessage;
+};
+
 async function sendRequestWithAxios(snsMessage: SNSMessage) {
-  console.log(`Sending PUT request with axios.`);
+  console.log(`Sending a POST request with axios.`);
 
   const interceptor = aws4Interceptor({
     region: "eu-west-2",
@@ -66,25 +83,17 @@ async function sendRequestWithAxios(snsMessage: SNSMessage) {
   let responseObject;
   try {
     const response: AxiosResponse = await axios.post(
-      // "https://home.dev.account.gov.uk/delete-account",
-      // "https://w91dhcuqij.execute-api.eu-west-2.amazonaws.com/dev/api/oidc-users/ana-test-user",
-      "https://ehui589zg9.execute-api.eu-west-2.amazonaws.com/dev/test",
-      snsMessage.email,
+      "https://home.dev.account.gov.uk/delete-account",
+      { email: snsMessage.email },
       requestConfig
     );
 
-    if (response.data) {
-      responseObject = {
-        status: response.status,
-        statusText: response.statusText,
-        data: response.data,
-      };
-    } else {
-      responseObject = {
-        status: response.status,
-        statusText: response.statusText,
-      };
-    }
+    responseObject = {
+      status: response.status,
+      statusText: response.statusText,
+      data: response.data,
+    };
+    
   } catch (error: any | AxiosError) {
     console.log(error);
     if (axios.isAxiosError(error)) {
@@ -95,7 +104,7 @@ async function sendRequestWithAxios(snsMessage: SNSMessage) {
       };
     }
   }
-  console.log("Done. Returning the response:", responseObject);
+  console.log("Returning the response:", responseObject);
   return responseObject;
 }
 
@@ -106,14 +115,8 @@ export const handler = async (event: SNSEvent): Promise<void> => {
     event.Records.map(async (record) => {
       try {
         const snsMessage: SNSMessage = JSON.parse(record.Sns.Message);
-        console.log("Parsed snsMessage:", snsMessage);
-        if (!snsMessage.email) {
-          throw new Error(
-            `SNS Message did not contain the user email: ${JSON.stringify(
-              snsMessage
-            )}`
-          );
-        }
+        console.log("Parsed SNS Message:", snsMessage);
+        validateSNSMessage(snsMessage);
         await sendRequestWithAxios(snsMessage);
       } catch (err) {
         console.error(err);

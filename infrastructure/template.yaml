@@ -175,6 +175,7 @@ Resources:
       KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
+    
   ######################
   # Save Raw Events
   ######################
@@ -804,7 +805,6 @@ Resources:
   ######################
   # Deleting the Record
   ######################
-
   UserAccountDeletionTopic:
     Type: AWS::SNS::Topic
     Properties:
@@ -1023,10 +1023,9 @@ Resources:
         - !Ref AlarmNotificationTopic
       ActionsEnabled: true
 
-    ###########################################
-    # Send request to Auth to delete Account
-    ###########################################
-
+  ###########################################
+  # Auth Delete Account
+  ###########################################
   DeleteAccountAuthSubscription:
     Type: AWS::SNS::Subscription
     Properties:
@@ -1056,8 +1055,6 @@ Resources:
       Handler: delete-account-auth.handler
       KmsKeyArn: !GetAtt LambdaKMSKey.Arn
       PackageType: Zip
-      Policies:
-        - AWSLambdaExecute
       MemorySize: 128
       Runtime: nodejs16.x
       Role: !GetAtt DeleteAccountAuthRole.Arn
@@ -1065,10 +1062,9 @@ Resources:
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt DeleteAccountAuthDeadLetterQueue.Arn
-      #      Environment:
-      #        Variables:
-      #          TABLE_NAME: !Ref UserServicesStoreTableName
-      #          DLQ_URL: !Ref DeleteUserServicesDeadLetterQueue
+#      Environment:
+#        Variables:
+#          TABLE_NAME: !Ref UserServicesStoreTableName
 #      VpcConfig:
 #        SubnetIds:
 #          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdA
@@ -1141,19 +1137,17 @@ Resources:
       RetentionInDays: 30
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
-    #  DeleteAccountAuthCSLSSubscription:
-    #    Condition: IsNotDevelopment
-    #    Type: AWS::Logs::SubscriptionFilter
-    #    Properties:
-    #      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
-    #      FilterPattern: ""
-    #      LogGroupName: !Ref DeleteAccountAuthFunctionLogGroup
+#  DeleteAccountAuthCSLSSubscription:
+#    Condition: IsNotDevelopment
+#    Type: AWS::Logs::SubscriptionFilter
+#    Properties:
+#      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
+#      FilterPattern: ""
+#      LogGroupName: !Ref DeleteAccountAuthFunctionLogGroup
 
-
-    ###########################################
-    # Send request to gov.uk to delete Account
-    ###########################################
-
+  ###########################################
+  # GOV.UK Delete Account
+  ###########################################
   DeleteAccountPublishingSubscription:
     Type: AWS::SNS::Subscription
     Properties:
@@ -1251,14 +1245,13 @@ Resources:
       RetentionInDays: 30
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
-    #  DeleteAccountPublishingCSLSSubscription:
-    #    Condition: IsNotDevelopment
-    #    Type: AWS::Logs::SubscriptionFilter
-    #    Properties:
-    #      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
-    #      FilterPattern: ""
-    #      LogGroupName: !Ref DeleteAccountPublishingFunctionLogGroup
-
+#  DeleteAccountPublishingCSLSSubscription:
+#    Condition: IsNotDevelopment
+#    Type: AWS::Logs::SubscriptionFilter
+#    Properties:
+#      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
+#      FilterPattern: ""
+#      LogGroupName: !Ref DeleteAccountPublishingFunctionLogGroup
 
   #######################
   # Monitoring
@@ -1291,7 +1284,6 @@ Resources:
   #######################
   # Encryption
   #######################
-
   QueueKmsKey:
     Type: AWS::KMS::Key
     Properties:

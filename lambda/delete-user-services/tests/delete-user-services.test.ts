@@ -8,7 +8,7 @@ import {
   deleteUserData,
 } from "../delete-user-services";
 
-import { TEST_USER_DATA, TEST_SNS_EVENT } from "./testHelpers";
+import { TEST_USER_DATA, TEST_SNS_EVENT } from "./test-helpers";
 
 const dynamoMock = mockClient(DynamoDBDocumentClient);
 const sqsMock = mockClient(SQSClient);

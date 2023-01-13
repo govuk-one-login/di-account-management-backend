@@ -46,7 +46,7 @@ async function sendRequest(snsMessage: SNSMessage) {
       statusText: response.statusText,
     };
 
-    console.log(`Response: ${responseObject}`);
+    console.log(`Response: ${JSON.stringify(responseObject)}`);
 
     return responseObject;
   } catch (error) {

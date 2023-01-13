@@ -77,7 +77,7 @@ async function sendRequest(snsMessage: SNSMessage) {
     snsMessage.persistentSessionId,
     snsMessage.sessionId
   );
-  const deleteUrl = `${process.env.MOCK_PUBLISHING_API_URL}/api/oidc-users/ana-test-friday`;
+  const deleteUrl = `${process.env.MOCK_PUBLISHING_API_URL}/delete-account`;
   // const deleteUrl = "https://home.dev.account.gov.uk/delete-account";
 
   console.log(
@@ -86,7 +86,7 @@ async function sendRequest(snsMessage: SNSMessage) {
 
   try {
     // Change PUT TO POST
-    const response: AxiosResponse = await axios.put(
+    const response: AxiosResponse = await axios.post(
       deleteUrl,
       { email: snsMessage.email },
       requestConfig

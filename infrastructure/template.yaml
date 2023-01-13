@@ -1245,6 +1245,10 @@ Resources:
         Statement:
           - Effect: Allow
             Action:
+              - sqs:SendMessage
+            Resource: !GetAtt DeleteAccountPublishingDeadLetterQueue.Arn
+          - Effect: Allow
+            Action:
               - kms:Decrypt
               - kms:GenerateDataKey*
               - kms:ReEncrypt*

@@ -1,5 +1,5 @@
 export interface SNSMessage {
-  publicSubjectId: string;
-  legacySubjectId: string;
+  public_subject_id: string;
+  legacy_subject_id: string;
 }
 

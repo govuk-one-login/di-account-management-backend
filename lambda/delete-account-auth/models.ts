@@ -1,7 +1,7 @@
 export interface SNSMessage {
   email: string;
-  token: string;
-  sourceIp: string;
-  persistentSessionId: string;
-  sessionId: string;
+  access_token: string;
+  ip: string;
+  persistent_session_id: string;
+  session_id: string;
 }

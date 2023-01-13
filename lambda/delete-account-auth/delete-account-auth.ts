@@ -4,16 +4,20 @@ import { aws4Interceptor } from "aws4-axios";
 import { SNSMessage } from "./models";
 
 export function getRequestConfig(
-  token: string,
+  // eslint-disable-next-line camelcase
+  access_token: string,
   validationStatus?: number[] | null,
-  sourceIp?: string,
-  persistentSessionId?: string,
-  sessionId?: string,
+  ip?: string,
+  // eslint-disable-next-line camelcase
+  persistent_session_id?: string,
+  // eslint-disable-next-line camelcase
+  session_id?: string,
   userLanguage?: string
 ): AxiosRequestConfig {
   const config: AxiosRequestConfig = {
     headers: {
-      Authorization: `Bearer ${token}`,
+      // eslint-disable-next-line camelcase
+      Authorization: `Bearer ${access_token}`,
     },
     proxy: false,
   };
@@ -24,16 +28,20 @@ export function getRequestConfig(
     };
   }
 
-  if (sourceIp) {
-    config.headers!["X-Forwarded-For"] = sourceIp;
+  if (ip) {
+    config.headers!["X-Forwarded-For"] = ip;
   }
 
-  if (persistentSessionId) {
-    config.headers!["di-persistent-session-id"] = persistentSessionId;
+  // eslint-disable-next-line camelcase
+  if (persistent_session_id) {
+    // eslint-disable-next-line camelcase
+    config.headers!["di-persistent-session-id"] = persistent_session_id;
   }
 
-  if (sessionId) {
-    config.headers!["Session-Id"] = sessionId;
+  // eslint-disable-next-line camelcase
+  if (session_id) {
+    // eslint-disable-next-line camelcase
+    config.headers!["Session-Id"] = session_id;
   }
 
   if (userLanguage) {
@@ -46,10 +54,10 @@ export function getRequestConfig(
 export const validateSNSMessage = (snsMessage: SNSMessage): SNSMessage => {
   if (
     !snsMessage.email ||
-    !snsMessage.token ||
-    !snsMessage.sourceIp ||
-    !snsMessage.persistentSessionId ||
-    !snsMessage.sessionId
+    !snsMessage.access_token ||
+    !snsMessage.ip ||
+    !snsMessage.persistent_session_id ||
+    !snsMessage.session_id
   ) {
     throw new Error(
       `SNS Message is missing one or more required attribute/s. ${JSON.stringify(
@@ -71,11 +79,11 @@ async function sendRequest(snsMessage: SNSMessage) {
   axios.interceptors.request.use(interceptor);
 
   const requestConfig = getRequestConfig(
-    snsMessage.token,
+    snsMessage.access_token,
     null,
-    snsMessage.sourceIp,
-    snsMessage.persistentSessionId,
-    snsMessage.sessionId
+    snsMessage.ip,
+    snsMessage.persistent_session_id,
+    snsMessage.session_id
   );
   const deleteUrl = `${process.env.MOCK_PUBLISHING_API_URL}/delete-account`;
   // const deleteUrl = "https://home.dev.account.gov.uk/delete-account";

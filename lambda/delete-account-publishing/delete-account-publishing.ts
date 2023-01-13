@@ -25,10 +25,10 @@ async function sendRequest(snsMessage: SNSMessage) {
 
   const token: string = process.env.GOV_ACCOUNTS_PUBLISHING_API_TOKEN!;
   const requestConfig = getRequestConfig(token);
-  let deleteUrl = `${process.env.MOCK_PUBLISHING_API_URL}/api/oidc-users/${snsMessage.publicSubjectId}`;
-  // let deleteUrl = `account-api.staging.publishing.service.gov.uk/api/oidc-users/${snsMessage.publicSubjectId}`;
-  if (snsMessage.legacySubjectId) {
-    deleteUrl = `${deleteUrl}?legacy_sub=${snsMessage.legacySubjectId}`;
+  let deleteUrl = `${process.env.MOCK_PUBLISHING_API_URL}/api/oidc-users/${snsMessage.public_subject_id}`;
+  // let deleteUrl = `account-api.staging.publishing.service.gov.uk/api/oidc-users/${snsMessage.public_subject_id}`;
+  if (snsMessage.legacy_subject_id) {
+    deleteUrl = `${deleteUrl}?legacy_sub=${snsMessage.legacy_subject_id}`;
   }
 
   console.log(

@@ -1187,6 +1187,7 @@ Resources:
       Environment:
         Variables:
           GOV_ACCOUNTS_PUBLISHING_API_TOKEN: !Sub "{{resolve:secretsmanager:/${AccountManagementFrontendStackName}/Config/Publishing/API/Key}}"
+          MOCK_PUBLISHING_API_URL: !Sub "{{resolve:ssm:/dev/APIGateway/MockPublishingAPI/Endpoint}}"
 
       VpcConfig:
         SubnetIds:

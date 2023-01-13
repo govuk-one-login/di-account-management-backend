@@ -101,13 +101,13 @@ async function sendRequest(snsMessage: SNSMessage) {
 }
 
 export const handler = async (event: SNSEvent): Promise<void> => {
-  console.log("SNS Event:", JSON.stringify(event));
+  console.log(`SNS Event: ${JSON.stringify(event)}`);
 
   await Promise.all(
     event.Records.map(async (record) => {
       try {
         const snsMessage: SNSMessage = JSON.parse(record.Sns.Message);
-        console.log("Parsed SNS Message:", snsMessage);
+        console.log(`Parsed SNS Message: ${snsMessage}`);
         validateSNSMessage(snsMessage);
         await sendRequest(snsMessage);
       } catch (error) {

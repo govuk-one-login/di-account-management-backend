@@ -77,12 +77,16 @@ async function sendRequest(snsMessage: SNSMessage) {
     snsMessage.persistentSessionId,
     snsMessage.sessionId
   );
-  const deleteUrl = "https://home.dev.account.gov.uk/delete-account";
+  const deleteUrl = `${process.env.MOCK_PUBLISHING_API_URL}/api/oidc-users/ana-test-friday`;
+  // const deleteUrl = "https://home.dev.account.gov.uk/delete-account";
 
-  console.log(`Request config: ${requestConfig}, URL: ${deleteUrl}`);
+  console.log(
+    `Request config: ${JSON.stringify(requestConfig)}, URL: ${deleteUrl}`
+  );
 
   try {
-    const response: AxiosResponse = await axios.post(
+    // Change PUT TO POST
+    const response: AxiosResponse = await axios.put(
       deleteUrl,
       { email: snsMessage.email },
       requestConfig
@@ -107,7 +111,7 @@ export const handler = async (event: SNSEvent): Promise<void> => {
     event.Records.map(async (record) => {
       try {
         const snsMessage: SNSMessage = JSON.parse(record.Sns.Message);
-        console.log(`Parsed SNS Message: ${snsMessage}`);
+        console.log(`Parsed SNS Message: ${JSON.stringify(snsMessage)}`);
         validateSNSMessage(snsMessage);
         await sendRequest(snsMessage);
       } catch (error) {

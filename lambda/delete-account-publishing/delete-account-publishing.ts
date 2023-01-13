@@ -25,13 +25,15 @@ async function sendRequest(snsMessage: SNSMessage) {
 
   const token: string = process.env.GOV_ACCOUNTS_PUBLISHING_API_TOKEN!;
   const requestConfig = getRequestConfig(token);
-  // const deleteUrl = `${process.env.MOCK_PUBLISHING_API_URL}/api/oidc-users/${snsMessage.publicSubjectId}`;
-  let deleteUrl = `account-api.staging.publishing.service.gov.uk/api/oidc-users/${snsMessage.publicSubjectId}`;
+  let deleteUrl = `${process.env.MOCK_PUBLISHING_API_URL}/api/oidc-users/${snsMessage.publicSubjectId}`;
+  // let deleteUrl = `account-api.staging.publishing.service.gov.uk/api/oidc-users/${snsMessage.publicSubjectId}`;
   if (snsMessage.legacySubjectId) {
     deleteUrl = `${deleteUrl}?legacy_sub=${snsMessage.legacySubjectId}`;
   }
 
-  console.log(`Request config: ${requestConfig}, URL: ${deleteUrl}`);
+  console.log(
+    `Request config: ${JSON.stringify(requestConfig)}, URL: ${deleteUrl}`
+  );
 
   try {
     const response: AxiosResponse = await axios.delete(
@@ -57,7 +59,7 @@ export const handler = async (event: SNSEvent): Promise<void> => {
     event.Records.map(async (record) => {
       try {
         const snsMessage: SNSMessage = JSON.parse(record.Sns.Message);
-        console.log(`Parsed SNS Message: ${snsMessage}`);
+        console.log(`Parsed SNS Message: ${JSON.stringify(snsMessage)}`);
         await sendRequest(snsMessage);
       } catch (error) {
         console.error(error);

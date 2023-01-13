@@ -40,10 +40,15 @@ async function sendRequest(snsMessage: SNSMessage) {
       deleteUrl,
       requestConfig
     );
-    return {
+
+    const responseObject = {
       status: response.status,
       statusText: response.statusText,
     };
+
+    console.log(`Response: ${responseObject}`);
+
+    return responseObject;
   } catch (error) {
     console.log(
       `Unable to send delete account request to GOV.UK. Error:${error}`

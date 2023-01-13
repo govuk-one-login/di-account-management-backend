@@ -85,17 +85,21 @@ async function sendRequest(snsMessage: SNSMessage) {
   );
 
   try {
-    // Change PUT TO POST
     const response: AxiosResponse = await axios.post(
       deleteUrl,
       { email: snsMessage.email },
       requestConfig
     );
-    return {
+
+    const responseObject = {
       status: response.status,
       statusText: response.statusText,
       data: response.data,
     };
+
+    console.log(`Response: ${responseObject}`);
+
+    return responseObject;
   } catch (error) {
     console.log(
       `Unable to send delete account POST request to Auth. Error:${error}`

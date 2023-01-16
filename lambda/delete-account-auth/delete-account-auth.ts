@@ -5,32 +5,35 @@ import { SNSMessage } from "./models";
 
 export function getRequestConfig(
   accessToken: string,
-  sourceIp: string,
-  persistentSessionId: string,
-  sessionId: string
+  sourceIp?: string,
+  persistentSessionId?: string,
+  sessionId?: string
 ): AxiosRequestConfig {
   const config: AxiosRequestConfig = {
     headers: {
       Authorization: `Bearer ${accessToken}`,
-      "X-Forwarded-For": sourceIp,
-      "di-persistent-session-id": persistentSessionId,
-      "Session-Id": sessionId,
     },
     proxy: false,
   };
+
+  if (sourceIp) {
+    config.headers!["X-Forwarded-For"] = sourceIp;
+  }
+
+  if (persistentSessionId) {
+    config.headers!["di-persistent-session-id"] = persistentSessionId;
+  }
+
+  if (sessionId) {
+    config.headers!["Session-Id"] = sessionId;
+  }
   return config;
 }
 
 export const validateSNSMessage = (snsMessage: SNSMessage): SNSMessage => {
-  if (
-    !snsMessage.email ||
-    !snsMessage.access_token ||
-    !snsMessage.source_ip ||
-    !snsMessage.persistent_session_id ||
-    !snsMessage.session_id
-  ) {
+  if (!snsMessage.email || !snsMessage.access_token) {
     throw new Error(
-      `SNS Message is missing one or more required attribute/s. ${JSON.stringify(
+      `SNS Message is missing one or both of the required attributes "email" and "access_token". ${JSON.stringify(
         snsMessage
       )}`
     );

@@ -1057,7 +1057,7 @@ Resources:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-step-function-trigger
       Architectures: [ "x86_64" ]
       ReservedConcurrentExecutions: 1
-      CodeUri: ../lambda/ste-function-trigger/
+      CodeUri: ../lambda/step-function-trigger/
       Handler: step-function-trigger.handler
       KmsKeyArn: !GetAtt LambdaKMSKey.Arn
       PackageType: Zip
@@ -1130,7 +1130,7 @@ Resources:
           - Effect: Allow
             Action:
               - states:StartExecution
-            Resource: !GetAtt StepFunctionTriggerDeadLetterQueue.Arn
+            Resource: !Ref StepFunction
           - Effect: Allow
             Action:
               - kms:Decrypt
@@ -1152,7 +1152,36 @@ Resources:
     Properties:
       StateMachineName: !Sub "${AWS::StackName}-step-function"
       RoleArn: !GetAtt StepFunctionIAMRole.Arn
-      DefinitionString: ?????????
+      DefinitionString:  !Sub
+        |-
+        {
+          "Comment": "A state machine for handling delete events",
+          "StartAt": "SendDeleteAccountRequestToAuth",
+          "SendDeleteAccountRequestToAuth": {
+            "StartExecution": {
+              "Type": "Task",
+              "Resource": "${DeleteAccountAuthFunction.Arn}",
+              "OutputPath": "$.Payload",
+              "Parameters": {
+                      "Payload.$": "$",
+                      "FunctionName": !Ref DeleteAccountAuthFunction
+                    },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "States.ALL"
+                  ],
+                  "IntervalSeconds": 5,
+                  "MaxAttempts": 6,
+                  "BackoffRate": 2
+                }
+              ],
+              "Next": "SendDeleteAccountRequestToGov"
+            },
+        
+          }
+        }
+  
         
   StepFunctionIAMRole:
     Type: AWS::IAM::Role
@@ -1182,27 +1211,10 @@ Resources:
       
       
     
-      
 
   ###########################################
   # Auth Delete Account
   ###########################################
-  DeleteAccountAuthSubscription:
-    Type: AWS::SNS::Subscription
-    Properties:
-      Endpoint: !GetAtt DeleteAccountAuthFunction.Arn
-      Protocol: lambda
-      TopicArn: !Ref UserAccountDeletionTopic
-
-  DeleteAccountAuthLambdaInvokePermission:
-    Type: AWS::Lambda::Permission
-    Properties:
-      Action: lambda:InvokeFunction
-      Principal: sns.amazonaws.com
-      SourceArn:
-        Ref: UserAccountDeletionTopic
-      FunctionName: !GetAtt DeleteAccountAuthFunction.Arn
-
   DeleteAccountAuthFunction:
     DependsOn:
       - DeleteAccountAuthFunctionLogGroup

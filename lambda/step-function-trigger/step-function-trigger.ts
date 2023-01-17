@@ -1,11 +1,11 @@
 import { SNSEvent } from "aws-lambda";
-import aws from "aws-sdk";
+import { SFNClient, StartExecutionCommand } from "@aws-sdk/client-sfn";
 import { SNSMessage } from "./models";
 
 export const handler = async (event: SNSEvent): Promise<void> => {
   console.log(`SNS Event: ${JSON.stringify(event)}`);
 
-  const stepFunction = new aws.StepFunctions();
+  const client = new SFNClient({ region: "eu-west-2" });
 
   await Promise.all(
     event.Records.map(async (record) => {
@@ -13,21 +13,16 @@ export const handler = async (event: SNSEvent): Promise<void> => {
         const snsMessage: SNSMessage = JSON.parse(record.Sns.Message);
         console.log(`Parsed SNS Message: ${JSON.stringify(snsMessage)}`);
 
-        const params = {
+        const input = {
           stateMachineArn: process.env.STEP_FUNCTION_ARN!,
           input: JSON.stringify(snsMessage),
         };
 
-        stepFunction.startExecution(params, function (error, data) {
-          if (error) {
-            console.log(
-              `An error occurred while trying to execute the step function. Error: ${error}.`
-            );
-          }
-          console.log("Started executing the step function.");
-        });
+        const command = new StartExecutionCommand(input);
+        const response = await client.send(command);
+        console.log(`Response: ${JSON.stringify(response)}`);
 
-        // validateSNSMessage(snsMessage);
+        // validateSNSMessage(snsMessage); SHOULD THE VALIDATION BE IMPLEMENTED HERE?
       } catch (error) {
         console.error(`An error occurred. Error: ${error}.`);
       }

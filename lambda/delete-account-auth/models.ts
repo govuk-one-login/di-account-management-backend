@@ -1,4 +1,4 @@
-export interface SNSMessage {
+export interface Payload {
   email: string;
   access_token: string;
   source_ip: string;

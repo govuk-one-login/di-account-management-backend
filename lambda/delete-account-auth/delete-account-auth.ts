@@ -1,7 +1,6 @@
-import { SNSEvent } from "aws-lambda";
 import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
 import { aws4Interceptor } from "aws4-axios";
-import { SNSMessage } from "./models";
+import { Payload } from "./models";
 
 export function getRequestConfig(
   accessToken: string,
@@ -30,18 +29,18 @@ export function getRequestConfig(
   return config;
 }
 
-export const validateSNSMessage = (snsMessage: SNSMessage): SNSMessage => {
-  if (!snsMessage.email || !snsMessage.access_token) {
+export const validatePayload = (payload: Payload): Payload => {
+  if (!payload.email || !payload.access_token) {
     throw new Error(
-      `SNS Message is missing one or both of the required attributes "email" and "access_token". ${JSON.stringify(
-        snsMessage
+      `Payload is missing one or both of the required attributes "email" and "access_token". ${JSON.stringify(
+        payload
       )}`
     );
   }
-  return snsMessage;
+  return payload;
 };
 
-export async function sendRequest(snsMessage: SNSMessage) {
+export async function sendRequest(payload: Payload) {
   console.log("Sending POST request to Auth.");
 
   const interceptor = aws4Interceptor({
@@ -52,10 +51,10 @@ export async function sendRequest(snsMessage: SNSMessage) {
   axios.interceptors.request.use(interceptor);
 
   const requestConfig = getRequestConfig(
-    snsMessage.access_token,
-    snsMessage.source_ip,
-    snsMessage.persistent_session_id,
-    snsMessage.session_id
+    payload.access_token,
+    payload.source_ip,
+    payload.persistent_session_id,
+    payload.session_id
   );
   const deleteUrl = `${process.env.MOCK_PUBLISHING_API_URL}/delete-account`;
   // const deleteUrl = "https://home.dev.account.gov.uk/delete-account";
@@ -67,7 +66,7 @@ export async function sendRequest(snsMessage: SNSMessage) {
   try {
     const response: AxiosResponse = await axios.post(
       deleteUrl,
-      { email: snsMessage.email },
+      { email: payload.email },
       requestConfig
     );
 
@@ -88,19 +87,14 @@ export async function sendRequest(snsMessage: SNSMessage) {
   return undefined;
 }
 
-export const handler = async (event: SNSEvent): Promise<void> => {
-  console.log(`SNS Event: ${JSON.stringify(event)}`);
-
-  await Promise.all(
-    event.Records.map(async (record) => {
-      try {
-        const snsMessage: SNSMessage = JSON.parse(record.Sns.Message);
-        console.log(`Parsed SNS Message: ${JSON.stringify(snsMessage)}`);
-        validateSNSMessage(snsMessage);
-        await sendRequest(snsMessage);
-      } catch (error) {
-        console.error(error);
-      }
-    })
-  );
+export const handler = async (event: { Payload: object }): Promise<void> => {
+  console.log(`Event received: ${JSON.stringify(event)}`);
+  try {
+    const payload: Payload = JSON.parse(JSON.stringify(event.Payload));
+    console.log(`Parsed event: ${JSON.stringify(payload)}`);
+    validatePayload(payload);
+    await sendRequest(payload);
+  } catch (error) {
+    console.error(error);
+  }
 };

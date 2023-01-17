@@ -178,7 +178,7 @@ Resources:
       KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
-    
+
   ######################
   # Save Raw Events
   ######################
@@ -318,8 +318,8 @@ Resources:
     Properties:
       AlarmName:
         !Join [
-          "-",
-          [ !Ref AWS::StackName, !Ref Environment, SaveDeadLetterQueueAlarm ],
+            "-",
+            [ !Ref AWS::StackName, !Ref Environment, SaveDeadLetterQueueAlarm ],
         ]
       Namespace: "AWS/SQS"
       MetricName: "ApproximateNumberOfMessagesVisible"
@@ -496,8 +496,8 @@ Resources:
     Properties:
       AlarmName:
         !Join [
-          "-",
-          [ !Ref AWS::StackName, !Ref Environment, QueryDeadLetterQueueAlarm ],
+            "-",
+            [ !Ref AWS::StackName, !Ref Environment, QueryDeadLetterQueueAlarm ],
         ]
       Namespace: "AWS/SQS"
       MetricName: "ApproximateNumberOfMessagesVisible"
@@ -642,8 +642,8 @@ Resources:
     Properties:
       AlarmName:
         !Join [
-          "-",
-          [ !Ref AWS::StackName, !Ref Environment, FormatDeadLetterQueueAlarm ],
+            "-",
+            [ !Ref AWS::StackName, !Ref Environment, FormatDeadLetterQueueAlarm ],
         ]
       Namespace: "AWS/SQS"
       MetricName: "ApproximateNumberOfMessagesVisible"
@@ -788,8 +788,8 @@ Resources:
     Properties:
       AlarmName:
         !Join [
-          "-",
-          [ !Ref AWS::StackName, !Ref Environment, WriteDeadLetterQueueAlarm ],
+            "-",
+            [ !Ref AWS::StackName, !Ref Environment, WriteDeadLetterQueueAlarm ],
         ]
       Namespace: "AWS/SQS"
       MetricName: "ApproximateNumberOfMessagesVisible"
@@ -983,7 +983,7 @@ Resources:
     Properties:
       AlarmName:
         !Join [
-          "-",
+            "-",
           [
             !Ref AWS::StackName,
             !Ref Environment,
@@ -1009,8 +1009,8 @@ Resources:
     Properties:
       AlarmName:
         !Join [
-          "-",
-          [ !Ref AWS::StackName, !Ref Environment, DeleteDeadLetterQueueAlarm ],
+            "-",
+            [ !Ref AWS::StackName, !Ref Environment, DeleteDeadLetterQueueAlarm ],
         ]
       Namespace: "AWS/SQS"
       MetricName: "ApproximateNumberOfMessagesVisible"
@@ -1025,10 +1025,10 @@ Resources:
       AlarmActions:
         - !Ref AlarmNotificationTopic
       ActionsEnabled: true
-      
-      
-      
-      
+
+
+
+
   ###########################################
   # Step Function Trigger Function
   ###########################################
@@ -1146,7 +1146,7 @@ Resources:
       LogGroupName: !Sub "${AWS::StackName}-step-function-trigger-log-group"
       RetentionInDays: 30
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
-      
+
   StepFunction:
     Type: AWS::StepFunctions::StateMachine
     Properties:
@@ -1157,15 +1157,15 @@ Resources:
         {
           "Comment": "A state machine for handling delete events",
           "StartAt": "SendDeleteAccountRequestToAuth",
-          "SendDeleteAccountRequestToAuth": {
-            "StartExecution": {
+          "States": {
+            "SendDeleteAccountRequestToAuth": {
               "Type": "Task",
               "Resource": "${DeleteAccountAuthFunction.Arn}",
               "OutputPath": "$.Payload",
               "Parameters": {
-                      "Payload.$": "$",
-                      "FunctionName": !Ref DeleteAccountAuthFunction
-                    },
+                "Payload.$": "$",
+                "FunctionName": "DeleteAccountAuthFunction"
+              },
               "Retry": [
                 {
                   "ErrorEquals": [
@@ -1176,41 +1176,56 @@ Resources:
                   "BackoffRate": 2
                 }
               ],
-              "Next": "SendDeleteAccountRequestToGov"
+              "Next": "SendDeleteAccountRequestToGovUk"
             },
-        
+            "SendDeleteAccountRequestToGovUk": {
+              "Type": "Task",
+              "Resource": "${DeleteAccountPublishingFunction.Arn}",
+              "OutputPath": "$.Payload",
+              "Parameters": {
+                "Payload.$": "$",
+                "FunctionName": "DeleteAccountPublishingFunction"
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "States.ALL"
+                  ],
+                  "IntervalSeconds": 5,
+                  "MaxAttempts": 6,
+                  "BackoffRate": 2
+                }
+              ],
+              "End": true
+            }
           }
         }
-  
-        
+
   StepFunctionIAMRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
-          -
-            Effect: "Allow"
+          - Effect: "Allow"
             Principal:
               Service:
                 - Fn::Sub: "states.${AWS::Region}.amazonaws.com"
             Action:
               - "sts:AssumeRole"
       Policies:
-        -
-          PolicyName: StatesExecutionPolicy
+        - PolicyName: StatesExecutionPolicy
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
-              -
-                Effect: "Allow"
+              - Effect: "Allow"
                 Action: "lambda:InvokeFunction"
                 Resource:
                   - !GetAtt DeleteAccountAuthFunction.Arn
                   - !GetAtt DeleteAccountPublishingFunction.Arn
-      
-      
-    
+
+
+
 
   ###########################################
   # Auth Delete Account
@@ -1238,12 +1253,12 @@ Resources:
       Environment:
         Variables:
           MOCK_PUBLISHING_API_URL: !Sub "{{resolve:ssm:/dev/APIGateway/MockPublishingAPI/Endpoint}}"
-#      VpcConfig:
-#        SubnetIds:
-#          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdA
-#          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdB
-#        SecurityGroupIds:
-#          - Fn::ImportValue: !Sub ${VpcStackName}-AWSServicesEndpointSecurityGroupId
+      #      VpcConfig:
+      #        SubnetIds:
+      #          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdA
+      #          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdB
+      #        SecurityGroupIds:
+      #          - Fn::ImportValue: !Sub ${VpcStackName}-AWSServicesEndpointSecurityGroupId
       Tags:
         CheckovRulesToSkip: CKV_AWS_117
     Metadata:
@@ -1310,13 +1325,13 @@ Resources:
       RetentionInDays: 30
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
-#  DeleteAccountAuthCSLSSubscription:
-#    Condition: IsNotDevelopment
-#    Type: AWS::Logs::SubscriptionFilter
-#    Properties:
-#      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
-#      FilterPattern: ""
-#      LogGroupName: !Ref DeleteAccountAuthFunctionLogGroup
+  #  DeleteAccountAuthCSLSSubscription:
+  #    Condition: IsNotDevelopment
+  #    Type: AWS::Logs::SubscriptionFilter
+  #    Properties:
+  #      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
+  #      FilterPattern: ""
+  #      LogGroupName: !Ref DeleteAccountAuthFunctionLogGroup
 
   ###########################################
   # GOV.UK Delete Account
@@ -1361,12 +1376,12 @@ Resources:
         Variables:
           GOV_ACCOUNTS_PUBLISHING_API_TOKEN: !Sub "{{resolve:secretsmanager:/${AccountManagementFrontendStackName}/Config/Publishing/API/Key}}"
           MOCK_PUBLISHING_API_URL: !Sub "{{resolve:ssm:/dev/APIGateway/MockPublishingAPI/Endpoint}}"
-#      VpcConfig:
-#        SubnetIds:
-#          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdA
-#          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdB
-#        SecurityGroupIds:
-#          - Fn::ImportValue: !Sub ${VpcStackName}-AWSServicesEndpointSecurityGroupId
+      #      VpcConfig:
+      #        SubnetIds:
+      #          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdA
+      #          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdB
+      #        SecurityGroupIds:
+      #          - Fn::ImportValue: !Sub ${VpcStackName}-AWSServicesEndpointSecurityGroupId
       Tags:
         CheckovRulesToSkip: CKV_AWS_117
     Metadata:
@@ -1433,13 +1448,13 @@ Resources:
       RetentionInDays: 30
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
-#  DeleteAccountPublishingCSLSSubscription:
-#    Condition: IsNotDevelopment
-#    Type: AWS::Logs::SubscriptionFilter
-#    Properties:
-#      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
-#      FilterPattern: ""
-#      LogGroupName: !Ref DeleteAccountPublishingFunctionLogGroup
+  #  DeleteAccountPublishingCSLSSubscription:
+  #    Condition: IsNotDevelopment
+  #    Type: AWS::Logs::SubscriptionFilter
+  #    Properties:
+  #      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
+  #      FilterPattern: ""
+  #      LogGroupName: !Ref DeleteAccountPublishingFunctionLogGroup
 
   #######################
   # Monitoring

@@ -1,8 +1,8 @@
 {
-  "name": "delete-account-auth",
+  "name": "step-function-trigger",
   "version": "1.0.0",
-  "description": "A Lambda function to send an HTTP request to Auth to delete the user account",
-  "main": "delete-account-auth.js",
+  "description": "A Lambda function to trigger a state machine (step function)",
+  "main": "step-function-trigger.js",
   "scripts": {
     "test": "jest",
     "lint": "eslint . --ext .ts"
@@ -27,7 +27,6 @@
     "typescript": "^4.8.4"
   },
   "dependencies": {
-    "@aws-sdk/client-sfn": "^3.245.0",
     "@types/aws-lambda": "^8.10.106",
     "aws-sdk": "^2.1295.0",
     "aws4-axios": "^2.4.9",

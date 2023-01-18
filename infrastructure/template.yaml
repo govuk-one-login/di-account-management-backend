@@ -318,8 +318,8 @@ Resources:
     Properties:
       AlarmName:
         !Join [
-            "-",
-            [ !Ref AWS::StackName, !Ref Environment, SaveDeadLetterQueueAlarm ],
+          "-",
+          [ !Ref AWS::StackName, !Ref Environment, SaveDeadLetterQueueAlarm ],
         ]
       Namespace: "AWS/SQS"
       MetricName: "ApproximateNumberOfMessagesVisible"
@@ -496,8 +496,8 @@ Resources:
     Properties:
       AlarmName:
         !Join [
-            "-",
-            [ !Ref AWS::StackName, !Ref Environment, QueryDeadLetterQueueAlarm ],
+          "-",
+          [ !Ref AWS::StackName, !Ref Environment, QueryDeadLetterQueueAlarm ],
         ]
       Namespace: "AWS/SQS"
       MetricName: "ApproximateNumberOfMessagesVisible"
@@ -642,8 +642,8 @@ Resources:
     Properties:
       AlarmName:
         !Join [
-            "-",
-            [ !Ref AWS::StackName, !Ref Environment, FormatDeadLetterQueueAlarm ],
+          "-",
+          [ !Ref AWS::StackName, !Ref Environment, FormatDeadLetterQueueAlarm ],
         ]
       Namespace: "AWS/SQS"
       MetricName: "ApproximateNumberOfMessagesVisible"
@@ -788,8 +788,8 @@ Resources:
     Properties:
       AlarmName:
         !Join [
-            "-",
-            [ !Ref AWS::StackName, !Ref Environment, WriteDeadLetterQueueAlarm ],
+          "-",
+          [ !Ref AWS::StackName, !Ref Environment, WriteDeadLetterQueueAlarm ],
         ]
       Namespace: "AWS/SQS"
       MetricName: "ApproximateNumberOfMessagesVisible"
@@ -983,7 +983,7 @@ Resources:
     Properties:
       AlarmName:
         !Join [
-            "-",
+          "-",
           [
             !Ref AWS::StackName,
             !Ref Environment,
@@ -1009,8 +1009,8 @@ Resources:
     Properties:
       AlarmName:
         !Join [
-            "-",
-            [ !Ref AWS::StackName, !Ref Environment, DeleteDeadLetterQueueAlarm ],
+          "-",
+          [ !Ref AWS::StackName, !Ref Environment, DeleteDeadLetterQueueAlarm ],
         ]
       Namespace: "AWS/SQS"
       MetricName: "ApproximateNumberOfMessagesVisible"
@@ -1152,7 +1152,14 @@ Resources:
     Properties:
       StateMachineName: !Sub "${AWS::StackName}-delete-events-step-function"
       RoleArn: !GetAtt DeleteEventsStepFunctionIAMRole.Arn
-      DefinitionString:  !Sub
+      LoggingConfiguration:
+        Destinations:
+          - CloudWatchLogsLogGroup:
+              LogGroupArn: !GetAtt DeleteEventsStepFunctionLogGroup.Arn
+        Level: "ALL"
+        IncludeExecutionData: True
+
+      DefinitionString: !Sub
         |-
         {
           "Comment": "A state machine for handling delete events",
@@ -1221,6 +1228,33 @@ Resources:
                 Resource:
                   - !GetAtt DeleteAccountAuthFunction.Arn
                   - !GetAtt DeleteAccountPublishingFunction.Arn
+        - PolicyName: StepFunctionExecRole
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                  - lambda:ListFunctions
+                Resource: !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:my-lambdas-namespace-*"
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogDelivery
+                  - logs:GetLogDelivery
+                  - logs:UpdateLogDelivery
+                  - logs:DeleteLogDelivery
+                  - logs:ListLogDeliveries
+                  - logs:PutResourcePolicy
+                  - logs:DescribeResourcePolicies
+                  - logs:DescribeLogGroups
+                Resource: "*"
+
+  DeleteEventsStepFunctionLogGroup:
+      Type: AWS::Logs::LogGroup
+      Properties:
+        LogGroupName: !Sub "${AWS::StackName}-delete-events-step-function-log-group"
+        RetentionInDays: 30
+        KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   ###############################
   # Send Delete Request to Auth

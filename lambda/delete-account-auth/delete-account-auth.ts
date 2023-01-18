@@ -29,7 +29,7 @@ export function getRequestConfig(
   return config;
 }
 
-export const validatePayload = (payload: Payload): Payload => {
+export const validatePayload = (payload: Payload) => {
   if (!payload.email || !payload.access_token) {
     throw new Error(
       `Payload is missing one or both of the required attributes "email" and "access_token". ${JSON.stringify(
@@ -41,7 +41,7 @@ export const validatePayload = (payload: Payload): Payload => {
 };
 
 export async function sendRequest(payload: Payload) {
-  console.log("Sending POST request to Auth.");
+  console.log("Sending POST request to Auth HTTP API.");
 
   const interceptor = aws4Interceptor({
     region: "eu-west-2",
@@ -81,17 +81,20 @@ export async function sendRequest(payload: Payload) {
     return responseObject;
   } catch (error) {
     console.log(
-      `Unable to send delete account POST request to Auth. Error:${error}`
+      `Unable to successfully send POST request to Auth HTTP API. Error:${error}`
     );
   }
   return undefined;
 }
 
-export const handler = async (event: { Payload: object }): Promise<void> => {
-  console.log(`Event received: ${JSON.stringify(event)}`);
+export const handler = async (event: {
+  Payload: Payload;
+  FunctionName: string;
+}): Promise<void> => {
+  console.log(`Input event received: ${JSON.stringify(event)}`);
   try {
-    const payload: Payload = JSON.parse(JSON.stringify(event.Payload));
-    console.log(`Parsed event: ${JSON.stringify(payload)}`);
+    const payload = event.Payload;
+    console.log(`Payload: ${JSON.stringify(payload)}`);
     validatePayload(payload);
     await sendRequest(payload);
   } catch (error) {

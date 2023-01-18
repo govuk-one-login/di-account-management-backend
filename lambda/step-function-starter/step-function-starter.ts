@@ -3,7 +3,7 @@ import { SFNClient, StartExecutionCommand } from "@aws-sdk/client-sfn";
 import { SNSMessage } from "./models";
 
 export const handler = async (event: SNSEvent): Promise<void> => {
-  console.log(`SNS Event: ${JSON.stringify(event)}`);
+  console.log(`Received SNS Event: ${JSON.stringify(event)}`);
 
   const client = new SFNClient({ region: "eu-west-2" });
 
@@ -18,11 +18,13 @@ export const handler = async (event: SNSEvent): Promise<void> => {
           input: JSON.stringify(snsMessage),
         };
 
+        console.log("Starting state machine execution.");
+
         const command = new StartExecutionCommand(input);
         const response = await client.send(command);
-        console.log(`Response: ${JSON.stringify(response)}`);
-
-        // validateSNSMessage(snsMessage); SHOULD THE VALIDATION BE IMPLEMENTED HERE?
+        console.log(
+          `Response from StartExecutionCommand: ${JSON.stringify(response)}`
+        );
       } catch (error) {
         console.error(`An error occurred. Error: ${error}.`);
       }

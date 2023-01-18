@@ -1026,51 +1026,48 @@ Resources:
         - !Ref AlarmNotificationTopic
       ActionsEnabled: true
 
-
-
-
-  ###########################################
-  # Step Function Trigger Function
-  ###########################################
-  StepFunctionTriggerSubscription:
+  #########################
+  # Step Function Starter
+  #########################
+  StepFunctionStarterSubscription:
     Type: AWS::SNS::Subscription
     Properties:
-      Endpoint: !GetAtt StepFunctionTriggerFunction.Arn
+      Endpoint: !GetAtt StepFunctionStarterFunction.Arn
       Protocol: lambda
       TopicArn: !Ref UserAccountDeletionTopic
 
-  StepFunctionTriggerLambdaInvokePermission:
+  StepFunctionStarterLambdaInvokePermission:
     Type: AWS::Lambda::Permission
     Properties:
       Action: lambda:InvokeFunction
       Principal: sns.amazonaws.com
       SourceArn:
         Ref: UserAccountDeletionTopic
-      FunctionName: !GetAtt StepFunctionTriggerFunction.Arn
+      FunctionName: !GetAtt StepFunctionStarterFunction.Arn
 
-  StepFunctionTriggerFunction:
+  StepFunctionStarterFunction:
     DependsOn:
-      - StepFunctionTriggerFunctionLogGroup
+      - StepFunctionStarterFunctionLogGroup
     Type: AWS::Serverless::Function
     Properties:
       # checkov:skip=CKV_AWS_117: Ensure that AWS Lambda function is configured inside a VPC
-      FunctionName: !Sub ${Environment}-${AWS::StackName}-step-function-trigger
+      FunctionName: !Sub ${Environment}-${AWS::StackName}-step-function-starter
       Architectures: [ "x86_64" ]
       ReservedConcurrentExecutions: 1
-      CodeUri: ../lambda/step-function-trigger/
-      Handler: step-function-trigger.handler
+      CodeUri: ../lambda/step-function-starter/
+      Handler: step-function-starter.handler
       KmsKeyArn: !GetAtt LambdaKMSKey.Arn
       PackageType: Zip
       MemorySize: 128
       Runtime: nodejs16.x
-      Role: !GetAtt StepFunctionTriggerRole.Arn
+      Role: !GetAtt StepFunctionStarterRole.Arn
       Timeout: 5
       DeadLetterQueue:
         Type: SQS
-        TargetArn: !GetAtt StepFunctionTriggerDeadLetterQueue.Arn
+        TargetArn: !GetAtt StepFunctionStarterDeadLetterQueue.Arn
       Environment:
         Variables:
-          STEP_FUNCTION_ARN: !Ref StepFunction
+          STEP_FUNCTION_ARN: !Ref DeleteEventsStepFunction
       #      VpcConfig:
       #        SubnetIds:
       #          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdA
@@ -1086,9 +1083,9 @@ Resources:
         Target: "es2020"
         Sourcemap: true
         EntryPoints:
-          - step-function-trigger.ts
+          - step-function-starter.ts
 
-  StepFunctionTriggerDeadLetterQueue:
+  StepFunctionStarterDeadLetterQueue:
     Type: AWS::SQS::Queue
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
@@ -1096,7 +1093,7 @@ Resources:
       MessageRetentionPeriod: 1209600
       KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
 
-  StepFunctionTriggerRole:
+  StepFunctionStarterRole:
     Type: AWS::IAM::Role
     Properties:
       PermissionsBoundary: !If
@@ -1106,7 +1103,7 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
-        - !Ref StepFunctionTriggerPolicy
+        - !Ref StepFunctionStarterPolicy
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -1117,7 +1114,7 @@ Resources:
             Action:
               - "sts:AssumeRole"
 
-  StepFunctionTriggerPolicy:
+  StepFunctionStarterPolicy:
     Type: AWS::IAM::ManagedPolicy
     Properties:
       PolicyDocument:
@@ -1126,11 +1123,11 @@ Resources:
           - Effect: Allow
             Action:
               - sqs:SendMessage
-            Resource: !GetAtt StepFunctionTriggerDeadLetterQueue.Arn
+            Resource: !GetAtt StepFunctionStarterDeadLetterQueue.Arn
           - Effect: Allow
             Action:
               - states:StartExecution
-            Resource: !Ref StepFunction
+            Resource: !Ref DeleteEventsStepFunction
           - Effect: Allow
             Action:
               - kms:Decrypt
@@ -1140,18 +1137,21 @@ Resources:
               - !GetAtt LoggingKmsKey.Arn
               - !GetAtt LambdaKMSKey.Arn
 
-  StepFunctionTriggerFunctionLogGroup:
+  StepFunctionStarterFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub "${AWS::StackName}-step-function-trigger-log-group"
+      LogGroupName: !Sub "${AWS::StackName}-step-function-starter-log-group"
       RetentionInDays: 30
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
-  StepFunction:
+  ###############################
+  # Delete Events State Machine
+  ###############################
+  DeleteEventsStepFunction:
     Type: AWS::StepFunctions::StateMachine
     Properties:
-      StateMachineName: !Sub "${AWS::StackName}-step-function"
-      RoleArn: !GetAtt StepFunctionIAMRole.Arn
+      StateMachineName: !Sub "${AWS::StackName}-delete-events-step-function"
+      RoleArn: !GetAtt DeleteEventsStepFunctionIAMRole.Arn
       DefinitionString:  !Sub
         |-
         {
@@ -1161,7 +1161,6 @@ Resources:
             "SendDeleteAccountRequestToAuth": {
               "Type": "Task",
               "Resource": "${DeleteAccountAuthFunction.Arn}",
-              "OutputPath": "$.Payload",
               "Parameters": {
                 "Payload.$": "$",
                 "FunctionName": "DeleteAccountAuthFunction"
@@ -1181,9 +1180,8 @@ Resources:
             "SendDeleteAccountRequestToGovUk": {
               "Type": "Task",
               "Resource": "${DeleteAccountPublishingFunction.Arn}",
-              "OutputPath": "$.Payload",
               "Parameters": {
-                "Payload.$": "$",
+                "Payload.$": "$$.Execution.Input",
                 "FunctionName": "DeleteAccountPublishingFunction"
               },
               "Retry": [
@@ -1201,7 +1199,7 @@ Resources:
           }
         }
 
-  StepFunctionIAMRole:
+  DeleteEventsStepFunctionIAMRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -1224,12 +1222,9 @@ Resources:
                   - !GetAtt DeleteAccountAuthFunction.Arn
                   - !GetAtt DeleteAccountPublishingFunction.Arn
 
-
-
-
-  ###########################################
-  # Auth Delete Account
-  ###########################################
+  ###############################
+  # Send Delete Request to Auth
+  ###############################
   DeleteAccountAuthFunction:
     DependsOn:
       - DeleteAccountAuthFunctionLogGroup
@@ -1333,25 +1328,9 @@ Resources:
   #      FilterPattern: ""
   #      LogGroupName: !Ref DeleteAccountAuthFunctionLogGroup
 
-  ###########################################
-  # GOV.UK Delete Account
-  ###########################################
-  DeleteAccountPublishingSubscription:
-    Type: AWS::SNS::Subscription
-    Properties:
-      Endpoint: !GetAtt DeleteAccountPublishingFunction.Arn
-      Protocol: lambda
-      TopicArn: !Ref UserAccountDeletionTopic
-
-  DeleteAccountPublishingLambdaInvokePermission:
-    Type: AWS::Lambda::Permission
-    Properties:
-      Action: lambda:InvokeFunction
-      Principal: sns.amazonaws.com
-      SourceArn:
-        Ref: UserAccountDeletionTopic
-      FunctionName: !GetAtt DeleteAccountPublishingFunction.Arn
-
+  ###############################################
+  # Send Delete Request to GOV.UK Publishing API
+  ###############################################
   DeleteAccountPublishingFunction:
     DependsOn:
       - DeleteAccountPublishingFunctionLogGroup

@@ -1,8 +1,8 @@
 {
-  "name": "step-function-trigger",
+  "name": "step-function-starter",
   "version": "1.0.0",
-  "description": "A Lambda function to trigger a state machine (step function)",
-  "main": "step-function-trigger.js",
+  "description": "A Lambda function to start the state machine (step function) execution",
+  "main": "step-function-starter.js",
   "scripts": {
     "test": "jest",
     "lint": "eslint . --ext .ts"

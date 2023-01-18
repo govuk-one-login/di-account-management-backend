@@ -1046,8 +1046,6 @@ Resources:
       FunctionName: !GetAtt StepFunctionStarterFunction.Arn
 
   StepFunctionStarterFunction:
-    DependsOn:
-      - StepFunctionStarterFunctionLogGroup
     Type: AWS::Serverless::Function
     Properties:
       # checkov:skip=CKV_AWS_117: Ensure that AWS Lambda function is configured inside a VPC
@@ -1139,8 +1137,10 @@ Resources:
 
   StepFunctionStarterFunctionLogGroup:
     Type: AWS::Logs::LogGroup
+    DependsOn:
+      - StepFunctionStarterFunction
     Properties:
-      LogGroupName: !Sub "${AWS::StackName}-step-function-starter-log-group"
+      LogGroupName: !Sub /aws/lambda/${StepFunctionStarterFunction}
       RetentionInDays: 30
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
@@ -1151,6 +1151,7 @@ Resources:
     Type: AWS::StepFunctions::StateMachine
     Properties:
       StateMachineName: !Sub "${AWS::StackName}-delete-events-step-function"
+      StateMachineType: STANDARD
       RoleArn: !GetAtt DeleteEventsStepFunctionIAMRole.Arn
       DefinitionString:  !Sub
         |-
@@ -1175,7 +1176,24 @@ Resources:
                   "BackoffRate": 2
                 }
               ],
-              "Next": "SendDeleteAccountRequestToGovUk"
+              "Next": "SendDeleteAccountRequestToGovUk",
+              "Catch": [
+                {
+                  "ErrorEquals": [
+                    "States.ALL"
+                  ],
+                  "Next": "SQSSendMessageToFailureQueue"
+                }
+              ]
+            },
+            "SQSSendMessageToFailureQueue": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::sqs:sendMessage",
+              "Parameters": {
+                "MessageBody.$": "$",
+                "QueueUrl": "${DeleteAccountAuthDeadLetterQueue.QueueUrl}"
+              },
+              "End": true
             },
             "SendDeleteAccountRequestToGovUk": {
               "Type": "Task",
@@ -1194,7 +1212,15 @@ Resources:
                   "BackoffRate": 2
                 }
               ],
-              "End": true
+              "End": true,
+              "Catch": [
+                {
+                  "ErrorEquals": [
+                    "States.ALL"
+                  ],
+                  "Next": "SQSSendMessageToFailureQueue"
+                }
+              ]
             }
           }
         }
@@ -1226,8 +1252,6 @@ Resources:
   # Send Delete Request to Auth
   ###############################
   DeleteAccountAuthFunction:
-    DependsOn:
-      - DeleteAccountAuthFunctionLogGroup
     Type: AWS::Serverless::Function
     Properties:
       # checkov:skip=CKV_AWS_117: Ensure that AWS Lambda function is configured inside a VPC
@@ -1315,8 +1339,10 @@ Resources:
 
   DeleteAccountAuthFunctionLogGroup:
     Type: AWS::Logs::LogGroup
+    DependsOn:
+      - DeleteAccountAuthFunction
     Properties:
-      LogGroupName: !Sub "${AWS::StackName}-delete-account-auth-log-group"
+      LogGroupName: !Sub /aws/lambda/${DeleteAccountAuthFunction}
       RetentionInDays: 30
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
@@ -1332,8 +1358,6 @@ Resources:
   # Send Delete Request to GOV.UK Publishing API
   ###############################################
   DeleteAccountPublishingFunction:
-    DependsOn:
-      - DeleteAccountPublishingFunctionLogGroup
     Type: AWS::Serverless::Function
     Properties:
       # checkov:skip=CKV_AWS_117: Ensure that AWS Lambda function is configured inside a VPC
@@ -1422,10 +1446,13 @@ Resources:
 
   DeleteAccountPublishingFunctionLogGroup:
     Type: AWS::Logs::LogGroup
+    DependsOn:
+      - DeleteAccountPublishingFunction
     Properties:
-      LogGroupName: !Sub "${AWS::StackName}-delete-account-publishing-log-group"
+      LogGroupName: !Sub /aws/lambda/${DeleteAccountPublishingFunction}
       RetentionInDays: 30
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
+
 
   #  DeleteAccountPublishingCSLSSubscription:
   #    Condition: IsNotDevelopment

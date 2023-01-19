@@ -76,15 +76,14 @@ export async function sendRequest(payload: Payload) {
       data: response.data,
     };
 
-    console.log(`Response: ${JSON.stringify(responseObject)}`);
+    console.log(`Response from Auth API: ${JSON.stringify(responseObject)}`);
 
     return responseObject;
-  } catch (error) {
-    console.log(
+  } catch (error: any) {
+    throw error(
       `Unable to successfully send POST request to Auth HTTP API. Error:${error}`
     );
   }
-  return undefined;
 }
 
 export const handler = async (event: {
@@ -92,12 +91,8 @@ export const handler = async (event: {
   FunctionName: string;
 }): Promise<void> => {
   console.log(`Input event received: ${JSON.stringify(event)}`);
-  try {
-    const payload = event.Payload;
-    console.log(`Payload: ${JSON.stringify(payload)}`);
-    validatePayload(payload);
-    await sendRequest(payload);
-  } catch (error) {
-    console.error(error);
-  }
+  const payload = event.Payload;
+  console.log(`Payload: ${JSON.stringify(payload)}`);
+  validatePayload(payload);
+  await sendRequest(payload);
 };

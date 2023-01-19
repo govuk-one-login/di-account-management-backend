@@ -1149,6 +1149,9 @@ Resources:
   ###############################
   DeleteEventsStepFunction:
     Type: AWS::StepFunctions::StateMachine
+    DependsOn:
+      - DeleteEventsStepFunctionIAMRole
+      - DeleteEventsStepFunctionLogGroup
     Properties:
       StateMachineName: !Sub "${AWS::StackName}-delete-events-step-function"
       StateMachineType: STANDARD
@@ -1188,7 +1191,7 @@ Resources:
                   "ErrorEquals": [
                     "States.ALL"
                   ],
-                  "Next": "SQSSendMessageToFailureQueue"
+                  "Next": "SQSSendMessageToAuthFailureQueue"
                 }
               ]
             },
@@ -1197,7 +1200,7 @@ Resources:
               "Resource": "arn:aws:states:::sqs:sendMessage",
               "Parameters": {
                 "MessageBody.$": "$",
-                "QueueUrl": "${SQSSendMessageToAuthFailureQueue}"
+                "QueueUrl": "${SQSSendMessageToAuthFailureQueue.QueueUrl}"
               },
               "End": true
             },
@@ -1233,7 +1236,7 @@ Resources:
               "Resource": "arn:aws:states:::sqs:sendMessage",
               "Parameters": {
                 "MessageBody.$": "$",
-                "QueueUrl": "${DeleteAccountAuthDeadLetterQueue.QueueUrl}"
+                "QueueUrl": "${SQSSendMessageToGovUkFailureQueue.QueueUrl}"
               },
               "End": true
             }
@@ -1270,37 +1273,6 @@ Resources:
                 - Fn::Sub: "states.${AWS::Region}.amazonaws.com"
             Action:
               - "sts:AssumeRole"
-#      Policies:
-#        - PolicyName: StatesExecutionPolicy
-#          PolicyDocument:
-#            Version: "2012-10-17"
-#            Statement:
-#              - Effect: "Allow"
-#                Action: "lambda:InvokeFunction"
-#                Resource:
-#                  - !GetAtt DeleteAccountAuthFunction.Arn
-#                  - !GetAtt DeleteAccountPublishingFunction.Arn
-#        - PolicyName: StepFunctionExecRole
-#          PolicyDocument:
-#            Version: '2012-10-17'
-#            Statement:
-#              - Effect: Allow
-#                Action:
-#                  - lambda:InvokeFunction
-#                  - lambda:ListFunctions
-#                Resource: !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:my-lambdas-namespace-*"
-#              - Effect: Allow
-#                Action:
-#                  - logs:CreateLogDelivery
-#                  - logs:GetLogDelivery
-#                  - logs:UpdateLogDelivery
-#                  - logs:DeleteLogDelivery
-#                  - logs:ListLogDeliveries
-#                  - logs:PutResourcePolicy
-#                  - logs:DescribeResourcePolicies
-#                  - logs:DescribeLogGroups
-#                Resource: "*"
-#                Resource: !Sub "arn:aws:states:${AWS::Region}:{AWS::AccountId}:stateMachine:${AWS::StackName}-delete-events-step-function"
 
   DeleteEventsStepFunctionPolicy:
     Type: AWS::IAM::ManagedPolicy
@@ -1316,19 +1288,19 @@ Resources:
           - Effect: "Allow"
             Action: "sqs:SendMessage"
             Resource:
-              # TO BE UPDATED WITH REAL QUEUES
-              - !GetAtt DeleteAccountAuthDeadLetterQueue.Arn
-          - Effect: Allow
+              - !GetAtt SQSSendMessageToAuthFailureQueue.Arn
+              - !GetAtt SQSSendMessageToGovUkFailureQueue.Arn
+          - Effect: "Allow"
             Action:
-              - logs:CreateLogDelivery
-              - logs:GetLogDelivery
-              - logs:UpdateLogDelivery
-              - logs:DeleteLogDelivery
-              - logs:ListLogDeliveries
-              - logs:PutResourcePolicy
-              - logs:DescribeResourcePolicies
-              - logs:DescribeLogGroups
-            Resource:
+              - "logs:CreateLogDelivery"
+              - "logs:GetLogDelivery"
+              - "logs:UpdateLogDelivery"
+              - "logs:DeleteLogDelivery"
+              - "logs:ListLogDeliveries"
+              - "logs:PutResourcePolicy"
+              - "logs:DescribeResourcePolicies"
+              - "logs:DescribeLogGroups"
+            Resour
               - !GetAtt DeleteEventsStepFunctionLogGroup.Arn
 
   DeleteEventsStepFunctionLogGroup:

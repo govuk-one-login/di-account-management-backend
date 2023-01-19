@@ -1159,7 +1159,6 @@ Resources:
               LogGroupArn: !GetAtt DeleteEventsStepFunctionLogGroup.Arn
         Level: "ALL"
         IncludeExecutionData: True
-
       DefinitionString: !Sub
         |-
         {
@@ -1193,7 +1192,7 @@ Resources:
                 }
               ]
             },
-            "SQSSendMessageToFailureQueue": {
+            "SQSSendMessageToAuthFailureQueue": {
               "Type": "Task",
               "Resource": "arn:aws:states:::sqs:sendMessage",
               "Parameters": {
@@ -1225,16 +1224,27 @@ Resources:
                   "ErrorEquals": [
                     "States.ALL"
                   ],
-                  "Next": "SQSSendMessageToFailureQueue"
+                  "Next": "SQSSendMessageToGovUkFailureQueue"
                 }
               ]
+            },
+            "SQSSendMessageToGovUkFailureQueue": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::sqs:sendMessage",
+              "Parameters": {
+                "MessageBody.$": "$",
+                "QueueUrl": "${DeleteAccountAuthDeadLetterQueue.QueueUrl}"
+              },
+              "End": true
             }
           }
-        }
+        }      
 
   DeleteEventsStepFunctionIAMRole:
     Type: AWS::IAM::Role
     Properties:
+      ManagedPolicyArns:
+        - !Ref DeleteEventsStepFunctionPolicy
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -1244,36 +1254,66 @@ Resources:
                 - Fn::Sub: "states.${AWS::Region}.amazonaws.com"
             Action:
               - "sts:AssumeRole"
-      Policies:
-        - PolicyName: StatesExecutionPolicy
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: "Allow"
-                Action: "lambda:InvokeFunction"
-                Resource:
-                  - !GetAtt DeleteAccountAuthFunction.Arn
-                  - !GetAtt DeleteAccountPublishingFunction.Arn
-        - PolicyName: StepFunctionExecRole
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - lambda:InvokeFunction
-                  - lambda:ListFunctions
-                Resource: !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:my-lambdas-namespace-*"
-              - Effect: Allow
-                Action:
-                  - logs:CreateLogDelivery
-                  - logs:GetLogDelivery
-                  - logs:UpdateLogDelivery
-                  - logs:DeleteLogDelivery
-                  - logs:ListLogDeliveries
-                  - logs:PutResourcePolicy
-                  - logs:DescribeResourcePolicies
-                  - logs:DescribeLogGroups
-                Resource: "*"
+#      Policies:
+#        - PolicyName: StatesExecutionPolicy
+#          PolicyDocument:
+#            Version: "2012-10-17"
+#            Statement:
+#              - Effect: "Allow"
+#                Action: "lambda:InvokeFunction"
+#                Resource:
+#                  - !GetAtt DeleteAccountAuthFunction.Arn
+#                  - !GetAtt DeleteAccountPublishingFunction.Arn
+#        - PolicyName: StepFunctionExecRole
+#          PolicyDocument:
+#            Version: '2012-10-17'
+#            Statement:
+#              - Effect: Allow
+#                Action:
+#                  - lambda:InvokeFunction
+#                  - lambda:ListFunctions
+#                Resource: !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:my-lambdas-namespace-*"
+#              - Effect: Allow
+#                Action:
+#                  - logs:CreateLogDelivery
+#                  - logs:GetLogDelivery
+#                  - logs:UpdateLogDelivery
+#                  - logs:DeleteLogDelivery
+#                  - logs:ListLogDeliveries
+#                  - logs:PutResourcePolicy
+#                  - logs:DescribeResourcePolicies
+#                  - logs:DescribeLogGroups
+#                Resource: "*"
+#                Resource: !Sub "arn:aws:states:${AWS::Region}:{AWS::AccountId}:stateMachine:${AWS::StackName}-delete-events-step-function"
+
+  DeleteEventsStepFunctionPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Action: "lambda:InvokeFunction"
+            Resource:
+              - !GetAtt DeleteAccountAuthFunction.Arn
+              - !GetAtt DeleteAccountPublishingFunction.Arn
+          - Effect: "Allow"
+            Action: "sqs:SendMessage"
+            Resource:
+              # TO BE UPDATED WITH REAL QUEUES
+              - !GetAtt DeleteAccountAuthDeadLetterQueue.Arn
+          - Effect: Allow
+            Action:
+              - logs:CreateLogDelivery
+              - logs:GetLogDelivery
+              - logs:UpdateLogDelivery
+              - logs:DeleteLogDelivery
+              - logs:ListLogDeliveries
+              - logs:PutResourcePolicy
+              - logs:DescribeResourcePolicies
+              - logs:DescribeLogGroups
+            Resource:
+              - !GetAtt DeleteEventsStepFunctionLogGroup.Arn
 
   DeleteEventsStepFunctionLogGroup:
       Type: AWS::Logs::LogGroup

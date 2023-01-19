@@ -1151,6 +1151,7 @@ Resources:
     Type: AWS::StepFunctions::StateMachine
     DependsOn:
       - DeleteEventsStepFunctionIAMRole
+      - DeleteEventsStepFunctionPolicy
       - DeleteEventsStepFunctionLogGroup
     Properties:
       StateMachineName: !Sub "${AWS::StackName}-delete-events-step-function"
@@ -1300,8 +1301,8 @@ Resources:
               - "logs:PutResourcePolicy"
               - "logs:DescribeResourcePolicies"
               - "logs:DescribeLogGroups"
-            Resour
-              - !GetAtt DeleteEventsStepFunctionLogGroup.Arn
+            Resource: "*"
+#              - !GetAtt DeleteEventsStepFunctionLogGroup.Arn
 
   DeleteEventsStepFunctionLogGroup:
       Type: AWS::Logs::LogGroup

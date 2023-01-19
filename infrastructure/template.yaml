@@ -1046,8 +1046,6 @@ Resources:
       FunctionName: !GetAtt DeleteAccountAuthFunction.Arn
 
   DeleteAccountAuthFunction:
-    DependsOn:
-      - DeleteAccountAuthFunctionLogGroup
     Type: AWS::Serverless::Function
     Properties:
       # checkov:skip=CKV_AWS_117: Ensure that AWS Lambda function is configured inside a VPC
@@ -1068,6 +1066,7 @@ Resources:
       Environment:
         Variables:
           MOCK_PUBLISHING_API_URL: !Sub "{{resolve:ssm:/dev/APIGateway/MockPublishingAPI/Endpoint}}"
+          DLQ_URL: !Ref DeleteAccountAuthDeadLetterQueue
 #      VpcConfig:
 #        SubnetIds:
 #          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdA
@@ -1135,8 +1134,10 @@ Resources:
 
   DeleteAccountAuthFunctionLogGroup:
     Type: AWS::Logs::LogGroup
+    DependsOn:
+      - DeleteAccountAuthFunction
     Properties:
-      LogGroupName: !Sub "${AWS::StackName}-delete-account-auth-log-group"
+      LogGroupName: !Sub "/aws/lambda/${DeleteAccountAuthFunction}"
       RetentionInDays: 30
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
@@ -1168,8 +1169,6 @@ Resources:
       FunctionName: !GetAtt DeleteAccountPublishingFunction.Arn
 
   DeleteAccountPublishingFunction:
-    DependsOn:
-      - DeleteAccountPublishingFunctionLogGroup
     Type: AWS::Serverless::Function
     Properties:
       # checkov:skip=CKV_AWS_117: Ensure that AWS Lambda function is configured inside a VPC
@@ -1258,8 +1257,10 @@ Resources:
 
   DeleteAccountPublishingFunctionLogGroup:
     Type: AWS::Logs::LogGroup
+    DependsOn:
+      - DeleteAccountPublishingFunction
     Properties:
-      LogGroupName: !Sub "${AWS::StackName}-delete-account-publishing-log-group"
+      LogGroupName: !Sub "/aws/lambda/${DeleteAccountPublishingFunction}"
       RetentionInDays: 30
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 

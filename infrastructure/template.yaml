@@ -1159,7 +1159,6 @@ Resources:
               LogGroupArn: !GetAtt DeleteEventsStepFunctionLogGroup.Arn
         Level: "ALL"
         IncludeExecutionData: True
-
       DefinitionString: !Sub
         |-
         {
@@ -1198,7 +1197,7 @@ Resources:
               "Resource": "arn:aws:states:::sqs:sendMessage",
               "Parameters": {
                 "MessageBody.$": "$",
-                "QueueUrl": "${DeleteAccountAuthDeadLetterQueue.QueueUrl}"
+                "QueueUrl": "${SQSSendMessageToAuthFailureQueue}"
               },
               "End": true
             },
@@ -1231,6 +1230,22 @@ Resources:
             }
           }
         }
+
+  SQSSendMessageToAuthFailureQueue:
+    Type: AWS::SQS::Queue
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      MessageRetentionPeriod: 1209600
+      KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
+
+  SQSSendMessageToGovUkFailureQueue:
+    Type: AWS::SQS::Queue
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      MessageRetentionPeriod: 1209600
+      KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
 
   DeleteEventsStepFunctionIAMRole:
     Type: AWS::IAM::Role

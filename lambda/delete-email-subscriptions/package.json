@@ -1,8 +1,8 @@
 {
-  "name": "step-function-starter",
+  "name": "delete-email-subscriptions",
   "version": "1.0.0",
-  "description": "A Lambda function to start the state machine (step function) execution",
-  "main": "step-function-starter.js",
+  "description": "A Lambda function to send an HTTP request to GOV.UK to delete email subscriptions",
+  "main": "delete-email-subscriptions.js",
   "scripts": {
     "test": "jest",
     "lint": "eslint . --ext .ts"
@@ -10,6 +10,7 @@
   "author": "GDS",
   "license": "OGL",
   "devDependencies": {
+    "@types/aws-lambda": "^8.10.106",
     "@types/jest": "^29.1.2",
     "@typescript-eslint/eslint-plugin": "^5.40.0",
     "eslint": "^8.25.0",
@@ -19,15 +20,13 @@
     "eslint-import-resolver-typescript": "^3.5.1",
     "eslint-plugin-import": "^2.26.0",
     "eslint-plugin-prettier": "^4.2.1",
-    "jest": "^29.1.2",
     "prettier": "^2.7.1",
-    "ts-jest": "^29.0.3",
     "ts-node": "^10.9.1",
     "typescript": "^4.8.4"
   },
   "dependencies": {
-    "@aws-sdk/client-sfn": "^3.245.0",
     "@types/aws-lambda": "^8.10.106",
-    "aws-lambda": "^1.0.7"
+    "aws4-axios": "^2.4.9",
+    "axios": "^0.27.2"
   }
 }

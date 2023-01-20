@@ -60,9 +60,10 @@ async function sendRequest(payload: Payload) {
 
     return responseObject;
   } catch (error: any) {
-    throw error(
-      `Unable to successfully send DELETE request to GOV.UK. Error:${error}`
+    console.log(
+      `Unable to successfully send DELETE request to GOV.UK API. Error:${error}`
     );
+    throw Error(error);
   }
 }
 

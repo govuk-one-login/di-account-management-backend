@@ -25,8 +25,9 @@ export const handler = async (event: SNSEvent): Promise<void> => {
         console.log(
           `Response from StartExecutionCommand: ${JSON.stringify(response)}`
         );
-      } catch (error) {
+      } catch (error: any) {
         console.error(`An error occurred. Error: ${error}.`);
+        throw Error(error);
       }
     })
   );

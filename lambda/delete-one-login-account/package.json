@@ -1,8 +1,8 @@
 {
-  "name": "delete-account-auth",
+  "name": "delete-one-login-account",
   "version": "1.0.0",
-  "description": "A Lambda function to send an HTTP request to Auth to delete the user account",
-  "main": "delete-account-auth.js",
+  "description": "A Lambda function to send an HTTP request to Auth to delete One Login account",
+  "main": "delete-one-login-account.js",
   "scripts": {
     "test": "jest",
     "lint": "eslint . --ext .ts"

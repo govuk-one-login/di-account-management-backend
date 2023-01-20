@@ -80,9 +80,10 @@ export async function sendRequest(payload: Payload) {
 
     return responseObject;
   } catch (error: any) {
-    throw error(
+    console.log(
       `Unable to successfully send POST request to Auth HTTP API. Error:${error}`
     );
+    throw Error(error);
   }
 }
 

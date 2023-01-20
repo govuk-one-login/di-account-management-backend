@@ -1026,47 +1026,52 @@ Resources:
         - !Ref AlarmNotificationTopic
       ActionsEnabled: true
 
-  ###########################################
-  # Auth Delete Account
-  ###########################################
-  DeleteAccountAuthSubscription:
+  ###########################
+  # Delete One Login Account
+  ###########################
+  DeleteOneLoginAccountSubscription:
     Type: AWS::SNS::Subscription
     Properties:
-      Endpoint: !GetAtt DeleteAccountAuthFunction.Arn
+      Endpoint: !GetAtt DeleteOneLoginAccountFunction.Arn
       Protocol: lambda
       TopicArn: !Ref UserAccountDeletionTopic
 
-  DeleteAccountAuthLambdaInvokePermission:
+  DeleteOneLoginAccountLambdaInvokePermission:
     Type: AWS::Lambda::Permission
     Properties:
       Action: lambda:InvokeFunction
       Principal: sns.amazonaws.com
       SourceArn:
         Ref: UserAccountDeletionTopic
-      FunctionName: !GetAtt DeleteAccountAuthFunction.Arn
+      FunctionName: !GetAtt DeleteOneLoginAccountFunction.Arn
 
-  DeleteAccountAuthFunction:
+  DeleteOneLoginAccountFunction:
     Type: AWS::Serverless::Function
     Properties:
       # checkov:skip=CKV_AWS_117: Ensure that AWS Lambda function is configured inside a VPC
-      FunctionName: !Sub ${Environment}-${AWS::StackName}-delete-account-auth
+      FunctionName: !Sub ${Environment}-${AWS::StackName}-delete-one-logic-account
       Architectures: [ "x86_64" ]
       ReservedConcurrentExecutions: 1
-      CodeUri: ../lambda/delete-account-auth/
-      Handler: delete-account-auth.handler
+      CodeUri: ../lambda/delete-one-login-account/
+      Handler: delete-one-login-account.handler
       KmsKeyArn: !GetAtt LambdaKMSKey.Arn
       PackageType: Zip
       MemorySize: 128
       Runtime: nodejs16.x
-      Role: !GetAtt DeleteAccountAuthRole.Arn
+      Role: !GetAtt DeleteOneLoginAccountRole.Arn
       Timeout: 5
+      EventInvokeConfig:
+        DestinationConfig:
+          OnFailure:
+            Type: Lambda
+            Destination: !GetAtt DeleteOneLoginAccountDeadLetterQueue.Arn
+        MaximumRetryAttempts: 2
       DeadLetterQueue:
         Type: SQS
-        TargetArn: !GetAtt DeleteAccountAuthDeadLetterQueue.Arn
+        TargetArn: !GetAtt DeleteOneLoginAccountDeadLetterQueue.Arn
       Environment:
         Variables:
           MOCK_PUBLISHING_API_URL: !Sub "{{resolve:ssm:/dev/APIGateway/MockPublishingAPI/Endpoint}}"
-          DLQ_URL: !Ref DeleteAccountAuthDeadLetterQueue
 #      VpcConfig:
 #        SubnetIds:
 #          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdA
@@ -1082,9 +1087,9 @@ Resources:
         Target: "es2020"
         Sourcemap: true
         EntryPoints:
-          - delete-account-auth.ts
+          - delete-one-login-account.ts
 
-  DeleteAccountAuthDeadLetterQueue:
+  DeleteOneLoginAccountDeadLetterQueue:
     Type: AWS::SQS::Queue
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
@@ -1092,7 +1097,7 @@ Resources:
       MessageRetentionPeriod: 1209600
       KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
 
-  DeleteAccountAuthRole:
+  DeleteOneLoginAccountRole:
     Type: AWS::IAM::Role
     Properties:
       PermissionsBoundary: !If
@@ -1102,7 +1107,7 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
-        - !Ref DeleteAccountAuthPolicy
+        - !Ref DeleteOneLoginAccountPolicy
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -1113,7 +1118,7 @@ Resources:
             Action:
               - "sts:AssumeRole"
 
-  DeleteAccountAuthPolicy:
+  DeleteOneLoginAccountPolicy:
     Type: AWS::IAM::ManagedPolicy
     Properties:
       PolicyDocument:
@@ -1122,7 +1127,7 @@ Resources:
           - Effect: Allow
             Action:
               - sqs:SendMessage
-            Resource: !GetAtt DeleteAccountAuthDeadLetterQueue.Arn
+            Resource: !GetAtt DeleteOneLoginAccountDeadLetterQueue.Arn
           - Effect: Allow
             Action:
               - kms:Decrypt
@@ -1132,60 +1137,66 @@ Resources:
               - !GetAtt LoggingKmsKey.Arn
               - !GetAtt LambdaKMSKey.Arn
 
-  DeleteAccountAuthFunctionLogGroup:
+  DeleteOneLoginAccountFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     DependsOn:
-      - DeleteAccountAuthFunction
+      - DeleteOneLoginAccountFunction
     Properties:
-      LogGroupName: !Sub "/aws/lambda/${DeleteAccountAuthFunction}"
+      LogGroupName: !Sub "/aws/lambda/${DeleteOneLoginAccountFunction}"
       RetentionInDays: 30
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
-#  DeleteAccountAuthCSLSSubscription:
+#  DeleteOneLoginAccountFunctionCSLSSubscription:
 #    Condition: IsNotDevelopment
 #    Type: AWS::Logs::SubscriptionFilter
 #    Properties:
 #      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
 #      FilterPattern: ""
-#      LogGroupName: !Ref DeleteAccountAuthFunctionLogGroup
+#      LogGroupName: !Ref DeleteOneLoginAccountFunctionLogGroup
 
-  ###########################################
-  # GOV.UK Delete Account
-  ###########################################
-  DeleteAccountPublishingSubscription:
+  #############################
+  # Delete Email Subscriptions
+  #############################
+  DeleteEmailSubscriptionsSubscription:
     Type: AWS::SNS::Subscription
     Properties:
-      Endpoint: !GetAtt DeleteAccountPublishingFunction.Arn
+      Endpoint: !GetAtt DeleteEmailSubscriptionsFunction.Arn
       Protocol: lambda
       TopicArn: !Ref UserAccountDeletionTopic
 
-  DeleteAccountPublishingLambdaInvokePermission:
+  DeleteEmailSubscriptionsLambdaInvokePermission:
     Type: AWS::Lambda::Permission
     Properties:
       Action: lambda:InvokeFunction
       Principal: sns.amazonaws.com
       SourceArn:
         Ref: UserAccountDeletionTopic
-      FunctionName: !GetAtt DeleteAccountPublishingFunction.Arn
+      FunctionName: !GetAtt DeleteEmailSubscriptionsFunction.Arn
 
-  DeleteAccountPublishingFunction:
+  DeleteEmailSubscriptionsFunction:
     Type: AWS::Serverless::Function
     Properties:
       # checkov:skip=CKV_AWS_117: Ensure that AWS Lambda function is configured inside a VPC
-      FunctionName: !Sub ${Environment}-${AWS::StackName}-delete-account-publishing
+      FunctionName: !Sub ${Environment}-${AWS::StackName}-delete-email-subscriptions
       Architectures: [ "x86_64" ]
       ReservedConcurrentExecutions: 1
-      CodeUri: ../lambda/delete-account-publishing/
-      Handler: delete-account-publishing.handler
+      CodeUri: ../lambda/delete-email-subscriptions/
+      Handler: delete-email-subscriptions.handler
       KmsKeyArn: !GetAtt LambdaKMSKey.Arn
       PackageType: Zip
       MemorySize: 128
       Runtime: nodejs16.x
-      Role: !GetAtt DeleteAccountPublishingRole.Arn
+      Role: !GetAtt DeleteEmailSubscriptionsRole.Arn
       Timeout: 5
+      EventInvokeConfig:
+        DestinationConfig:
+          OnFailure:
+            Type: Lambda
+            Destination: !GetAtt DeleteEmailSubscriptionsDeadLetterQueue.Arn
+        MaximumRetryAttempts: 2
       DeadLetterQueue:
         Type: SQS
-        TargetArn: !GetAtt DeleteAccountPublishingDeadLetterQueue.Arn
+        TargetArn: !GetAtt DeleteEmailSubscriptionsDeadLetterQueue.Arn
       Environment:
         Variables:
           GOV_ACCOUNTS_PUBLISHING_API_TOKEN: !Sub "{{resolve:secretsmanager:/${AccountManagementFrontendStackName}/Config/Publishing/API/Key}}"
@@ -1205,9 +1216,9 @@ Resources:
         Target: "es2020"
         Sourcemap: true
         EntryPoints:
-          - delete-account-publishing.ts
+          - delete-email-subscriptions.ts
 
-  DeleteAccountPublishingDeadLetterQueue:
+  DeleteEmailSubscriptionsDeadLetterQueue:
     Type: AWS::SQS::Queue
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
@@ -1215,7 +1226,7 @@ Resources:
       MessageRetentionPeriod: 1209600
       KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
 
-  DeleteAccountPublishingRole:
+  DeleteEmailSubscriptionsRole:
     Type: AWS::IAM::Role
     Properties:
       PermissionsBoundary: !If
@@ -1225,7 +1236,7 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
-        - !Ref DeleteAccountPublishingPolicy
+        - !Ref DeleteEmailSubscriptionsPolicy
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -1236,7 +1247,7 @@ Resources:
             Action:
               - "sts:AssumeRole"
 
-  DeleteAccountPublishingPolicy:
+  DeleteEmailSubscriptionsPolicy:
     Type: AWS::IAM::ManagedPolicy
     Properties:
       PolicyDocument:
@@ -1245,7 +1256,7 @@ Resources:
           - Effect: Allow
             Action:
               - sqs:SendMessage
-            Resource: !GetAtt DeleteAccountPublishingDeadLetterQueue.Arn
+            Resource: !GetAtt DeleteEmailSubscriptionsDeadLetterQueue.Arn
           - Effect: Allow
             Action:
               - kms:Decrypt
@@ -1255,22 +1266,22 @@ Resources:
               - !GetAtt LoggingKmsKey.Arn
               - !GetAtt LambdaKMSKey.Arn
 
-  DeleteAccountPublishingFunctionLogGroup:
+  DeleteEmailSubscriptionsFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     DependsOn:
-      - DeleteAccountPublishingFunction
+      - DeleteEmailSubscriptionsFunction
     Properties:
-      LogGroupName: !Sub "/aws/lambda/${DeleteAccountPublishingFunction}"
+      LogGroupName: !Sub "/aws/lambda/${DeleteEmailSubscriptionsFunction}"
       RetentionInDays: 30
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
-#  DeleteAccountPublishingCSLSSubscription:
+#  DeleteEmailSubscriptionsCSLSSubscription:
 #    Condition: IsNotDevelopment
 #    Type: AWS::Logs::SubscriptionFilter
 #    Properties:
 #      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
 #      FilterPattern: ""
-#      LogGroupName: !Ref DeleteAccountPublishingFunctionLogGroup
+#      LogGroupName: !Ref DeleteEmailSubscriptionsFunctionLogGroup
 
   #######################
   # Monitoring

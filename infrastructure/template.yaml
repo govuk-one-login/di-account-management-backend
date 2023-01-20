@@ -1162,7 +1162,6 @@ Resources:
       StateMachineName: !Sub "${AWS::StackName}-delete-account-step-function"
       StateMachineType: STANDARD
       RoleArn: !GetAtt DeleteAccountStepFunctionIAMRole.Arn
-#      RoleArn: !Sub "arn:aws:iam::${AWS::AccountId}:role/DeleteAccountStepFunctionIAMRole"
       LoggingConfiguration:
         Destinations:
           - CloudWatchLogsLogGroup:
@@ -1269,8 +1268,6 @@ Resources:
   DeleteAccountStepFunctionIAMRole:
     Type: AWS::IAM::Role
     Properties:
-      #      ManagedPolicyArns:
-      #        - !Ref DeleteAccountStepFunctionPolicy
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -1315,35 +1312,6 @@ Resources:
                   - "logs:DescribeLogGroups"
                 Resource:
                   - !GetAtt DeleteAccountStepFunctionLogGroup.Arn
-
-  #  DeleteAccountStepFunctionPolicy:
-  #    Type: AWS::IAM::ManagedPolicy
-  #    Properties:
-  #      PolicyDocument:
-  #        Version: "2012-10-17"
-  #        Statement:
-  #          - Effect: "Allow"
-  #            Action: "lambda:InvokeFunction"
-  #            Resource:
-  #              - !GetAtt DeleteOneLoginAccountFunction.Arn
-  #              - !GetAtt DeleteEmailSubscriptionsFunction.Arn
-  #          - Effect: "Allow"
-  #            Action: "sqs:SendMessage"
-  #            Resource:
-  #              - !GetAtt DeleteOneLoginAccountFailureQueue.Arn
-  #              - !GetAtt DeleteEmailSubscriptionsFailureQueue.Arn
-  #          - Effect: "Allow"
-  #            Action:
-  #              - "logs:CreateLogDelivery"
-  #              - "logs:GetLogDelivery"
-  #              - "logs:UpdateLogDelivery"
-  #              - "logs:DeleteLogDelivery"
-  #              - "logs:ListLogDeliveries"
-  #              - "logs:PutResourcePolicy"
-  #              - "logs:DescribeResourcePolicies"
-  #              - "logs:DescribeLogGroups"
-  #            Resource:
-  #              - !GetAtt DeleteAccountStepFunctionLogGroup.Arn
 
   DeleteAccountStepFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -1436,13 +1404,13 @@ Resources:
       RetentionInDays: 30
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
-  #  DeleteAccountAuthCSLSSubscription:
+  #  DeleteOneLoginAccountCSLSSubscription:
   #    Condition: IsNotDevelopment
   #    Type: AWS::Logs::SubscriptionFilter
   #    Properties:
   #      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
   #      FilterPattern: ""
-  #      LogGroupName: !Ref DeleteAccountAuthFunctionLogGroup
+  #      LogGroupName: !Ref DeleteOneLoginAccountFunctionLogGrou
 
   ###############################################
   # Delete Email Subscriptions
@@ -1529,13 +1497,13 @@ Resources:
       RetentionInDays: 30
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
-  #  DeleteAccountPublishingCSLSSubscription:
+  #  DeleteEmailSubscriptionsCSLSSubscription:
   #    Condition: IsNotDevelopment
   #    Type: AWS::Logs::SubscriptionFilter
   #    Properties:
   #      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
   #      FilterPattern: ""
-  #      LogGroupName: !Ref DeleteAccountPublishingFunctionLogGroup
+  #      LogGroupName: !Ref DeleteEmailSubscriptionsFunctionLogGroup
 
   #######################
   # Monitoring

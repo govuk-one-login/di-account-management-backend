@@ -1156,9 +1156,6 @@ Resources:
   ###############################
   DeleteAccountStepFunction:
     Type: AWS::StepFunctions::StateMachine
-#    DependsOn:
-#      - DeleteAccountStepFunctionIAMRole
-#      - DeleteAccountStepFunctionLogGroup
     Properties:
       StateMachineName: !Sub "${AWS::StackName}-delete-account-step-function"
       StateMachineType: STANDARD
@@ -1304,25 +1301,20 @@ Resources:
               - Effect: "Allow"
                 Action:
                   - "logs:CreateLogDelivery"
-                  - "logs:CreateLogGroup"
-                  - "logs:CreateLogStream"
-                  - "logs:DeleteLogDelivery"
-                  - "logs:DescribeLogGroups"
-                  - "logs:DescribeLogStreams"
-                  - "logs:DescribeResourcePolicies"
-                  - "logs:GetLogEvents"
                   - "logs:GetLogDelivery"
-                  - "logs:FilterLogEvents"
+                  - "logs:UpdateLogDelivery"
+                  - "logs:DeleteLogDelivery"
                   - "logs:ListLogDeliveries"
                   - "logs:PutLogEvents"
                   - "logs:PutResourcePolicy"
-                  - "logs:UpdateLogDelivery"
+                  - "logs:DescribeResourcePolicies"
+                  - "logs:DescribeLogGroups"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
                 Resource: "*"
                 Condition:
                   ArnLike:
-                    - !GetAtt DeleteAccountStepFunctionLogGroup.Arn
-#                  - !GetAtt DeleteAccountStepFunctionLogGroup.Arn
-#                  - !Sub "${DeleteAccountStepFunctionLogGroup.Arn}:*"
+                    aws:SourceArn: !GetAtt DeleteAccountStepFunctionLogGroup.Arn             
 
   DeleteAccountStepFunctionLogGroup:
     Type: AWS::Logs::LogGroup

@@ -1138,6 +1138,7 @@ Resources:
               - kms:GenerateDataKey*
               - kms:ReEncrypt*
             Resource:
+              - !GetAtt QueueKmsKey.Arn
               - !GetAtt LoggingKmsKey.Arn
               - !GetAtt LambdaKMSKey.Arn
 
@@ -1311,7 +1312,8 @@ Resources:
                   - "logs:DescribeResourcePolicies"
                   - "logs:DescribeLogGroups"
                 Resource:
-                  - !GetAtt DeleteAccountStepFunctionLogGroup.Arn
+                  - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/${AWS::StackName}-delete-account-step-function-log-group:*"
+#                  - !GetAtt DeleteAccountStepFunctionLogGroup.Arn
 
   DeleteAccountStepFunctionLogGroup:
     Type: AWS::Logs::LogGroup

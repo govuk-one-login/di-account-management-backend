@@ -1,7 +1,7 @@
 {
   "name": "delete-email-subscriptions",
   "version": "1.0.0",
-  "description": "A Lambda function to send an HTTP request to GOV.UK to delete email subscriptions",
+  "description": "A Lambda function to send an HTTP request to the GOV.UK API to delete user's email subscriptions",
   "main": "delete-email-subscriptions.js",
   "scripts": {
     "test": "jest",

@@ -1,7 +1,7 @@
 {
   "name": "delete-one-login-account",
   "version": "1.0.0",
-  "description": "A Lambda function to send an HTTP request to Auth to delete One Login account",
+  "description": "A Lambda function to send an HTTP request to the Auth API to delete user's One Login account",
   "main": "delete-one-login-account.js",
   "scripts": {
     "test": "jest",

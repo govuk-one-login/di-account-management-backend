@@ -26,7 +26,9 @@ export const handler = async (event: SNSEvent): Promise<void> => {
           `Response from StartExecutionCommand: ${JSON.stringify(response)}`
         );
       } catch (error: any) {
-        console.error(`An error occurred. Error: ${error}.`);
+        console.error(
+          `An error happened while trying to start the state machine. Error: ${error}.`
+        );
         throw Error(error);
       }
     })

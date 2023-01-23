@@ -6,7 +6,6 @@ import {
   startStateMachine,
   validateSNSMessage,
 } from "../delete-account-step-function-starter";
-
 import { TEST_USER_DATA, TEST_SNS_EVENT } from "./test-helpers";
 
 const sfnMock = mockClient(SFNClient);
@@ -22,9 +21,23 @@ describe("handler", () => {
   });
 
   test("if it iterates over each SNS record in the batch", async () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires,global-require
+    const module = require("../delete-account-step-function-starter");
+    const validateSNSMessageMock = jest
+      .spyOn(module, "validateSNSMessage")
+      .mockReturnValueOnce("validateSNSMessage-mock");
     await handler(TEST_SNS_EVENT);
     expect(sfnMock.commandCalls(StartExecutionCommand).length).toEqual(2);
-    // expect(validateSNSMessage).toHaveBeenCalledTimes(2)
+    expect(validateSNSMessageMock).toHaveBeenCalledTimes(2);
+  });
+
+  test("if it starts the step function execution", async () => {
+    sfnMock.on(StartExecutionCommand).resolves({});
+    await handler(TEST_SNS_EVENT);
+    expect(sfnMock.call(0).args[0].input).toEqual({
+      input: JSON.stringify(TEST_USER_DATA),
+      stateMachineArn: "STEP_FUNCTION_ARN",
+    });
   });
 
   describe("handler error handling", () => {
@@ -97,7 +110,6 @@ describe("validateSNSMessage", () => {
 describe("startStateMachine", () => {
   beforeEach(() => {
     sfnMock.reset();
-
     process.env.STEP_FUNCTION_ARN = "STEP_FUNCTION_ARN";
   });
 

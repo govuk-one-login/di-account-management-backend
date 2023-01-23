@@ -1203,7 +1203,10 @@ Resources:
               "Type": "Task",
               "Resource": "arn:aws:states:::sqs:sendMessage",
               "Parameters": {
-                "MessageBody.$": "$",
+                "MessageBody": {
+                  "Error.$": "$",
+                  "SNSMessage.$": "$$.Execution.Input"
+                },
                 "QueueUrl": "${DeleteOneLoginAccountFailureQueue.QueueUrl}"
               },
               "End": true
@@ -1239,7 +1242,10 @@ Resources:
               "Type": "Task",
               "Resource": "arn:aws:states:::sqs:sendMessage",
               "Parameters": {
-                "MessageBody.$": "$",
+                "MessageBody": {
+                  "Error.$": "$",
+                  "SNSMessage.$": "$$.Execution.Input"
+                },
                 "QueueUrl": "${DeleteEmailSubscriptionsFailureQueue.QueueUrl}"
               },
               "End": true
@@ -1294,6 +1300,18 @@ Resources:
                 Resource:
                   - !GetAtt DeleteOneLoginAccountFailureQueue.Arn
                   - !GetAtt DeleteEmailSubscriptionsFailureQueue.Arn
+        - PolicyName: KMSKeyAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - kms:Decrypt
+                  - kms:GenerateDataKey*
+                  - kms:ReEncrypt*
+                Resource:
+                  - !GetAtt QueueKmsKey.Arn
+                  - !GetAtt LoggingKmsKey.Arn
         - PolicyName: LogGroupAccess
           PolicyDocument:
             Version: "2012-10-17"
@@ -1312,9 +1330,9 @@ Resources:
                   - "logs:CreateLogStream"
                   - "logs:PutLogEvents"
                 Resource: "*"
-                Condition:
-                  ArnLike:
-                    aws:SourceArn: !GetAtt DeleteAccountStepFunctionLogGroup.Arn             
+#                Condition:
+#                  ArnLike:
+#                    aws:SourceArn: !GetAtt DeleteAccountStepFunctionLogGroup.Arn
 
   DeleteAccountStepFunctionLogGroup:
     Type: AWS::Logs::LogGroup

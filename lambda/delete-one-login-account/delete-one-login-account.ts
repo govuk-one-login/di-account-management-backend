@@ -81,9 +81,7 @@ export async function sendRequest(snsMessage: SNSMessage) {
 
     return responseObject;
   } catch (error: any) {
-    console.log(
-      `Unable to successfully send POST request to Auth HTTP API. Error:${error}`
-    );
+    console.log(`Unable to send POST request to Auth HTTP API. Error:${error}`);
     throw Error(error);
   }
 }

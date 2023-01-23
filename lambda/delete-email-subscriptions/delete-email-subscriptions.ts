@@ -61,9 +61,7 @@ async function sendRequest(snsMessage: SNSMessage) {
 
     return responseObject;
   } catch (error: any) {
-    console.log(
-      `Unable to successfully send DELETE request to GOV.UK API. Error:${error}`
-    );
+    console.log(`Unable to send DELETE request to GOV.UK API. Error:${error}`);
     throw Error(error);
   }
 }

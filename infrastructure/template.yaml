@@ -1134,6 +1134,7 @@ Resources:
               - kms:GenerateDataKey*
               - kms:ReEncrypt*
             Resource:
+              - !GetAtt QueueKmsKey.Arn
               - !GetAtt LoggingKmsKey.Arn
               - !GetAtt LambdaKMSKey.Arn
 
@@ -1263,6 +1264,7 @@ Resources:
               - kms:GenerateDataKey*
               - kms:ReEncrypt*
             Resource:
+              - !GetAtt QueueKmsKey.Arn
               - !GetAtt LoggingKmsKey.Arn
               - !GetAtt LambdaKMSKey.Arn
 

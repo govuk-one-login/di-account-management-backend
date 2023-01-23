@@ -1156,9 +1156,9 @@ Resources:
   ###############################
   DeleteAccountStepFunction:
     Type: AWS::StepFunctions::StateMachine
-    DependsOn:
-      - DeleteAccountStepFunctionIAMRole
-      - DeleteAccountStepFunctionLogGroup
+#    DependsOn:
+#      - DeleteAccountStepFunctionIAMRole
+#      - DeleteAccountStepFunctionLogGroup
     Properties:
       StateMachineName: !Sub "${AWS::StackName}-delete-account-step-function"
       StateMachineType: STANDARD
@@ -1304,16 +1304,25 @@ Resources:
               - Effect: "Allow"
                 Action:
                   - "logs:CreateLogDelivery"
-                  - "logs:GetLogDelivery"
-                  - "logs:UpdateLogDelivery"
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
                   - "logs:DeleteLogDelivery"
-                  - "logs:ListLogDeliveries"
-                  - "logs:PutResourcePolicy"
-                  - "logs:DescribeResourcePolicies"
                   - "logs:DescribeLogGroups"
-                Resource:
-                  - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/${AWS::StackName}-delete-account-step-function-log-group:*"
+                  - "logs:DescribeLogStreams"
+                  - "logs:DescribeResourcePolicies"
+                  - "logs:GetLogEvents"
+                  - "logs:GetLogDelivery"
+                  - "logs:FilterLogEvents"
+                  - "logs:ListLogDeliveries"
+                  - "logs:PutLogEvents"
+                  - "logs:PutResourcePolicy"
+                  - "logs:UpdateLogDelivery"
+                Resource: "*"
+                Condition:
+                  ArnLike:
+                    - !GetAtt DeleteAccountStepFunctionLogGroup.Arn
 #                  - !GetAtt DeleteAccountStepFunctionLogGroup.Arn
+#                  - !Sub "${DeleteAccountStepFunctionLogGroup.Arn}:*"
 
   DeleteAccountStepFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -1322,9 +1331,9 @@ Resources:
       RetentionInDays: 30
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
-  ###############################
+  ###########################
   # Delete One Login Account
-  ###############################
+  ###########################
   DeleteOneLoginAccountFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -1414,9 +1423,9 @@ Resources:
   #      FilterPattern: ""
   #      LogGroupName: !Ref DeleteOneLoginAccountFunctionLogGrou
 
-  ###############################################
+  #############################
   # Delete Email Subscriptions
-  ###############################################
+  #############################
   DeleteEmailSubscriptionsFunction:
     Type: AWS::Serverless::Function
     Properties:

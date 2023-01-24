@@ -1277,10 +1277,12 @@ Resources:
         Statement:
           - Effect: "Allow"
             Principal:
-              Service:
-                - Fn::Sub: "states.${AWS::Region}.amazonaws.com"
+              Service: !Sub "states.${AWS::Region}.amazonaws.com"
             Action:
               - "sts:AssumeRole"
+#            Condition:
+#              ArnLike:
+#                "aws:SourceArn": !Sub "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${AWS::StackName}-delete-account-step-function"
       Policies:
         - PolicyName: !Sub "${AWS::StackName}-DeleteAccountStepFunction"
           PolicyDocument:
@@ -1318,9 +1320,10 @@ Resources:
                   - "logs:CreateLogStream"
                   - "logs:PutLogEvents"
                 Resource: "*"
-                Condition:
-                  StringLike:
-                    aws:SourceArn: !GetAtt DeleteAccountStepFunctionLogGroup.Arn
+#                Condition:
+#                  StringLike:
+#                    aws:SourceArn: !GetAtt DeleteAccountStepFunctionLogGroup.Arn
+
 
   DeleteAccountStepFunctionLogGroup:
     Type: AWS::Logs::LogGroup

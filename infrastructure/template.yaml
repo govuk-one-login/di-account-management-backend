@@ -1282,7 +1282,7 @@ Resources:
             Action:
               - "sts:AssumeRole"
       Policies:
-        - PolicyName: InvokeLambdaFunctions
+        - PolicyName: !Sub "${AWS::StackName}-DeleteAccountStepFunction"
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
@@ -1291,19 +1291,11 @@ Resources:
                 Resource:
                   - !GetAtt DeleteOneLoginAccountFunction.Arn
                   - !GetAtt DeleteEmailSubscriptionsFunction.Arn
-        - PolicyName: FailureQueuesAccess
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
               - Effect: "Allow"
                 Action: "sqs:SendMessage"
                 Resource:
                   - !GetAtt DeleteOneLoginAccountFailureQueue.Arn
                   - !GetAtt DeleteEmailSubscriptionsFailureQueue.Arn
-        - PolicyName: KMSKeyAccess
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
               - Effect: Allow
                 Action:
                   - kms:Decrypt
@@ -1312,10 +1304,6 @@ Resources:
                 Resource:
                   - !GetAtt QueueKmsKey.Arn
                   - !GetAtt LoggingKmsKey.Arn
-        - PolicyName: LogGroupAccess
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
               - Effect: "Allow"
                 Action:
                   - "logs:CreateLogDelivery"
@@ -1330,9 +1318,9 @@ Resources:
                   - "logs:CreateLogStream"
                   - "logs:PutLogEvents"
                 Resource: "*"
-#                Condition:
-#                  ArnLike:
-#                    aws:SourceArn: !GetAtt DeleteAccountStepFunctionLogGroup.Arn
+                Condition:
+                  StringLike:
+                    aws:SourceArn: !GetAtt DeleteAccountStepFunctionLogGroup.Arn
 
   DeleteAccountStepFunctionLogGroup:
     Type: AWS::Logs::LogGroup

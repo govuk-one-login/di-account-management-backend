@@ -33,15 +33,13 @@ export function getRequestConfig(
 export const validateSNSMessage = (snsMessage: SNSMessage): SNSMessage => {
   if (!snsMessage.email || !snsMessage.access_token) {
     throw new Error(
-      `SNS Message is missing one or both of the required attributes "email" and "access_token". ${JSON.stringify(
-        snsMessage
-      )}`
+      "SNS message is missing one or both of the required attributes 'email' and 'access_token'."
     );
   }
   return snsMessage;
 };
 
-export async function sendRequest(snsMessage: SNSMessage) {
+export const sendRequest = async (snsMessage: SNSMessage) => {
   console.log("Sending POST request to Auth HTTP API.");
 
   const interceptor = aws4Interceptor({
@@ -71,20 +69,16 @@ export async function sendRequest(snsMessage: SNSMessage) {
       requestConfig
     );
 
-    const responseObject = {
-      status: response.status,
-      statusText: response.statusText,
-      data: response.data,
-    };
+    console.log(`Response from Auth API: ${JSON.stringify(response)}`);
 
-    console.log(`Response from Auth API: ${JSON.stringify(responseObject)}`);
-
-    return responseObject;
+    return response;
   } catch (error: any) {
-    console.log(`Unable to send POST request to Auth HTTP API. Error:${error}`);
+    console.error(
+      `Unable to send POST request to Auth HTTP API. Error:${error}`
+    );
     throw Error(error);
   }
-}
+};
 
 export const handler = async (event: SNSEvent): Promise<void> => {
   console.log(`SNS Event received: ${JSON.stringify(event)}`);

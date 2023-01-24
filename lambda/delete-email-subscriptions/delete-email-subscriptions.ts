@@ -16,15 +16,13 @@ export function getRequestConfig(token: string): AxiosRequestConfig {
 export const validateSNSMessage = (snsMessage: SNSMessage): SNSMessage => {
   if (!snsMessage.public_subject_id) {
     throw new Error(
-      `SNS Message is missing required attribute "public_subject_id". ${JSON.stringify(
-        snsMessage
-      )}`
+      "SNS message is missing the required attribute 'public_subject_id'."
     );
   }
   return snsMessage;
 };
 
-async function sendRequest(snsMessage: SNSMessage) {
+export const sendRequest = async (snsMessage: SNSMessage) => {
   console.log("Sending DELETE request to GOV.UK Subscriptions API.");
 
   const interceptor = aws4Interceptor({
@@ -52,23 +50,19 @@ async function sendRequest(snsMessage: SNSMessage) {
       requestConfig
     );
 
-    const responseObject = {
-      status: response.status,
-      statusText: response.statusText,
-    };
+    console.log(`Response from GOV.UK API: ${JSON.stringify(response)}`);
 
-    console.log(`Response from GOV.UK API: ${JSON.stringify(responseObject)}`);
-
-    return responseObject;
+    return response;
   } catch (error: any) {
-    console.log(`Unable to send DELETE request to GOV.UK API. Error:${error}`);
+    console.error(
+      `Unable to send DELETE request to GOV.UK API. Error:${error}`
+    );
     throw Error(error);
   }
-}
+};
 
 export const handler = async (event: SNSEvent): Promise<void> => {
   console.log(`SNS Event: ${JSON.stringify(event)}`);
-
   await Promise.all(
     event.Records.map(async (record) => {
       const snsMessage: SNSMessage = JSON.parse(record.Sns.Message);

@@ -15,10 +15,9 @@ export const validateSNSMessage = (snsMessage: SNSMessage): SNSMessage => {
     !snsMessage.public_subject_id
   ) {
     throw new Error(
-      "SNS message is missing one or more of the required attributes 'email', 'access_token' 'public_subject_id'"
+      "SNS Message is missing one or more of the required attributes 'email', 'access_token' and 'public_subject_id'."
     );
   }
-
   return snsMessage;
 };
 
@@ -37,21 +36,19 @@ export const startStateMachine = async (
 export const handler = async (event: SNSEvent): Promise<void> => {
   console.log(`Received SNS Event: ${JSON.stringify(event)}`);
 
-  await Promise.all(
-    event.Records.map(async (record) => {
-      const snsMessage: SNSMessage = JSON.parse(record.Sns.Message);
-      validateSNSMessage(snsMessage);
-      try {
-        const response = await startStateMachine(snsMessage);
-        console.log(
-          `Response from StartExecutionCommand: ${JSON.stringify(response)}`
-        );
-      } catch (error: any) {
-        console.error(
-          `An error happened while trying to start the state machine. Error: ${error}.`
-        );
-        throw Error(error);
-      }
-    })
-  );
+  const snsMessage: SNSMessage = JSON.parse(event.Records[0].Sns.Message);
+  validateSNSMessage(snsMessage);
+  try {
+    const response = await startStateMachine(snsMessage);
+    console.log(
+      `Successfully started the state machine. Response from StartExecutionCommand: ${JSON.stringify(
+        response
+      )}`
+    );
+  } catch (error: any) {
+    console.error(
+      `An error happened while trying to start the state machine. Error: ${error}.`
+    );
+    throw Error(error);
+  }
 };

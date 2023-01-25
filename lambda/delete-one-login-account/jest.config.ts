@@ -15,4 +15,4 @@ export default {
   testMatch: ["**/tests/*/*.test.ts", "**/tests/*.test.ts"],
 };
 
-process.env.STEP_FUNCTION_ARN = "STEP_FUNCTION_ARN";
+process.env.AM_API_BASE_URL = "https://test.com";

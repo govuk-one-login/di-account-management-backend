@@ -15,4 +15,5 @@ export default {
   testMatch: ["**/tests/*/*.test.ts", "**/tests/*.test.ts"],
 };
 
-process.env.STEP_FUNCTION_ARN = "STEP_FUNCTION_ARN";
+process.env.GOV_ACCOUNTS_PUBLISHING_API_TOKEN = "TOKEN";
+process.env.PUBLISHING_API_URL = "https://test.com";

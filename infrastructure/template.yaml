@@ -1049,7 +1049,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       # checkov:skip=CKV_AWS_117: Ensure that AWS Lambda function is configured inside a VPC
-      FunctionName: !Sub ${Environment}-${AWS::StackName}-step-function-starter
+      FunctionName: !Sub "${Environment}-${AWS::StackName}-step-function-starter"
       Architectures: [ "x86_64" ]
       ReservedConcurrentExecutions: 1
       CodeUri: ../lambda/delete-account-step-function-starter/
@@ -1147,7 +1147,7 @@ Resources:
     DependsOn:
       - StepFunctionStarterFunction
     Properties:
-      LogGroupName: !Sub /aws/lambda/${StepFunctionStarterFunction}
+      LogGroupName: !Sub "/aws/lambda/${StepFunctionStarterFunction}"
       RetentionInDays: 30
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
@@ -1176,7 +1176,7 @@ Resources:
               "Type": "Task",
               "Resource": "${DeleteOneLoginAccountFunction.Arn}",
               "Parameters": {
-                "Payload.$": "$",
+                "SNSMessage.$": "$",
                 "FunctionName": "DeleteOneLoginAccountFunction"
               },
               "Retry": [
@@ -1215,7 +1215,7 @@ Resources:
               "Type": "Task",
               "Resource": "${DeleteEmailSubscriptionsFunction.Arn}",
               "Parameters": {
-                "Payload.$": "$$.Execution.Input",
+                "SNSMessage.$": "$$.Execution.Input",
                 "FunctionName": "DeleteEmailSubscriptionsFunction"
               },
               "Retry": [
@@ -1337,7 +1337,7 @@ Resources:
   DeleteAccountStepFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub "${AWS::StackName}-delete-account-step-function-log-group"
+      LogGroupName: !Sub "/aws/stepfunctions/${DeleteAccountStepFunction}"
       RetentionInDays: 30
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
@@ -1349,7 +1349,7 @@ Resources:
     Properties:
       # checkov:skip=CKV_AWS_116: Ensure that AWS Lambda function is configured for a Dead Letter Queue(DLQ)
       # checkov:skip=CKV_AWS_117: Ensure that AWS Lambda function is configured inside a VPC
-      FunctionName: !Sub ${Environment}-${AWS::StackName}-delete-one-login-account
+      FunctionName: !Sub "${Environment}-${AWS::StackName}-delete-one-login-account"
       Architectures: [ "x86_64" ]
       ReservedConcurrentExecutions: 1
       CodeUri: ../lambda/delete-one-login-account/
@@ -1362,7 +1362,7 @@ Resources:
       Timeout: 5
       Environment:
         Variables:
-          MOCK_PUBLISHING_API_URL: !Sub "{{resolve:ssm:/dev/APIGateway/MockPublishingAPI/Endpoint}}"
+          AM_API_BASE_URL: !Sub "{{resolve:ssm:/dev/APIGateway/MockPublishingAPI/Endpoint}}"
       #      VpcConfig:
       #        SubnetIds:
       #          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdA
@@ -1421,7 +1421,7 @@ Resources:
     DependsOn:
       - DeleteOneLoginAccountFunction
     Properties:
-      LogGroupName: !Sub /aws/lambda/${DeleteOneLoginAccountFunction}
+      LogGroupName: !Sub "/aws/lambda/${DeleteOneLoginAccountFunction}"
       RetentionInDays: 30
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
@@ -1441,7 +1441,7 @@ Resources:
     Properties:
       # checkov:skip=CKV_AWS_116: Ensure that AWS Lambda function is configured for a Dead Letter Queue(DLQ)
       # checkov:skip=CKV_AWS_117: Ensure that AWS Lambda function is configured inside a VPC
-      FunctionName: !Sub ${Environment}-${AWS::StackName}-delete-email-subscriptions
+      FunctionName: !Sub "${Environment}-${AWS::StackName}-delete-email-subscriptions"
       Architectures: [ "x86_64" ]
       ReservedConcurrentExecutions: 1
       CodeUri: ../lambda/delete-email-subscriptions/
@@ -1455,7 +1455,7 @@ Resources:
       Environment:
         Variables:
           GOV_ACCOUNTS_PUBLISHING_API_TOKEN: !Sub "{{resolve:secretsmanager:/${AccountManagementFrontendStackName}/Config/Publishing/API/Key}}"
-          MOCK_PUBLISHING_API_URL: !Sub "{{resolve:ssm:/dev/APIGateway/MockPublishingAPI/Endpoint}}"
+          PUBLISHING_API_URL: !Sub "{{resolve:ssm:/dev/APIGateway/MockPublishingAPI/Endpoint}}"
       #      VpcConfig:
       #        SubnetIds:
       #          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdA
@@ -1514,7 +1514,7 @@ Resources:
     DependsOn:
       - DeleteEmailSubscriptionsFunction
     Properties:
-      LogGroupName: !Sub /aws/lambda/${DeleteEmailSubscriptionsFunction}
+      LogGroupName: !Sub "/aws/lambda/${DeleteEmailSubscriptionsFunction}"
       RetentionInDays: 30
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 

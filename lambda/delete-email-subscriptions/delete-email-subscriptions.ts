@@ -1,6 +1,6 @@
 import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
 import { aws4Interceptor } from "aws4-axios";
-import { Payload } from "./models";
+import { SNSMessage } from "./models";
 
 export function getRequestConfig(token: string): AxiosRequestConfig {
   const config: AxiosRequestConfig = {
@@ -12,18 +12,16 @@ export function getRequestConfig(token: string): AxiosRequestConfig {
   return config;
 }
 
-export const validatePayload = (payload: Payload): Payload => {
-  if (!payload.public_subject_id) {
+export const validateSNSMessage = (snsMessage: SNSMessage) => {
+  if (!snsMessage.public_subject_id) {
     throw new Error(
-      `Payload is missing required attribute "public_subject_id". ${JSON.stringify(
-        payload
-      )}`
+      "SNS message is missing the required attribute 'public_subject_id'."
     );
   }
-  return payload;
+  return snsMessage;
 };
 
-async function sendRequest(payload: Payload) {
+export const sendRequest = async (snsMessage: SNSMessage) => {
   console.log("Sending DELETE request to GOV.UK Subscriptions API.");
 
   const interceptor = aws4Interceptor({
@@ -35,10 +33,12 @@ async function sendRequest(payload: Payload) {
 
   const token: string = process.env.GOV_ACCOUNTS_PUBLISHING_API_TOKEN!;
   const requestConfig = getRequestConfig(token);
-  let deleteUrl = `${process.env.MOCK_PUBLISHING_API_URL}/api/oidc-users/${payload.public_subject_id}`;
-  // let deleteUrl = `account-api.staging.publishing.service.gov.uk/api/oidc-users/${snsMessage.public_subject_id}`;
-  if (payload.legacy_subject_id) {
-    deleteUrl = `${deleteUrl}?legacy_sub=${payload.legacy_subject_id}`;
+
+  let deleteUrl = `${process.env.PUBLISHING_API_URL!}/api/oidc-users/${
+    snsMessage.public_subject_id
+  }`;
+  if (snsMessage.legacy_subject_id) {
+    deleteUrl = `${deleteUrl}?legacy_sub=${snsMessage.legacy_subject_id}`;
   }
 
   console.log(
@@ -57,21 +57,22 @@ async function sendRequest(payload: Payload) {
     };
 
     console.log(`Response from GOV.UK API: ${JSON.stringify(responseObject)}`);
-
     return responseObject;
   } catch (error: any) {
-    console.log(`Unable to send DELETE request to GOV.UK API. Error:${error}`);
+    console.error(
+      `Unable to send DELETE request to GOV.UK API. Error:${error}`
+    );
     throw Error(error);
   }
-}
+};
 
 export const handler = async (event: {
-  Payload: Payload;
+  SNSMessage: SNSMessage;
   FunctionName: string;
 }): Promise<void> => {
-  console.log(`Input event received: ${JSON.stringify(event)}`);
-  const payload = event.Payload;
-  console.log(`Event payload: ${JSON.stringify(payload)}`);
-  validatePayload(payload);
-  await sendRequest(payload);
+  console.log(`Step Function event received: ${JSON.stringify(event)}`);
+  const snsMessage: SNSMessage = event.SNSMessage;
+  console.log(`SNS Message: ${JSON.stringify(snsMessage)}`);
+  validateSNSMessage(snsMessage);
+  await sendRequest(snsMessage);
 };

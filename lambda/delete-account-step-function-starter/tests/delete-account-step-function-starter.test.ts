@@ -11,32 +11,55 @@ import { TEST_USER_DATA, TEST_SNS_EVENT } from "./test-helpers";
 const sfnMock = mockClient(SFNClient);
 
 describe("handler", () => {
+  let consoleLogMock: jest.SpyInstance;
+
   beforeEach(() => {
     sfnMock.reset();
-    process.env.STEP_FUNCTION_ARN = "STEP_FUNCTION_ARN";
+    consoleLogMock = jest.spyOn(console, "log").mockImplementation(() => {});
   });
 
   afterEach(() => {
     jest.clearAllMocks();
+    consoleLogMock.mockRestore();
   });
 
-  test("if it iterates over each SNS record in the batch", async () => {
+  test("that it successfully processes the SNS message", async () => {
+    sfnMock
+      .on(StartExecutionCommand, {
+        input: JSON.stringify(TEST_USER_DATA),
+        stateMachineArn: process.env.STEP_FUNCTION_ARN,
+      })
+      .resolves({
+        $metadata: {
+          httpStatusCode: 200,
+          requestId: "493a2c58",
+          attempts: 1,
+          totalRetryDelay: 0,
+        },
+        executionArn: "test",
+      });
+
     // eslint-disable-next-line @typescript-eslint/no-var-requires,global-require
     const module = require("../delete-account-step-function-starter");
     const validateSNSMessageMock = jest
       .spyOn(module, "validateSNSMessage")
       .mockReturnValueOnce("validateSNSMessage-mock");
-    await handler(TEST_SNS_EVENT);
-    expect(sfnMock.commandCalls(StartExecutionCommand).length).toEqual(2);
-    expect(validateSNSMessageMock).toHaveBeenCalledTimes(2);
+
+    await expect(handler(TEST_SNS_EVENT)).resolves.not.toThrowError();
+    expect(validateSNSMessageMock).toHaveBeenCalledTimes(1);
+    expect(sfnMock.commandCalls(StartExecutionCommand).length).toEqual(1);
+    expect(consoleLogMock).toHaveBeenNthCalledWith(
+      3,
+      'Response from StartExecutionCommand: {"$metadata":{"httpStatusCode":200,"requestId":"493a2c58","attempts":1,"totalRetryDelay":0},"executionArn":"test"}'
+    );
   });
 
-  test("if it starts the step function execution", async () => {
+  test("that it starts the step function execution", async () => {
     sfnMock.on(StartExecutionCommand).resolves({});
     await handler(TEST_SNS_EVENT);
     expect(sfnMock.call(0).args[0].input).toEqual({
       input: JSON.stringify(TEST_USER_DATA),
-      stateMachineArn: "STEP_FUNCTION_ARN",
+      stateMachineArn: process.env.STEP_FUNCTION_ARN,
     });
   });
 
@@ -47,32 +70,31 @@ describe("handler", () => {
       consoleErrorMock = jest
         .spyOn(console, "error")
         .mockImplementation(() => {});
-      sfnMock.rejectsOnce("mock error");
-    });
-
-    afterAll(() => {
-      consoleErrorMock.mockRestore();
     });
 
     afterEach(() => {
       consoleErrorMock.mockClear();
     });
 
-    test("if the handler logs and throws an error when the StartExecutionCommand throws an error", async () => {
+    test("that it logs and throws an error if the StartExecutionCommand throws an error", async () => {
+      sfnMock.rejectsOnce("step function error");
       await expect(async () => {
         await handler(TEST_SNS_EVENT);
       }).rejects.toThrowError();
       expect(consoleErrorMock).toHaveBeenCalledTimes(1);
+      expect(consoleErrorMock).toHaveBeenCalledWith(
+        "An error happened while trying to start the state machine. Error: Error: step function error."
+      );
     });
   });
 });
 
 describe("validateSNSMessage", () => {
-  test("that it doesn't throw an error when the SNS message is valid", () => {
+  test("that it does not throw an error if the SNS message is valid", () => {
     expect(validateSNSMessage(TEST_USER_DATA)).toBe(TEST_USER_DATA);
   });
 
-  test("that it throws an error when the SNS message is missing the required attribute 'email'", () => {
+  test("that it throws an error if the SNS message is missing the required attribute email", () => {
     const snsMessage = JSON.parse(
       JSON.stringify({
         user_id: "user-id",
@@ -87,11 +109,11 @@ describe("validateSNSMessage", () => {
     expect(() => {
       validateSNSMessage(snsMessage);
     }).toThrowError(
-      "SNS message is missing one or more of the required attributes 'email', 'access_token' 'public_subject_id'"
+      "SNS Message is missing one or more of the required attributes 'email', 'access_token' and 'public_subject_id'."
     );
   });
 
-  test("that it doesn't throw an error when the SNS message is missing a non-required attribute", () => {
+  test("that it does not throw an error if the SNS message is missing the non-required attribute legacy_subject_id", () => {
     const snsMessage = JSON.parse(
       JSON.stringify({
         user_id: "user-id",
@@ -110,18 +132,48 @@ describe("validateSNSMessage", () => {
 describe("startStateMachine", () => {
   beforeEach(() => {
     sfnMock.reset();
-    process.env.STEP_FUNCTION_ARN = "STEP_FUNCTION_ARN";
   });
 
   afterEach(() => {
     jest.clearAllMocks();
   });
 
-  test("if the StartExecutionCommand gets called called with the correct input", async () => {
+  test("that the StartExecutionCommand gets called with the correct input", async () => {
     await startStateMachine(TEST_USER_DATA);
     expect(sfnMock).toHaveReceivedCommandWith(StartExecutionCommand, {
       stateMachineArn: process.env.STEP_FUNCTION_ARN,
       input: JSON.stringify(TEST_USER_DATA),
+    });
+  });
+
+  test("that it returns the StartExecutionCommandOutput, i.e. response", async () => {
+    sfnMock
+      .on(StartExecutionCommand, {
+        input: JSON.stringify(TEST_USER_DATA),
+        stateMachineArn: process.env.STEP_FUNCTION_ARN,
+      })
+      .resolves({
+        $metadata: {
+          httpStatusCode: 200,
+          requestId: "493a2c58",
+          attempts: 1,
+          totalRetryDelay: 0,
+        },
+        executionArn: "test",
+      });
+    const response = await startStateMachine(TEST_USER_DATA);
+    expect(sfnMock).toHaveReceivedCommandWith(StartExecutionCommand, {
+      stateMachineArn: process.env.STEP_FUNCTION_ARN,
+      input: JSON.stringify(TEST_USER_DATA),
+    });
+    expect(response).toEqual({
+      $metadata: {
+        attempts: 1,
+        httpStatusCode: 200,
+        requestId: "493a2c58",
+        totalRetryDelay: 0,
+      },
+      executionArn: "test",
     });
   });
 });

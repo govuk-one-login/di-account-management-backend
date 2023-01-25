@@ -1,6 +1,6 @@
 import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
 import { aws4Interceptor } from "aws4-axios";
-import { Payload } from "./models";
+import { SNSMessage } from "./models";
 
 export function getRequestConfig(
   accessToken: string,
@@ -29,18 +29,16 @@ export function getRequestConfig(
   return config;
 }
 
-export const validatePayload = (payload: Payload) => {
-  if (!payload.email || !payload.access_token) {
+export const validateSNSMessage = (snsMessage: SNSMessage) => {
+  if (!snsMessage.email || !snsMessage.access_token) {
     throw new Error(
-      `Payload is missing one or both of the required attributes "email" and "access_token". ${JSON.stringify(
-        payload
-      )}`
+      "SNS Message is missing one or both of the required attributes 'email' and 'access_token'."
     );
   }
-  return payload;
+  return snsMessage;
 };
 
-export async function sendRequest(payload: Payload) {
+export const sendRequest = async (snsMessage: SNSMessage) => {
   console.log("Sending POST request to Auth HTTP API.");
 
   const interceptor = aws4Interceptor({
@@ -51,13 +49,13 @@ export async function sendRequest(payload: Payload) {
   axios.interceptors.request.use(interceptor);
 
   const requestConfig = getRequestConfig(
-    payload.access_token,
-    payload.source_ip,
-    payload.persistent_session_id,
-    payload.session_id
+    snsMessage.access_token,
+    snsMessage.source_ip,
+    snsMessage.persistent_session_id,
+    snsMessage.session_id
   );
-  const deleteUrl = `${process.env.MOCK_PUBLISHING_API_URL}/delete-account`;
-  // const deleteUrl = "https://home.dev.account.gov.uk/delete-account";
+
+  const deleteUrl = `${process.env.AM_API_BASE_URL}/delete-account`;
 
   console.log(
     `Request config: ${JSON.stringify(requestConfig)}, URL: ${deleteUrl}`
@@ -66,7 +64,7 @@ export async function sendRequest(payload: Payload) {
   try {
     const response: AxiosResponse = await axios.post(
       deleteUrl,
-      { email: payload.email },
+      { email: snsMessage.email },
       requestConfig
     );
 
@@ -77,21 +75,22 @@ export async function sendRequest(payload: Payload) {
     };
 
     console.log(`Response from Auth API: ${JSON.stringify(responseObject)}`);
-
     return responseObject;
   } catch (error: any) {
-    console.log(`Unable to send POST request to Auth HTTP API. Error:${error}`);
+    console.error(
+      `Unable to send POST request to Auth HTTP API. Error:${error}`
+    );
     throw Error(error);
   }
-}
+};
 
 export const handler = async (event: {
-  Payload: Payload;
+  SNSMessage: SNSMessage;
   FunctionName: string;
 }): Promise<void> => {
-  console.log(`Input event received: ${JSON.stringify(event)}`);
-  const payload = event.Payload;
-  console.log(`Event payload: ${JSON.stringify(payload)}`);
-  validatePayload(payload);
-  await sendRequest(payload);
+  console.log(`Step Function event received: ${JSON.stringify(event)}`);
+  const snsMessage: SNSMessage = event.SNSMessage;
+  console.log(`SNS Message: ${JSON.stringify(snsMessage)}`);
+  validateSNSMessage(snsMessage);
+  await sendRequest(snsMessage);
 };

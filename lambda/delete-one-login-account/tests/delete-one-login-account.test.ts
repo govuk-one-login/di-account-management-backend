@@ -17,10 +17,6 @@ describe("handler", () => {
     consoleLogMock = jest.spyOn(console, "log").mockImplementation(() => {});
   });
 
-  afterAll(() => {
-    consoleLogMock.mockRestore();
-  });
-
   afterEach(() => {
     jest.clearAllMocks();
     consoleLogMock.mockClear();
@@ -62,10 +58,6 @@ describe("handler", () => {
         .spyOn(console, "error")
         .mockImplementation(() => {});
       mockedAxios.post.mockRejectedValueOnce(new Error("error"));
-    });
-
-    afterAll(() => {
-      consoleErrorMock.mockRestore();
     });
 
     afterEach(() => {
@@ -195,11 +187,11 @@ describe("validateSNSMessage", () => {
   test("that it does not throw an error if the SNS message is missing the non-required attribute user_id", () => {
     const snsMessage = JSON.parse(
       JSON.stringify({
-        user_id: "user-id",
         access_token: "access_token",
         email: "email",
         source_ip: "source_ip",
         persistent_session_id: "persistent_session_id",
+        session_id: "session_id",
         legacy_subject_id: "legacy_subject_id",
         public_subject_id: "public_subject_id",
       })

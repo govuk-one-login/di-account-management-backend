@@ -17,10 +17,6 @@ describe("handler", () => {
     consoleLogMock = jest.spyOn(console, "log").mockImplementation(() => {});
   });
 
-  afterAll(() => {
-    consoleLogMock.mockRestore();
-  });
-
   afterEach(() => {
     jest.clearAllMocks();
     consoleLogMock.mockClear();
@@ -47,7 +43,6 @@ describe("handler", () => {
 
   test("that it does not throw an error if axios returns a successful response", async () => {
     mockedAxios.delete.mockResolvedValue({
-      data: {},
       status: 204,
       statusText: "No Content",
     });
@@ -62,10 +57,6 @@ describe("handler", () => {
         .spyOn(console, "error")
         .mockImplementation(() => {});
       mockedAxios.delete.mockRejectedValueOnce(new Error("error"));
-    });
-
-    afterAll(() => {
-      consoleErrorMock.mockRestore();
     });
 
     afterEach(() => {

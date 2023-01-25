@@ -50,7 +50,7 @@ describe("handler", () => {
     expect(sfnMock.commandCalls(StartExecutionCommand).length).toEqual(1);
     expect(consoleLogMock).toHaveBeenNthCalledWith(
       3,
-      'Response from StartExecutionCommand: {"$metadata":{"httpStatusCode":200,"requestId":"493a2c58","attempts":1,"totalRetryDelay":0},"executionArn":"test"}'
+      'Successfully started the state machine. Response from StartExecutionCommand: {"$metadata":{"httpStatusCode":200,"requestId":"493a2c58","attempts":1,"totalRetryDelay":0},"executionArn":"test"}'
     );
   });
 

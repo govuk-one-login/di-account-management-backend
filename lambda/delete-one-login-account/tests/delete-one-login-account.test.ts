@@ -85,16 +85,19 @@ describe("handler", () => {
 });
 
 describe("getRequestConfig", () => {
-  test("that the headers contain only Authorization if only the attribute access_token is true and all others are undefined", () => {
-    expect(
-      getRequestConfig("access_token", undefined, undefined, undefined)
-    ).toEqual({
+  test("that it returns the config in the correct format without additional properties in the headers", () => {
+    const config = getRequestConfig("access_token");
+    expect(config).toHaveProperty("headers", {
+      Authorization: "Bearer access_token",
+    });
+    expect(config).toHaveProperty("proxy", false);
+    expect(config).toEqual({
       headers: { Authorization: "Bearer access_token" },
       proxy: false,
     });
   });
 
-  test("that X-Forwarded-For is added to the headers if the attribute source_ip is true", () => {
+  test("that the property X-Forwarded-For is added to the headers if source_ip is truthy", () => {
     expect(
       getRequestConfig("access_token", "source_ip", undefined, undefined)
     ).toEqual({
@@ -106,7 +109,7 @@ describe("getRequestConfig", () => {
     });
   });
 
-  test("that all possible attributes are added to the headers if all are true", () => {
+  test("that all possible additional properties are added to the headers if their value is truthy", () => {
     expect(
       getRequestConfig(
         "access_token",
@@ -135,7 +138,7 @@ describe("sendRequest", () => {
     jest.clearAllMocks();
   });
 
-  test("that it returns the response returned by axios when the request is successful", async () => {
+  test("that it returns the response object if axios returns a successful response", async () => {
     const mockResponse = {
       data: {},
       status: 200,

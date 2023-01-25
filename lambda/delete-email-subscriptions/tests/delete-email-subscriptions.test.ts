@@ -102,7 +102,7 @@ describe("sendRequest", () => {
     jest.clearAllMocks();
   });
 
-  test("that the URL contains a query parameter if legacy_subject_id is true", async () => {
+  test("that the URL contains a query parameter if legacy_subject_id is truthy", async () => {
     await sendRequest(TEST_USER_DATA);
     expect(mockedAxios.delete).toHaveBeenCalledWith(
       "https://test.com/api/oidc-users/public_subject_id?legacy_sub=legacy_subject_id",
@@ -110,7 +110,7 @@ describe("sendRequest", () => {
     );
   });
 
-  test("that the URL does not contain a query parameter if legacy_subject_id is false", async () => {
+  test("that the URL does not contain a query parameter if legacy_subject_id is falsy", async () => {
     const snsMessage = JSON.parse(
       JSON.stringify({
         user_id: "user-id",
@@ -129,9 +129,8 @@ describe("sendRequest", () => {
     );
   });
 
-  test("that it returns the response returned by axios if the request is successful", async () => {
+  test("that it returns the response object if axios returns a successful response", async () => {
     const mockResponse = {
-      data: {},
       status: 204,
       statusText: "No Content",
     } as AxiosResponse;
@@ -148,7 +147,6 @@ describe("sendRequest", () => {
       }
     );
     expect(response).toEqual({
-      data: {},
       status: 204,
       statusText: "No Content",
     });

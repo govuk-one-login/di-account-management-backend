@@ -1157,7 +1157,7 @@ Resources:
   DeleteAccountStepFunction:
     Type: AWS::StepFunctions::StateMachine
     Properties:
-      StateMachineName: !Sub "${AWS::StackName}-delete-account-step-function"
+      StateMachineName: !Sub "${Environment}-${AWS::StackName}-delete-account-step-function"
       StateMachineType: STANDARD
       RoleArn: !GetAtt DeleteAccountStepFunctionIAMRole.Arn
       LoggingConfiguration:
@@ -1328,7 +1328,7 @@ Resources:
   DeleteAccountStepFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub "/aws/stepfunctions/${DeleteAccountStepFunction}"
+      LogGroupName: !Sub "/aws/stepfunctions/${Environment}-${AWS::StackName}-delete-account-step-function"
       RetentionInDays: 30
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 

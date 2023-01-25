@@ -14,3 +14,5 @@ export default {
   coverageProvider: "babel",
   testMatch: ["**/tests/*/*.test.ts", "**/tests/*.test.ts"],
 };
+
+process.env.AM_API_BASE_URL = "https://test.com";

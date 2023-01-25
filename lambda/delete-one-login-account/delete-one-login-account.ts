@@ -55,8 +55,7 @@ export const sendRequest = async (snsMessage: SNSMessage) => {
     snsMessage.persistent_session_id,
     snsMessage.session_id
   );
-  const deleteUrl = `${process.env.MOCK_PUBLISHING_API_URL}/delete-account`;
-  // const deleteUrl = "https://home.dev.account.gov.uk/delete-account";
+  const deleteUrl = `${process.env.AM_API_BASE_URL}/delete-account`;
 
   console.log(
     `Request config: ${JSON.stringify(requestConfig)}, URL: ${deleteUrl}`
@@ -69,9 +68,13 @@ export const sendRequest = async (snsMessage: SNSMessage) => {
       requestConfig
     );
 
+    const responseObject = {
+      status: response.status,
+      statusText: response.statusText,
+      data: response.data,
+    };
     console.log(`Response from Auth API: ${JSON.stringify(response)}`);
-
-    return response;
+    return responseObject;
   } catch (error: any) {
     console.error(
       `Unable to send POST request to Auth HTTP API. Error:${error}`
@@ -81,14 +84,9 @@ export const sendRequest = async (snsMessage: SNSMessage) => {
 };
 
 export const handler = async (event: SNSEvent): Promise<void> => {
-  console.log(`SNS Event received: ${JSON.stringify(event)}`);
-
-  await Promise.all(
-    event.Records.map(async (record) => {
-      const snsMessage: SNSMessage = JSON.parse(record.Sns.Message);
-      console.log(`Parsed SNS Message: ${JSON.stringify(snsMessage)}`);
-      validateSNSMessage(snsMessage);
-      await sendRequest(snsMessage);
-    })
-  );
+  console.log(`Received SNS Event: ${JSON.stringify(event)}`);
+  const snsMessage: SNSMessage = JSON.parse(event.Records[0].Sns.Message);
+  console.log(`Parsed SNS Message: ${JSON.stringify(snsMessage)}`);
+  validateSNSMessage(snsMessage);
+  await sendRequest(snsMessage);
 };

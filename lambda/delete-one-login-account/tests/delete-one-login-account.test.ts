@@ -14,12 +14,7 @@ describe("handler", () => {
   let consoleLogMock: jest.SpyInstance;
   beforeEach(() => {
     jest.restoreAllMocks();
-    process.env.MOCK_PUBLISHING_API_URL = "https://test.com/";
     consoleLogMock = jest.spyOn(console, "log").mockImplementation(() => {});
-  });
-
-  afterAll(() => {
-    consoleLogMock.mockRestore();
   });
 
   afterEach(() => {
@@ -27,7 +22,7 @@ describe("handler", () => {
     consoleLogMock.mockClear();
   });
 
-  test("that it iterates over each SNS record in the batch", async () => {
+  test("that it successfully processes the SNS message", async () => {
     // eslint-disable-next-line @typescript-eslint/no-var-requires,global-require
     const module = require("../delete-one-login-account");
     const validateSNSMessageMock = jest
@@ -38,11 +33,11 @@ describe("handler", () => {
       .spyOn(module, "sendRequest")
       .mockReturnValue("sendRequest-mock");
 
-    await handler(TEST_SNS_EVENT);
-    expect(consoleLogMock).toHaveBeenCalledTimes(3);
-    expect(validateSNSMessageMock).toHaveBeenCalledTimes(2);
+    await expect(handler(TEST_SNS_EVENT)).resolves.not.toThrowError();
+    expect(consoleLogMock).toHaveBeenCalledTimes(2);
+    expect(validateSNSMessageMock).toHaveBeenCalledTimes(1);
     expect(validateSNSMessageMock).toHaveBeenCalledWith(TEST_USER_DATA);
-    expect(sendRequestMock).toHaveBeenCalledTimes(2);
+    expect(sendRequestMock).toHaveBeenCalledTimes(1);
     expect(sendRequestMock).toHaveBeenCalledWith(TEST_USER_DATA);
   });
 
@@ -65,10 +60,6 @@ describe("handler", () => {
       mockedAxios.post.mockRejectedValueOnce(new Error("error"));
     });
 
-    afterAll(() => {
-      consoleErrorMock.mockRestore();
-    });
-
     afterEach(() => {
       consoleErrorMock.mockClear();
     });
@@ -86,16 +77,19 @@ describe("handler", () => {
 });
 
 describe("getRequestConfig", () => {
-  test("that the headers will contain only 'Authorization' when only the attribute 'access_token' is true and all others are undefined", () => {
-    expect(
-      getRequestConfig("access_token", undefined, undefined, undefined)
-    ).toEqual({
-      headers: { Authorization: "Bearer access_token"},
+  test("that it returns the config in the correct format without additional properties in the headers", () => {
+    const config = getRequestConfig("access_token");
+    expect(config).toHaveProperty("headers", {
+      Authorization: "Bearer access_token",
+    });
+    expect(config).toHaveProperty("proxy", false);
+    expect(config).toEqual({
+      headers: { Authorization: "Bearer access_token" },
       proxy: false,
     });
   });
 
-  test("that the headers will contain 'X-Forwarded-For' when the attribute 'source_ip' is true", () => {
+  test("that the property X-Forwarded-For is added to the headers if source_ip is truthy", () => {
     expect(
       getRequestConfig("access_token", "source_ip", undefined, undefined)
     ).toEqual({
@@ -107,7 +101,7 @@ describe("getRequestConfig", () => {
     });
   });
 
-  test("that the headers will contain all possible attributes when all are true", () => {
+  test("that all possible additional properties are added to the headers if their value is truthy", () => {
     expect(
       getRequestConfig(
         "access_token",
@@ -120,7 +114,7 @@ describe("getRequestConfig", () => {
         Authorization: "Bearer access_token",
         "Session-Id": "session_id",
         "X-Forwarded-For": "source_ip",
-        "di-persistent-session-id": "persistent_session_id"
+        "di-persistent-session-id": "persistent_session_id",
       },
       proxy: false,
     });
@@ -130,37 +124,35 @@ describe("getRequestConfig", () => {
 describe("sendRequest", () => {
   beforeEach(() => {
     jest.restoreAllMocks();
-    process.env.GOV_ACCOUNTS_PUBLISHING_API_TOKEN = "TOKEN";
-    process.env.MOCK_PUBLISHING_API_URL = "https://test.com";
   });
 
   afterEach(() => {
     jest.clearAllMocks();
   });
 
-  test("that it will return the response returned by axios when the request is successful", async () => {
+  test("that it returns the response object if axios returns a successful response", async () => {
     const mockResponse = {
       data: {},
-      status: 204,
-      statusText: "No Content",
+      status: 200,
+      statusText: "OK",
     } as AxiosResponse;
     mockedAxios.post.mockResolvedValue(mockResponse);
     const response = await sendRequest(TEST_USER_DATA);
     expect(mockedAxios.post).toHaveBeenCalledTimes(1);
     expect(response).toEqual({
       data: {},
-      status: 204,
-      statusText: "No Content",
+      status: 200,
+      statusText: "OK",
     });
   });
 });
 
 describe("validateSNSMessage", () => {
-  test("that it doesn't throw an error when the SNS message is valid", () => {
+  test("that it does not throw an error if the SNS message is valid", () => {
     expect(validateSNSMessage(TEST_USER_DATA)).toBe(TEST_USER_DATA);
   });
 
-  test("that it throws an error when the SNS message is missing the required attribute 'email'", () => {
+  test("that it throws an error if the SNS message is missing the required attribute email", () => {
     const snsMessage = JSON.parse(
       JSON.stringify({
         user_id: "user-id",
@@ -179,14 +171,14 @@ describe("validateSNSMessage", () => {
     );
   });
 
-  test("that it doesn't throw an error when the SNS message is missing the non-required attribute 'session_id'", () => {
+  test("that it does not throw an error if the SNS message is missing the non-required attribute user_id", () => {
     const snsMessage = JSON.parse(
       JSON.stringify({
-        user_id: "user-id",
         access_token: "access_token",
         email: "email",
         source_ip: "source_ip",
         persistent_session_id: "persistent_session_id",
+        session_id: "session_id",
         legacy_subject_id: "legacy_subject_id",
         public_subject_id: "public_subject_id",
       })

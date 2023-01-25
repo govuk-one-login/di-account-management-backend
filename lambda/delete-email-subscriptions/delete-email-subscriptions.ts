@@ -34,8 +34,8 @@ export const sendRequest = async (snsMessage: SNSMessage) => {
 
   const token: string = process.env.GOV_ACCOUNTS_PUBLISHING_API_TOKEN!;
   const requestConfig = getRequestConfig(token);
-  let deleteUrl = `${process.env.MOCK_PUBLISHING_API_URL}/api/oidc-users/${snsMessage.public_subject_id}`;
-  // let deleteUrl = `account-api.staging.publishing.service.gov.uk/api/oidc-users/${snsMessage.public_subject_id}`;
+
+  let deleteUrl = `${process.env.PUBLISHING_API_URL}/api/oidc-users/${snsMessage.public_subject_id}`;
   if (snsMessage.legacy_subject_id) {
     deleteUrl = `${deleteUrl}?legacy_sub=${snsMessage.legacy_subject_id}`;
   }
@@ -50,9 +50,12 @@ export const sendRequest = async (snsMessage: SNSMessage) => {
       requestConfig
     );
 
-    console.log(`Response from GOV.UK API: ${JSON.stringify(response)}`);
-
-    return response;
+    const responseObject = {
+      status: response.status,
+      statusText: response.statusText,
+    };
+    console.log(`Response from GOV.UK API: ${JSON.stringify(responseObject)}`);
+    return responseObject;
   } catch (error: any) {
     console.error(
       `Unable to send DELETE request to GOV.UK API. Error:${error}`
@@ -62,13 +65,9 @@ export const sendRequest = async (snsMessage: SNSMessage) => {
 };
 
 export const handler = async (event: SNSEvent): Promise<void> => {
-  console.log(`SNS Event: ${JSON.stringify(event)}`);
-  await Promise.all(
-    event.Records.map(async (record) => {
-      const snsMessage: SNSMessage = JSON.parse(record.Sns.Message);
-      console.log(`Parsed SNS Message: ${JSON.stringify(snsMessage)}`);
-      validateSNSMessage(snsMessage);
-      await sendRequest(snsMessage);
-    })
-  );
+  console.log(`Received SNS Event: ${JSON.stringify(event)}`);
+  const snsMessage: SNSMessage = JSON.parse(event.Records[0].Sns.Message);
+  console.log(`Parsed SNS Message: ${JSON.stringify(snsMessage)}`);
+  validateSNSMessage(snsMessage);
+  await sendRequest(snsMessage);
 };

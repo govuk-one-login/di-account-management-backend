@@ -1,4 +1,4 @@
-import axios, { AxiosResponse } from "axios";
+import axios from "axios";
 import {
   handler,
   sendRequest,
@@ -14,13 +14,7 @@ describe("handler", () => {
   let consoleLogMock: jest.SpyInstance;
   beforeEach(() => {
     jest.restoreAllMocks();
-    process.env.GOV_ACCOUNTS_PUBLISHING_API_TOKEN = "TOKEN";
-    process.env.MOCK_PUBLISHING_API_URL = "https://test.com/";
     consoleLogMock = jest.spyOn(console, "log").mockImplementation(() => {});
-  });
-
-  afterAll(() => {
-    consoleLogMock.mockRestore();
   });
 
   afterEach(() => {
@@ -28,7 +22,7 @@ describe("handler", () => {
     consoleLogMock.mockClear();
   });
 
-  test("that it iterates over each SNS record in the batch", async () => {
+  test("that it successfully processes the SNS message", async () => {
     // eslint-disable-next-line @typescript-eslint/no-var-requires,global-require
     const module = require("../delete-email-subscriptions");
     const validateSNSMessageMock = jest
@@ -39,19 +33,18 @@ describe("handler", () => {
       .spyOn(module, "sendRequest")
       .mockReturnValue("sendRequest-mock");
 
-    await handler(TEST_SNS_EVENT);
-    expect(consoleLogMock).toHaveBeenCalledTimes(3);
-    expect(validateSNSMessageMock).toHaveBeenCalledTimes(2);
+    await expect(handler(TEST_SNS_EVENT)).resolves.not.toThrowError();
+    expect(consoleLogMock).toHaveBeenCalledTimes(2);
+    expect(validateSNSMessageMock).toHaveBeenCalledTimes(1);
     expect(validateSNSMessageMock).toHaveBeenCalledWith(TEST_USER_DATA);
-    expect(sendRequestMock).toHaveBeenCalledTimes(2);
+    expect(sendRequestMock).toHaveBeenCalledTimes(1);
     expect(sendRequestMock).toHaveBeenCalledWith(TEST_USER_DATA);
   });
 
   test("that it does not throw an error if axios returns a successful response", async () => {
     mockedAxios.delete.mockResolvedValue({
-      data: {},
-      status: 200,
-      statusText: "OK",
+      status: 204,
+      statusText: "No Content",
     });
     await expect(handler(TEST_SNS_EVENT)).resolves.not.toThrowError();
   });
@@ -64,10 +57,6 @@ describe("handler", () => {
         .spyOn(console, "error")
         .mockImplementation(() => {});
       mockedAxios.delete.mockRejectedValueOnce(new Error("error"));
-    });
-
-    afterAll(() => {
-      consoleErrorMock.mockRestore();
     });
 
     afterEach(() => {
@@ -88,8 +77,8 @@ describe("handler", () => {
 
 describe("getRequestConfig", () => {
   test("that it returns the request config in the correct format", () => {
-    expect(getRequestConfig("token")).toEqual({
-      headers: { Authorization: "Bearer token" },
+    expect(getRequestConfig("TOKEN")).toEqual({
+      headers: { Authorization: "Bearer TOKEN" },
       proxy: false,
     });
   });
@@ -98,15 +87,17 @@ describe("getRequestConfig", () => {
 describe("sendRequest", () => {
   beforeEach(() => {
     jest.restoreAllMocks();
-    process.env.GOV_ACCOUNTS_PUBLISHING_API_TOKEN = "TOKEN";
-    process.env.MOCK_PUBLISHING_API_URL = "https://test.com";
+    mockedAxios.delete.mockResolvedValue({
+      status: 204,
+      statusText: "No Content",
+    });
   });
 
   afterEach(() => {
     jest.clearAllMocks();
   });
 
-  test("that the URL will contain a query parameter if legacy_subject_id is true", async () => {
+  test("that the URL contains a query parameter if legacy_subject_id is truthy", async () => {
     await sendRequest(TEST_USER_DATA);
     expect(mockedAxios.delete).toHaveBeenCalledWith(
       "https://test.com/api/oidc-users/public_subject_id?legacy_sub=legacy_subject_id",
@@ -114,7 +105,7 @@ describe("sendRequest", () => {
     );
   });
 
-  test("that the URL will only contain a path parameter, the public_subject_id, if legacy_subject_id is false", async () => {
+  test("that the URL does not contain a query parameter if legacy_subject_id is falsy", async () => {
     const snsMessage = JSON.parse(
       JSON.stringify({
         user_id: "user-id",
@@ -133,25 +124,19 @@ describe("sendRequest", () => {
     );
   });
 
-  test("that it will return the response returned by axios when the request is successful", async () => {
-    const mockResponse = {
-      data: {},
-      status: 200,
-      statusText: "OK",
-    } as AxiosResponse;
-    mockedAxios.delete.mockResolvedValue(mockResponse);
+  test("that it returns the response object if axios returns a successful response", async () => {
     const response = await sendRequest(TEST_USER_DATA);
     expect(mockedAxios.delete).toHaveBeenCalledTimes(1);
-    expect(response).toEqual({ data: {}, status: 200, statusText: "OK" });
+    expect(response).toEqual({ status: 204, statusText: "No Content" });
   });
 });
 
 describe("validateSNSMessage", () => {
-  test("that it doesn't throw an error when the SNS message is valid", () => {
+  test("that it does not throw an error when the SNS message is valid", () => {
     expect(validateSNSMessage(TEST_USER_DATA)).toBe(TEST_USER_DATA);
   });
 
-  test("that it throws an error when the SNS message is missing the required attribute 'public_subject_id'", () => {
+  test("that it throws an error if the SNS message is missing the required attribute public_subject_id", () => {
     const snsMessage = JSON.parse(
       JSON.stringify({
         user_id: "user-id",
@@ -170,7 +155,7 @@ describe("validateSNSMessage", () => {
     );
   });
 
-  test("that it doesn't throw an error when the SNS message is missing the non-required attribute 'legacy_subject_id'", () => {
+  test("that it does not throw an error if the SNS message is missing the non-required attribute legacy_subject_id", () => {
     const snsMessage = JSON.parse(
       JSON.stringify({
         user_id: "user-id",

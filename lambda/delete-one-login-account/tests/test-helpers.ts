@@ -33,5 +33,5 @@ const TEST_SNS_EVENT_RECORD: SNSEventRecord = {
 };
 
 export const TEST_SNS_EVENT: SNSEvent = {
-  Records: [TEST_SNS_EVENT_RECORD, TEST_SNS_EVENT_RECORD],
+  Records: [TEST_SNS_EVENT_RECORD],
 };

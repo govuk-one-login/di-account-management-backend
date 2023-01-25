@@ -14,3 +14,6 @@ export default {
   coverageProvider: "babel",
   testMatch: ["**/tests/*/*.test.ts", "**/tests/*.test.ts"],
 };
+
+process.env.GOV_ACCOUNTS_PUBLISHING_API_TOKEN = "TOKEN";
+process.env.PUBLISHING_API_URL = "https://test.com";

@@ -32,9 +32,7 @@ export function getRequestConfig(
 export const validatePayload = (payload: Payload) => {
   if (!payload.email || !payload.access_token) {
     throw new Error(
-      `Payload is missing one or both of the required attributes "email" and "access_token". ${JSON.stringify(
-        payload
-      )}`
+      `Payload is missing one or both of the required attributes "email" and "access_token".`
     );
   }
   return payload;

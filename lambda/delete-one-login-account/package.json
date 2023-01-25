@@ -10,6 +10,7 @@
   "author": "GDS",
   "license": "OGL",
   "devDependencies": {
+    "@types/aws-lambda": "^8.10.109",
     "@types/jest": "^29.1.2",
     "@typescript-eslint/eslint-plugin": "^5.40.0",
     "eslint": "^8.25.0",

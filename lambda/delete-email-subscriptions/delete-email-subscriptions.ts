@@ -15,10 +15,15 @@ export function getRequestConfig(token: string): AxiosRequestConfig {
 export const validatePayload = (payload: Payload): Payload => {
   if (!payload.public_subject_id) {
     throw new Error(
-      `Payload is missing required attribute "public_subject_id". ${JSON.stringify(
-        payload
-      )}`
+      `Payload is missing required attribute "public_subject_id".`
     );
+  }
+  return payload;
+};
+
+export const userIDPayload = (payload: Payload): Payload => {
+  if (!payload.user_id) {
+    throw new Error(`Payload is missing required attribute "user_id".`);
   }
   return payload;
 };

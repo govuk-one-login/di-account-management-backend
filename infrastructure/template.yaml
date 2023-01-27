@@ -90,6 +90,24 @@ Mappings:
     production:
       QueueArn: "arn:aws:sqs:eu-west-2:451773080033:PublishToAccountsSQSQueue-production"
       KeyArn: "arn:aws:kms:eu-west-2:451773080033:key/3ece5761-145f-43c7-ae2e-4485c91fe6bd"
+  EnvironmentVariables:
+    ### These environment variables are referenced further down the file.
+    ### Please ensure that any variables defined for an environment are defined for _all_ environments.
+    dev:
+      AMAPIBASEURL: ""
+      GOVACCOUNTSPUBLISHINGAPIURL: ""
+    build:
+      AMAPIBASEURL: "https://manage.build.account.gov.uk"
+      GOVACCOUNTSPUBLISHINGAPIURL: "account-api.staging.publishing.service.gov.uk"
+    staging:
+      AMAPIBASEURL: "https://manage.staging.account.gov.uk"
+      GOVACCOUNTSPUBLISHINGAPIURL: "account-api.staging.publishing.service.gov.uk"
+    integration:
+      AMAPIBASEURL: "https://manage.integration.account.gov.uk"
+      GOVACCOUNTSPUBLISHINGAPIURL: "account-api.integration.publishing.service.gov.uk"
+    production:
+      AMAPIBASEURL: "https://manage.account.gov.uk"
+      GOVACCOUNTSPUBLISHINGAPIURL: "account-api.publishing.service.gov.uk"
 
 Resources:
   ######################################
@@ -1034,7 +1052,33 @@ Resources:
     Properties:
       Endpoint: !GetAtt DeleteOneLoginAccountFunction.Arn
       Protocol: lambda
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt UserAccountDeletionTopicSubscriptionDeleteOneLoginAccountDeadLetterQueue.Arn
       TopicArn: !Ref UserAccountDeletionTopic
+
+  UserAccountDeletionTopicSubscriptionDeleteOneLoginAccountDeadLetterQueue:
+    Type: AWS::SQS::Queue
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      MessageRetentionPeriod: 1209600
+      KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
+
+  UserAccountDeletionTopicDeleteOneLoginAccountSubscriptionDeadLetterQueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues:
+        - !Ref UserAccountDeletionTopicSubscriptionDeleteOneLoginAccountDeadLetterQueue
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: sns.amazonaws.com
+            Action: "sqs:SendMessage"
+            Resource: !GetAtt UserAccountDeletionTopicSubscriptionDeleteOneLoginAccountDeadLetterQueue.Arn
+            Condition:
+              ArnEquals:
+                "aws:SourceArn": !Ref UserAccountDeletionTopic
 
   DeleteOneLoginAccountLambdaInvokePermission:
     Type: AWS::Lambda::Permission
@@ -1071,13 +1115,16 @@ Resources:
         TargetArn: !GetAtt DeleteOneLoginAccountDeadLetterQueue.Arn
       Environment:
         Variables:
-          AM_API_BASE_URL: !Sub "{{resolve:ssm:/dev/APIGateway/MockPublishingAPI/Endpoint}}"
-#      VpcConfig:
-#        SubnetIds:
-#          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdA
-#          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdB
-#        SecurityGroupIds:
-#          - Fn::ImportValue: !Sub ${VpcStackName}-AWSServicesEndpointSecurityGroupId
+          AM_API_BASE_URL: !If
+            - IsNotDevelopment
+            - !FindInMap [ EnvironmentVariables, !Ref Environment, AMAPIBASEURL, ]
+            - !Sub "{{resolve:ssm:/dev/APIGateway/MockPublishingAPI/Endpoint}}"
+      #      VpcConfig:
+      #        SubnetIds:
+      #          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdA
+      #          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdB
+      #        SecurityGroupIds:
+      #          - Fn::ImportValue: !Sub ${VpcStackName}-AWSServicesEndpointSecurityGroupId
       Tags:
         CheckovRulesToSkip: CKV_AWS_117
     Metadata:
@@ -1163,7 +1210,33 @@ Resources:
     Properties:
       Endpoint: !GetAtt DeleteEmailSubscriptionsFunction.Arn
       Protocol: lambda
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt UserAccountDeletionTopicSubscriptionDeleteEmailSubscriptionsDeadLetterQueue.Arn
       TopicArn: !Ref UserAccountDeletionTopic
+
+  UserAccountDeletionTopicSubscriptionDeleteEmailSubscriptionsDeadLetterQueue:
+    Type: AWS::SQS::Queue
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      MessageRetentionPeriod: 1209600
+      KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
+
+  UserAccountDeletionTopicDeleteEmailSubscriptionsSubscriptionDeadLetterQueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues:
+        - !Ref UserAccountDeletionTopicSubscriptionDeleteEmailSubscriptionsDeadLetterQueue
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: sns.amazonaws.com
+            Action: "sqs:SendMessage"
+            Resource: !GetAtt UserAccountDeletionTopicSubscriptionDeleteEmailSubscriptionsDeadLetterQueue.Arn
+            Condition:
+              ArnEquals:
+                "aws:SourceArn": !Ref UserAccountDeletionTopic
 
   DeleteEmailSubscriptionsLambdaInvokePermission:
     Type: AWS::Lambda::Permission
@@ -1201,13 +1274,16 @@ Resources:
       Environment:
         Variables:
           GOV_ACCOUNTS_PUBLISHING_API_TOKEN: !Sub "{{resolve:secretsmanager:/${AccountManagementFrontendStackName}/Config/Publishing/API/Key}}"
-          PUBLISHING_API_URL: !Sub "{{resolve:ssm:/dev/APIGateway/MockPublishingAPI/Endpoint}}"
-#      VpcConfig:
-#        SubnetIds:
-#          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdA
-#          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdB
-#        SecurityGroupIds:
-#          - Fn::ImportValue: !Sub ${VpcStackName}-AWSServicesEndpointSecurityGroupId
+          GOV_ACCOUNTS_PUBLISHING_API_URL: !If
+          - IsNotDevelopment
+          - !FindInMap [ EnvironmentVariables, !Ref Environment, GOVACCOUNTSPUBLISHINGAPIURL, ]
+          - !Sub "{{resolve:ssm:/dev/APIGateway/MockPublishingAPI/Endpoint}}"    
+      #      VpcConfig:
+      #        SubnetIds:
+      #          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdA
+      #          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdB
+      #        SecurityGroupIds:
+      #          - Fn::ImportValue: !Sub ${VpcStackName}-AWSServicesEndpointSecurityGroupId
       Tags:
         CheckovRulesToSkip: CKV_AWS_117
     Metadata:
@@ -1335,6 +1411,15 @@ Resources:
             Action: kms:*
             Resource:
               - "*"
+          - Effect: Allow
+            Principal:
+              Service: sns.amazonaws.com
+            Action:
+              - kms:Decrypt
+              - kms:GenerateDataKey*
+            Resource: 
+              - "*"
+
 
   QueueKmsKeyAlias:
     Type: AWS::KMS::Alias

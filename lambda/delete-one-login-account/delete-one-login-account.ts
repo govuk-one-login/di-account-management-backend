@@ -73,7 +73,9 @@ export const sendRequest = async (snsMessage: SNSMessage) => {
       statusText: response.statusText,
       data: response.data,
     };
-    console.log(`Response from Auth API: ${JSON.stringify(response)}`);
+
+    console.log(`Response from Auth API: ${JSON.stringify(responseObject)}`);
+
     return responseObject;
   } catch (error: any) {
     console.error(

@@ -34,7 +34,7 @@ export const sendRequest = async (snsMessage: SNSMessage) => {
   const token: string = process.env.GOV_ACCOUNTS_PUBLISHING_API_TOKEN!;
   const requestConfig = getRequestConfig(token);
 
-  let deleteUrl = `${process.env.PUBLISHING_API_URL!}/api/oidc-users/${
+  let deleteUrl = `${process.env.GOV_ACCOUNTS_PUBLISHING_API_URL!}/api/oidc-users/${
     snsMessage.public_subject_id
   }`;
   if (snsMessage.legacy_subject_id) {
@@ -57,6 +57,7 @@ export const sendRequest = async (snsMessage: SNSMessage) => {
     };
 
     console.log(`Response from GOV.UK API: ${JSON.stringify(responseObject)}`);
+
     return responseObject;
   } catch (error: any) {
     console.error(

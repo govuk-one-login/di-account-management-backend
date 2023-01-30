@@ -1052,8 +1052,9 @@ Resources:
     Properties:
       Endpoint: !GetAtt StepFunctionStarterFunction.Arn
       Protocol: lambda
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt UserAccountDeletionTopicSubscriptionStepFunctionStarterDeadLetterQueue.Arn
       TopicArn: !Ref UserAccountDeletionTopic
-      
 
   UserAccountDeletionTopicSubscriptionStepFunctionStarterDeadLetterQueue:
     Type: AWS::SQS::Queue

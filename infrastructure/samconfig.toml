@@ -10,3 +10,4 @@ confirm_changeset = true
 capabilities = "CAPABILITY_IAM"
 parameter_overrides = "UserServicesStoreTableName=\"user_services\" RawEventsStoreTableName=\"raw_events\" Environment=\"dev\" VpcStackName=\"vpc-enhanced\" CodeSigningConfigArn=\"none\" PermissionsBoundary=\"none\" AccountManagementFrontendStackName=\"account-mgmt-frontend\""
 image_repositories = []
+disable_rollback = true

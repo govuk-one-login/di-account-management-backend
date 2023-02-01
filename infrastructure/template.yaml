@@ -950,13 +950,11 @@ Resources:
   DeleteUserServicesFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub "${AWS::StackName}-delete-user-service-log-group"
+      LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-delete-user-services"
       RetentionInDays: 30
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   DeleteUserServicesCSLSSubscription:
-    DependsOn:
-      - DeleteUserServicesFunctionLogGroup
     Condition: IsNotDevelopment
     Type: AWS::Logs::SubscriptionFilter
     Properties:
@@ -1116,12 +1114,12 @@ Resources:
       Environment:
         Variables:
           STEP_FUNCTION_ARN: !Ref DeleteAccountStepFunction
-      #      VpcConfig:
-      #        SubnetIds:
-      #          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdA
-      #          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdB
-      #        SecurityGroupIds:
-      #          - Fn::ImportValue: !Sub ${VpcStackName}-AWSServicesEndpointSecurityGroupId
+      VpcConfig:
+        SubnetIds:
+          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdA
+          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdB
+        SecurityGroupIds:
+          - Fn::ImportValue: !Sub ${VpcStackName}-AWSServicesEndpointSecurityGroupId
       Tags:
         CheckovRulesToSkip: CKV_AWS_117
     Metadata:
@@ -1401,12 +1399,12 @@ Resources:
             - IsNotDevelopment
             - !FindInMap [ EnvironmentVariables, !Ref Environment, AMAPIBASEURL, ]
             - !Sub "{{resolve:ssm:/dev/APIGateway/MockPublishingAPI/Endpoint}}"
-      #      VpcConfig:
-      #        SubnetIds:
-      #          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdA
-      #          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdB
-      #        SecurityGroupIds:
-      #          - Fn::ImportValue: !Sub ${VpcStackName}-AWSServicesEndpointSecurityGroupId
+      VpcConfig:
+        SubnetIds:
+          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdA
+          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdB
+        SecurityGroupIds:
+          - Fn::ImportValue: !Sub ${VpcStackName}-AWSServicesEndpointSecurityGroupId
       Tags:
         CheckovRulesToSkip: CKV_AWS_117.CKV_AWS_116
     Metadata:
@@ -1497,12 +1495,12 @@ Resources:
             - IsNotDevelopment
             - !FindInMap [ EnvironmentVariables, !Ref Environment, GOVACCOUNTSPUBLISHINGAPIURL, ]
             - !Sub "{{resolve:ssm:/dev/APIGateway/MockPublishingAPI/Endpoint}}"
-      #      VpcConfig:
-      #        SubnetIds:
-      #          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdA
-      #          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdB
-      #        SecurityGroupIds:
-      #          - Fn::ImportValue: !Sub ${VpcStackName}-AWSServicesEndpointSecurityGroupId
+      VpcConfig:
+        SubnetIds:
+          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdA
+          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdB
+        SecurityGroupIds:
+          - Fn::ImportValue: !Sub ${VpcStackName}-AWSServicesEndpointSecurityGroupId
       Tags:
         CheckovRulesToSkip: CKV_AWS_117.CKV_AWS_116
     Metadata:

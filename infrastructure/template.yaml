@@ -1072,6 +1072,14 @@ Resources:
             Action: kms:*
             Resource:
               - "*"
+          - Effect: Allow
+            Principal:
+              Service: sns.amazonaws.com
+            Action: 
+              - kms:Decrypt
+              - kms:GenerateDataKey
+            Resource:
+              - "*"
 
   QueueKmsKeyAlias:
     Type: AWS::KMS::Alias

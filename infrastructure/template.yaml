@@ -1200,7 +1200,7 @@ Resources:
     Type: AWS::StepFunctions::StateMachine
     Properties:
       StateMachineName: !Sub "${Environment}-${AWS::StackName}-delete-account-step-function"
-      StateMachineType: STANDARD
+      StateMachineType: EXPRESS
       RoleArn: !GetAtt DeleteAccountStepFunctionIAMRole.Arn
       LoggingConfiguration:
         Destinations:
@@ -1227,7 +1227,7 @@ Resources:
                     "States.ALL"
                   ],
                   "IntervalSeconds": 5,
-                  "MaxAttempts": 6,
+                  "MaxAttempts": 3,
                   "BackoffRate": 2
                 }
               ],
@@ -1266,7 +1266,7 @@ Resources:
                     "States.ALL"
                   ],
                   "IntervalSeconds": 5,
-                  "MaxAttempts": 6,
+                  "MaxAttempts": 3,
                   "BackoffRate": 2
                 }
               ],
@@ -1401,8 +1401,8 @@ Resources:
             - !Sub "{{resolve:ssm:/dev/APIGateway/MockPublishingAPI/Endpoint}}"
       VpcConfig:
         SubnetIds:
-          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdA
-          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdB
+          - Fn::ImportValue: !Sub ${VpcStackName}-ProtectedSubnetIdA
+          - Fn::ImportValue: !Sub ${VpcStackName}-ProtectedSubnetIdB
         SecurityGroupIds:
           - Fn::ImportValue: !Sub ${VpcStackName}-AWSServicesEndpointSecurityGroupId
       Tags:
@@ -1497,8 +1497,8 @@ Resources:
             - !Sub "{{resolve:ssm:/dev/APIGateway/MockPublishingAPI/Endpoint}}"
       VpcConfig:
         SubnetIds:
-          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdA
-          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdB
+          - Fn::ImportValue: !Sub ${VpcStackName}-ProtectedSubnetIdA
+          - Fn::ImportValue: !Sub ${VpcStackName}-ProtectedSubnetIdB
         SecurityGroupIds:
           - Fn::ImportValue: !Sub ${VpcStackName}-AWSServicesEndpointSecurityGroupId
       Tags:

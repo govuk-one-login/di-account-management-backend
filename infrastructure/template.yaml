@@ -88,6 +88,18 @@ Mappings:
       QueueArn: "arn:aws:sqs:eu-west-2:451773080033:PublishToAccountsSQSQueue-production"
       KeyArn: "arn:aws:kms:eu-west-2:451773080033:key/3ece5761-145f-43c7-ae2e-4485c91fe6bd"
 
+  IPVCoreAccounts:
+    dev:
+      AccountNumber: ""
+    build:
+      AccountNumber: "457601271792"
+    staging:
+      AccountNumber: "335257547869"
+    integration:
+      AccountNumber: "991138514218"
+    production:
+      AccountNumber: "075701497069"
+
 Resources:
   ######################################
   # Raw events store
@@ -812,6 +824,25 @@ Resources:
       KmsMasterKeyId: !Ref SnsKmsKey
       TopicName: UserAccountDeletion
 
+  UserAccountDeletionTopicPolicy:
+    Condition: IsNotDevelopment
+    Type: AWS::SNS::TopicPolicy
+    Properties:
+      Topics:
+        - !Ref UserAccountDeletionTopic
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Join
+                - ''
+                - - "arn:aws:iam::"
+                  - !FindInMap [ IPVCoreAccounts, !Ref Environment, "AccountNumber" ]
+                  - ":root"
+            Action: sns:Subscribe
+            Resource:
+              - !Ref UserAccountDeletionTopic
+
   DeleteUserServicesSubscription:
     Type: AWS::SNS::Subscription
     Properties:
@@ -1181,6 +1212,19 @@ Resources:
             Action: kms:*
             Resource:
               - "*"
+          - !If
+            - "IsNotDevelopment"
+            - Effect: Allow
+              Principal:
+                AWS: !Join
+                  - ''
+                  - - "arn:aws:iam::"
+                    - !FindInMap [IPVCoreAccounts, !Ref Environment, "AccountNumber"]
+                    - ":root"
+              Action: kms:Decrypt
+              Resource:
+                - "*"
+            - !Ref AWS::NoValue
           - Effect: Allow
             Principal:
               Service: cloudwatch.amazonaws.com

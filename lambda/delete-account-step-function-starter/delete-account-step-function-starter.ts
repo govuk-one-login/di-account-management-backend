@@ -28,6 +28,7 @@ export const startStateMachine = async (
 
   const command = new StartExecutionCommand({
     stateMachineArn: process.env.STEP_FUNCTION_ARN!,
+    name: snsMessage.user_id,
     input: JSON.stringify(snsMessage),
   });
   return sfnClient.send(command);

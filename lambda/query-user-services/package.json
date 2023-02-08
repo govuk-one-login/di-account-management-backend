@@ -4,7 +4,8 @@
   "description": "A Lambda function to read events from sqs read from dynamo and write to sqs",
   "scripts": {
     "test": "jest",
-    "lint": "eslint . --ext .ts"
+    "lint": "eslint . --ext .ts",
+    "test:cov": "jest --coverage"
   },
   "author": "GDS",
   "license": "OGL",

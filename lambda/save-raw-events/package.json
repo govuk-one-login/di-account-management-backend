@@ -5,7 +5,8 @@
   "main": "save-raw-events.js",
   "scripts": {
     "test": "jest",
-    "lint": "eslint . --ext .ts"
+    "lint": "eslint . --ext .ts",
+    "test:cov": "jest --coverage"
   },
   "author": "GDS",
   "license": "OGL",

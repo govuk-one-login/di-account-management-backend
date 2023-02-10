@@ -9,16 +9,12 @@ beta_features = true
 stack_name = "account-mgmt-backend"
 region = "eu-west-2"
 s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-44r43ey3knwx"
-s3_prefix = "account-management-backend"
+s3_prefix = "account-mgmt-backend"
 capabilities = "CAPABILITY_NAMED_IAM"
 confirm_changeset = true
 tags = "project=\"account-management-backend\" stage=\"dev\""
-parameter_overrides=[
-    "Environment=dev",
-    "UserServicesStoreTableName=\"user_services\"",
-    "CodeSigningConfigArn=none",
-    "PermissionsBoundary=none"
-]
+parameter_overrides = "UserServicesStoreTableName=\"user_services\" RawEventsStoreTableName=\"raw_events\" Environment=\"dev\" VpcStackName=\"vpc-enhanced\" CodeSigningConfigArn=\"none\" PermissionsBoundary=\"none\""
+image_repositories = []
 
 [dev.deploy.parameters]
 stack_name = "account-mgmt-backend"

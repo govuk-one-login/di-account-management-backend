@@ -1,0 +1,91 @@
+name: "Verify & Publish to Dev"
+
+on:
+  workflow_dispatch:
+    inputs:
+      refType:
+        type: choice
+        description: "Find branch name, commit SHA, or tag?"
+        options:
+          - Branch name
+          - Commit SHA
+          - Tag
+        default: Branch name
+      gitRef:
+        description: "Input branch name, commit SHA, or tag"
+        required: true
+        type: string
+        default: main
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  lint_infrastructure:
+    name: Lint Infrastructure
+    uses: ./.github/workflows/lint-cloudformation.yaml
+    secrets: inherit
+    with:
+      gitRef: ${{ inputs.gitRef }}
+
+  test_application:
+    name: Test Lambdas
+    uses: ./.github/workflows/lint-and-test-lambdas.yaml
+    secrets: inherit
+    with:
+      gitRef: ${{ inputs.gitRef }}
+
+  deploy_to_dev:
+    permissions:
+        contents: read
+        id-token: write
+    name: "Deploy to Dev"
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    needs:
+      - lint_infrastructure
+      - test_application
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+        with:
+            fetch-depth: 0
+
+      - name: Install Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Install ESbuild
+        run: npm install -g esbuild@0.15.12
+
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+
+      - name: Set up SAM cli
+        uses: aws-actions/setup-sam@v2
+
+      - name: sam fix https://github.com/aws/aws-sam-cli/issues/4527
+        run: $(dirname $(readlink $(which sam)))/pip install --force-reinstall "cryptography==38.0.4"
+
+      - name: Set up AWS creds
+        uses: aws-actions/configure-aws-credentials@v1-node16
+        with:
+          role-to-assume: ${{ secrets.GH_ACTIONS_ROLE_ARN }}
+          aws-region: eu-west-2
+
+      - name: SAM validate
+        run: sam validate
+
+      - name: SAM build
+        run: sam build
+
+      - name: Deploy SAM app
+        uses: alphagov/di-devplatform-upload-action@v2
+        with:
+          artifact-bucket-name: ${{ secrets.DEV_ARTIFACT_BUCKET_NAME }}
+          signing-profile-name: ${{ secrets.SIGNING_PROFILE_NAME }}
+          working-directory: ./infrastructure

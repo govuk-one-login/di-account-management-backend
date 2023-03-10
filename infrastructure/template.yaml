@@ -196,7 +196,7 @@ Resources:
       - SaveRawEventsFunctionLogGroup
     Properties:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-save-raw-events
-      Architectures: ["x86_64"]
+      Architectures: ["arm64"]
       CodeUri: ../lambda/save-raw-events/
       Events:
         InputQueue:
@@ -352,7 +352,7 @@ Resources:
       - QueryUserServicesFunctionLogGroup
     Properties:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-query-user-services
-      Architectures: ["x86_64"]
+      Architectures: ["arm64"]
       CodeUri: ../lambda/query-user-services/
       Events:
         DynamoStream:
@@ -530,7 +530,7 @@ Resources:
       - FormatUserServicesFunctionLogGroup
     Properties:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-format-user-services
-      Architectures: ["x86_64"]
+      Architectures: ["arm64"]
       CodeUri: ../lambda/format-user-services/
       Events:
         UserServicesToFormatQueue:
@@ -676,7 +676,7 @@ Resources:
       - WriteUserServicesFunctionLogGroup
     Properties:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-write-user-services
-      Architectures: ["x86_64"]
+      Architectures: ["arm64"]
       CodeUri: ../lambda/write-user-services/
       Events:
         UserServicesToWriteQueue:
@@ -875,7 +875,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-delete-user-services
-      Architectures: ["x86_64"]
+      Architectures: ["arm64"]
       CodeUri: ../lambda/delete-user-services/
       DeadLetterQueue:
         Type: SQS
@@ -1106,7 +1106,7 @@ Resources:
           - Effect: Allow
             Principal:
               Service: sns.amazonaws.com
-            Action: 
+            Action:
               - kms:Decrypt
               - kms:GenerateDataKey
             Resource:

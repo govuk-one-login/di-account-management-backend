@@ -89,5 +89,5 @@ jobs:
         uses: alphagov/di-devplatform-upload-action@v2
         with:
           artifact-bucket-name: ${{ secrets.DEV_ARTIFACT_BUCKET_NAME }}
-          signing-profile-name: ${{ secrets.SIGNING_PROFILE_NAME }}
+          signing-profile-name: ${{ secrets.DEV_SIGNING_PROFILE_NAME }}
           working-directory: ./infrastructure

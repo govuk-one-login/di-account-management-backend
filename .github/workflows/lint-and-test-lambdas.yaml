@@ -1,6 +1,14 @@
 name: Lint and test lambdas
 
-on: pull_request
+on:
+  workflow_call:
+    inputs:
+      gitRef:
+        required: false
+        type: string
+        default: ${{ github.ref }}
+  pull_request:
+
 
 jobs:
   lint_and_test_query_user_services:

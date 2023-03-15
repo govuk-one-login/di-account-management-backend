@@ -960,7 +960,7 @@ Resources:
   DeleteUserServicesFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub "${AWS::StackName}-delete-user-service-log-group"
+      LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-delete-user-services"
       RetentionInDays: 30
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 

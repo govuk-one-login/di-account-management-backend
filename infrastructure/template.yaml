@@ -100,6 +100,18 @@ Mappings:
     production:
       AccountNumber: "075701497069"
 
+  CredentialStoreAccounts:
+    dev:
+      AccountNumber: "013758878511"
+    build:
+      AccountNumber: "688341086169"
+    staging:
+      AccountNumber: "922902741880"
+    integration:
+      AccountNumber: "406416508755"
+    production:
+      AccountNumber: "499563136613"
+
 Resources:
   ######################################
   # Raw events store
@@ -835,9 +847,27 @@ Resources:
           - Effect: Allow
             Principal:
               AWS: !Join
-                - ''
+                - ""
                 - - "arn:aws:iam::"
-                  - !FindInMap [ IPVCoreAccounts, !Ref Environment, "AccountNumber" ]
+                  - !FindInMap [
+                      IPVCoreAccounts,
+                      !Ref Environment,
+                      "AccountNumber",
+                    ]
+                  - ":root"
+            Action: sns:Subscribe
+            Resource:
+              - !Ref UserAccountDeletionTopic
+          - Effect: Allow
+            Principal:
+              AWS: !Join
+                - ""
+                - - "arn:aws:iam::"
+                  - !FindInMap [
+                      CredentialStoreAccounts,
+                      !Ref Environment,
+                      "AccountNumber",
+                    ]
                   - ":root"
             Action: sns:Subscribe
             Resource:
@@ -1225,9 +1255,30 @@ Resources:
             - Effect: Allow
               Principal:
                 AWS: !Join
-                  - ''
+                  - ""
                   - - "arn:aws:iam::"
-                    - !FindInMap [IPVCoreAccounts, !Ref Environment, "AccountNumber"]
+                    - !FindInMap [
+                        CredentialStoreAccounts,
+                        !Ref Environment,
+                        "AccountNumber",
+                      ]
+                    - ":root"
+              Action: kms:Decrypt
+              Resource:
+                - "*"
+            - !Ref AWS::NoValue
+          - !If
+            - "IsNotDevelopment"
+            - Effect: Allow
+              Principal:
+                AWS: !Join
+                  - ""
+                  - - "arn:aws:iam::"
+                    - !FindInMap [
+                        IPVCoreAccounts,
+                        !Ref Environment,
+                        "AccountNumber",
+                      ]
                     - ":root"
               Action: kms:Decrypt
               Resource:

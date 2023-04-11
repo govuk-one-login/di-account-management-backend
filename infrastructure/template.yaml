@@ -844,7 +844,8 @@ Resources:
         - !Ref UserAccountDeletionTopic
       PolicyDocument:
         Statement:
-          - Effect: Allow
+          - Sid: "Allow IPV Core"
+            Effect: Allow
             Principal:
               AWS: !Join
                 - ""
@@ -858,7 +859,8 @@ Resources:
             Action: sns:Subscribe
             Resource:
               - !Ref UserAccountDeletionTopic
-          - Effect: Allow
+          - Sid: "Allow Credential store"
+            Effect: Allow
             Principal:
               AWS: !Join
                 - ""

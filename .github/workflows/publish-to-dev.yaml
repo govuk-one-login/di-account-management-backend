@@ -38,8 +38,8 @@ jobs:
 
   deploy_to_dev:
     permissions:
-        contents: read
-        id-token: write
+      contents: read
+      id-token: write
     name: "Deploy to Dev"
     runs-on: ubuntu-latest
     timeout-minutes: 60
@@ -50,12 +50,12 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
         with:
-            fetch-depth: 0
+          fetch-depth: 0
 
       - name: Install Node.js
         uses: actions/setup-node@v3
         with:
-          node-version-file: '.nvmrc'
+          node-version-file: ".nvmrc18"
 
       - name: Install ESbuild
         run: npm install -g esbuild@0.15.12

@@ -28,7 +28,7 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@v3
         with:
-          node-version-file: '.nvmrc'
+          node-version-file: ".nvmrc18"
 
       - name: Install ESbuild
         run: npm install -g esbuild@0.15.12

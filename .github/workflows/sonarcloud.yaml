@@ -8,137 +8,164 @@ on:
 
 jobs:
   sonarcloud_query_user_services:
-        name: query-user-services
-        runs-on: ubuntu-latest
-        defaults:
-          run:
-            working-directory: ./lambda/query-user-services
-        steps:
-          - uses: actions/checkout@v3
+    name: query-user-services
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./lambda/query-user-services
+    steps:
+      - uses: actions/checkout@v3
 
-          - name: Install Node.js
-            uses: actions/setup-node@v3
-            with:
-              node-version-file: '.nvmrc'
+      - name: Install Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version-file: ".nvmrc"
 
-          - name: Install dependencies
-            run: npm ci
+      - name: Install dependencies
+        run: npm ci
 
-          - name: Generate coverage report
-            run: yarn test:cov
+      - name: Generate coverage report
+        run: yarn test:cov
 
-          - name: SonarCloud Scan
-            uses: SonarSource/sonarcloud-github-action@master
-            env:
-              GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-              SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_1 }}
-            with:
-             projectBaseDir: ./lambda/query-user-services
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_1 }}
+        with:
+          projectBaseDir: ./lambda/query-user-services
   sonarcloud_format_user_services:
-        name: format-user-services
-        runs-on: ubuntu-latest
-        defaults:
-          run:
-            working-directory: ./lambda/format-user-services
-        steps:
-          - uses: actions/checkout@v3
+    name: format-user-services
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./lambda/format-user-services
+    steps:
+      - uses: actions/checkout@v3
 
-          - name: Install Node.js
-            uses: actions/setup-node@v3
-            with:
-              node-version-file: '.nvmrc'
+      - name: Install Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version-file: ".nvmrc"
 
-          - name: Install dependencies
-            run: npm ci
+      - name: Install dependencies
+        run: npm ci
 
-          - name: Generate coverage report
-            run: yarn test:cov
+      - name: Generate coverage report
+        run: yarn test:cov
 
-          - name: SonarCloud Scan
-            uses: SonarSource/sonarcloud-github-action@master
-            env:
-              GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-              SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_2 }}
-            with:
-             projectBaseDir: ./lambda/format-user-services
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_2 }}
+        with:
+          projectBaseDir: ./lambda/format-user-services
   sonarcloud_write_user_services:
-        name: write-user-services
-        runs-on: ubuntu-latest
-        defaults:
-          run:
-            working-directory: ./lambda/write-user-services
-        steps:
-          - uses: actions/checkout@v3
+    name: write-user-services
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./lambda/write-user-services
+    steps:
+      - uses: actions/checkout@v3
 
-          - name: Install Node.js
-            uses: actions/setup-node@v3
-            with:
-              node-version-file: '.nvmrc'
+      - name: Install Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version-file: ".nvmrc"
 
-          - name: Install dependencies
-            run: npm ci
+      - name: Install dependencies
+        run: npm ci
 
-          - name: Generate coverage report
-            run: yarn test:cov
+      - name: Generate coverage report
+        run: yarn test:cov
 
-          - name: SonarCloud Scan
-            uses: SonarSource/sonarcloud-github-action@master
-            env:
-              GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-              SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_3 }}
-            with:
-             projectBaseDir: ./lambda/write-user-services
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_3 }}
+        with:
+          projectBaseDir: ./lambda/write-user-services
   sonarcloud_delete_user_services:
-        name: delete-user-services
-        runs-on: ubuntu-latest
-        defaults:
-          run:
-            working-directory: ./lambda/delete-user-services
-        steps:
-          - uses: actions/checkout@v3
+    name: delete-user-services
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./lambda/delete-user-services
+    steps:
+      - uses: actions/checkout@v3
 
-          - name: Install Node.js
-            uses: actions/setup-node@v3
-            with:
-              node-version-file: '.nvmrc'
+      - name: Install Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version-file: ".nvmrc"
 
-          - name: Install dependencies
-            run: npm ci
+      - name: Install dependencies
+        run: npm ci
 
-          - name: Generate coverage report
-            run: yarn test:cov
+      - name: Generate coverage report
+        run: yarn test:cov
 
-          - name: SonarCloud Scan
-            uses: SonarSource/sonarcloud-github-action@master
-            env:
-              GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-              SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_4 }}
-            with:
-             projectBaseDir: ./lambda/delete-user-services
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_4 }}
+        with:
+          projectBaseDir: ./lambda/delete-user-services
   sonarcloud_save_raw_events:
-        name: save-raw-events
-        runs-on: ubuntu-latest
-        defaults:
-          run:
-            working-directory: ./lambda/save-raw-events
-        steps:
-          - uses: actions/checkout@v3
+    name: save-raw-events
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./lambda/save-raw-events
+    steps:
+      - uses: actions/checkout@v3
 
-          - name: Install Node.js
-            uses: actions/setup-node@v3
-            with:
-              node-version-file: '.nvmrc'
+      - name: Install Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version-file: ".nvmrc"
 
-          - name: Install dependencies
-            run: npm ci
+      - name: Install dependencies
+        run: npm ci
 
-          - name: Generate coverage report
-            run: yarn test:cov
+      - name: Generate coverage report
+        run: yarn test:cov
 
-          - name: SonarCloud Scan
-            uses: SonarSource/sonarcloud-github-action@master
-            env:
-              GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-              SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_5 }}
-            with:
-             projectBaseDir: ./lambda/save-raw-events
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_5 }}
+        with:
+          projectBaseDir: ./lambda/save-raw-events
+  sonarcloud_delete_email_subscriptions:
+    name: delete-email-subscriptions
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./lambda/delete-email-subscriptions
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version-file: ".nvmrc18"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate coverage report
+        run: yarn test:cov
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_2 }}
+        with:
+          projectBaseDir: ./lambda/delete-email-subscriptions

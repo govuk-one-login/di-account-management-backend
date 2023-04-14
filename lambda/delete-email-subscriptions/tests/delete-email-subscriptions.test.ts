@@ -1,14 +1,9 @@
-import axios from "axios";
 import {
   handler,
-  deleteEmailSubscription,
   getRequestConfig,
   validateUserData,
 } from "../delete-email-subscriptions";
 import { TEST_USER_DATA, TEST_SNS_EVENT } from "./test-helpers";
-
-jest.mock("axios");
-const mockedAxios = axios as jest.Mocked<typeof axios>;
 
 describe("handler", () => {
   beforeEach(() => {
@@ -36,94 +31,23 @@ describe("handler", () => {
     expect(deleteEmailSubscriptionMock).toHaveBeenCalledTimes(1);
     expect(deleteEmailSubscriptionMock).toHaveBeenCalledWith(TEST_USER_DATA);
   });
-
-  test("that it does not throw an error if axios returns a successful response", async () => {
-    mockedAxios.delete.mockResolvedValue({
-      status: 204,
-      statusText: "No Content",
-    });
-    await expect(handler(TEST_SNS_EVENT)).resolves.not.toThrowError();
-  });
-
-  describe("handler error handling", () => {
-    let consoleErrorMock: jest.SpyInstance;
-
-    beforeEach(() => {
-      consoleErrorMock = jest.spyOn(console, "error").mockImplementation();
-      mockedAxios.delete.mockRejectedValueOnce(new Error("error"));
-    });
-
-    afterEach(() => {
-      consoleErrorMock.mockClear();
-    });
-
-    test("that it throws an error if axios throws an error", async () => {
-      await expect(async () => {
-        await handler(TEST_SNS_EVENT);
-      }).rejects.toThrowError();
-      expect(consoleErrorMock).toHaveBeenCalledTimes(2);
-      expect(consoleErrorMock).toHaveBeenCalledWith(
-        "Unable to send DELETE request to GOV.UK API. Error:Error: error"
-      );
-    });
-  });
 });
 
 describe("getRequestConfig", () => {
   test("that it returns the request config in the correct format", () => {
-    expect(getRequestConfig("TOKEN")).toEqual({
+    expect(
+      getRequestConfig(
+        "TOKEN",
+        "https://test.com",
+        "/api/oidc-users/public_subject_id/?legacy_sub=legacy_subject_id"
+      )
+    ).toEqual({
       headers: { Authorization: "Bearer TOKEN" },
-      proxy: false,
+      method: "DELETE",
+      hostname: "https://test.com",
+      port: 443,
+      path: "/api/oidc-users/public_subject_id/?legacy_sub=legacy_subject_id",
     });
-  });
-});
-
-describe("deleteEmailSubscription", () => {
-  beforeEach(() => {
-    jest.restoreAllMocks();
-    mockedAxios.delete.mockResolvedValue({
-      status: 204,
-      statusText: "No Content",
-    });
-    process.env.GOV_ACCOUNTS_PUBLISHING_API_URL = "https://test.com";
-    process.env.GOV_ACCOUNTS_PUBLISHING_API_TOKEN = "TOKEN";
-  });
-
-  afterEach(() => {
-    jest.clearAllMocks();
-  });
-
-  test("that the URL contains a query parameter if legacy_subject_id is truthy", async () => {
-    await deleteEmailSubscription(TEST_USER_DATA);
-    expect(mockedAxios.delete).toHaveBeenCalledWith(
-      "https://test.com/api/oidc-users/public_subject_id?legacy_sub=legacy_subject_id",
-      { headers: { Authorization: "Bearer TOKEN" }, proxy: false }
-    );
-  });
-
-  test("that the URL does not contain a query parameter if legacy_subject_id is falsy", async () => {
-    const snsMessage = JSON.parse(
-      JSON.stringify({
-        user_id: "user-id",
-        access_token: "access_token",
-        email: "email",
-        source_ip: "source_ip",
-        persistent_session_id: "persistent_session_id",
-        session_id: "session_id",
-        public_subject_id: "public_subject_id",
-      })
-    );
-    await deleteEmailSubscription(snsMessage);
-    expect(mockedAxios.delete).toHaveBeenCalledWith(
-      "https://test.com/api/oidc-users/public_subject_id",
-      { headers: { Authorization: "Bearer TOKEN" }, proxy: false }
-    );
-  });
-
-  test("that it returns the response object if axios returns a successful response", async () => {
-    const response = await deleteEmailSubscription(TEST_USER_DATA);
-    expect(mockedAxios.delete).toHaveBeenCalledTimes(1);
-    expect(response).toEqual({ status: 204, statusText: "No Content" });
   });
 });
 

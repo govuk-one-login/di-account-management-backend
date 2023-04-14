@@ -1,5 +1,5 @@
 import { SNSEvent } from "aws-lambda";
-import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
+import https, { RequestOptions } from "https";
 import {
   SQSClient,
   SendMessageRequest,
@@ -10,13 +10,18 @@ import { UserData } from "./models";
 const sqsClient = new SQSClient({});
 
 export function getRequestConfig(
-  token: string | undefined
-): AxiosRequestConfig {
-  const config: AxiosRequestConfig = {
+  token: string | undefined,
+  publishingUrl: string | undefined,
+  path: string
+): RequestOptions {
+  const config: RequestOptions = {
     headers: {
       Authorization: `Bearer ${token}`,
     },
-    proxy: false,
+    method: "DELETE",
+    hostname: publishingUrl,
+    port: 443,
+    path,
   };
   return config;
 }
@@ -31,47 +36,31 @@ export const validateUserData = (userData: UserData): UserData => {
   }
   return userData;
 };
-
-function getRequestUrl(
-  publishingUrl: string | undefined,
-  publicSubjectId: string
-) {
-  return `${publishingUrl}/api/oidc-users/${publicSubjectId}`;
+function getPath(userData: UserData) {
+  if (userData.legacy_subject_id) {
+    return `/api/oidc-users/${userData.public_subject_id}/?legacy_sub=${userData.legacy_subject_id}`;
+  }
+  return `/api/oidc-users/${userData.public_subject_id}`;
 }
 
 export const deleteEmailSubscription = async (userData: UserData) => {
   const { GOV_ACCOUNTS_PUBLISHING_API_TOKEN, GOV_ACCOUNTS_PUBLISHING_API_URL } =
     process.env;
   console.log("Sending DELETE request to GOV.UK Subscriptions API.");
-  const requestConfig = getRequestConfig(GOV_ACCOUNTS_PUBLISHING_API_TOKEN);
 
-  let deleteUrl = getRequestUrl(
+  const requestConfig = getRequestConfig(
+    GOV_ACCOUNTS_PUBLISHING_API_TOKEN,
     GOV_ACCOUNTS_PUBLISHING_API_URL,
-    userData.public_subject_id
+    getPath(userData)
   );
 
-  if (userData.legacy_subject_id) {
-    deleteUrl = `${deleteUrl}?legacy_sub=${userData.legacy_subject_id}`;
-  }
-
-  console.log(
-    `Request config: ${JSON.stringify(requestConfig)}, URL: ${deleteUrl}`
-  );
+  console.log(`Request config: ${JSON.stringify(requestConfig)}`);
 
   try {
-    const response: AxiosResponse = await axios.delete(
-      deleteUrl,
-      requestConfig
-    );
-
-    const responseObject = {
-      status: response.status,
-      statusText: response.statusText,
-    };
-
-    console.log(`Response from GOV.UK API: ${JSON.stringify(responseObject)}`);
-
-    return responseObject;
+    https.request(requestConfig, (response: any) => {
+      console.log(`Response from GOV.UK API: ${JSON.stringify(response)}`);
+      console.log(`statusCode: ${response.statusCode}`);
+    });
   } catch (error: any) {
     console.error(
       `Unable to send DELETE request to GOV.UK API. Error:${error}`

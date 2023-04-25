@@ -67,11 +67,7 @@ describe("validateTxmaEventBody", () => {
       ...makeTxmaEvent(),
       clientId: undefined,
     };
-    const txmaEvent = JSON.parse(
-      JSON.stringify({
-        services: [invalidTxmaEvent],
-      })
-    );
+    const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
     }).toThrowError();
@@ -82,11 +78,7 @@ describe("validateTxmaEventBody", () => {
       ...makeTxmaEvent(),
       timestamp: undefined,
     };
-    const txmaEvent = JSON.parse(
-      JSON.stringify({
-        services: [invalidTxmaEvent],
-      })
-    );
+    const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
     }).toThrowError();
@@ -96,11 +88,7 @@ describe("validateTxmaEventBody", () => {
       ...makeTxmaEvent(),
       event_name: undefined,
     };
-    const txmaEvent = JSON.parse(
-      JSON.stringify({
-        services: [invalidTxmaEvent],
-      })
-    );
+    const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
     }).toThrowError();
@@ -111,11 +99,7 @@ describe("validateTxmaEventBody", () => {
       ...makeTxmaEvent(),
       user: undefined,
     };
-    const txmaEvent = JSON.parse(
-      JSON.stringify({
-        services: [invalidTxmaEvent],
-      })
-    );
+    const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
     }).toThrowError();
@@ -126,11 +110,7 @@ describe("validateTxmaEventBody", () => {
       ...makeTxmaEvent(),
       user: {},
     };
-    const txmaEvent = JSON.parse(
-      JSON.stringify({
-        services: [invalidTxmaEvent],
-      })
-    );
+    const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
     }).toThrowError();

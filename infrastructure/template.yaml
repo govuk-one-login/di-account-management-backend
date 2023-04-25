@@ -1093,8 +1093,8 @@ Resources:
       MessageRetentionPeriod: 1209600
       KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
 
-  ? UserAccountDeletionTopicDeleteEmailSubscriptionsSubscriptionDeadLetterQueuePolicy
-  : Type: AWS::SQS::QueuePolicy
+  DeleteEmailSubscriptionsSubscriptionDeadLetterQueuePolicy:
+    Type: AWS::SQS::QueuePolicy
     Properties:
       Queues:
         - !Ref UserAccountDeletionTopicSubscriptionDeleteEmailSubscriptionsDeadLetterQueue
@@ -1122,8 +1122,8 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-delete-email-subscriptions
-      Architectures: ["x86_64"]
-      ReservedConcurrentExecutions: 1
+      Architectures: ["arm64"]
+      ReservedConcurrentExecutions: 10
       CodeUri: ../lambda/delete-email-subscriptions/
       Handler: delete-email-subscriptions.handler
       KmsKeyArn: !GetAtt LambdaKMSKey.Arn
@@ -1131,7 +1131,7 @@ Resources:
       MemorySize: 128
       Runtime: nodejs18.x
       Role: !GetAtt DeleteEmailSubscriptionsRole.Arn
-      Timeout: 5
+      Timeout: 30
       EventInvokeConfig:
         DestinationConfig:
           OnFailure:

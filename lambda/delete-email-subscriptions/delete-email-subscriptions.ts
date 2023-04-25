@@ -1,5 +1,4 @@
 import { SNSEvent } from "aws-lambda";
-import https, { RequestOptions } from "https";
 import {
   SQSClient,
   SendMessageRequest,
@@ -9,22 +8,15 @@ import { UserData } from "./models";
 
 const sqsClient = new SQSClient({});
 
-export function getRequestConfig(
-  token: string | undefined,
-  publishingUrl: string | undefined,
-  path: string
-): RequestOptions {
-  const config: RequestOptions = {
+export const getRequestConfig = (token: string | undefined) => {
+  const config = {
     headers: {
       Authorization: `Bearer ${token}`,
     },
     method: "DELETE",
-    hostname: publishingUrl,
-    port: 443,
-    path,
   };
   return config;
-}
+};
 
 export const validateUserData = (userData: UserData): UserData => {
   if (
@@ -36,36 +28,43 @@ export const validateUserData = (userData: UserData): UserData => {
   }
   return userData;
 };
-function getPath(userData: UserData) {
+
+const getPath = (userData: UserData) => {
   if (userData.legacy_subject_id) {
     return `/api/oidc-users/${userData.public_subject_id}/?legacy_sub=${userData.legacy_subject_id}`;
   }
   return `/api/oidc-users/${userData.public_subject_id}`;
-}
+};
+
+const getDeleteUrl = (
+  publishingUrl: string | undefined,
+  userData: UserData
+) => {
+  return publishingUrl + getPath(userData);
+};
 
 export const deleteEmailSubscription = async (userData: UserData) => {
   const { GOV_ACCOUNTS_PUBLISHING_API_TOKEN, GOV_ACCOUNTS_PUBLISHING_API_URL } =
     process.env;
   console.log("Sending DELETE request to GOV.UK Subscriptions API.");
-
-  const requestConfig = getRequestConfig(
-    GOV_ACCOUNTS_PUBLISHING_API_TOKEN,
-    GOV_ACCOUNTS_PUBLISHING_API_URL,
-    getPath(userData)
+  console.log(
+    `Delete URL: ${JSON.stringify(
+      getDeleteUrl(GOV_ACCOUNTS_PUBLISHING_API_URL, userData)
+    )}`
+  );
+  console.log(
+    `Request config: ${JSON.stringify(
+      getRequestConfig(GOV_ACCOUNTS_PUBLISHING_API_TOKEN)
+    )}`
   );
 
-  console.log(`Request config: ${JSON.stringify(requestConfig)}`);
-
-  try {
-    https.request(requestConfig, (response: any) => {
-      console.log(`Response from GOV.UK API: ${JSON.stringify(response)}`);
-      console.log(`statusCode: ${response.statusCode}`);
-    });
-  } catch (error: any) {
-    console.error(
-      `Unable to send DELETE request to GOV.UK API. Error:${error}`
-    );
-    throw Error(error);
+  const response = await fetch(
+    getDeleteUrl(GOV_ACCOUNTS_PUBLISHING_API_URL, userData),
+    getRequestConfig(GOV_ACCOUNTS_PUBLISHING_API_TOKEN)
+  );
+  if (!response.ok) {
+    const message = `Unable to send DELETE request to GOV.UK API for ${userData.public_subject_id}. Status code : ${response.status}`;
+    throw new Error(message);
   }
 };
 

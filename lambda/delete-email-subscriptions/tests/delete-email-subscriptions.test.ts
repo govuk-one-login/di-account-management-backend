@@ -35,18 +35,9 @@ describe("handler", () => {
 
 describe("getRequestConfig", () => {
   test("that it returns the request config in the correct format", () => {
-    expect(
-      getRequestConfig(
-        "TOKEN",
-        "https://test.com",
-        "/api/oidc-users/public_subject_id/?legacy_sub=legacy_subject_id"
-      )
-    ).toEqual({
+    expect(getRequestConfig("TOKEN")).toEqual({
       headers: { Authorization: "Bearer TOKEN" },
       method: "DELETE",
-      hostname: "https://test.com",
-      port: 443,
-      path: "/api/oidc-users/public_subject_id/?legacy_sub=legacy_subject_id",
     });
   });
 });

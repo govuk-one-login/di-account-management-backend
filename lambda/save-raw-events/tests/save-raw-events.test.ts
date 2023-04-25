@@ -65,7 +65,7 @@ describe("validateTxmaEventBody", () => {
   test("throws error when client_id is missing", () => {
     const invalidTxmaEvent = {
       ...makeTxmaEvent(),
-      clientId: undefined,
+      client_id: undefined,
     };
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {

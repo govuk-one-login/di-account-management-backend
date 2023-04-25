@@ -32,6 +32,7 @@ describe("writeRawTxmaEvent", () => {
     jest.spyOn(Date, "now").mockRestore();
     jest.spyOn(crypto, "randomUUID").mockRestore();
   });
+
   test("writes raw events to DynamoDB", async () => {
     await writeRawTxmaEvent(makeTxmaEvent());
     expect(dynamoMock.commandCalls(PutCommand).length).toEqual(1);
@@ -46,12 +47,15 @@ describe("writeRawTxmaEvent", () => {
     });
   });
 });
+
 describe("validateUser", () => {
   test("throws error when user is is missing", () => {
     const inValidUser = JSON.parse(JSON.stringify({}));
     expect(() => {
       validateUser(inValidUser);
-    }).toThrowError();
+    }).toThrowError(
+      new Error(`Could not find User ${JSON.stringify(inValidUser)}`)
+    );
   });
 });
 
@@ -59,75 +63,69 @@ describe("validateTxmaEventBody", () => {
   test("doesn't throw an error with valid txma data", () => {
     expect(validateTxmaEventBody(makeTxmaEvent())).toBe(undefined);
   });
+
   test("throws error when client_id is missing", () => {
     const invalidTxmaEvent = {
       ...makeTxmaEvent(),
-      clientId: undefined,
+      client_id: undefined,
     };
-    const txmaEvent = JSON.parse(
-      JSON.stringify({
-        services: [invalidTxmaEvent],
-      })
-    );
+    const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrowError();
+    }).toThrowError(
+      new Error(`Could not validate UserServices ${JSON.stringify(txmaEvent)}`)
+    );
   });
+
   test("throws error when timestamp is missing", () => {
     const invalidTxmaEvent = {
       ...makeTxmaEvent(),
       timestamp: undefined,
     };
-    const txmaEvent = JSON.parse(
-      JSON.stringify({
-        services: [invalidTxmaEvent],
-      })
-    );
+    const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrowError();
+    }).toThrowError(
+      new Error(`Could not validate UserServices ${JSON.stringify(txmaEvent)}`)
+    );
   });
   test("throws error when event name is missing", () => {
     const invalidTxmaEvent = {
       ...makeTxmaEvent(),
       event_name: undefined,
     };
-    const txmaEvent = JSON.parse(
-      JSON.stringify({
-        services: [invalidTxmaEvent],
-      })
-    );
+    const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrowError();
+    }).toThrowError(
+      new Error(`Could not validate UserServices ${JSON.stringify(txmaEvent)}`)
+    );
   });
-  test(" throws error when user is missing", () => {
+
+  test("throws error when user is missing", () => {
     const invalidTxmaEvent = {
       ...makeTxmaEvent(),
       user: undefined,
     };
-    const txmaEvent = JSON.parse(
-      JSON.stringify({
-        services: [invalidTxmaEvent],
-      })
-    );
+    const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrowError();
+    }).toThrowError(
+      new Error(`Could not validate UserServices ${JSON.stringify(txmaEvent)}`)
+    );
   });
+
   test("throws error when user_id is missing", () => {
     const invalidTxmaEvent = {
       ...makeTxmaEvent(),
       user: {},
     };
-    const txmaEvent = JSON.parse(
-      JSON.stringify({
-        services: [invalidTxmaEvent],
-      })
-    );
+    const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrowError();
+    }).toThrowError(
+      new Error(`Could not find User ${JSON.stringify(txmaEvent.user)}`)
+    );
   });
 });
 
@@ -172,14 +170,17 @@ describe("handler error handling", () => {
     consoleErrorMock = jest.spyOn(global.console, "error").mockImplementation();
     dynamoMock.rejectsOnce("mock error");
   });
+
   afterEach(() => {
     consoleErrorMock.mockRestore();
     jest.clearAllMocks();
   });
+
   test("logs the error message", async () => {
     await handler(TEST_SQS_EVENT);
     expect(consoleErrorMock).toHaveBeenCalledTimes(1);
   });
+
   test("sends the event to the dead letter queue", async () => {
     await handler(TEST_SQS_EVENT);
     expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(1);

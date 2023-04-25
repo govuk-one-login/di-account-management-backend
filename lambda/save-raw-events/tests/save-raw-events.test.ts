@@ -102,7 +102,7 @@ describe("validateTxmaEventBody", () => {
     );
   });
 
-  test(" throws error when user is missing", () => {
+  test("throws error when user is missing", () => {
     const invalidTxmaEvent = {
       ...makeTxmaEvent(),
       user: undefined,

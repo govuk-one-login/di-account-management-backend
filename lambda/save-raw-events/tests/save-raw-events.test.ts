@@ -53,7 +53,9 @@ describe("validateUser", () => {
     const inValidUser = JSON.parse(JSON.stringify({}));
     expect(() => {
       validateUser(inValidUser);
-    }).toThrowError();
+    }).toThrowError(
+      new Error(`Could not find User ${JSON.stringify(inValidUser)}`)
+    );
   });
 });
 
@@ -70,7 +72,9 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrowError();
+    }).toThrowError(
+      new Error(`Could not validate UserServices ${JSON.stringify(txmaEvent)}`)
+    );
   });
 
   test("throws error when timestamp is missing", () => {
@@ -81,7 +85,9 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrowError();
+    }).toThrowError(
+      new Error(`Could not validate UserServices ${JSON.stringify(txmaEvent)}`)
+    );
   });
   test("throws error when event name is missing", () => {
     const invalidTxmaEvent = {
@@ -91,7 +97,9 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrowError();
+    }).toThrowError(
+      new Error(`Could not validate UserServices ${JSON.stringify(txmaEvent)}`)
+    );
   });
 
   test(" throws error when user is missing", () => {
@@ -102,7 +110,9 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrowError();
+    }).toThrowError(
+      new Error(`Could not validate UserServices ${JSON.stringify(txmaEvent)}`)
+    );
   });
 
   test("throws error when user_id is missing", () => {
@@ -113,7 +123,9 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrowError();
+    }).toThrowError(
+      new Error(`Could not find User ${JSON.stringify(txmaEvent.user)}`)
+    );
   });
 });
 

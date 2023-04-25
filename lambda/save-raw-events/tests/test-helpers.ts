@@ -3,12 +3,14 @@ import { TxmaEvent, UserData } from "../models";
 
 const userId = "user_id";
 const eventId = "ab12345a-a12b-3ced-ef12-12a3b4cd5678";
+const sessionId = "Upt1k+cYtXSwadQHvxsfDg==";
 const eventName = "AUTH_AUTH_CODE_ISSUED";
 const clientId = "client_id";
 
-const user: UserData = {
+export const user: UserData = {
   user_id: userId,
   govuk_signin_journey_id: "govuk_signin_journey_id",
+  session_id: sessionId,
 };
 
 export const date = new Date();

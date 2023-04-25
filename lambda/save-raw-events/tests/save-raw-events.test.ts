@@ -10,7 +10,7 @@ import {
   writeRawTxmaEvent,
   validateUser,
 } from "../save-raw-events";
-import { TEST_SQS_EVENT, makeTxmaEvent } from "./test-helpers";
+import { TEST_SQS_EVENT, makeTxmaEvent, user } from "./test-helpers";
 
 const dynamoMock = mockClient(DynamoDBDocumentClient);
 const sqsMock = mockClient(SQSClient);
@@ -51,6 +51,48 @@ describe("writeRawTxmaEvent", () => {
 describe("validateUser", () => {
   test("throws error when user is is missing", () => {
     const inValidUser = JSON.parse(JSON.stringify({}));
+    expect(() => {
+      validateUser(inValidUser);
+    }).toThrowError(
+      new Error(`Could not find User ${JSON.stringify(inValidUser)}`)
+    );
+  });
+
+  test("throws error when user_id key is missing", () => {
+    const inValidUser = JSON.parse(
+      JSON.stringify({
+        ...user,
+        user_id: undefined,
+      })
+    );
+    expect(() => {
+      validateUser(inValidUser);
+    }).toThrowError(
+      new Error(`Could not find User ${JSON.stringify(inValidUser)}`)
+    );
+  });
+
+  test("throws error when session_id key is missing", () => {
+    const inValidUser = JSON.parse(
+      JSON.stringify({
+        ...user,
+        session_id: undefined,
+      })
+    );
+    expect(() => {
+      validateUser(inValidUser);
+    }).toThrowError(
+      new Error(`Could not find User ${JSON.stringify(inValidUser)}`)
+    );
+  });
+
+  test("throws error when session_id value is null", () => {
+    const inValidUser = JSON.parse(
+      JSON.stringify({
+        ...user,
+        session_id: null,
+      })
+    );
     expect(() => {
       validateUser(inValidUser);
     }).toThrowError(

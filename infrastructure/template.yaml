@@ -82,14 +82,14 @@ Mappings:
       QueueArn: ""
       KeyArn: ""
     staging:
-      QueueArn: "arn:aws:sqs:eu-west-2:178023842775:PublishToAccountsSQSQueue-staging"
-      KeyArn: "arn:aws:kms:eu-west-2:178023842775:key/0b1e15d0-ea22-440e-b153-3842d60293ad"
+      QueueArn: "arn:aws:sqs:eu-west-2:178023842775:self-staging-EC-SQS-Output-Queue-accounts"
+      KeyArn: "arn:aws:kms:eu-west-2:178023842775:key/6dbe7362-a125-466b-a135-22c98c436f17"
     integration:
-      QueueArn: "arn:aws:sqs:eu-west-2:729485541398:PublishToAccountsSQSQueue-integration"
-      KeyArn: "arn:aws:kms:eu-west-2:729485541398:key/6e41cb14-5506-4a03-9115-c21999575dda"
+      QueueArn: "arn:aws:sqs:eu-west-2:729485541398:self-integration-EC-SQS-Output-Queue-accounts"
+      KeyArn: "arn:aws:kms:eu-west-2:729485541398:key/107fc428-3843-4bd3-9e53-41d2d794e62e"
     production:
-      QueueArn: "arn:aws:sqs:eu-west-2:451773080033:PublishToAccountsSQSQueue-production"
-      KeyArn: "arn:aws:kms:eu-west-2:451773080033:key/3ece5761-145f-43c7-ae2e-4485c91fe6bd"
+      QueueArn: "arn:aws:sqs:eu-west-2:451773080033:self-production-EC-SQS-Output-Queue-accounts"
+      KeyArn: "arn:aws:kms:eu-west-2:451773080033:key/e95d47b6-613d-4bea-93c9-d400cdfb31ee"
 
   IPVCoreAccounts:
     dev:
@@ -116,6 +116,18 @@ Mappings:
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.integration.publishing.service.gov.uk"
     production:
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.publishing.service.gov.uk"
+
+  CredentialStoreAccounts:
+    dev:
+      AccountNumber: "013758878511"
+    build:
+      AccountNumber: "688341086169"
+    staging:
+      AccountNumber: "922902741880"
+    integration:
+      AccountNumber: "406416508755"
+    production:
+      AccountNumber: "499563136613"
 
 Resources:
   ######################################
@@ -849,13 +861,29 @@ Resources:
         - !Ref UserAccountDeletionTopic
       PolicyDocument:
         Statement:
-          - Effect: Allow
+          - Sid: "Allow IPV Core"
+            Effect: Allow
             Principal:
               AWS: !Join
                 - ""
                 - - "arn:aws:iam::"
                   - !FindInMap [
                       IPVCoreAccounts,
+                      !Ref Environment,
+                      "AccountNumber",
+                    ]
+                  - ":root"
+            Action: sns:Subscribe
+            Resource:
+              - !Ref UserAccountDeletionTopic
+          - Sid: "Allow Credential store"
+            Effect: Allow
+            Principal:
+              AWS: !Join
+                - ""
+                - - "arn:aws:iam::"
+                  - !FindInMap [
+                      CredentialStoreAccounts,
                       !Ref Environment,
                       "AccountNumber",
                     ]
@@ -1400,6 +1428,23 @@ Resources:
             Action: kms:*
             Resource:
               - "*"
+          - !If
+            - "IsNotDevelopment"
+            - Effect: Allow
+              Principal:
+                AWS: !Join
+                  - ""
+                  - - "arn:aws:iam::"
+                    - !FindInMap [
+                        CredentialStoreAccounts,
+                        !Ref Environment,
+                        "AccountNumber",
+                      ]
+                    - ":root"
+              Action: kms:Decrypt
+              Resource:
+                - "*"
+            - !Ref AWS::NoValue
           - !If
             - "IsNotDevelopment"
             - Effect: Allow

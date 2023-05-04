@@ -46,22 +46,13 @@ const getDeleteUrl = (
 export const deleteEmailSubscription = async (userData: UserData) => {
   const { GOV_ACCOUNTS_PUBLISHING_API_TOKEN, GOV_ACCOUNTS_PUBLISHING_API_URL } =
     process.env;
-  console.log("Sending DELETE request to GOV.UK Subscriptions API.");
+  const deleteUrl = getDeleteUrl(GOV_ACCOUNTS_PUBLISHING_API_URL, userData);
+  const config = getRequestConfig(GOV_ACCOUNTS_PUBLISHING_API_TOKEN);
   console.log(
-    `Delete URL: ${JSON.stringify(
-      getDeleteUrl(GOV_ACCOUNTS_PUBLISHING_API_URL, userData)
-    )}`
-  );
-  console.log(
-    `Request config: ${JSON.stringify(
-      getRequestConfig(GOV_ACCOUNTS_PUBLISHING_API_TOKEN)
-    )}`
+    `Sending DELETE request to ${deleteUrl} with config ${config} to GOV.UK Subscriptions API.`
   );
 
-  const response = await fetch(
-    getDeleteUrl(GOV_ACCOUNTS_PUBLISHING_API_URL, userData),
-    getRequestConfig(GOV_ACCOUNTS_PUBLISHING_API_TOKEN)
-  );
+  const response = await fetch(deleteUrl, config);
   if (!response.ok) {
     const message = `Unable to send DELETE request to GOV.UK API for ${userData.public_subject_id}. Status code : ${response.status}`;
     throw new Error(message);

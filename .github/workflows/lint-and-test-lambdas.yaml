@@ -9,7 +9,6 @@ on:
         default: ${{ github.ref }}
   pull_request:
 
-
 jobs:
   lint_and_test_query_user_services:
     name: query-user-services
@@ -23,7 +22,7 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # pin@v3
         with:
-          node-version-file: '.nvmrc'
+          node-version-file: ".nvmrc"
 
       - name: Install dependencies
         run: npm ci
@@ -46,7 +45,7 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # pin@v3
         with:
-          node-version-file: '.nvmrc'
+          node-version-file: ".nvmrc"
 
       - name: Install dependencies
         run: npm ci
@@ -69,7 +68,7 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # pin@v3
         with:
-          node-version-file: '.nvmrc'
+          node-version-file: ".nvmrc"
 
       - name: Install dependencies
         run: npm ci
@@ -92,7 +91,7 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # pin@v3
         with:
-          node-version-file: '.nvmrc'
+          node-version-file: ".nvmrc"
 
       - name: Install dependencies
         run: npm ci
@@ -115,7 +114,30 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # pin@v3
         with:
-          node-version-file: '.nvmrc'
+          node-version-file: ".nvmrc"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm test
+
+  lint_and_test_delete_email_subscriptions:
+    name: delete-email-subscriptions
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./lambda/delete-email-subscriptions
+    steps:
+      - uses: actions/checkout@8f4b7f84864484a7bf31766abe9204da3cbe65b3 # pin@v3
+
+      - name: Install Node.js
+        uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # pin@v3
+        with:
+          node-version-file: ".nvmrc18"
 
       - name: Install dependencies
         run: npm ci

@@ -9,7 +9,6 @@ const clientId = "client_id";
 
 export const user: UserData = {
   user_id: userId,
-  govuk_signin_journey_id: "govuk_signin_journey_id",
   session_id: sessionId,
 };
 

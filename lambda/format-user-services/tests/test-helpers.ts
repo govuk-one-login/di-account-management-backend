@@ -51,7 +51,6 @@ export const makeTxmaEvent = (clientId: string, userId: string): TxmaEvent => ({
   client_id: clientId,
   user: {
     user_id: userId,
-    govuk_signin_journey_id: "abc123",
   },
 });
 

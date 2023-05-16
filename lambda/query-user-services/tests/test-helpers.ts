@@ -25,7 +25,9 @@ export const TEST_TXMA_EVENT: TxmaEvent = {
   user,
 };
 
-const TEST_DYNAMO_STREAM_RECORD: DynamoDBRecord = {
+const generateDynamoSteamRecord = (
+  txmaEventName = "AUTH_AUTH_CODE_ISSUED"
+): DynamoDBRecord => ({
   eventID: "1234567",
   eventName: "INSERT",
   dynamodb: {
@@ -42,7 +44,7 @@ const TEST_DYNAMO_STREAM_RECORD: DynamoDBRecord = {
             S: "event_id",
           },
           event_name: {
-            S: "event_name",
+            S: `${txmaEventName}`,
           },
           timestamp: {
             N: `${timestamp}`,
@@ -67,8 +69,11 @@ const TEST_DYNAMO_STREAM_RECORD: DynamoDBRecord = {
       },
     },
   },
-};
+});
 
 export const TEST_DYNAMO_STREAM_EVENT: DynamoDBStreamEvent = {
-  Records: [TEST_DYNAMO_STREAM_RECORD, TEST_DYNAMO_STREAM_RECORD],
+  Records: [
+    generateDynamoSteamRecord("event_name"),
+    generateDynamoSteamRecord("event_name"),
+  ],
 };

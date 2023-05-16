@@ -9,11 +9,9 @@ export const messageId = "MyMessageId";
 export const queueUrl = "http://my_queue_url";
 const timestamp = date.valueOf();
 const timestampFormatted = date.toISOString();
-const govukSigninJourneyId = "abc123";
 
 const user: UserData = {
   user_id: userId,
-  govuk_signin_journey_id: govukSigninJourneyId,
 };
 
 const generateTestTxmaEvent = (
@@ -61,9 +59,6 @@ const generateDynamoSteamRecord = (
             M: {
               user_id: {
                 S: userId,
-              },
-              govuk_signin_journey_id: {
-                S: govukSigninJourneyId,
               },
             },
           },

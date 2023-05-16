@@ -90,7 +90,7 @@ describe("validateTxmaEventBody", () => {
         services: [
           {
             timestamp: new Date().toISOString,
-            event_name: "event_name",
+            event_name: "AUTH_AUTH_CODE_ISSUED",
             user: {
               user_id: userId,
             },
@@ -108,7 +108,7 @@ describe("validateTxmaEventBody", () => {
         services: [
           {
             client_id: clientId,
-            event_name: "event_name",
+            event_name: "AUTH_AUTH_CODE_ISSUED",
             user: {
               user_id: userId,
             },
@@ -145,7 +145,7 @@ describe("validateTxmaEventBody", () => {
           {
             client_id: clientId,
             timestamp: new Date().toISOString,
-            event_name: "event_name",
+            event_name: "AUTH_AUTH_CODE_ISSUED",
           },
         ],
       })
@@ -161,7 +161,7 @@ describe("validateTxmaEventBody", () => {
           {
             client_id: clientId,
             timestamp: new Date().toISOString,
-            event_name: "event_name",
+            event_name: "AUTH_AUTH_CODE_ISSUED",
             user: {},
           },
         ],

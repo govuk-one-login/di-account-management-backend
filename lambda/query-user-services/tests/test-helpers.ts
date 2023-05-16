@@ -16,14 +16,16 @@ const user: UserData = {
   govuk_signin_journey_id: govukSigninJourneyId,
 };
 
-export const TEST_TXMA_EVENT: TxmaEvent = {
+const generateTestTxmaEvent = (
+  txmaEventName = "AUTH_AUTH_CODE_ISSUED"
+): TxmaEvent => ({
   event_id: "event_id",
-  event_name: "event_name",
+  event_name: `${txmaEventName}`,
   timestamp,
   timestamp_formatted: timestampFormatted,
   client_id: clientId,
   user,
-};
+});
 
 const generateDynamoSteamRecord = (
   txmaEventName = "AUTH_AUTH_CODE_ISSUED"
@@ -72,8 +74,7 @@ const generateDynamoSteamRecord = (
 });
 
 export const TEST_DYNAMO_STREAM_EVENT: DynamoDBStreamEvent = {
-  Records: [
-    generateDynamoSteamRecord("event_name"),
-    generateDynamoSteamRecord("event_name"),
-  ],
+  Records: [generateDynamoSteamRecord(), generateDynamoSteamRecord()],
 };
+
+export const TEST_TXMA_EVENT: TxmaEvent = generateTestTxmaEvent();

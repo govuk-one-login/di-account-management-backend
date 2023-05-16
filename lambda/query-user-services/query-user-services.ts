@@ -41,17 +41,17 @@ export const queryUserServices = async (userId: string): Promise<Service[]> => {
 };
 
 export const validateUser = (user: UserData): void => {
-  if (user.user_id === undefined) {
+  if (!user.user_id) {
     throw new Error(`Could not find User ${JSON.stringify(user)}`);
   }
 };
 
 export const validateTxmaEventBody = (txmaEvent: TxmaEvent): void => {
   if (
-    txmaEvent.timestamp !== undefined &&
-    txmaEvent.event_name !== undefined &&
-    txmaEvent.client_id !== undefined &&
-    txmaEvent.user !== undefined
+    !txmaEvent.timestamp &&
+    !txmaEvent.event_name &&
+    !txmaEvent.client_id &&
+    !txmaEvent.user
   ) {
     validateUser(txmaEvent.user);
   } else {

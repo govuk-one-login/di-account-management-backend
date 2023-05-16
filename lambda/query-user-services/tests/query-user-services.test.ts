@@ -223,7 +223,11 @@ describe("handler", () => {
     await handler(TEST_DYNAMO_STREAM_EVENT);
     expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(2);
     expect(dynamoMock.commandCalls(GetCommand).length).toEqual(2);
-    expect(sqsMock).toHaveReceivedCommandWith(SendMessageCommand, {
+    expect(sqsMock).toHaveReceivedNthCommandWith(1, SendMessageCommand, {
+      QueueUrl: queueUrl,
+      MessageBody: JSON.stringify(userRecordEvents),
+    });
+    expect(sqsMock).toHaveReceivedNthCommandWith(2, SendMessageCommand, {
       QueueUrl: queueUrl,
       MessageBody: JSON.stringify(userRecordEvents),
     });

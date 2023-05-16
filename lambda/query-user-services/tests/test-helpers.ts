@@ -77,4 +77,12 @@ export const TEST_DYNAMO_STREAM_EVENT: DynamoDBStreamEvent = {
   Records: [generateDynamoSteamRecord(), generateDynamoSteamRecord()],
 };
 
+export const MUCKY_DYNAMODB_STREAM_EVENT: DynamoDBStreamEvent = {
+  Records: [
+    generateDynamoSteamRecord("AUTH_IPV_AUTHORISATION_REQUESTED"),
+    generateDynamoSteamRecord(),
+    generateDynamoSteamRecord("AUTH_OTHER_RANDOM_EVENT"),
+  ],
+};
+
 export const TEST_TXMA_EVENT: TxmaEvent = generateTestTxmaEvent();

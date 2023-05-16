@@ -13,6 +13,7 @@ import {
 import {
   TEST_TXMA_EVENT,
   TEST_DYNAMO_STREAM_EVENT,
+  MUCKY_DYNAMODB_STREAM_EVENT,
   tableName,
   messageId,
   queueUrl,
@@ -228,6 +229,16 @@ describe("handler", () => {
       MessageBody: JSON.stringify(userRecordEvents),
     });
     expect(sqsMock).toHaveReceivedNthCommandWith(2, SendMessageCommand, {
+      QueueUrl: queueUrl,
+      MessageBody: JSON.stringify(userRecordEvents),
+    });
+  });
+
+  test("Ignores any non-AUTH_AUTH_CODE_ISSUED event", async () => {
+    await handler(MUCKY_DYNAMODB_STREAM_EVENT);
+    expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(1);
+    expect(dynamoMock.commandCalls(GetCommand).length).toEqual(1);
+    expect(sqsMock).toHaveReceivedNthCommandWith(1, SendMessageCommand, {
       QueueUrl: queueUrl,
       MessageBody: JSON.stringify(userRecordEvents),
     });

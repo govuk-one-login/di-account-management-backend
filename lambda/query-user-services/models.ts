@@ -23,7 +23,6 @@ export interface Service {
 
 export interface UserData {
   user_id: UrnFdnSub;
-  govuk_signin_journey_id: string;
 }
 
 export interface UserRecordEvent {

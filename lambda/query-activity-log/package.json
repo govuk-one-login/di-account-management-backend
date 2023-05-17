@@ -1,8 +1,8 @@
 {
-  "name": "delete-email-subscriptions",
+  "name": "query-activity-log",
   "version": "1.0.0",
-  "description": "A Lambda function to send an HTTP request to the GOV.UK API to delete user's email subscriptions",
-  "main": "delete-email-subscriptions.js",
+  "description": "A Lambda function to read events from the raw event store DynamoDB stream and query our stored activity log",
+  "main": "query-activity-log.js",
   "scripts": {
     "test": "jest",
     "lint": "eslint . --ext .ts",

@@ -13,6 +13,7 @@ import {
 import {
   TEST_TXMA_EVENT,
   TEST_DYNAMO_STREAM_EVENT,
+  MUCKY_DYNAMODB_STREAM_EVENT,
   tableName,
   messageId,
   queueUrl,
@@ -90,7 +91,7 @@ describe("validateTxmaEventBody", () => {
         services: [
           {
             timestamp: new Date().toISOString,
-            event_name: "event_name",
+            event_name: "AUTH_AUTH_CODE_ISSUED",
             user: {
               user_id: userId,
             },
@@ -108,7 +109,7 @@ describe("validateTxmaEventBody", () => {
         services: [
           {
             client_id: clientId,
-            event_name: "event_name",
+            event_name: "AUTH_AUTH_CODE_ISSUED",
             user: {
               user_id: userId,
             },
@@ -145,7 +146,7 @@ describe("validateTxmaEventBody", () => {
           {
             client_id: clientId,
             timestamp: new Date().toISOString,
-            event_name: "event_name",
+            event_name: "AUTH_AUTH_CODE_ISSUED",
           },
         ],
       })
@@ -161,7 +162,7 @@ describe("validateTxmaEventBody", () => {
           {
             client_id: clientId,
             timestamp: new Date().toISOString,
-            event_name: "event_name",
+            event_name: "AUTH_AUTH_CODE_ISSUED",
             user: {},
           },
         ],
@@ -223,7 +224,21 @@ describe("handler", () => {
     await handler(TEST_DYNAMO_STREAM_EVENT);
     expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(2);
     expect(dynamoMock.commandCalls(GetCommand).length).toEqual(2);
-    expect(sqsMock).toHaveReceivedCommandWith(SendMessageCommand, {
+    expect(sqsMock).toHaveReceivedNthCommandWith(1, SendMessageCommand, {
+      QueueUrl: queueUrl,
+      MessageBody: JSON.stringify(userRecordEvents),
+    });
+    expect(sqsMock).toHaveReceivedNthCommandWith(2, SendMessageCommand, {
+      QueueUrl: queueUrl,
+      MessageBody: JSON.stringify(userRecordEvents),
+    });
+  });
+
+  test("Ignores any non-AUTH_AUTH_CODE_ISSUED event", async () => {
+    await handler(MUCKY_DYNAMODB_STREAM_EVENT);
+    expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(1);
+    expect(dynamoMock.commandCalls(GetCommand).length).toEqual(1);
+    expect(sqsMock).toHaveReceivedNthCommandWith(1, SendMessageCommand, {
       QueueUrl: queueUrl,
       MessageBody: JSON.stringify(userRecordEvents),
     });

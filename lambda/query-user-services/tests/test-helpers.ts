@@ -16,16 +16,20 @@ const user: UserData = {
   govuk_signin_journey_id: govukSigninJourneyId,
 };
 
-export const TEST_TXMA_EVENT: TxmaEvent = {
+const generateTestTxmaEvent = (
+  txmaEventName = "AUTH_AUTH_CODE_ISSUED"
+): TxmaEvent => ({
   event_id: "event_id",
-  event_name: "event_name",
+  event_name: `${txmaEventName}`,
   timestamp,
   timestamp_formatted: timestampFormatted,
   client_id: clientId,
   user,
-};
+});
 
-const TEST_DYNAMO_STREAM_RECORD: DynamoDBRecord = {
+const generateDynamoSteamRecord = (
+  txmaEventName = "AUTH_AUTH_CODE_ISSUED"
+): DynamoDBRecord => ({
   eventID: "1234567",
   eventName: "INSERT",
   dynamodb: {
@@ -42,7 +46,7 @@ const TEST_DYNAMO_STREAM_RECORD: DynamoDBRecord = {
             S: "event_id",
           },
           event_name: {
-            S: "event_name",
+            S: `${txmaEventName}`,
           },
           timestamp: {
             N: `${timestamp}`,
@@ -67,8 +71,18 @@ const TEST_DYNAMO_STREAM_RECORD: DynamoDBRecord = {
       },
     },
   },
-};
+});
 
 export const TEST_DYNAMO_STREAM_EVENT: DynamoDBStreamEvent = {
-  Records: [TEST_DYNAMO_STREAM_RECORD, TEST_DYNAMO_STREAM_RECORD],
+  Records: [generateDynamoSteamRecord(), generateDynamoSteamRecord()],
 };
+
+export const MUCKY_DYNAMODB_STREAM_EVENT: DynamoDBStreamEvent = {
+  Records: [
+    generateDynamoSteamRecord("AUTH_IPV_AUTHORISATION_REQUESTED"),
+    generateDynamoSteamRecord(),
+    generateDynamoSteamRecord("AUTH_OTHER_RANDOM_EVENT"),
+  ],
+};
+
+export const TEST_TXMA_EVENT: TxmaEvent = generateTestTxmaEvent();

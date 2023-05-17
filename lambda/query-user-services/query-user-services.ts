@@ -97,13 +97,19 @@ export const handler = async (event: DynamoDBStreamEvent): Promise<void> => {
             [key: string]: AttributeValue;
           }
         ) as TxmaEvent;
-        validateTxmaEventBody(txmaEvent);
-        const results = await queryUserServices(txmaEvent.user.user_id);
-        const messageId = await sendSqsMessage(
-          JSON.stringify(createUserRecordEvent(txmaEvent, results)),
-          OUTPUT_QUEUE_URL
-        );
-        console.log(`[Message sent to QUEUE] with message id = ${messageId}`);
+        if (txmaEvent.event_name === "AUTH_AUTH_CODE_ISSUED") {
+          validateTxmaEventBody(txmaEvent);
+          const results = await queryUserServices(txmaEvent.user.user_id);
+          const messageId = await sendSqsMessage(
+            JSON.stringify(createUserRecordEvent(txmaEvent, results)),
+            OUTPUT_QUEUE_URL
+          );
+          console.log(`[Message sent to QUEUE] with message id = ${messageId}`);
+        } else {
+          console.log(
+            `DB stream sent a ${txmaEvent.event_name} event. Irrelevant for service card so ignoring`
+          );
+        }
       } catch (err) {
         console.error(err);
         await sendSqsMessage(JSON.stringify(record), DLQ_URL);

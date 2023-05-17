@@ -9,6 +9,9 @@ Parameters:
   RawEventsStoreTableName:
     Type: String
     Default: raw_events
+  ActivityLogStoreTableName:
+    Type: String
+    Default: activity_log
   Environment:
     Description: "The environment type"
     Type: "String"
@@ -207,6 +210,52 @@ Resources:
         SSEType: KMS
         KMSMasterKeyId: !GetAtt DatabaseKmsKey.Arn
 
+  ######################################
+  # User Activity Log  store
+  ######################################
+  UserActivityLogStore:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: user_id
+          AttributeType: S
+        - AttributeName: timestamp
+          AttributeType: S
+        - AttributeName: session_id
+          AttributeType: S
+      GlobalSecondaryIndexes:
+        - IndexName: SessionIdIndex
+          KeySchema:
+            - AttributeName: session_id
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+      BillingMode: PAY_PER_REQUEST
+      TableName: !Ref ActivityLogStoreTableName
+      KeySchema:
+        - AttributeName: user_id
+          KeyType: HASH
+        - AttributeName: timestamp
+          KeyType: RANGE
+      Tags:
+        - Key: Product
+          Value: GOV.UK Sign In
+        - Key: System
+          Value: Account Management Backend
+        - Key: Owner
+          Value: govuk-accounts-tech@digital.cabinet-office.gov.uk
+        - Key: Environment
+          Value: !Ref "Environment"
+        - Key: Source
+          Value: "https://github.com/alphagov/di-account-management-backend/blob/main/infrastructre/template.yaml"
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+        SSEType: KMS
+        KMSMasterKeyId: !GetAtt DatabaseKmsKey.Arn
   ######################################
   # TxMA Event Queue (Dummy for now)
   ######################################

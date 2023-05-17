@@ -35,6 +35,9 @@ Parameters:
     Description: >
       The ARN of the permissions boundary to apply to any role created by the template
     Default: "none"
+  AccountManagementFrontendStackName:
+    Type: String
+    Default: account-mgmt-frontend
 
 Conditions:
   UseCodeSigning:
@@ -99,6 +102,20 @@ Mappings:
       AccountNumber: "991138514218"
     production:
       AccountNumber: "075701497069"
+
+  EnvironmentVariables:
+    ### These environment variables are referenced further down the file.
+    ### Please ensure that any variables defined for an environment are defined for _all_ environments.
+    dev:
+      GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.integration.publishing.service.gov.uk"
+    build:
+      GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.staging.publishing.service.gov.uk"
+    staging:
+      GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.staging.publishing.service.gov.uk"
+    integration:
+      GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.integration.publishing.service.gov.uk"
+    production:
+      GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.publishing.service.gov.uk"
 
   CredentialStoreAccounts:
     dev:
@@ -1083,6 +1100,165 @@ Resources:
       AlarmActions:
         - !Ref AlarmNotificationTopic
       ActionsEnabled: true
+
+  ######################
+  # Delete Email Subscriptions
+  ######################
+  DeleteEmailSubscriptionsSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Endpoint: !GetAtt DeleteEmailSubscriptionsFunction.Arn
+      Protocol: lambda
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt UserAccountDeletionTopicSubscriptionDeleteEmailSubscriptionsDeadLetterQueue.Arn
+      TopicArn: !Ref UserAccountDeletionTopic
+
+  UserAccountDeletionTopicSubscriptionDeleteEmailSubscriptionsDeadLetterQueue:
+    Type: AWS::SQS::Queue
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      MessageRetentionPeriod: 1209600
+      KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
+
+  DeleteEmailSubscriptionsSubscriptionDeadLetterQueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues:
+        - !Ref UserAccountDeletionTopicSubscriptionDeleteEmailSubscriptionsDeadLetterQueue
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: sns.amazonaws.com
+            Action: "sqs:SendMessage"
+            Resource: !GetAtt UserAccountDeletionTopicSubscriptionDeleteEmailSubscriptionsDeadLetterQueue.Arn
+            Condition:
+              ArnEquals:
+                "aws:SourceArn": !Ref UserAccountDeletionTopic
+
+  DeleteEmailSubscriptionsLambdaInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      Principal: sns.amazonaws.com
+      SourceArn:
+        Ref: UserAccountDeletionTopic
+      FunctionName: !GetAtt DeleteEmailSubscriptionsFunction.Arn
+
+  DeleteEmailSubscriptionsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${Environment}-${AWS::StackName}-delete-email-subscriptions
+      Architectures: ["arm64"]
+      ReservedConcurrentExecutions: 10
+      CodeUri: ../lambda/delete-email-subscriptions/
+      Handler: delete-email-subscriptions.handler
+      KmsKeyArn: !GetAtt LambdaKMSKey.Arn
+      PackageType: Zip
+      MemorySize: 128
+      Runtime: nodejs18.x
+      Role: !GetAtt DeleteEmailSubscriptionsRole.Arn
+      Timeout: 30
+      EventInvokeConfig:
+        DestinationConfig:
+          OnFailure:
+            Type: Lambda
+            Destination: !GetAtt DeleteEmailSubscriptionsDeadLetterQueue.Arn
+        MaximumRetryAttempts: 2
+      DeadLetterQueue:
+        Type: SQS
+        TargetArn: !GetAtt DeleteEmailSubscriptionsDeadLetterQueue.Arn
+      Environment:
+        Variables:
+          DLQ_URL: !Ref DeleteEmailSubscriptionsDeadLetterQueue
+          GOV_ACCOUNTS_PUBLISHING_API_TOKEN: !Sub "{{resolve:secretsmanager:/${AccountManagementFrontendStackName}/Config/Publishing/API/Key}}"
+          GOV_ACCOUNTS_PUBLISHING_API_URL:
+            !FindInMap [
+              EnvironmentVariables,
+              !Ref Environment,
+              GOVACCOUNTSPUBLISHINGAPIURL,
+            ]
+      VpcConfig:
+        SubnetIds:
+          - Fn::ImportValue: !Sub ${VpcStackName}-ProtectedSubnetIdA
+          - Fn::ImportValue: !Sub ${VpcStackName}-ProtectedSubnetIdB
+        SecurityGroupIds:
+          - Fn::ImportValue: !Sub ${VpcStackName}-AWSServicesEndpointSecurityGroupId
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        Sourcemap: true
+        EntryPoints:
+          - delete-email-subscriptions.ts
+
+  DeleteEmailSubscriptionsDeadLetterQueue:
+    Type: AWS::SQS::Queue
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      MessageRetentionPeriod: 1209600
+      KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
+
+  DeleteEmailSubscriptionsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      PermissionsBoundary: !If
+        - UsePermissionsBoundary
+        - !Ref PermissionsBoundary
+        - !Ref AWS::NoValue
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+        - !Ref DeleteEmailSubscriptionsPolicy
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+
+  DeleteEmailSubscriptionsPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - sqs:SendMessage
+            Resource: !GetAtt DeleteEmailSubscriptionsDeadLetterQueue.Arn
+          - Effect: Allow
+            Action:
+              - kms:Decrypt
+              - kms:GenerateDataKey*
+              - kms:ReEncrypt*
+            Resource:
+              - !GetAtt QueueKmsKey.Arn
+              - !GetAtt LoggingKmsKey.Arn
+              - !GetAtt LambdaKMSKey.Arn
+
+  DeleteEmailSubscriptionsFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    DependsOn:
+      - DeleteEmailSubscriptionsFunction
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${DeleteEmailSubscriptionsFunction}"
+      RetentionInDays: 30
+      KmsKeyId: !GetAtt LoggingKmsKey.Arn
+
+  DeleteEmailSubscriptionsCSLSSubscription:
+    Condition: IsNotDevelopment
+    Type: AWS::Logs::SubscriptionFilter
+    Properties:
+      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
+      FilterPattern: ""
+      LogGroupName: !Ref DeleteEmailSubscriptionsFunctionLogGroup
 
   #######################
   # Monitoring

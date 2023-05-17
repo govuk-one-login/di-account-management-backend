@@ -1284,6 +1284,20 @@ Resources:
             Type: Lambda
             Destination: !GetAtt QueryActivityLogDeadLetterQueue.Arn
         MaximumRetryAttempts: 2
+      Events:
+        DynamoStream:
+          Type: DynamoDB
+          Properties:
+            BatchSize: 1
+            Stream: !GetAtt RawEventsStore.StreamArn
+            Enabled: true
+            DestinationConfig:
+              OnFailure:
+                Destination: !GetAtt QueryActivityLogDeadLetterQueue.Arn
+            StartingPosition: LATEST
+            FilterCriteria:
+              Filters:
+                - Pattern: '{ "eventName": ["INSERT"] }'
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt QueryActivityLogDeadLetterQueue.Arn
@@ -1296,6 +1310,7 @@ Resources:
         SubnetIds:
           - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdA
           - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdB
+          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdC
         SecurityGroupIds:
           - Fn::ImportValue: !Sub ${VpcStackName}-AWSServicesEndpointSecurityGroupId
     Metadata:
@@ -1308,11 +1323,6 @@ Resources:
           - query-activity-log.ts
 
   QueryActivityLogLambdaRole:
-    Type: AWS::IAM::Role
-    Properties:
-      PermissionsBoundary: !If
-        - UsePermissionsBoundary
-        - !Ref PermissionsBoundary
     Type: AWS::IAM::Role
     Properties:
       PermissionsBoundary: !If
@@ -1331,7 +1341,7 @@ Resources:
               Service:
                 - lambda.amazonaws.com
             Action:
-            - "sts:AssumeRole"
+              - "sts:AssumeRole"
 
   QueryActivityLogPolicy:
     Type: AWS::IAM::ManagedPolicy
@@ -1418,7 +1428,11 @@ Resources:
       AlarmName:
         !Join [
           "-",
-          [!Ref AWS::StackName, !Ref Environment, QueryActivityLogDeadLetterQueueAlarm],
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            QueryActivityLogDeadLetterQueueAlarm,
+          ],
         ]
       Namespace: "AWS/SQS"
       MetricName: "ApproximateNumberOfMessagesVisible"

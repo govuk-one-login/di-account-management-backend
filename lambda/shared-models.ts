@@ -1,9 +1,11 @@
 type UrnFdnSub = string;
 type ClientId = string;
+type SessionId = string;
 
 export interface UserData {
   user_id: UrnFdnSub;
   govuk_signin_journey_id: string;
+  session_id: SessionId;
 }
 
 export interface TxmaEvent {
@@ -26,7 +28,16 @@ export interface ActivityLogEntry {
   session_id: string;
   user_id: string;
   timestamp: number;
-  activities:Activity[],
+  activities: Activity[];
   truncated: boolean;
 }
 
+export interface UserActivityLog {
+  TxmaEvent: TxmaEvent;
+  ActivityLogEntry: ActivityLogEntry | undefined;
+}
+
+export const allowedTxmaEvents: Array<string> = [
+  "AUTH_AUTH_CODE_ISSUED",
+  "AUTH_IPV_AUTHORISATION_REQUESTED",
+];

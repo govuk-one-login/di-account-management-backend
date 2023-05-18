@@ -3,7 +3,7 @@ type ClientId = string;
 type SessionId = string;
 
 export interface UserData {
-  user_id: UrnFdnSub;
+  user_id: string;
   govuk_signin_journey_id: string;
   session_id: SessionId;
 }
@@ -13,7 +13,7 @@ export interface TxmaEvent {
   timestamp: number;
   timestamp_formatted: string;
   event_name: string;
-  client_id: ClientId;
+  client_id: string;
   user: UserData;
 }
 

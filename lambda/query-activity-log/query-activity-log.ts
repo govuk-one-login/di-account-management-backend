@@ -1,10 +1,6 @@
 import { DynamoDBStreamEvent } from "aws-lambda";
 import { DynamoDBDocumentClient, QueryCommand } from "@aws-sdk/lib-dynamodb";
-import {
-  AttributeValue,
-  DynamoDBClient,
-  QueryCommandInput,
-} from "@aws-sdk/client-dynamodb";
+import { AttributeValue, DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
 import {
   SendMessageCommand,
@@ -17,7 +13,7 @@ import {
   UserActivityLog,
   UserData,
   allowedTxmaEvents,
-} from "../shared-models";
+} from "./models";
 
 const marshallOptions = {
   convertClassInstanceToMap: true,
@@ -35,7 +31,7 @@ export const queryActivityLog = async (
   sessionId: string
 ): Promise<ActivityLogEntry | undefined> => {
   const { TABLE_NAME } = process.env;
-  const command: QueryCommandInput = {
+  const command = {
     TableName: TABLE_NAME,
     KeyConditionExpression: "user_id = :user_id ",
     FilterExpression: "session_id = :session_id",
@@ -46,9 +42,7 @@ export const queryActivityLog = async (
   };
 
   const response = await dynamoDocClient.send(new QueryCommand(command));
-  return response.Items
-    ? (response.Items as unknown as ActivityLogEntry)
-    : undefined;
+  return response.Items ? (response.Items[0] as ActivityLogEntry) : undefined;
 };
 
 export const validateUser = (user: UserData): void => {

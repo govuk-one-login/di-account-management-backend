@@ -1,7 +1,8 @@
 import { DynamoDBStreamEvent, DynamoDBRecord } from "aws-lambda";
-import { TxmaEvent, UserData } from "../../shared-models";
+import { TxmaEvent, UserData } from "../models";
 
 export const eventType = "AUTH_AUTH_CODE_ISSUED";
+export const randomEventType = "AUTH_OTHER_RANDOM_EVENT";
 export const userId = "user_id";
 export const sessionId = "session_id";
 export const clientId = "client_id";
@@ -67,6 +68,9 @@ const generateDynamoSteamRecord = (
               govuk_signin_journey_id: {
                 S: govukSigninJourneyId,
               },
+              session_id: {
+                S: sessionId,
+              },
             },
           },
         },
@@ -80,3 +84,7 @@ export const TEST_DYNAMO_STREAM_EVENT: DynamoDBStreamEvent = {
 };
 
 export const TEST_TXMA_EVENT: TxmaEvent = generateTestTxmaEvent();
+
+export const MUCKY_DYNAMODB_STREAM_EVENT: DynamoDBStreamEvent = {
+  Records: [generateDynamoSteamRecord(randomEventType)],
+};

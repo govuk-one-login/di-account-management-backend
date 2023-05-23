@@ -11,20 +11,18 @@ import {
   SQSClient,
 } from "@aws-sdk/client-sqs";
 import { Activity, ActivityLogEntry } from "../shared/models";
+import { timestamp } from "./tests/test-helpers";
 
 
-export const validateActivityLogEntries = (activityLogEntries: ActivityLogEntry[]): void => {
-    for (let i = 0; i < activityLogEntries.length; i += 1) {
-        const activityLog = activityLogEntries[i];
-        if (!(
-                activityLog.user_id  !== undefined &&
-                activityLog.session_id !== undefined &&
-                activityLog.timestamp !== undefined &&
-                activityLog.truncated !== undefined
-            )) {
-            throw new Error(`Could not validate activity log entry ${JSON.stringify(activityLog)}`);
-        }
-    }
+export const validateActivityLogEntry = (activityLogEntry: ActivityLogEntry): void => {
+  if (!(
+          activityLogEntry.user_id  !== undefined &&
+          activityLogEntry.session_id !== undefined &&
+          activityLogEntry.timestamp !== undefined &&
+          activityLogEntry.truncated !== undefined
+      )) {
+      throw new Error(`Could not validate activity log entry ${JSON.stringify(activityLog)}`);
+  }
 };
 
 export const validateActivities = (activities: Activity[]): void => {
@@ -49,11 +47,10 @@ export const writeActivityLogEntry = async (activityLogEntry: ActivityLogEntry):
     const command = new PutCommand({
       TableName: TABLE_NAME,
       Item: {
-        
-        //TODO
-
-        user_id: userServices.user_id,
-        services: userServices.services,
+        user_id: activityLogEntry.user_id,
+        timestamp: activityLogEntry.timestamp,
+        session_id: activityLogEntry.session_id,
+        activities: activityLogEntry
       },
     });
     return dynamoDocClient.send(command);

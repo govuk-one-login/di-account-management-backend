@@ -1386,13 +1386,13 @@ Resources:
       FilterPattern: ""
       LogGroupName: !Ref WriteActivityLogFunctionLogGroup
 
-  WriteDeadLetterQueueAlarm:
+  WriteActivityLogDeadLetterQueueAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
       AlarmName:
         !Join [
           "-",
-          [!Ref AWS::StackName, !Ref Environment, WriteDeadLetterQueueAlarm],
+          [!Ref AWS::StackName, !Ref Environment, WriteActivityLogDeadLetterQueueAlarm],
         ]
       Namespace: "AWS/SQS"
       MetricName: "ApproximateNumberOfMessagesVisible"

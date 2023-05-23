@@ -1508,11 +1508,11 @@ Resources:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-write-user-services
       Architectures: ["arm64"]
       CodeUri: ../lambda/write-user-services/
-      Events:
-        ActivityLogToWriteQueue:
-          Type: SQS
-          Properties:
-            Queue: !GetAtt ActivityLogToWriteQueue.Arn
+      # Events:
+      #   ActivityLogToWriteQueue:
+      #     Type: SQS
+      #     Properties:
+      #       Queue: !GetAtt ActivityLogToWriteQueue.Arn
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt WriteActivityLogDeadLetterQueue.Arn

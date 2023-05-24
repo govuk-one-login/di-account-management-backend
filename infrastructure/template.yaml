@@ -1518,7 +1518,7 @@ Resources:
     DependsOn:
       - WriteActivityLogFunctionLogGroup
     Properties:
-      FunctionName: !Sub ${Environment}-${AWS::StackName}-write-user-services
+      FunctionName: !Sub ${Environment}-${AWS::StackName}-write-activity-log
       Architectures: ["arm64"]
       CodeUri: ../lambda/write-user-services/
       Events:
@@ -1554,7 +1554,7 @@ Resources:
         Target: "es2020"
         Sourcemap: true
         EntryPoints:
-          - write-user-services.ts
+          - write-activitylog.ts
 
   WriteActivityLogDeadLetterQueue:
     Type: AWS::SQS::Queue
@@ -1622,7 +1622,7 @@ Resources:
   WriteActivityLogFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-write-user-services"
+      LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-write-activity-log"
       RetentionInDays: 30
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 

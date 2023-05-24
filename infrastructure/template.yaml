@@ -1606,10 +1606,10 @@ Resources:
               - dynamodb:PutItem
               - dynamodb:UpdateItem
             Resource:
-              - !GetAtt ActivityLogStore.Arn
+              - !GetAtt UserActivityLogStore.Arn
               - !Sub
                 - "${Arn}/*"
-                - Arn: !GetAtt ActivityLogStore.Arn
+                - Arn: !GetAtt UserActivityLogStore.Arn
           - Effect: Allow
             Action:
               - kms:Decrypt

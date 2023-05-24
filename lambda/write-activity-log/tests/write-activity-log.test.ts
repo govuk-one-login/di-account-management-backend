@@ -1,8 +1,10 @@
 import { validateActivityLogEntry
     } from "../write-activity-log"
-import {  Activity, 
-    ActivityLogEntry } from "../../shared/models";
-import { TEST_ACTIVITY_LOG_ENTRY } from "./test-helpers";
+import { ACTIVITY_LOG_ENTRY_NO_TIMESTAMP,
+    ACTIVITY_LOG_ENTRY_NO_USER_ID,
+    TEST_ACTIVITY_LOG_ENTRY,
+    ACTIVITY_LOG_ENTRY_NO_ACTIVITY_ARRAY
+} from "./test-helpers";
 
 describe("ValidateActivityLogEntries", () => {
 
@@ -14,22 +16,26 @@ describe("ValidateActivityLogEntries", () => {
         expect(validateActivityLogEntry(TEST_ACTIVITY_LOG_ENTRY))
     });
 
-    // todo corect absent
     test("doens't throw error when activities array is absent", () => {
-        expect(validateActivityLogEntry(TEST_ACTIVITY_LOG_ENTRY))
+        expect(validateActivityLogEntry(ACTIVITY_LOG_ENTRY_NO_ACTIVITY_ARRAY))
     });
 
-    test("", () => {
-
+    test("throws an error when user_id is missing", () => {
+        expect(() => {
+            validateActivityLogEntry(ACTIVITY_LOG_ENTRY_NO_USER_ID)
+        })
+            .toThrowError(
+            new Error(`Could not validate activity log entry ${JSON.stringify(ACTIVITY_LOG_ENTRY_NO_USER_ID)}`)
+        )
     });
 
-    test("throws an error when event-type is missing", () => {
-        
-    })
-
-    test("throws an error when session_ID is missing", () => {
-        
-    })
-
+    test("throws an error when timestamp is missing", () => {
+        expect(() => {
+            validateActivityLogEntry(ACTIVITY_LOG_ENTRY_NO_TIMESTAMP)
+        })
+            .toThrowError(
+            new Error(`Could not validate activity log entry ${JSON.stringify(ACTIVITY_LOG_ENTRY_NO_TIMESTAMP)}`)
+        )
+    });
 
 })

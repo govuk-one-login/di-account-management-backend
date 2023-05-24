@@ -14,7 +14,7 @@ export const truncated = false;
 export const clientId = "client-id-value";
 export const type = "activity-type-value";
 
-export const TEST_ACTIVITY_LOG_ENTRY: ActivityLogEntry = {
+var MUTABLE_ACTIVITY_LOG_ENTRY: ActivityLogEntry = {
   event_type: event_type,
   session_id: sessionId,
   user_id: userId,
@@ -28,3 +28,21 @@ export const TEST_ACTIVITY_LOG_ENTRY: ActivityLogEntry = {
     }
   ],
 };
+
+export const TEST_ACTIVITY_LOG_ENTRY: ActivityLogEntry = MUTABLE_ACTIVITY_LOG_ENTRY;
+
+const NO_ACTIVITY_ARRAY = { 
+  ...MUTABLE_ACTIVITY_LOG_ENTRY, activities: undefined };
+export const ACTIVITY_LOG_ENTRY_NO_ACTIVITY_ARRAY: ActivityLogEntry = 
+  JSON.parse(JSON.stringify(NO_ACTIVITY_ARRAY));
+
+
+const NO_USER_ID = { 
+  ...MUTABLE_ACTIVITY_LOG_ENTRY, user_id: undefined };
+export const ACTIVITY_LOG_ENTRY_NO_USER_ID: ActivityLogEntry = 
+  JSON.parse(JSON.stringify(NO_USER_ID));
+
+const NO_TIMESTAMP = { 
+    ...MUTABLE_ACTIVITY_LOG_ENTRY, timestamp: undefined };
+export const ACTIVITY_LOG_ENTRY_NO_TIMESTAMP: ActivityLogEntry = 
+  JSON.parse(JSON.stringify(NO_TIMESTAMP));

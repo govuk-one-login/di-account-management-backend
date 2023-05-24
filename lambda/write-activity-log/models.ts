@@ -13,7 +13,7 @@ export interface TxmaEvent {
   timestamp: number;
   timestamp_formatted: string;
   event_name: string;
-  client_id: string;
+  client_id: ClientId;
   user: UserData;
 }
 

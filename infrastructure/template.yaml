@@ -1520,7 +1520,7 @@ Resources:
     Properties:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-write-activity-log
       Architectures: ["arm64"]
-      CodeUri: ../lambda/write-user-services/
+      CodeUri: ../lambda/write-activity-log/
       Events:
         ActivityLogToWriteQueue:
           Type: SQS
@@ -1529,7 +1529,7 @@ Resources:
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt WriteActivityLogDeadLetterQueue.Arn
-      Handler: write-user-services.handler
+      Handler: write-activity-log.handler
       KmsKeyArn: !GetAtt LambdaKMSKey.Arn
       PackageType: Zip
       MemorySize: 128

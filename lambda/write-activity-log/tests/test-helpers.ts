@@ -1,6 +1,6 @@
 import { SQSEvent, SQSRecord } from "aws-lambda";
 
-import { ActivityLogEntry } from "../../shared/models";
+import { ActivityLogEntry } from "../models";
 import { TooManyEntriesInBatchRequest } from "@aws-sdk/client-sqs";
 
 // Activity log entry constants

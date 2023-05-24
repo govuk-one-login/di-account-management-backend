@@ -13,6 +13,12 @@ import {
 import { Activity, ActivityLogEntry } from "./models";
 import { timestamp } from "./tests/test-helpers";
 
+const dynamoClient = new DynamoDBClient({});
+const dynamoDocClient = DynamoDBDocumentClient.from(
+  dynamoClient
+);
+
+const sqsClient = new SQSClient({});
 
 export const validateActivityLogEntry = (activityLogEntry: ActivityLogEntry): void => {
   if (!(
@@ -41,37 +47,37 @@ export const validateActivities = (activities: Activity[]): void => {
     }
 }
 
-// export const writeActivityLogEntry = async (activityLogEntry: ActivityLogEntry):
-//  Promise<PutCommandOutput> => {
-//     const { TABLE_NAME } = process.env;
-//     const command = new PutCommand({
-//       TableName: TABLE_NAME,
-//       Item: {
-//         user_id: activityLogEntry.user_id,
-//         timestamp: activityLogEntry.timestamp,
-//         session_id: activityLogEntry.session_id,
-//         activities: activityLogEntry
-//       },
-//     });
-//     return dynamoDocClient.send(command);
-// };
+export const writeActivityLogEntry = async (activityLogEntry: ActivityLogEntry):
+ Promise<PutCommandOutput> => {
+    const { TABLE_NAME } = process.env;
+    const command = new PutCommand({
+      TableName: TABLE_NAME,
+      Item: {
+        user_id: activityLogEntry.user_id,
+        timestamp: activityLogEntry.timestamp,
+        session_id: activityLogEntry.session_id,
+        activities: activityLogEntry
+      },
+    });
+    return dynamoDocClient.send(command);
+};
 
-// export const handler = async (event: SQSEvent): Promise<void> => {
-//     const { DLQ_URL } = process.env;
-//     await Promise.all(
-//       event.Records.map(async (record) => {
-//         try {
-//           const activityLogEntry: ActivityLogEntry = JSON.parse(record.body);
-//           validateActivityLogEntries(activityLogEntry);
-//           await writeActivityLogEntry(activityLogEntry);
-//         } catch (err) {
-//           console.error(err);
-//           const message: SendMessageRequest = {
-//             QueueUrl: DLQ_URL,
-//             MessageBody: record.body,
-//           };
-//           await sqsClient.send(new SendMessageCommand(message));
-//         }
-//       })
-//     );
-//   };
+export const handler = async (event: SQSEvent): Promise<void> => {
+    const { DLQ_URL } = process.env;
+    await Promise.all(
+      event.Records.map(async (record) => {
+        try {
+          const activityLogEntry: ActivityLogEntry = JSON.parse(record.body);
+          validateActivityLogEntry(activityLogEntry);
+          await writeActivityLogEntry(activityLogEntry);
+        } catch (err) {
+          console.error(err);
+          const message: SendMessageRequest = {
+            QueueUrl: DLQ_URL,
+            MessageBody: record.body,
+          };
+          await sqsClient.send(new SendMessageCommand(message));
+        }
+      })
+    );
+  };

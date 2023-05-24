@@ -1,5 +1,5 @@
 {
-  "name": "write-user-services",
+  "name": "write-activity-log",
   "version": "1.0.0",
   "description": "A Lambda function to write events to DynamoDB",
   "main": "index.js",

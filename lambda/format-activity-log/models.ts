@@ -33,8 +33,8 @@ export interface ActivityLogEntry {
 }
 
 export interface UserActivityLog {
-  TxmaEvent: TxmaEvent;
-  ActivityLogEntry: ActivityLogEntry | undefined;
+  txmaEvent: TxmaEvent;
+  activityLogEntry: ActivityLogEntry | undefined;
 }
 
 export const allowedTxmaEvents: Array<string> = [

@@ -46,8 +46,8 @@ const activityLogEntry: ActivityLogEntry = {
 };
 
 const userActivityLog: UserActivityLog = {
-  TxmaEvent: TEST_TXMA_EVENT,
-  ActivityLogEntry: activityLogEntry,
+  txmaEvent: TEST_TXMA_EVENT,
+  activityLogEntry,
 };
 
 describe("queryActivityLog", () => {

@@ -71,8 +71,8 @@ const createUserActivityLog = (
   results: ActivityLogEntry | undefined
 ): UserActivityLog => {
   const userActivityLog: UserActivityLog = {
-    TxmaEvent: txmaEvent,
-    ActivityLogEntry: results,
+    txmaEvent,
+    activityLogEntry: results,
   };
   return userActivityLog;
 };

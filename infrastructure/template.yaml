@@ -12,6 +12,9 @@ Parameters:
   ActivityLogStoreTableName:
     Type: String
     Default: activity_log
+  DummyEventStoreTableName:
+    Type: String
+    Default: dummy_events
   Environment:
     Description: "The environment type"
     Type: "String"
@@ -133,6 +136,46 @@ Mappings:
       AccountNumber: "499563136613"
 
 Resources:
+  ######################################
+  # Dummy events store
+  ######################################
+  DummyEventStore:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: timestamp
+          AttributeType: N
+      BillingMode: PAY_PER_REQUEST
+      TableName: !Ref DummyEventStoreTableName
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: timestamp
+          KeyType: RANGE
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+        SSEType: KMS
+        KMSMasterKeyId: !GetAtt DatabaseKmsKey.Arn
+      StreamSpecification:
+        StreamViewType: NEW_IMAGE
+      Tags:
+        - Key: Product
+          Value: GOV.UK Sign In
+        - Key: System
+          Value: Account Management Backend
+        - Key: Owner
+          Value: govuk-accounts-tech@digital.cabinet-office.gov.uk
+        - Key: Environment
+          Value: !Ref "Environment"
+        - Key: Source
+          Value: "https://github.com/alphagov/di-account-management-backend/blob/main/infrastructure/template.yaml"
+
   ######################################
   # Raw events store
   ######################################
@@ -1338,7 +1381,7 @@ Resources:
           Type: DynamoDB
           Properties:
             BatchSize: 1
-            Stream: !GetAtt RawEventsStore.StreamArn
+            Stream: !GetAtt DummyEventStore.StreamArn
             Enabled: true
             DestinationConfig:
               OnFailure:
@@ -1427,10 +1470,10 @@ Resources:
               - dynamodb:GetShardIterator
               - dynamodb:ListStreams
             Resource:
-              - !GetAtt RawEventsStore.StreamArn
+              - !GetAtt DummyEventStore.StreamArn
               - !Sub
                 - "${Arn}/*"
-                - Arn: !GetAtt RawEventsStore.StreamArn
+                - Arn: !GetAtt DummyEventStore.StreamArn
           - Effect: Allow
             Action:
               - kms:Decrypt

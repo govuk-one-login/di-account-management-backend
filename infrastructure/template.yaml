@@ -9,6 +9,12 @@ Parameters:
   RawEventsStoreTableName:
     Type: String
     Default: raw_events
+  ActivityLogStoreTableName:
+    Type: String
+    Default: activity_log
+  DummyEventStoreTableName:
+    Type: String
+    Default: dummy_events
   Environment:
     Description: "The environment type"
     Type: "String"
@@ -131,6 +137,46 @@ Mappings:
 
 Resources:
   ######################################
+  # Dummy events store
+  ######################################
+  DummyEventStore:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: timestamp
+          AttributeType: N
+      BillingMode: PAY_PER_REQUEST
+      TableName: !Ref DummyEventStoreTableName
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: timestamp
+          KeyType: RANGE
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+        SSEType: KMS
+        KMSMasterKeyId: !GetAtt DatabaseKmsKey.Arn
+      StreamSpecification:
+        StreamViewType: NEW_IMAGE
+      Tags:
+        - Key: Product
+          Value: GOV.UK Sign In
+        - Key: System
+          Value: Account Management Backend
+        - Key: Owner
+          Value: govuk-accounts-tech@digital.cabinet-office.gov.uk
+        - Key: Environment
+          Value: !Ref "Environment"
+        - Key: Source
+          Value: "https://github.com/alphagov/di-account-management-backend/blob/main/infrastructure/template.yaml"
+
+  ######################################
   # Raw events store
   ######################################
   RawEventsStore:
@@ -207,6 +253,52 @@ Resources:
         SSEType: KMS
         KMSMasterKeyId: !GetAtt DatabaseKmsKey.Arn
 
+  ######################################
+  # User Activity Log  store
+  ######################################
+  UserActivityLogStore:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: user_id
+          AttributeType: S
+        - AttributeName: timestamp
+          AttributeType: S
+        - AttributeName: session_id
+          AttributeType: S
+      GlobalSecondaryIndexes:
+        - IndexName: SessionIdIndex
+          KeySchema:
+            - AttributeName: session_id
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+      BillingMode: PAY_PER_REQUEST
+      TableName: !Ref ActivityLogStoreTableName
+      KeySchema:
+        - AttributeName: user_id
+          KeyType: HASH
+        - AttributeName: timestamp
+          KeyType: RANGE
+      Tags:
+        - Key: Product
+          Value: GOV.UK Sign In
+        - Key: System
+          Value: Account Management Backend
+        - Key: Owner
+          Value: govuk-accounts-tech@digital.cabinet-office.gov.uk
+        - Key: Environment
+          Value: !Ref "Environment"
+        - Key: Source
+          Value: "https://github.com/alphagov/di-account-management-backend/blob/main/infrastructre/template.yaml"
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+        SSEType: KMS
+        KMSMasterKeyId: !GetAtt DatabaseKmsKey.Arn
   ######################################
   # TxMA Event Queue (Dummy for now)
   ######################################
@@ -1259,6 +1351,193 @@ Resources:
       DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
       FilterPattern: ""
       LogGroupName: !Ref DeleteEmailSubscriptionsFunctionLogGroup
+
+  ######################
+  # Query Activity Log
+  ######################
+
+  QueryActivityLogFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${Environment}-${AWS::StackName}-query-activity-log
+      Architectures: ["arm64"]
+      ReservedConcurrentExecutions: 10
+      CodeUri: ../lambda/query-activity-log/
+      Handler: query-activity-log.handler
+      KmsKeyArn: !GetAtt LambdaKMSKey.Arn
+      PackageType: Zip
+      MemorySize: 128
+      Runtime: nodejs18.x
+      Role: !GetAtt QueryActivityLogLambdaRole.Arn
+      Timeout: 30
+      EventInvokeConfig:
+        DestinationConfig:
+          OnFailure:
+            Type: Lambda
+            Destination: !GetAtt QueryActivityLogDeadLetterQueue.Arn
+        MaximumRetryAttempts: 2
+      Events:
+        DynamoStream:
+          Type: DynamoDB
+          Properties:
+            BatchSize: 1
+            Stream: !GetAtt DummyEventStore.StreamArn
+            Enabled: true
+            DestinationConfig:
+              OnFailure:
+                Destination: !GetAtt QueryActivityLogDeadLetterQueue.Arn
+            StartingPosition: LATEST
+            FilterCriteria:
+              Filters:
+                - Pattern: '{ "eventName": ["INSERT"] }'
+      DeadLetterQueue:
+        Type: SQS
+        TargetArn: !GetAtt QueryActivityLogDeadLetterQueue.Arn
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref ActivityLogStoreTableName
+          DLQ_URL: !Ref QueryActivityLogDeadLetterQueue
+          OUTPUT_QUEUE_URL: !Ref ActivityLogToFormatQueue
+      VpcConfig:
+        SubnetIds:
+          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdA
+          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdB
+        SecurityGroupIds:
+          - Fn::ImportValue: !Sub ${VpcStackName}-AWSServicesEndpointSecurityGroupId
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        Sourcemap: true
+        EntryPoints:
+          - query-activity-log.ts
+
+  QueryActivityLogLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      PermissionsBoundary: !If
+        - UsePermissionsBoundary
+        - !Ref PermissionsBoundary
+        - !Ref AWS::NoValue
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+        - !Ref QueryActivityLogPolicy
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+
+  QueryActivityLogPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - sqs:ReceiveMessage
+              - sqs:DeleteMessage
+              - sqs:GetQueueAttributes
+            Resource: !GetAtt TxMAInputDummyQueue.Arn
+          - Effect: Allow
+            Action:
+              - sqs:SendMessage
+            Resource: !GetAtt ActivityLogToFormatQueue.Arn
+          - Effect: Allow
+            Action:
+              - sqs:SendMessage
+            Resource: !GetAtt QueryActivityLogDeadLetterQueue.Arn
+          - Effect: Allow
+            Action:
+              - dynamodb:Query
+              - dynamodb:GetItem
+            Resource:
+              - !GetAtt UserActivityLogStore.Arn
+              - !Sub
+                - "${Arn}/*"
+                - Arn: !GetAtt UserActivityLogStore.Arn
+          - Effect: Allow
+            Action:
+              - dynamodb:DescribeStream
+              - dynamodb:GetRecords
+              - dynamodb:GetShardIterator
+              - dynamodb:ListStreams
+            Resource:
+              - !GetAtt DummyEventStore.StreamArn
+              - !Sub
+                - "${Arn}/*"
+                - Arn: !GetAtt DummyEventStore.StreamArn
+          - Effect: Allow
+            Action:
+              - kms:Decrypt
+              - kms:GenerateDataKey*
+              - kms:ReEncrypt*
+            Resource:
+              - !GetAtt QueueKmsKey.Arn
+              - !GetAtt DatabaseKmsKey.Arn
+
+  QueryActivityLogDeadLetterQueue:
+    Type: AWS::SQS::Queue
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      MessageRetentionPeriod: 1209600
+      KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
+
+  QueryActivityLogFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-query-activity-log"
+      RetentionInDays: 30
+      KmsKeyId: !GetAtt LoggingKmsKey.Arn
+
+  QueryActivityLogCSLSSubscription:
+    Condition: IsNotDevelopment
+    Type: AWS::Logs::SubscriptionFilter
+    Properties:
+      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
+      FilterPattern: ""
+      LogGroupName: !Ref QueryActivityLogFunctionLogGroup
+
+  ActivityLogToFormatQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+
+  QueryActivityLogDeadLetterQueueAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            QueryActivityLogDeadLetterQueueAlarm,
+          ],
+        ]
+      Namespace: "AWS/SQS"
+      MetricName: "ApproximateNumberOfMessagesVisible"
+      Dimensions:
+        - Name: "QueueName"
+          Value: !GetAtt QueryActivityLogDeadLetterQueue.QueueName
+      Statistic: "Sum"
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: "GreaterThanOrEqualToThreshold"
+      AlarmActions:
+        - !Ref AlarmNotificationTopic
+      ActionsEnabled: true
 
   #######################
   # Monitoring

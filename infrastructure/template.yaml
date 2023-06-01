@@ -253,9 +253,9 @@ Resources:
         SSEType: KMS
         KMSMasterKeyId: !GetAtt DatabaseKmsKey.Arn
 
-  ######################################
-  # User Activity Log  store
-  ######################################
+  #########################
+  # User Activity Log store
+  #########################
   UserActivityLogStore:
     Type: AWS::DynamoDB::Table
     DeletionPolicy: Delete
@@ -299,6 +299,7 @@ Resources:
         SSEEnabled: true
         SSEType: KMS
         KMSMasterKeyId: !GetAtt DatabaseKmsKey.Arn
+
   ######################################
   # TxMA Event Queue (Dummy for now)
   ######################################
@@ -308,6 +309,7 @@ Resources:
       KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
+
   ######################
   # Save Raw Events
   ######################
@@ -464,9 +466,9 @@ Resources:
         - !Ref AlarmNotificationTopic
       ActionsEnabled: true
 
-  ######################
-  # Querying the Record
-  ######################
+  ########################
+  # Querying User Services
+  ########################
   QueryUserServicesFunction:
     Type: AWS::Serverless::Function
     DependsOn:
@@ -642,9 +644,9 @@ Resources:
         - !Ref AlarmNotificationTopic
       ActionsEnabled: true
 
-  #######################
-  # Formatting the Record
-  #######################
+  #################################
+  # Formatting User Services Record
+  #################################
   FormatUserServicesFunction:
     Type: AWS::Serverless::Function
     DependsOn:
@@ -788,9 +790,9 @@ Resources:
         - !Ref AlarmNotificationTopic
       ActionsEnabled: true
 
-  ###################
-  # Write the Record
-  ###################
+  #########################
+  # Write the User Services
+  #########################
   WriteUserServicesFunction:
     Type: AWS::Serverless::Function
     DependsOn:
@@ -934,10 +936,9 @@ Resources:
         - !Ref AlarmNotificationTopic
       ActionsEnabled: true
 
-  ######################
-  # Deleting the Record
-  ######################
-
+  ##################################
+  # Notification of Account Deletion
+  ##################################
   UserAccountDeletionTopic:
     Type: AWS::SNS::Topic
     Properties:
@@ -984,6 +985,17 @@ Resources:
             Resource:
               - !Ref UserAccountDeletionTopic
 
+  DeleteTopicArnParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Description: The ARN of the Delete Event Topic
+      Name: !Sub "/${AWS::StackName}/SNS/DeleteTopic/ARN"
+      Type: String
+      Value: !Ref UserAccountDeletionTopic
+
+  ################################
+  # Deleting User Services Records
+  ################################
   DeleteUserServicesSubscription:
     Type: AWS::SNS::Subscription
     Properties:
@@ -992,14 +1004,6 @@ Resources:
       RedrivePolicy:
         deadLetterTargetArn: !GetAtt UserAccountDeletionTopicDeadLetterQueue.Arn
       TopicArn: !Ref UserAccountDeletionTopic
-
-  DeleteTopicArnParameter:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Description: The ARN of the Delete Event Topic
-      Name: !Sub "/${AWS::StackName}/SNS/DeleteTopic/ARN"
-      Type: String
-      Value: !Ref UserAccountDeletionTopic
 
   DeleteUserServicesLambdaInvokePermission:
     Type: AWS::Lambda::Permission
@@ -1193,9 +1197,9 @@ Resources:
         - !Ref AlarmNotificationTopic
       ActionsEnabled: true
 
-  ######################
+  ############################
   # Delete Email Subscriptions
-  ######################
+  ############################
   DeleteEmailSubscriptionsSubscription:
     Type: AWS::SNS::Subscription
     Properties:
@@ -1355,7 +1359,6 @@ Resources:
   ######################
   # Query Activity Log
   ######################
-
   QueryActivityLogFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -1540,10 +1543,9 @@ Resources:
       ActionsEnabled: true
 
 
-###################
-# Write Activity Log
-###################
-
+  ###################
+  # Write Activity Log
+  ###################
   WriteActivityLogFunction:
     Type: AWS::Serverless::Function
     DependsOn:
@@ -1690,7 +1692,6 @@ Resources:
   #######################
   # Formatting Activity Log
   #######################
-
   FormatActivityLogFunction:
     Type: AWS::Serverless::Function
     DependsOn:
@@ -1834,6 +1835,233 @@ Resources:
         - !Ref AlarmNotificationTopic
       ActionsEnabled: true
 
+  ################################
+  # Deleting Activity Log Records
+  ################################
+  DeleteActivityLogSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Endpoint: !GetAtt DeleteActivityLogFunction.Arn
+      Protocol: lambda
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt DeleteActivityLogSubscriptionDeadLetterQueue.Arn
+      TopicArn: !Ref UserAccountDeletionTopic
+
+  DeleteActivityLogSubscriptionDeadLetterQueue:
+    Type: AWS::SQS::Queue
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      MessageRetentionPeriod: 1209600
+      KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
+
+  DeleteActivityLogSubscriptionDeadLetterQueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues:
+        - !Ref DeleteActivityLogSubscriptionDeadLetterQueue
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: sns.amazonaws.com
+            Action: "sqs:SendMessage"
+            Resource: !GetAtt DeleteActivityLogSubscriptionDeadLetterQueue.Arn
+            Condition:
+              ArnEquals:
+                "aws:SourceArn": !Ref UserAccountDeletionTopic
+
+  DeleteActivityLogSubscriptionDeadLetterQueueAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            DeleteActivityLogSubscriptionDeadLetterQueue,
+          ],
+        ]
+      Namespace: "AWS/SQS"
+      MetricName: "ApproximateNumberOfMessagesVisible"
+      Dimensions:
+        - Name: "QueueName"
+          Value: !GetAtt DeleteActivityLogSubscriptionDeadLetterQueue.QueueName
+      Statistic: "Sum"
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: "GreaterThanOrEqualToThreshold"
+      AlarmActions:
+        - !Ref AlarmNotificationTopic
+      ActionsEnabled: true
+
+  DeleteActivityLogFunction:
+    DependsOn:
+      - DeleteActivityLogFunctionLogGroup
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${Environment}-${AWS::StackName}-delete-activity-log
+      Architectures: ["arm64"]
+      CodeUri: ../lambda/delete-activity-log/
+      DeadLetterQueue:
+        Type: SQS
+        TargetArn: !GetAtt DeleteActivityLogDeadLetterQueue.Arn
+      Handler: delete-activity-log.handler
+      KmsKeyArn: !GetAtt LambdaKMSKey.Arn
+      PackageType: Zip
+      MemorySize: 128
+      ReservedConcurrentExecutions: 10
+      Runtime: nodejs18.x
+      Role: !GetAtt DeleteActivityLogRole.Arn
+      Timeout: 5
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref ActivityLogStoreTableName
+          DLQ_URL: !Ref DeleteActivityLogDeadLetterQueue
+      VpcConfig:
+        SubnetIds:
+          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdA
+          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdB
+        SecurityGroupIds:
+          - Fn::ImportValue: !Sub ${VpcStackName}-AWSServicesEndpointSecurityGroupId
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        Sourcemap: true
+        EntryPoints:
+          - delete-activity-log.ts
+
+  DeleteActivityLogRole:
+    Type: AWS::IAM::Role
+    Properties:
+      PermissionsBoundary: !If
+        - UsePermissionsBoundary
+        - !Ref PermissionsBoundary
+        - !Ref AWS::NoValue
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+        - !Ref DeleteActivityLogPolicy
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+
+  DeleteActivityLogPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - sqs:SendMessage
+            Resource: !GetAtt DeleteActivityLogDeadLetterQueue.Arn
+          - Effect: Allow
+            Action:
+              - dynamodb:DeleteItem
+              - dynamodb:Query
+              - dynamodb:GetItem
+              - dynamodb:BatchWriteItem
+            Resource:
+              - !GetAtt UserActivityLogStore.Arn
+              - !Sub
+                - "${Arn}/*"
+                - Arn: !GetAtt UserActivityLogStore.Arn
+          - Effect: Allow
+            Action:
+              - kms:Decrypt
+              - kms:GenerateDataKey*
+              - kms:ReEncrypt*
+            Resource:
+              - !GetAtt QueueKmsKey.Arn
+              - !GetAtt DatabaseKmsKey.Arn
+              - !GetAtt LoggingKmsKey.Arn
+              - !GetAtt LambdaKMSKey.Arn
+
+  DeleteActivityLogLambdaInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      Principal: sns.amazonaws.com
+      SourceArn:
+        Ref: UserAccountDeletionTopic
+      FunctionName: !GetAtt DeleteActivityLogFunction.Arn
+
+  DeleteActivityLogFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-delete-activity-log"
+      RetentionInDays: 30
+      KmsKeyId: !GetAtt LoggingKmsKey.Arn
+
+  DeleteActivityLogCSLSSubscription:
+    Condition: IsNotDevelopment
+    Type: AWS::Logs::SubscriptionFilter
+    Properties:
+      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
+      FilterPattern: ""
+      LogGroupName: !Ref DeleteActivityLogFunctionLogGroup
+
+  DeleteActivityLogDeadLetterQueue:
+    Type: AWS::SQS::Queue
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      MessageRetentionPeriod: 1209600
+      KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
+
+  DeleteActivityLogDeadLetterQueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues:
+        - !Ref DeleteActivityLogDeadLetterQueue
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: sns.amazonaws.com
+            Action: "sqs:SendMessage"
+            Resource: !GetAtt DeleteActivityLogDeadLetterQueue.Arn
+            Condition:
+              ArnEquals:
+                "aws:SourceArn": !Ref UserAccountDeletionTopic
+
+  DeleteActivityLogDeadLetterQueueAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            DeleteActivityLogDeadLetterQueueAlarm,
+          ],
+        ]
+      Namespace: "AWS/SQS"
+      MetricName: "ApproximateNumberOfMessagesVisible"
+      Dimensions:
+        - Name: "QueueName"
+          Value: !GetAtt DeleteActivityLogDeadLetterQueue.QueueName
+      Statistic: "Sum"
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: "GreaterThanOrEqualToThreshold"
+      AlarmActions:
+        - !Ref AlarmNotificationTopic
+      ActionsEnabled: true
+
   #######################
   # Monitoring
   #######################
@@ -1865,7 +2093,6 @@ Resources:
   #######################
   # Encryption
   #######################
-
   QueueKmsKey:
     Type: AWS::KMS::Key
     Properties:

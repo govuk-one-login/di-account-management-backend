@@ -37,7 +37,7 @@ export const getTTLDate = (): number => {
 };
 
 export const validateUser = (user: UserData): void => {
-  if (!user.user_id) {
+  if (!user.user_id || !user.session_id) {
     throw new Error(`Could not find User ${JSON.stringify(user)}`);
   }
 };

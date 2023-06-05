@@ -1,11 +1,7 @@
-type UrnFdnSub = string;
-type ClientId = string;
-type SessionId = string;
-
 export interface UserData {
-  user_id: UrnFdnSub;
+  user_id: string;
   govuk_signin_journey_id: string;
-  session_id: SessionId;
+  session_id: string;
 }
 
 export interface TxmaEvent {
@@ -13,7 +9,7 @@ export interface TxmaEvent {
   timestamp: number;
   timestamp_formatted: string;
   event_name: string;
-  client_id: ClientId;
+  client_id: string;
   user: UserData;
 }
 
@@ -33,8 +29,8 @@ export interface ActivityLogEntry {
 }
 
 export interface UserActivityLog {
-  TxmaEvent: TxmaEvent;
-  ActivityLogEntry: ActivityLogEntry | undefined;
+  txmaEvent: TxmaEvent;
+  activityLogEntry: ActivityLogEntry | undefined;
 }
 
 export const allowedTxmaEvents: Array<string> = [

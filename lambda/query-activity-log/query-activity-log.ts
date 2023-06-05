@@ -71,8 +71,8 @@ const createUserActivityLog = (
   results: ActivityLogEntry | undefined
 ): UserActivityLog => {
   const userActivityLog: UserActivityLog = {
-    TxmaEvent: txmaEvent,
-    ActivityLogEntry: results,
+    txmaEvent,
+    activityLogEntry: results,
   };
   return userActivityLog;
 };
@@ -90,6 +90,7 @@ export const sendSqsMessage = async (
   const result = await client.send(new SendMessageCommand(message));
   return result.MessageId;
 };
+
 export const handler = async (event: DynamoDBStreamEvent): Promise<void> => {
   const { OUTPUT_QUEUE_URL, DLQ_URL } = process.env;
   const { Records } = event;

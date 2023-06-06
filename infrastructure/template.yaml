@@ -265,7 +265,7 @@ Resources:
         - AttributeName: user_id
           AttributeType: S
         - AttributeName: timestamp
-          AttributeType: S
+          AttributeType: N
         - AttributeName: session_id
           AttributeType: S
       GlobalSecondaryIndexes:

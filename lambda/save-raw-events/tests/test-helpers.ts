@@ -18,7 +18,6 @@ export const makeTxmaEvent = (): TxmaEvent => ({
   event_name: eventName,
   event_id: eventId,
   timestamp: date.valueOf(),
-  timestamp_formatted: date.toISOString(),
   client_id: clientId,
   user,
 });

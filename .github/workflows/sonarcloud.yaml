@@ -195,3 +195,31 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_7 }}
         with:
           projectBaseDir: ./lambda/query-activity-log
+
+  sonarcloud_format_activity_log:
+    name: format-activity-log
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./lambda/format-activity-log
+    steps:
+      - uses: actions/checkout@8f4b7f84864484a7bf31766abe9204da3cbe65b3 # pin@v3
+
+      - name: Install Node.js
+        uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # pin@v3
+        with:
+          node-version-file: ".nvmrc18"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate coverage report
+        run: yarn test:cov
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@db501078e936e4b4c8773d1bb949ba9ddb7b6b6a # pin@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_8 }}
+        with:
+          projectBaseDir: ./lambda/format-activity-log

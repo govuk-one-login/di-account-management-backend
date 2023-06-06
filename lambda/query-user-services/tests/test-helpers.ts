@@ -8,7 +8,6 @@ export const tableName = "TableName";
 export const messageId = "MyMessageId";
 export const queueUrl = "http://my_queue_url";
 const timestamp = date.valueOf();
-const timestampFormatted = date.toISOString();
 
 const user: UserData = {
   user_id: userId,
@@ -18,7 +17,6 @@ export const TEST_TXMA_EVENT: TxmaEvent = {
   event_id: "event_id",
   event_name: "event_name",
   timestamp,
-  timestamp_formatted: timestampFormatted,
   client_id: clientId,
   user,
 };
@@ -44,9 +42,6 @@ const TEST_DYNAMO_STREAM_RECORD: DynamoDBRecord = {
           },
           timestamp: {
             N: `${timestamp}`,
-          },
-          timestamp_formatted: {
-            S: timestampFormatted,
           },
           client_id: {
             S: clientId,

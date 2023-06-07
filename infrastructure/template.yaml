@@ -11,7 +11,7 @@ Parameters:
     Default: raw_events
   ActivityLogStoreTableName:
     Type: String
-    Default: activity_log
+    Default: activity_logs
   DummyEventStoreTableName:
     Type: String
     Default: dummy_events

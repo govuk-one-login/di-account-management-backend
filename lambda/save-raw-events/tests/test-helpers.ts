@@ -9,7 +9,6 @@ const clientId = "client_id";
 
 export const user: UserData = {
   user_id: userId,
-  govuk_signin_journey_id: "govuk_signin_journey_id",
   session_id: sessionId,
 };
 
@@ -19,7 +18,6 @@ export const makeTxmaEvent = (): TxmaEvent => ({
   event_name: eventName,
   event_id: eventId,
   timestamp: date.valueOf(),
-  timestamp_formatted: date.toISOString(),
   client_id: clientId,
   user,
 });

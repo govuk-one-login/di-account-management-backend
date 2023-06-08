@@ -47,11 +47,9 @@ export const makeTxmaEvent = (clientId: string, userId: string): TxmaEvent => ({
   event_name: "event_1",
   event_id: "event_id",
   timestamp: 1670850655485,
-  timestamp_formatted: "2022-12-12T13:10:55.485Z",
   client_id: clientId,
   user: {
     user_id: userId,
-    govuk_signin_journey_id: "abc123",
   },
 });
 

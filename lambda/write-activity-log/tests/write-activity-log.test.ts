@@ -1,3 +1,4 @@
+import "aws-sdk-client-mock-jest";
 import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
 import { SendMessageCommand, SQSClient } from "@aws-sdk/client-sqs";
 import { mockClient } from "aws-sdk-client-mock";
@@ -13,6 +14,12 @@ import {
   ACTIVITY_LOG_ENTRY_NO_ACTIVITY_ARRAY,
   TEST_SQS_EVENT,
   TEST_ACTIVITY_LOG_WITH_ACTIVITY_TYPE_UNDEFINED,
+  userId,
+  sessionId,
+  activities,
+  eventType,
+  isTruncated,
+  timestamp,
 } from "./test-helpers";
 
 const dynamoMock = mockClient(DynamoDBDocumentClient);
@@ -88,6 +95,17 @@ describe("writeActivitwriteActivityLogEntryyLog", () => {
   test("writes to DynamoDB", async () => {
     await writeActivityLogEntry(TEST_ACTIVITY_LOG_ENTRY);
     expect(dynamoMock.commandCalls(PutCommand).length).toEqual(1);
+    expect(dynamoMock).toHaveReceivedCommandWith(PutCommand, {
+      TableName: process.env.TABLE_NAME,
+      Item: {
+        user_id: userId,
+        timestamp,
+        session_id: sessionId,
+        activities,
+        event_type: eventType,
+        truncated: isTruncated,
+      },
+    });
   });
 });
 

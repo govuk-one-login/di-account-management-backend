@@ -4,23 +4,25 @@ import { Activity, ActivityLogEntry } from "../models";
 export const eventType = "TXMA_EVENT";
 export const sessionId = "123456789";
 export const userId = "qwerty";
-export const time = 123456789;
+export const timestamp = 123456789;
 export const isTruncated = false;
 export const clientId = "client-id-value";
+
+export const activities: Activity[] = [
+  {
+    client_id: clientId,
+    timestamp,
+    type: eventType,
+  },
+];
 
 export const TEST_ACTIVITY_LOG_ENTRY: ActivityLogEntry = {
   event_type: eventType,
   session_id: sessionId,
   user_id: userId,
-  timestamp: time,
+  timestamp,
   truncated: isTruncated,
-  activities: [
-    {
-      client_id: clientId,
-      timestamp: time,
-      type: eventType,
-    },
-  ],
+  activities,
 };
 
 const NO_ACTIVITY_ARRAY = { ...TEST_ACTIVITY_LOG_ENTRY, activities: undefined };
@@ -39,7 +41,7 @@ export const ACTIVITY_LOG_ENTRY_NO_TIMESTAMP: ActivityLogEntry = JSON.parse(
 
 const ACTIVITY_UNDEFINED_TYPE = {
   client_id: clientId,
-  timestamp: time,
+  timestamp,
 };
 const TEST_ACTIVITY_UNDEFINED_TYPE: Activity = JSON.parse(
   JSON.stringify(ACTIVITY_UNDEFINED_TYPE)

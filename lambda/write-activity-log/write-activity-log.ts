@@ -56,7 +56,9 @@ export const writeActivityLogEntry = async (
       user_id: activityLogEntry.user_id,
       timestamp: activityLogEntry.timestamp,
       session_id: activityLogEntry.session_id,
-      activities: activityLogEntry,
+      activities: activityLogEntry.activities,
+      event_type: activityLogEntry.event_type,
+      truncated: activityLogEntry.truncated,
     },
   });
   return dynamoDocClient.send(command);

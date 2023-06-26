@@ -65,6 +65,10 @@ jobs:
         run: npm ci && npm test
         working-directory: ./lambda/write-activity-log
 
+      - name: Test delete-activity-log
+        run: npm ci && npm test
+        working-directory: ./lambda/delete-activity-log
+
       - name: Set up Python 3.9
         uses: actions/setup-python@d27e3f3d7c64b4bbf8e4abfb9b63b83e846e0435 # pin@v4
         with:

@@ -43,6 +43,28 @@ paths:
 
         The authorisation code the stub generates can be a random number.
 
+        Our backend recieves AUTH_AUTH_CODE_ISSUED events, so at this point in 
+        the journey the stub needs to generate a mock event and put it on the 
+        SQS queue. The structure of the event is:
+
+        {
+          event_name: "AUTH_AUTH_CODE_ISSUED",
+          event_id: "ab12345a-a12b-3ced-ef12-12a3b4cd5678",
+          timestamp: "1687765582",
+          client_id: "client_id",
+          {
+            user_id: "user_id",
+            session_id: "Upt1k+cYtXSwadQHvxsfDg=="",
+          },
+        }
+
+        The client ID will be provided by the frontend as a URL parameter in the
+        request to this endpoint.
+
+        The user ID needs to be the same as the `sub` provided to the RP in 
+        the ID token. For simplicity, the stub should always return both of these 
+        values as "user_id".
+
       responses:
         "302":
           description: |-

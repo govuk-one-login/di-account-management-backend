@@ -1,0 +1,160 @@
+openapi: 3.0.3
+info:
+  title: OIDC Stub
+  description: |-
+    API specification for an OIDC stub which always signs in a user.
+    See our tech docs (below) for an example of the 
+
+    https://docs.sign-in.service.gov.uk/how-gov-uk-one-login-works/#understand-the-technical-flow-gov-uk-one-login-uses
+
+  version: 1.0.0
+paths:
+  /.well-known/openid-configuration:
+    get:
+      description: View the stub's OIDC configuration
+      responses:
+        "200":
+          description: |-
+            The stub's OIDC configuration.
+
+            This should be very similar to what's currently shown by the live service
+            https://oidc.account.gov.uk/.well-known/openid-configuration
+
+  /.well-known/jwks.json:
+    get:
+      description: View the stub's JKWS configuration
+      responses:
+        "200":
+          description: |-
+            The stub's JWKS configuration.
+
+            This will be the same structure as the live service, but the stub will 
+            needs its own keys
+            https://oidc.account.gov.uk/.well-known/jwks.json
+
+  /authorize:
+    get:
+      description: |-
+        The starting point of the OIDC flow. The frontend redirects the user to 
+        this URL to begin the sign in journey. A regular OIDC system would then 
+        probably show the user a login screen or something similar to authenticate 
+        before serving the redirect back to the RP. Our stub doesn't care about 
+        authentication though, so it can send the redirect right away.
+
+        The authorisation code the stub generates can be a random number.
+
+        Our backend recieves AUTH_AUTH_CODE_ISSUED events, so at this point in 
+        the journey the stub needs to generate a mock event and put it on the 
+        SQS queue. The structure of the event is:
+
+        {
+          event_name: "AUTH_AUTH_CODE_ISSUED",
+          event_id: "ab12345a-a12b-3ced-ef12-12a3b4cd5678",
+          timestamp: "1687765582",
+          client_id: "client_id",
+          {
+            user_id: "user_id",
+            session_id: "Upt1k+cYtXSwadQHvxsfDg=="",
+          },
+        }
+
+        The client ID will be provided by the frontend as a URL parameter in the
+        request to this endpoint.
+
+        The user ID needs to be the same as the `sub` provided to the RP in 
+        the ID token. For simplicity, the stub should always return both of these 
+        values as "user_id".
+
+      responses:
+        "302":
+          description: |-
+            A redirect back to the RP including the authorisation code as a 
+            URL parameter.
+
+  /token:
+    post:
+      description: |-
+        The second step in the OIDC flow is when the RP exchanges the authorisation
+        code for access, ID and refresh tokens. The RP creates a JWT with the code 
+        and signs it with their private key. A regular OIDC system would check the 
+        signature matches the key provided when the RP registered, but our stub 
+        doesn't need to do that. 
+        The RP will set the 'grant_type' parameter to 'authorization_code' to request this exchange.
+
+        The ID token in this response should be a signed JWT that contains information about the user.
+        RPs should verify the signature on the JWT, so our stub will need to sign it with one of the signing keys published on the /.well-known/jwks.json endpoint.
+
+        See our docs for the content of the JWT. 
+
+        https://docs.sign-in.service.gov.uk/integrate-with-integration-environment/integrate-with-code-flow/#make-a-token-request
+
+        The other use of this endpoint is to exchange a refresh token for a new access token (our access tokens are only valid for 3 minutes).
+        The stub shouldn't need to handle this type of request as it'll never tell the RP that the access token has expired.
+
+      responses:
+        "200":
+          description: |-
+            Access, ID and refresh tokens for that user.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tokens"
+
+  /userinfo:
+    get:
+      description: |-
+        The final step in OIDC authentication is to use the access token to fetch data from the userinfo endpoint. 
+
+        The RP will send the access token in a header, but the stub doesn't need to check its validity.
+        Instead the stub can always return a 200 response with a randomly generated sub, email and phone number.
+
+      responses:
+        "200":
+          description: |-
+            A JSON object containing information about the user.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserInfo"
+
+components:
+  schemas:
+    Tokens:
+      type: object
+      properties:
+        access_token:
+          type: string
+          example: SlAV32hkKG
+        refresh_token:
+          type: string
+          example: i6mapTIAVSp2oJkgUnCACKKfZxt_H5MBLiqcybBBd04
+        token_type:
+          type: string
+          enum: [Bearer]
+        expires_in:
+          type: integer
+          example: 180
+        id_token:
+          type: string
+          example: "eyJhbGciOiJSUzI1NiIsImtpZCI6IjFlOWdkazcifQ.ewogImlzc
+            yI6ICJodHRwOi8vc2VydmVyLmV4YW1wbGUuY29tIiwKICJzdWIiOiAiMjQ4Mjg"
+
+    UserInfo:
+      type: object
+      properties:
+        sub:
+          type: string
+          example: b2d2d115-1d7e-4579-b9d6-f8e84f4f56ca
+        email:
+          type: string
+          example: john@email.com
+        email_verified:
+          type: boolean
+        phone:
+          type: string
+          example: "07777 777777"
+        phone_verified:
+          type: boolean
+        updated_at:
+          type: string
+          example: "1687765582"

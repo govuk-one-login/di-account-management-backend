@@ -37,18 +37,32 @@ export const validateUserData = (userData: UserData): UserData => {
 export const getAllActivitiesoForUser = async (
   userData: UserData
 ): Promise<ActivityLogEntry[] | undefined> => {
+  const queryResult: ActivityLogEntry[] = [];
   const { TABLE_NAME } = process.env;
+  let lastEvaluatedKey: Record<string, unknown> | undefined;
   const command = {
     TableName: TABLE_NAME,
     KeyConditionExpression: "user_id = :user_id",
     ExpressionAttributeValues: {
       ":user_id": userData.user_id,
     },
-    // TODO: make multiple requests when dynamo has truncated the response to 10MB
+    ScanIndexForward: true,
+    ExclusiveStartKey: lastEvaluatedKey,
   };
+  do {
+    // eslint-disable-next-line no-await-in-loop
+    const response = await dynamoDocClient.send(new QueryCommand(command));
 
-  const response = await dynamoDocClient.send(new QueryCommand(command));
-  return response.Items ? (response.Items as ActivityLogEntry[]) : undefined;
+    if (response.Items) {
+      queryResult.push(...(response.Items as ActivityLogEntry[]));
+    }
+
+    lastEvaluatedKey = response.LastEvaluatedKey
+      ? response.LastEvaluatedKey
+      : undefined;
+  } while (lastEvaluatedKey);
+
+  return queryResult.length > 0 ? queryResult : undefined;
 };
 
 const arraySplitIntoBatchesOf25 = (

@@ -17,6 +17,7 @@ import {
 import { Activity, ActivityLogEntry } from "../models";
 
 const dynamoMock = mockClient(DynamoDBDocumentClient);
+
 const sqsMock = mockClient(SQSClient);
 
 export const eventType = "AUTH_AUTH_CODE_ISSUED";
@@ -65,11 +66,28 @@ describe("deleteUserData", () => {
   });
 
   test("get all activities", async () => {
-    dynamoMock
-      .on(QueryCommand)
-      .resolves({ Items: [activityLogEntry, activityLogEntry] });
+    // jest.spyOn(dynamoMock, "send").mockResolvedValue({
+    //   $metadata: {},
+    //   Items: [activityLogEntry, activityLogEntry],
+    //   LastEvaluatedKey: undefined,
+    // });
+
+    dynamoMock.on(QueryCommand).resolves({
+      Items: [activityLogEntry, activityLogEntry],
+      LastEvaluatedKey: undefined,
+    });
     const activityRecords: ActivityLogEntry[] | undefined =
       await getAllActivitiesoForUser({ user_id: userId });
+    // expect(dynamoMock.send).toHaveBeenCalledWith(QueryCommand);
+    // expect(dynamoMock.send).toHaveBeenCalledWith({
+    //   TableName: "TABLE_NAME",
+    //   KeyConditionExpression: "user_id = :user_id",
+    //   ExpressionAttributeValues: {
+    //     ":user_id": userId,
+    //   },
+    //   ScanIndexForward: true,
+    //   ExclusiveStartKey: undefined,
+    // });
     expect(activityRecords?.[0]).toEqual(activityLogEntry);
     expect(activityRecords?.[1]).toEqual(activityLogEntry);
   });

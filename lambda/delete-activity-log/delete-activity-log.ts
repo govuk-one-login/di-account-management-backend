@@ -49,6 +49,7 @@ export const getAllActivitiesoForUser = async (
     ScanIndexForward: true,
     ExclusiveStartKey: lastEvaluatedKey,
   };
+
   do {
     // eslint-disable-next-line no-await-in-loop
     const response = await dynamoDocClient.send(new QueryCommand(command));

@@ -44,7 +44,21 @@ const activityLogEntry: ActivityLogEntry = {
   activities: activityList,
   truncated: true,
 };
-
+const activityLogEntry1: ActivityLogEntry = {
+  ...activityLogEntry,
+  session_id: "session1",
+};
+const activityLogEntry2: ActivityLogEntry = {
+  ...activityLogEntry,
+};
+const activityLogEntry3: ActivityLogEntry = {
+  ...activityLogEntry,
+  session_id: "session3",
+};
+const activityLogEntry4: ActivityLogEntry = {
+  ...activityLogEntry,
+  session_id: "session4",
+};
 const deleteRequest = {
   DeleteRequest: {
     Key: {
@@ -58,20 +72,32 @@ describe("deleteUserData", () => {
   beforeEach(() => {
     dynamoMock.reset();
     process.env.TABLE_NAME = "TABLE_NAME";
+    // The mock will return activityLogEntry1 & 2 for the first set of requests
+    // and further requests will return activityLogEntry3 & 4
+    dynamoMock
+      .on(QueryCommand)
+      .resolvesOnce({
+        Items: [activityLogEntry1, activityLogEntry2],
+        LastEvaluatedKey: activityLogEntry2,
+      })
+      .resolves({
+        Items: [activityLogEntry3, activityLogEntry4],
+        LastEvaluatedKey: undefined,
+      });
   });
 
   afterEach(() => {
     jest.clearAllMocks();
   });
 
-  test("get all activities", async () => {
-    dynamoMock
-      .on(QueryCommand)
-      .resolves({ Items: [activityLogEntry, activityLogEntry] });
+  test("multiple requests made to DB to get all request", async () => {
     const activityRecords: ActivityLogEntry[] | undefined =
       await getAllActivitiesoForUser({ user_id: userId });
-    expect(activityRecords?.[0]).toEqual(activityLogEntry);
-    expect(activityRecords?.[1]).toEqual(activityLogEntry);
+    console.log(JSON.stringify(activityRecords));
+    expect(activityRecords?.[0]).toEqual(activityLogEntry1);
+    expect(activityRecords?.[1]).toEqual(activityLogEntry2);
+    expect(activityRecords?.[2]).toEqual(activityLogEntry3);
+    expect(activityRecords?.[3]).toEqual(activityLogEntry4);
   });
 
   test("map an activity to a deletion request structure", () => {

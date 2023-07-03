@@ -337,7 +337,7 @@ Resources:
       PackageType: Zip
       MemorySize: 128
       ReservedConcurrentExecutions: 10
-      Runtime: nodejs16.x
+      Runtime: nodejs18.x
       Role: !GetAtt SaveRawEventsRole.Arn
       Timeout: 5
       Environment:
@@ -499,7 +499,7 @@ Resources:
       PackageType: Zip
       MemorySize: 128
       ReservedConcurrentExecutions: 10
-      Runtime: nodejs16.x
+      Runtime: nodejs18.x
       Role: !GetAtt QueryUserServicesRole.Arn
       Timeout: 5
       Environment:
@@ -668,7 +668,7 @@ Resources:
       PackageType: Zip
       MemorySize: 128
       ReservedConcurrentExecutions: 10
-      Runtime: nodejs16.x
+      Runtime: nodejs18.x
       Role: !GetAtt FormatUserServicesRole.Arn
       Timeout: 5
       Environment:
@@ -814,7 +814,7 @@ Resources:
       PackageType: Zip
       MemorySize: 128
       ReservedConcurrentExecutions: 10
-      Runtime: nodejs16.x
+      Runtime: nodejs18.x
       Role: !GetAtt WriteServiceRecordRole.Arn
       Timeout: 5
       Environment:
@@ -1030,7 +1030,7 @@ Resources:
       PackageType: Zip
       MemorySize: 128
       ReservedConcurrentExecutions: 10
-      Runtime: nodejs16.x
+      Runtime: nodejs18.x
       Role: !GetAtt DeleteUserServicesRole.Arn
       Timeout: 5
       Environment:

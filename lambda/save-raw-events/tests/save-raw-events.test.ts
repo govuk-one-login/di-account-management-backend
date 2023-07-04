@@ -42,7 +42,7 @@ describe("writeRawTxmaEvent", () => {
         id: UUID,
         timestamp: TIMESTAMP,
         event: makeTxmaEvent(),
-        remove_at: 9444506,
+        remove_at: 2878106,
       },
     });
   });
@@ -248,7 +248,7 @@ describe("handler", () => {
         id: UUID,
         timestamp: TIMESTAMP,
         event: makeTxmaEvent(),
-        remove_at: 9444506,
+        remove_at: 2878106,
       },
     });
   });

@@ -32,7 +32,7 @@ export const getEventId = (): string => {
 export const getTTLDate = (): number => {
   const SECONDS_IN_AN_DAY = 60 * 60 * 24;
   const secondsSinceEpoch = Math.round(Date.now() / 1000);
-  const expirationTime = secondsSinceEpoch + 90 * SECONDS_IN_AN_DAY;
+  const expirationTime = secondsSinceEpoch + 14 * SECONDS_IN_AN_DAY;
   return expirationTime;
 };
 

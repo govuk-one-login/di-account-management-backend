@@ -38,7 +38,7 @@ const activityFromTxmaEvent = (txmaEvent: TxmaEvent): Activity => ({
 
 export const validateUser = (user: UserData): void => {
   if (!user.user_id || !user.session_id) {
-    throw new Error(`Could not validate User ${JSON.stringify(user)}`);
+    throw new Error(`Could not validate User`);
   }
 };
 
@@ -51,9 +51,7 @@ export const validateTxmaEventBody = (txmaEvent: TxmaEvent): void => {
   ) {
     validateUser(txmaEvent.user);
   } else {
-    throw new Error(
-      `Could not validate UserServices ${JSON.stringify(txmaEvent)}`
-    );
+    throw new Error(`Could not validate UserServices`);
   }
 };
 
@@ -61,9 +59,7 @@ export const validateUserActivityLog = (
   userActivityLog: UserActivityLog
 ): void => {
   if (!userActivityLog.txmaEvent) {
-    throw new Error(
-      `Could not validate UserActivityLog ${JSON.stringify(userActivityLog)}`
-    );
+    throw new Error(`Could not validate UserActivityLog`);
   } else {
     validateTxmaEventBody(userActivityLog.txmaEvent);
   }

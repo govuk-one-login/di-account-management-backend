@@ -47,7 +47,7 @@ export const queryActivityLog = async (
 
 export const validateUser = (user: UserData): void => {
   if (!user.user_id || !user.session_id) {
-    throw new Error(`Could not validate User ${JSON.stringify(user)}`);
+    throw new Error(`Could not validate User`);
   }
 };
 
@@ -60,9 +60,7 @@ export const validateTxmaEventBody = (txmaEvent: TxmaEvent): void => {
   ) {
     validateUser(txmaEvent.user);
   } else {
-    throw new Error(
-      `Could not validate UserServices ${JSON.stringify(txmaEvent)}`
-    );
+    throw new Error(`Could not validate UserServices`);
   }
 };
 

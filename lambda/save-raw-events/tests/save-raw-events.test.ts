@@ -53,9 +53,7 @@ describe("validateUser", () => {
     const inValidUser = JSON.parse(JSON.stringify({}));
     expect(() => {
       validateUser(inValidUser);
-    }).toThrowError(
-      new Error(`Could not find User ${JSON.stringify(inValidUser)}`)
-    );
+    }).toThrowError(new Error(`Could not validate User`));
   });
 
   test("throws error when user_id key is missing", () => {
@@ -67,9 +65,7 @@ describe("validateUser", () => {
     );
     expect(() => {
       validateUser(inValidUser);
-    }).toThrowError(
-      new Error(`Could not find User ${JSON.stringify(inValidUser)}`)
-    );
+    }).toThrowError(new Error(`Could not validate User`));
   });
 
   test("throws error when session_id key is missing", () => {
@@ -81,9 +77,7 @@ describe("validateUser", () => {
     );
     expect(() => {
       validateUser(inValidUser);
-    }).toThrowError(
-      new Error(`Could not find User ${JSON.stringify(inValidUser)}`)
-    );
+    }).toThrowError(new Error(`Could not validate User`));
   });
 
   test("throws error when session_id value is null", () => {
@@ -95,9 +89,7 @@ describe("validateUser", () => {
     );
     expect(() => {
       validateUser(inValidUser);
-    }).toThrowError(
-      new Error(`Could not find User ${JSON.stringify(inValidUser)}`)
-    );
+    }).toThrowError(new Error(`Could not validate User`));
   });
 });
 
@@ -114,9 +106,7 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrowError(
-      new Error(`Could not validate UserServices ${JSON.stringify(txmaEvent)}`)
-    );
+    }).toThrowError(new Error(`Could not validate UserServices`));
   });
 
   test("throws error when client_id value is null", () => {
@@ -127,9 +117,7 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrowError(
-      new Error(`Could not validate UserServices ${JSON.stringify(txmaEvent)}`)
-    );
+    }).toThrowError(new Error(`Could not validate UserServices`));
   });
 
   test("throws error when timestamp key is missing", () => {
@@ -140,9 +128,7 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrowError(
-      new Error(`Could not validate UserServices ${JSON.stringify(txmaEvent)}`)
-    );
+    }).toThrowError(new Error(`Could not validate UserServices`));
   });
 
   test("throws error when timestamp value is null", () => {
@@ -153,9 +139,7 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrowError(
-      new Error(`Could not validate UserServices ${JSON.stringify(txmaEvent)}`)
-    );
+    }).toThrowError(new Error(`Could not validate UserServices`));
   });
 
   test("throws error when event_name key is missing", () => {
@@ -166,9 +150,7 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrowError(
-      new Error(`Could not validate UserServices ${JSON.stringify(txmaEvent)}`)
-    );
+    }).toThrowError(new Error(`Could not validate UserServices`));
   });
 
   test("throws error when event name value is null", () => {
@@ -179,9 +161,7 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrowError(
-      new Error(`Could not validate UserServices ${JSON.stringify(txmaEvent)}`)
-    );
+    }).toThrowError(new Error(`Could not validate UserServices`));
   });
 
   test("throws error when user key is missing", () => {
@@ -192,9 +172,7 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrowError(
-      new Error(`Could not validate UserServices ${JSON.stringify(txmaEvent)}`)
-    );
+    }).toThrowError(new Error(`Could not validate UserServices`));
   });
 
   test("throws error when user_id key is missing", () => {
@@ -205,9 +183,7 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrowError(
-      new Error(`Could not find User ${JSON.stringify(txmaEvent.user)}`)
-    );
+    }).toThrowError(new Error(`Could not validate User`));
   });
 
   test("throws error when user_id value is null", () => {
@@ -218,9 +194,7 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrowError(
-      new Error(`Could not find User ${JSON.stringify(txmaEvent.user)}`)
-    );
+    }).toThrowError(new Error(`Could not validate User`));
   });
 });
 

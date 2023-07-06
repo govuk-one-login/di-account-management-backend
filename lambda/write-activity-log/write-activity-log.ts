@@ -38,11 +38,7 @@ export const validateActivityLogEntry = (
       activityLogEntry.activities.every(validateActivity)
     )
   ) {
-    throw new Error(
-      `Could not validate activity log entry ${JSON.stringify(
-        activityLogEntry
-      )}`
-    );
+    throw new Error(`Could not validate activity log entry`);
   }
 };
 

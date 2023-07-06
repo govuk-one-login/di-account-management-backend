@@ -38,7 +38,7 @@ const validateUserServices = (services: Service[]): void => {
 
 const validateUser = (user: UserData): void => {
   if (user.user_id === undefined) {
-    throw new Error(`Could not find User ${JSON.stringify(user)}`);
+    throw new Error(`Could not validate User`);
   }
 };
 
@@ -51,7 +51,7 @@ const validateTxmaEvent = (txmaEvent: TxmaEvent): void => {
   ) {
     validateUser(txmaEvent.user);
   } else {
-    throw new Error(`Could not validate txmaEvent ${txmaEvent}`);
+    throw new Error(`Could not validate txmaEvent`);
   }
 };
 

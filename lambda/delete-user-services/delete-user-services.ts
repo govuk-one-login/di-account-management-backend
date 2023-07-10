@@ -56,12 +56,15 @@ export const handler = async (event: SNSEvent): Promise<void> => {
         validateUserData(userData);
         await deleteUserData(userData);
       } catch (err) {
-        console.error(err);
         const message: SendMessageRequest = {
           QueueUrl: DLQ_URL,
           MessageBody: record.Sns.Message,
         };
-        await sqsClient.send(new SendMessageCommand(message));
+        const result = await sqsClient.send(new SendMessageCommand(message));
+        console.error(
+          `[Message sent to DLQ] with message id = ${result.MessageId}`,
+          err
+        );
       }
     })
   );

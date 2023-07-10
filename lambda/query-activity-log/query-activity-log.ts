@@ -117,8 +117,11 @@ export const handler = async (event: DynamoDBStreamEvent): Promise<void> => {
           );
         }
       } catch (err) {
-        console.error(err);
-        await sendSqsMessage(JSON.stringify(record), DLQ_URL);
+        const messageId = await sendSqsMessage(JSON.stringify(record), DLQ_URL);
+        console.error(
+          `[Message sent to DLQ] with message id = ${messageId}`,
+          err
+        );
       }
     })
   );

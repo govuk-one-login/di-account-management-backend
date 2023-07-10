@@ -110,8 +110,11 @@ export const handler = async (event: SQSEvent): Promise<void> => {
         );
         console.log(`[Message sent to QUEUE] with message id = ${messageId}`);
       } catch (err) {
-        console.error(err);
-        await sendSqsMessage(record.body, DLQ_URL);
+        const messageId = await sendSqsMessage(record.body, DLQ_URL);
+        console.error(
+          `[Message sent to DLQ] with message id = ${messageId}`,
+          err
+        );
       }
     })
   );

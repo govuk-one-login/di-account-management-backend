@@ -237,6 +237,7 @@ describe("handler error handling", () => {
     process.env.TABLE_NAME = "TABLE_NAME";
     process.env.DLQ_URL = "DLQ_URL";
     consoleErrorMock = jest.spyOn(global.console, "error").mockImplementation();
+    sqsMock.on(SendMessageCommand).resolves({ MessageId: "MessageId" });
     dynamoMock.rejectsOnce("mock error");
   });
 

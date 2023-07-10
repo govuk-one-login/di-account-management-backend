@@ -126,13 +126,15 @@ export const handler = async (event: SNSEvent): Promise<void> => {
           await batchDeleteActivityLog(activityRecords);
         }
       } catch (err) {
-        console.error(err);
         const message: SendMessageRequest = {
           QueueUrl: DLQ_URL,
           MessageBody: record.Sns.Message,
         };
-        console.log("sending message to SQS %s", JSON.stringify(message));
-        await sqsClient.send(new SendMessageCommand(message));
+        const result = await sqsClient.send(new SendMessageCommand(message));
+        console.error(
+          `[Message sent to DLQ] with message id = ${result.MessageId}`,
+          err
+        );
       }
     })
   );

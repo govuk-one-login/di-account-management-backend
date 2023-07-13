@@ -53,6 +53,8 @@ describe("handler", () => {
     let consoleErrorMock: jest.SpyInstance;
 
     beforeEach(() => {
+      sqsMock.reset();
+      sqsMock.on(SendMessageCommand).resolves({ MessageId: "MessageId" });
       consoleErrorMock = jest
         .spyOn(global.console, "error")
         .mockImplementation();

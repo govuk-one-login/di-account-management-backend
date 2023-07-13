@@ -38,7 +38,7 @@ export const getTTLDate = (): number => {
 
 export const validateUser = (user: UserData): void => {
   if (!user.user_id || !user.session_id) {
-    throw new Error(`Could not find User ${JSON.stringify(user)}`);
+    throw new Error(`Could not validate User`);
   }
 };
 
@@ -51,9 +51,7 @@ export const validateTxmaEventBody = (txmaEvent: TxmaEvent): void => {
   ) {
     validateUser(txmaEvent.user);
   } else {
-    throw new Error(
-      `Could not validate UserServices ${JSON.stringify(txmaEvent)}`
-    );
+    throw new Error(`Could not validate UserServices`);
   }
 };
 
@@ -84,12 +82,15 @@ export const handler = async (event: SQSEvent): Promise<void> => {
         validateTxmaEventBody(txmaEvent);
         await writeRawTxmaEvent(txmaEvent);
       } catch (err) {
-        console.error(err);
         const message: SendMessageRequest = {
           QueueUrl: DLQ_URL,
           MessageBody: record.body,
         };
-        await sqsClient.send(new SendMessageCommand(message));
+        const result = await sqsClient.send(new SendMessageCommand(message));
+        console.error(
+          `[Message sent to DLQ] with message id = ${result.MessageId}`,
+          err
+        );
       }
     })
   );

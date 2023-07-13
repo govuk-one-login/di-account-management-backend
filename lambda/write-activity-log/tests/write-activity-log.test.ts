@@ -37,49 +37,25 @@ describe("ValidateActivityLogEntries", () => {
   test("throws error when activities array is absent", () => {
     expect(() => {
       validateActivityLogEntry(ACTIVITY_LOG_ENTRY_NO_ACTIVITY_ARRAY);
-    }).toThrowError(
-      new Error(
-        `Could not validate activity log entry ${JSON.stringify(
-          ACTIVITY_LOG_ENTRY_NO_ACTIVITY_ARRAY
-        )}`
-      )
-    );
+    }).toThrowError(new Error(`Could not validate activity log entry`));
   });
 
   test("throws an error when user_id is missing", () => {
     expect(() => {
       validateActivityLogEntry(ACTIVITY_LOG_ENTRY_NO_USER_ID);
-    }).toThrowError(
-      new Error(
-        `Could not validate activity log entry ${JSON.stringify(
-          ACTIVITY_LOG_ENTRY_NO_USER_ID
-        )}`
-      )
-    );
+    }).toThrowError(new Error(`Could not validate activity log entry`));
   });
 
   test("throws an error when timestamp is missing", () => {
     expect(() => {
       validateActivityLogEntry(ACTIVITY_LOG_ENTRY_NO_TIMESTAMP);
-    }).toThrowError(
-      new Error(
-        `Could not validate activity log entry ${JSON.stringify(
-          ACTIVITY_LOG_ENTRY_NO_TIMESTAMP
-        )}`
-      )
-    );
+    }).toThrowError(new Error(`Could not validate activity log entry`));
   });
 
   test("throws an error when an activity has type missing", () => {
     expect(() => {
       validateActivityLogEntry(TEST_ACTIVITY_LOG_WITH_ACTIVITY_TYPE_UNDEFINED);
-    }).toThrowError(
-      new Error(
-        `Could not validate activity log entry ${JSON.stringify(
-          TEST_ACTIVITY_LOG_WITH_ACTIVITY_TYPE_UNDEFINED
-        )}`
-      )
-    );
+    }).toThrowError(new Error(`Could not validate activity log entry`));
   });
 });
 
@@ -128,9 +104,12 @@ describe("lambdaHandler", () => {
     let consoleErrorMock: jest.SpyInstance;
 
     beforeEach(() => {
+      sqsMock.reset();
+      sqsMock.on(SendMessageCommand).resolves({ MessageId: "MessageId" });
       consoleErrorMock = jest
         .spyOn(global.console, "error")
         .mockImplementation();
+
       dynamoMock.rejectsOnce("mock error");
     });
 

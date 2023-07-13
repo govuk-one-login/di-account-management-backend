@@ -7,6 +7,7 @@ import {
 } from "@aws-sdk/client-sqs";
 import { DynamoDBDocumentClient, GetCommand } from "@aws-sdk/lib-dynamodb";
 import { AttributeValue, DynamoDBClient } from "@aws-sdk/client-dynamodb";
+
 import {
   Service,
   TxmaEvent,
@@ -42,7 +43,7 @@ export const queryUserServices = async (userId: string): Promise<Service[]> => {
 
 export const validateUser = (user: UserData): void => {
   if (user.user_id === undefined) {
-    throw new Error(`Could not find User ${JSON.stringify(user)}`);
+    throw new Error(`Could not validate User`);
   }
 };
 
@@ -55,9 +56,7 @@ export const validateTxmaEventBody = (txmaEvent: TxmaEvent): void => {
   ) {
     validateUser(txmaEvent.user);
   } else {
-    throw new Error(
-      `Could not validate UserServices ${JSON.stringify(txmaEvent)}`
-    );
+    throw new Error(`Could not validate UserServices`);
   }
 };
 
@@ -111,8 +110,11 @@ export const handler = async (event: DynamoDBStreamEvent): Promise<void> => {
           );
         }
       } catch (err) {
-        console.error(err);
-        await sendSqsMessage(JSON.stringify(record), DLQ_URL);
+        const messageId = await sendSqsMessage(JSON.stringify(record), DLQ_URL);
+        console.error(
+          `[Message sent to DLQ] with message id = ${messageId}`,
+          err
+        );
       }
     })
   );

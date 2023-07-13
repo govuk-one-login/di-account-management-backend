@@ -83,7 +83,7 @@ describe("validateAndParseSQSRecord", () => {
     ])[0];
 
     expect(() => validateAndParseSQSRecord(invalidSQSFixture)).toThrowError(
-      `Could not validate txmaEvent ${invalidUserRecord.TxmaEvent}`
+      `Could not validate txmaEvent`
     );
   });
 
@@ -103,7 +103,7 @@ describe("validateAndParseSQSRecord", () => {
     ])[0];
 
     expect(() => validateAndParseSQSRecord(invalidSQSFixture)).toThrowError(
-      `Could not find User ${JSON.stringify({})}`
+      `Could not validate User`
     );
   });
 

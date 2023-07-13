@@ -38,7 +38,7 @@ const validateUserServices = (services: Service[]): void => {
 
 const validateUser = (user: UserData): void => {
   if (user.user_id === undefined) {
-    throw new Error(`Could not find User ${JSON.stringify(user)}`);
+    throw new Error(`Could not validate User`);
   }
 };
 
@@ -51,7 +51,7 @@ const validateTxmaEvent = (txmaEvent: TxmaEvent): void => {
   ) {
     validateUser(txmaEvent.user);
   } else {
-    throw new Error(`Could not validate txmaEvent ${txmaEvent}`);
+    throw new Error(`Could not validate txmaEvent`);
   }
 };
 
@@ -143,8 +143,11 @@ export const handler = async (event: SQSEvent): Promise<void> => {
         );
         console.log(`[Message sent to QUEUE] with message id = ${messageId}`);
       } catch (err) {
-        console.error(err);
-        await sendSqsMessage(record.body, DLQ_URL);
+        const messageId = await sendSqsMessage(record.body, DLQ_URL);
+        console.error(
+          `[Message sent to DLQ] with message id = ${messageId}`,
+          err
+        );
       }
     })
   );

@@ -93,7 +93,6 @@ describe("deleteUserData", () => {
   test("multiple requests made to DB to get all request", async () => {
     const activityRecords: ActivityLogEntry[] | undefined =
       await getAllActivitiesoForUser({ user_id: userId });
-    console.log(JSON.stringify(activityRecords));
     expect(activityRecords?.[0]).toEqual(activityLogEntry1);
     expect(activityRecords?.[1]).toEqual(activityLogEntry2);
     expect(activityRecords?.[2]).toEqual(activityLogEntry3);
@@ -170,9 +169,10 @@ describe("error handling", () => {
   let consoleErrorMock: jest.SpyInstance;
 
   beforeEach(() => {
-    consoleErrorMock = jest.spyOn(global.console, "error").mockImplementation();
-    dynamoMock.reset();
     sqsMock.reset();
+    consoleErrorMock = jest.spyOn(global.console, "error").mockImplementation();
+    sqsMock.on(SendMessageCommand).resolves({ MessageId: "MessageId" });
+    dynamoMock.reset();
     dynamoMock.rejectsOnce("mock error");
   });
 

@@ -37,7 +37,7 @@ export const validateServices = (services: Service[]): void => {
         service.last_accessed_pretty !== undefined
       )
     ) {
-      throw new Error(`Could not validate Service ${JSON.stringify(service)}`);
+      throw new Error(`Could not validate Service`);
     }
   }
 };
@@ -49,9 +49,7 @@ export const validateUserServices = (userServices: UserServices): void => {
   ) {
     validateServices(userServices.services);
   } else {
-    throw new Error(
-      `Could not validate UserServices ${JSON.stringify(userServices)}`
-    );
+    throw new Error(`Could not validate UserServices`);
   }
 };
 
@@ -78,12 +76,15 @@ export const handler = async (event: SQSEvent): Promise<void> => {
         validateUserServices(userServices);
         await writeUserServices(userServices);
       } catch (err) {
-        console.error(err);
         const message: SendMessageRequest = {
           QueueUrl: DLQ_URL,
           MessageBody: record.body,
         };
-        await sqsClient.send(new SendMessageCommand(message));
+        const result = await sqsClient.send(new SendMessageCommand(message));
+        console.error(
+          `[Message sent to DLQ] with message id = ${result.MessageId}`,
+          err
+        );
       }
     })
   );

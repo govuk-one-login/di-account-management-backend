@@ -56,7 +56,8 @@ export const validateTxmaEventBody = (txmaEvent: TxmaEvent): void => {
     txmaEvent.timestamp !== undefined &&
     txmaEvent.event_name !== undefined &&
     txmaEvent.client_id !== undefined &&
-    txmaEvent.user !== undefined
+    txmaEvent.user !== undefined &&
+    txmaEvent.event_id !== undefined
   ) {
     validateUser(txmaEvent.user);
   } else {

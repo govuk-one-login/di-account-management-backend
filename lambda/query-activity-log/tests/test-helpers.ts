@@ -6,6 +6,7 @@ export const randomEventType = "AUTH_OTHER_RANDOM_EVENT";
 export const userId = "user_id";
 export const sessionId = "session_id";
 export const clientId = "client_id";
+export const eventId = "event_id";
 export const date = new Date();
 export const tableName = "TableName";
 export const messageId = "MyMessageId";

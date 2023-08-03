@@ -17,6 +17,7 @@ export interface Activity {
   type: string;
   client_id: string;
   timestamp: number;
+  event_id: string;
 }
 
 export interface ActivityLogEntry {

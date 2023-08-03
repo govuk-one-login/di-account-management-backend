@@ -15,6 +15,7 @@ import {
   TEST_DYNAMO_STREAM_EVENT,
   TEST_TXMA_EVENT,
   clientId,
+  eventId,
   eventType,
   messageId,
   queueUrl,
@@ -33,6 +34,7 @@ const activityList: Activity[] = [
     type: "service_visited",
     client_id: clientId,
     timestamp,
+    event_id: eventId,
   },
 ];
 

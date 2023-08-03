@@ -145,50 +145,51 @@ describe("handler", () => {
       expect(dynamoMock.commandCalls(QueryCommand).length).toEqual(2);
     });
   });
-});
 
-describe("when db contains activity log records", () => {
-  beforeEach(() => {
-    dynamoMock.reset();
-    sqsMock.reset();
-    process.env.TABLE_NAME = "TABLE_NAME";
-    dynamoMock.on(QueryCommand).resolves({ Items: undefined });
+  describe("when db contains no activity log records", () => {
+    beforeEach(() => {
+      dynamoMock.reset();
+      sqsMock.reset();
+      process.env.TABLE_NAME = "TABLE_NAME";
+      dynamoMock.on(QueryCommand).resolves({ Items: [] });
+    });
+  
+    afterEach(() => {
+      jest.clearAllMocks();
+    });
+  
+    test("no delete requests", async () => {
+      await handler(TEST_SNS_EVENT_WITH_TWO_RECORDS);
+      expect(dynamoMock.commandCalls(BatchWriteItemCommand).length).toEqual(0);
+    });
+  });
+  
+  describe("error handling", () => {
+    let consoleErrorMock: jest.SpyInstance;
+  
+    beforeEach(() => {
+      sqsMock.reset();
+      consoleErrorMock = jest.spyOn(global.console, "error").mockImplementation();
+      sqsMock.on(SendMessageCommand).resolves({ MessageId: "MessageId" });
+      dynamoMock.reset();
+      dynamoMock.rejectsOnce("mock error");
+    });
+  
+    afterEach(() => {
+      consoleErrorMock.mockRestore();
+    });
+  
+    test("logs the error message", async () => {
+      await handler(TEST_SNS_EVENT_WITH_TWO_RECORDS);
+      expect(consoleErrorMock).toHaveBeenCalledTimes(2);
+    });
+  
+    test("sends the event to the dead letter queue", async () => {
+      await handler(TEST_SNS_EVENT_WITH_TWO_RECORDS);
+      expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(2);
+    });
   });
 
-  afterEach(() => {
-    jest.clearAllMocks();
-  });
-
-  test("no delete requests", async () => {
-    await handler(TEST_SNS_EVENT_WITH_TWO_RECORDS);
-    expect(dynamoMock.commandCalls(BatchWriteItemCommand).length).toEqual(0);
-  });
-});
-
-describe("error handling", () => {
-  let consoleErrorMock: jest.SpyInstance;
-
-  beforeEach(() => {
-    sqsMock.reset();
-    consoleErrorMock = jest.spyOn(global.console, "error").mockImplementation();
-    sqsMock.on(SendMessageCommand).resolves({ MessageId: "MessageId" });
-    dynamoMock.reset();
-    dynamoMock.rejectsOnce("mock error");
-  });
-
-  afterEach(() => {
-    consoleErrorMock.mockRestore();
-  });
-
-  test("logs the error message", async () => {
-    await handler(TEST_SNS_EVENT_WITH_TWO_RECORDS);
-    expect(consoleErrorMock).toHaveBeenCalledTimes(2);
-  });
-
-  test("sends the event to the dead letter queue", async () => {
-    await handler(TEST_SNS_EVENT_WITH_TWO_RECORDS);
-    expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(2);
-  });
 });
 
 describe("validateUserData", () => {

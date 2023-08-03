@@ -64,7 +64,7 @@ export const getAllActivitiesoForUser = async (
   return queryResult.length > 0 ? queryResult : undefined;
 };
 
-const arraySplitIntoBatchesOf25 = (
+const splitArrayIntoBatchesOf25 = (
   arrayToSplit: WriteRequest[]
 ): WriteRequest[][] => {
   const newArrayOfArrays: WriteRequest[][] = [];
@@ -76,18 +76,24 @@ const arraySplitIntoBatchesOf25 = (
   return newArrayOfArrays;
 };
 
+const newDeleteRequest = (
+  activityLogEntry: ActivityLogEntry
+) => ({
+  DeleteRequest: {
+    Key: {
+      user_id: { S: activityLogEntry.user_id },
+      timestamp: { N: activityLogEntry.timestamp.toString() },
+    },
+  },
+});
+
 export const batchDeletionRequestArray = (
   activityLogEntries: ActivityLogEntry[]
 ): WriteRequest[][] => {
-  return arraySplitIntoBatchesOf25(
-    activityLogEntries.map((entry) => ({
-      DeleteRequest: {
-        Key: {
-          user_id: { S: entry.user_id },
-          timestamp: { N: entry.timestamp.toString() },
-        },
-      },
-    }))
+  return splitArrayIntoBatchesOf25(
+    activityLogEntries.map((entry) => (
+      newDeleteRequest(entry)
+    ))
   );
 };
 
@@ -96,11 +102,11 @@ export const batchDeleteActivityLog = async (
 ) => {
   const batchArray = batchDeletionRequestArray(activityLogEntries);
   Promise.all(
-    batchArray.map(async (array) => {
+    batchArray.map(async (arrayOf25orFewerItems) => {
       try {
         const batchcommand = new BatchWriteItemCommand({
           RequestItems: {
-            activity_logs: array,
+            activity_logs: arrayOf25orFewerItems,
           },
         });
         await dynamoDocClient.send(batchcommand);

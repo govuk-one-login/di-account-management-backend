@@ -1,6 +1,7 @@
 import { SQSEvent, SQSRecord } from "aws-lambda";
 import { Activity, ActivityLogEntry } from "../models";
 
+export const eventId = "event_id";
 export const eventType = "TXMA_EVENT";
 export const sessionId = "123456789";
 export const userId = "qwerty";
@@ -13,6 +14,7 @@ export const activities: Activity[] = [
     client_id: clientId,
     timestamp,
     type: eventType,
+    event_id: eventId,
   },
 ];
 

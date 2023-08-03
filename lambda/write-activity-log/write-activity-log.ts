@@ -20,7 +20,8 @@ const validateActivity = (activity: Activity): boolean => {
   return (
     activity.client_id !== undefined &&
     activity.timestamp !== undefined &&
-    activity.type !== undefined
+    activity.type !== undefined &&
+    activity.event_id !== undefined
   );
 };
 

@@ -35,9 +35,10 @@ const MUTABLE_TXMA_EVENT: TxmaEvent = {
 };
 
 export const activity: Activity = {
+  type: eventType,
   client_id: clientId,
   timestamp,
-  type: eventType,
+  event_id: txmaEventId,
 };
 
 export const MUTABLE_ACTIVITY_LOG_ENTRY: ActivityLogEntry = {
@@ -45,13 +46,7 @@ export const MUTABLE_ACTIVITY_LOG_ENTRY: ActivityLogEntry = {
   session_id: sessionId,
   user_id: userId,
   timestamp,
-  activities: [
-    {
-      type: eventType,
-      client_id: clientId,
-      timestamp,
-    },
-  ],
+  activities: [activity],
   truncated,
 };
 
@@ -81,15 +76,12 @@ export const TEST_USER_ACTIVITY_SECOND_TXMA_EVENT: UserActivityLog = {
 };
 
 const twoActivities: Activity[] = [
-  {
-    client_id: clientId,
-    timestamp,
-    type: eventType,
-  },
+  activity,
   {
     client_id: clientId,
     timestamp,
     type: secondEventType,
+    event_id: txmaEventId,
   },
 ];
 export const TEST_ACTIVITY_LOG_ENTRY_WITH_TWO_ACTIVITIES: ActivityLogEntry = {

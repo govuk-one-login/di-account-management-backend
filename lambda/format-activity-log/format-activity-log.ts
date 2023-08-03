@@ -13,6 +13,13 @@ import {
   UserData,
 } from "./models";
 
+const activityFromTxmaEvent = (txmaEvent: TxmaEvent): Activity => ({
+  type: txmaEvent.event_name,
+  client_id: txmaEvent.client_id,
+  timestamp: txmaEvent.timestamp,
+  event_id: txmaEvent.event_id,
+});
+
 const createNewActivityLogEntryFromTxmaEvent = (
   txmaEvent: TxmaEvent
 ): ActivityLogEntry => ({
@@ -20,20 +27,8 @@ const createNewActivityLogEntryFromTxmaEvent = (
   session_id: txmaEvent.user.session_id,
   user_id: txmaEvent.user.user_id,
   timestamp: txmaEvent.timestamp,
-  activities: [
-    {
-      type: txmaEvent.event_name,
-      client_id: txmaEvent.client_id,
-      timestamp: txmaEvent.timestamp,
-    },
-  ],
+  activities: [activityFromTxmaEvent(txmaEvent)],
   truncated: false,
-});
-
-const activityFromTxmaEvent = (txmaEvent: TxmaEvent): Activity => ({
-  type: txmaEvent.event_name,
-  client_id: txmaEvent.client_id,
-  timestamp: txmaEvent.timestamp,
 });
 
 export const validateUser = (user: UserData): void => {
@@ -47,7 +42,8 @@ export const validateTxmaEventBody = (txmaEvent: TxmaEvent): void => {
     txmaEvent.timestamp !== undefined &&
     txmaEvent.event_name !== undefined &&
     txmaEvent.client_id !== undefined &&
-    txmaEvent.user !== undefined
+    txmaEvent.user !== undefined &&
+    txmaEvent.event_id !== undefined
   ) {
     validateUser(txmaEvent.user);
   } else {

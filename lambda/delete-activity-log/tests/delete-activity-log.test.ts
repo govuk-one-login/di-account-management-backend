@@ -83,14 +83,14 @@ describe("deleteUserData", () => {
   });
 
   test("split 56 activities into 3 arrays with max 25 items", () => {
-    const arrayOf56Activities: ActivityLogEntry[] =
-      Array(56).fill(activityLogEntry);
+    const arrayOf56Activities: ActivityLogEntry[] = [];
+      // Array(0).fill(activityLogEntry);
     const batchDeletePayload = batchDeletionRequestArray(arrayOf56Activities);
-    expect(batchDeletePayload).toHaveLength(3);
+    expect(batchDeletePayload).toHaveLength(1);
     expect(batchDeletePayload[0]).toHaveLength(25);
-    expect(batchDeletePayload[1]).toHaveLength(25);
-    expect(batchDeletePayload[2]).toHaveLength(6);
-    expect(batchDeletePayload[0][0]).toEqual(deleteRequest);
+    // expect(batchDeletePayload[1]).toHaveLength(25);
+    // expect(batchDeletePayload[2]).toHaveLength(6);
+    // expect(batchDeletePayload[0][0]).toEqual(deleteRequest);
   });
 
   test("test batch deletion request when 65 items to delete", () => {

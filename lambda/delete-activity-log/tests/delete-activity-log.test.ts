@@ -9,7 +9,7 @@ import {
 } from "./test-helpers";
 import {
   batchDeleteActivityLog,
-  batchDeletionRequestArray,
+  buildBatchDeletionRequestArray,
   getAllActivitiesoForUser,
   handler,
   validateUserData,
@@ -100,7 +100,7 @@ describe("deleteUserData", () => {
   });
 
   test("map an activity to a deletion request structure", () => {
-    const batchDeletePayload = batchDeletionRequestArray([
+    const batchDeletePayload = buildBatchDeletionRequestArray([
       activityLogEntry,
       activityLogEntry,
     ]);
@@ -110,7 +110,8 @@ describe("deleteUserData", () => {
   test("split 56 activities into 3 arrays with max 25 items", () => {
     const arrayOf56Activities: ActivityLogEntry[] =
       Array(56).fill(activityLogEntry);
-    const batchDeletePayload = batchDeletionRequestArray(arrayOf56Activities);
+    const batchDeletePayload =
+      buildBatchDeletionRequestArray(arrayOf56Activities);
     expect(batchDeletePayload).toHaveLength(3);
     expect(batchDeletePayload[0]).toHaveLength(25);
     expect(batchDeletePayload[1]).toHaveLength(25);
@@ -145,49 +146,51 @@ describe("handler", () => {
       expect(dynamoMock.commandCalls(QueryCommand).length).toEqual(2);
     });
   });
-});
 
-describe("when db contains activity log records", () => {
-  beforeEach(() => {
-    dynamoMock.reset();
-    sqsMock.reset();
-    process.env.TABLE_NAME = "TABLE_NAME";
-    dynamoMock.on(QueryCommand).resolves({ Items: undefined });
+  describe("when db contains no activity log records", () => {
+    beforeEach(() => {
+      dynamoMock.reset();
+      sqsMock.reset();
+      process.env.TABLE_NAME = "TABLE_NAME";
+      dynamoMock.on(QueryCommand).resolves({ Items: [] });
+    });
+
+    afterEach(() => {
+      jest.clearAllMocks();
+    });
+
+    test("no delete requests", async () => {
+      await handler(TEST_SNS_EVENT_WITH_TWO_RECORDS);
+      expect(dynamoMock.commandCalls(BatchWriteItemCommand).length).toEqual(0);
+    });
   });
 
-  afterEach(() => {
-    jest.clearAllMocks();
-  });
+  describe("error handling", () => {
+    let consoleErrorMock: jest.SpyInstance;
 
-  test("no delete requests", async () => {
-    await handler(TEST_SNS_EVENT_WITH_TWO_RECORDS);
-    expect(dynamoMock.commandCalls(BatchWriteItemCommand).length).toEqual(0);
-  });
-});
+    beforeEach(() => {
+      sqsMock.reset();
+      consoleErrorMock = jest
+        .spyOn(global.console, "error")
+        .mockImplementation();
+      sqsMock.on(SendMessageCommand).resolves({ MessageId: "MessageId" });
+      dynamoMock.reset();
+      dynamoMock.rejectsOnce("mock error");
+    });
 
-describe("error handling", () => {
-  let consoleErrorMock: jest.SpyInstance;
+    afterEach(() => {
+      consoleErrorMock.mockRestore();
+    });
 
-  beforeEach(() => {
-    sqsMock.reset();
-    consoleErrorMock = jest.spyOn(global.console, "error").mockImplementation();
-    sqsMock.on(SendMessageCommand).resolves({ MessageId: "MessageId" });
-    dynamoMock.reset();
-    dynamoMock.rejectsOnce("mock error");
-  });
+    test("logs the error message", async () => {
+      await handler(TEST_SNS_EVENT_WITH_TWO_RECORDS);
+      expect(consoleErrorMock).toHaveBeenCalledTimes(2);
+    });
 
-  afterEach(() => {
-    consoleErrorMock.mockRestore();
-  });
-
-  test("logs the error message", async () => {
-    await handler(TEST_SNS_EVENT_WITH_TWO_RECORDS);
-    expect(consoleErrorMock).toHaveBeenCalledTimes(2);
-  });
-
-  test("sends the event to the dead letter queue", async () => {
-    await handler(TEST_SNS_EVENT_WITH_TWO_RECORDS);
-    expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(2);
+    test("sends the event to the dead letter queue", async () => {
+      await handler(TEST_SNS_EVENT_WITH_TWO_RECORDS);
+      expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(2);
+    });
   });
 });
 

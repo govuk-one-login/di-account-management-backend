@@ -2069,6 +2069,84 @@ Resources:
         - !Ref AlarmNotificationTopic
       ActionsEnabled: true
 
+  ################################
+  # File Upload Function
+  ################################
+  ErrorPageUploadFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${Environment}-${AWS::StackName}-error-page-upload
+      Architectures: ["arm64"]
+      CodeUri: ../lambda/file-upload
+      Handler: file-upload.handler
+      KmsKeyArn: !GetAtt LambdaKMSKey.Arn
+      PackageType: Zip
+      MemorySize: 128
+      ReservedConcurrentExecutions: 10
+      Runtime: nodejs18.x
+      Role: !GetAtt ErrorPageUploadRole.Arn
+      VpcConfig:
+        SubnetIds:
+          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdA
+          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdB
+        SecurityGroupIds:
+          - Fn::ImportValue: !Sub ${VpcStackName}-AWSServicesEndpointSecurityGroupId
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        Sourcemap: true
+        EntryPoints:
+          - file-upload.ts
+
+  ErrorPageUploadRole:
+    Type: AWS::IAM::Role
+    Properties:
+      PermissionsBoundary: !If
+        - UsePermissionsBoundary
+        - !Ref PermissionsBoundary
+        - !Ref AWS::NoValue
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+        - !Ref ErrorPageUploadRolePolicy
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+
+  ErrorPageUploadRolePolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - s3:PutObject
+            Resource: !GetAtt CustomErrorPageBucket.Arn
+
+  CustomErrorPageBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "4xx-errors-${AWS::StackName}"
+      AccessControl: Private
+
+  CustomFileUploadResource:
+    Type: Custom::UploadErrorPage
+    Properties:
+     ServiceToken: !GetAtt ErrorPageUploadFunction.Arn
+     BucketName: !Ref CustomErrorPageBucket
+     ObjectKey: customError.html
+     ContentType: text/html
+     FileContent: "<html> <head><title>Error</title></head><body><h1>Sorry, there is a problem with the service</h1><p>Try again later</p></body></html>"
+
   #######################
   # Monitoring
   #######################

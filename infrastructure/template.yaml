@@ -2147,6 +2147,13 @@ Resources:
      ContentType: text/html
      FileContent: "<html> <head><title>Error</title></head><body><h1>Sorry, there is a problem with the service</h1><p>Try again later</p></body></html>"
 
+  CustomErrorPageDomainParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Description: The Domain Name for the S3 bucket
+      Name: !Sub "/${AWS::StackName}/S3/CustomErrorPage/DomainName"
+      Type: String
+      Value: !GetAtt CustomErrorPageBucket.DomainName
   #######################
   # Monitoring
   #######################

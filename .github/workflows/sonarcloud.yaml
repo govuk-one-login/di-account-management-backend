@@ -10,6 +10,7 @@ jobs:
   sonarcloud_query_user_services:
     name: query-user-services
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: ./lambda/query-user-services
@@ -37,6 +38,7 @@ jobs:
   sonarcloud_format_user_services:
     name: format-user-services
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: ./lambda/format-user-services
@@ -64,6 +66,7 @@ jobs:
   sonarcloud_write_user_services:
     name: write-user-services
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: ./lambda/write-user-services
@@ -91,6 +94,7 @@ jobs:
   sonarcloud_delete_user_services:
     name: delete-user-services
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: ./lambda/delete-user-services
@@ -119,6 +123,7 @@ jobs:
   sonarcloud_save_raw_events:
     name: save-raw-events
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: ./lambda/save-raw-events
@@ -147,6 +152,7 @@ jobs:
   sonarcloud_delete_email_subscriptions:
     name: delete-email-subscriptions
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: ./lambda/delete-email-subscriptions
@@ -175,6 +181,7 @@ jobs:
   sonarcloud_query_activity_log:
     name: query-activity-log
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: ./lambda/query-activity-log
@@ -203,6 +210,7 @@ jobs:
   sonarcloud_format_activity_log:
     name: format-activity-log
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: ./lambda/format-activity-log
@@ -231,6 +239,7 @@ jobs:
   sonarcloud_delete_activity_log:
     name: delete-activity-log
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: ./lambda/delete-activity-log
@@ -259,6 +268,7 @@ jobs:
   sonarcloud_write_activity_log:
     name: write-user-services
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: ./lambda/write-activity-log

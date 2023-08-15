@@ -3,7 +3,7 @@ name: CloudFormation Linter
 on:
   pull_request:
     paths:
-      - 'infrastructure/**'
+      - "infrastructure/**"
   workflow_call:
     inputs:
       gitRef:
@@ -15,6 +15,7 @@ jobs:
   lint_cloudformation:
     name: Lint
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@8f4b7f84864484a7bf31766abe9204da3cbe65b3 # pin@v3
@@ -22,7 +23,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@d27e3f3d7c64b4bbf8e4abfb9b63b83e846e0435 # pin@v4
         with:
-          python-version: '3.x'
+          python-version: "3.x"
 
       - name: Install cfn-lint
         run: python -m pip install cfn-lint

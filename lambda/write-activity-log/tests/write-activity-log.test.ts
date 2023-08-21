@@ -14,13 +14,15 @@ import {
   ACTIVITY_LOG_ENTRY_NO_ACTIVITY_ARRAY,
   TEST_SQS_EVENT,
   TEST_ACTIVITY_LOG_WITH_ACTIVITY_TYPE_UNDEFINED,
-  userId,
-  sessionId,
-  activities,
-  eventType,
-  isTruncated,
-  timestamp,
+  TEST_ENCRYPTED_ACTIVITY_LOG_ENTRY,
 } from "./test-helpers";
+
+jest.mock(`../encrypt-data`, () => ({
+  __esModule: true,
+  default: jest.fn(() => ({
+    return: "an-encrypted-activity-array",
+  })),
+}));
 
 const dynamoMock = mockClient(DynamoDBDocumentClient);
 const sqsMock = mockClient(SQSClient);
@@ -69,18 +71,11 @@ describe("writeActivitwriteActivityLogEntryyLog", () => {
   });
 
   test("writes to DynamoDB", async () => {
-    await writeActivityLogEntry(TEST_ACTIVITY_LOG_ENTRY);
+    await writeActivityLogEntry(TEST_ENCRYPTED_ACTIVITY_LOG_ENTRY);
     expect(dynamoMock.commandCalls(PutCommand).length).toEqual(1);
     expect(dynamoMock).toHaveReceivedCommandWith(PutCommand, {
       TableName: process.env.TABLE_NAME,
-      Item: {
-        user_id: userId,
-        timestamp,
-        session_id: sessionId,
-        activities,
-        event_type: eventType,
-        truncated: isTruncated,
-      },
+      Item: TEST_ENCRYPTED_ACTIVITY_LOG_ENTRY,
     });
   });
 });

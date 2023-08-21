@@ -10,7 +10,12 @@ import {
   SendMessageRequest,
   SQSClient,
 } from "@aws-sdk/client-sqs";
-import { Activity, ActivityLogEntry } from "./models";
+import {
+  Activity,
+  ActivityLogEntry,
+  EncryptedActivityLogEntry,
+} from "./models";
+import encryptData from "./encrypt-data";
 
 const dynamoClient = new DynamoDBClient({});
 const dynamoDocClient = DynamoDBDocumentClient.from(dynamoClient);
@@ -44,7 +49,7 @@ export const validateActivityLogEntry = (
 };
 
 export const writeActivityLogEntry = async (
-  activityLogEntry: ActivityLogEntry
+  activityLogEntry: EncryptedActivityLogEntry
 ): Promise<PutCommandOutput> => {
   const { TABLE_NAME } = process.env;
   const command = new PutCommand({
@@ -68,7 +73,19 @@ export const handler = async (event: SQSEvent): Promise<void> => {
       try {
         const activityLogEntry: ActivityLogEntry = JSON.parse(record.body);
         validateActivityLogEntry(activityLogEntry);
-        await writeActivityLogEntry(activityLogEntry);
+        const encryptedActivities: string = await encryptData(
+          JSON.stringify(activityLogEntry.activities),
+          activityLogEntry.user_id
+        );
+        const encryptedActivityLog: EncryptedActivityLogEntry = {
+          event_type: activityLogEntry.event_type,
+          session_id: activityLogEntry.session_id,
+          user_id: activityLogEntry.user_id,
+          timestamp: activityLogEntry.timestamp,
+          activities: encryptedActivities,
+          truncated: activityLogEntry.truncated,
+        };
+        await writeActivityLogEntry(encryptedActivityLog);
       } catch (err) {
         const message: SendMessageRequest = {
           QueueUrl: DLQ_URL,

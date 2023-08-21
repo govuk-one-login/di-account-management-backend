@@ -1573,6 +1573,13 @@ Resources:
         Variables:
           TABLE_NAME: !Ref ActivityLogStoreTableName
           DLQ_URL: !Ref WriteActivityLogDeadLetterQueue
+          GENERATOR_KEY_ARN: !GetAtt GeneratorKey.Arn
+          WRAPPING_KEY_ARN: !GetAtt WrapperKey.Arn
+          BACKUP_WRAPPING_KEY_ARN: "arn:aws:kms:eu-west-2:748818073862:key/a8e91d3f-9c46-4f35-bd1a-f7dbc2901f5e"  #will need replacing with a dynamic import
+          VERIFY_ACCESS_PARAM_NAME:  
+          AWS_REGION: !Sub "${AWS::Region}"
+          ACCOUNT_ID: !Sub "${AWS::AccountId}"
+          ENVIRONMENT: !Ref Environment
       VpcConfig:
         SubnetIds:
           - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdA
@@ -2296,3 +2303,197 @@ Resources:
       Name: !Sub "/${AWS::StackName}/KMS/SnsKmsKey/ID"
       Type: String
       Value: !Ref SnsKmsKey
+
+  WrapperKey:
+    Type: AWS::KMS::Key
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      Description: A key used to encrypt the data key for envelope encryption
+      EnableKeyRotation: true
+      KeyPolicy:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: "Allow IAM to manage access to the key"
+            Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action: "kms:*"
+            Resource: "*"
+      Tags:
+        - Key: Product
+          Value: GOV.UK Sign In
+        - Key: System
+          Value: Account Management Backend
+        - Key: Owner
+          Value: govuk-accounts-tech@digital.cabinet-office.gov.uk
+        - Key: Environment
+          Value: !Ref "Environment"
+        - Key: Source
+          Value: "https://github.com/alphagov/di-account-management-backend/blob/main/infrastructure/template.yaml"
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-BackupWrapperKey"
+  
+  # MetricFilters to be implemented (copy from VC store as placeholder)
+
+  # WrappingKeyLegitUseMetricFilter:
+  #   Type: AWS::Logs::MetricFilter
+  #   Properties:
+  #     FilterPattern:
+  #       Fn::Join:
+  #         - ""
+  #         - - '{$.eventSource = kms.amazonaws.com && $.requestParameters.keyId = "'
+  #           - Fn::ImportValue: !Sub "${CoreStackName}-WrappingKeyArn"
+  #           - '" && (($.eventName = Decrypt && $.userIdentity.arn = "arn:aws:sts::'
+  #           - !Sub "${AWS::AccountId}:assumed-role/${DecryptDataFunctionRole}/${DecryptDataFunction}"
+  #           - '") || ($.eventName = Encrypt && $.userIdentity.arn = "arn:aws:sts::'
+  #           - !Sub "${AWS::AccountId}:assumed-role/${EncryptDataFunctionRole}/${EncryptDataFunction}"
+  #           - '"))}'
+  #     LogGroupName: !Sub "{{resolve:ssm:/${CloudtrailStackName}/CloudTrail/Logs/Name}}"
+  #     MetricTransformations:
+  #       - MetricValue: 1
+  #         MetricNamespace: !Ref SystemTagValue
+  #         MetricName: WrappingKeyLegitUse
+  #         Unit: Count
+  #         Dimensions:
+  #           - Key: "EventName"
+  #             Value: "$.eventName"
+
+  # WrappingKeyMisuseMetricFilter:
+  #   Type: AWS::Logs::MetricFilter
+  #   Properties:
+  #     FilterPattern:
+  #       Fn::Join:
+  #         - ""
+  #         - - '{$.eventSource = kms.amazonaws.com &&$.requestParameters.keyId = "'
+  #           - Fn::ImportValue: !Sub "${CoreStackName}-WrappingKeyArn"
+  #           - '" && ((($.eventName = Decrypt && $.userIdentity.arn != "arn:aws:sts::'
+  #           - !Sub "${AWS::AccountId}:assumed-role/${DecryptDataFunctionRole}/${DecryptDataFunction}"
+  #           - '") || ($.eventName = Encrypt && $.userIdentity.arn != "arn:aws:sts::'
+  #           - !Sub "${AWS::AccountId}:assumed-role/${EncryptDataFunctionRole}/${EncryptDataFunction}"
+  #           - '")) || ($.eventName != Decrypt && $.eventName != Encrypt && $.eventName != DescribeKey && '
+  #           - '$.userAgent != "cloudformation.amazonaws.com" && $.userAgent != "config.amazonaws.com"))}'
+  #     LogGroupName: !Sub "{{resolve:ssm:/${CloudtrailStackName}/CloudTrail/Logs/Name}}"
+  #     MetricTransformations:
+  #       - MetricValue: 1
+  #         MetricNamespace: !Ref SystemTagValue
+  #         MetricName: WrappingKeyMisuse
+  #         Unit: Count
+
+  # WrappingKeyMisuseAlarm:
+  #   Type: AWS::CloudWatch::Alarm
+  #   Properties:
+  #     AlarmDescription: "CloudTrail: KMS - Wrapping Key misuse"
+  #     Namespace: !Ref SystemTagValue
+  #     MetricName: WrappingKeyMisuse
+  #     Statistic: Sum
+  #     Period: 60
+  #     EvaluationPeriods: 1
+  #     ComparisonOperator: GreaterThanThreshold
+  #     Threshold: 0
+  #     AlarmActions:
+  #       - !Sub "{{resolve:ssm:/${CloudtrailStackName}/SNS/AlertTopic/ARN}}"
+  #     TreatMissingData: notBreaching
+
+  GeneratorKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: A generator key for generating a plaintext data key
+      Enabled: true
+      EnableKeyRotation: true
+      KeyPolicy:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: 'Allow root account access'
+            Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action:
+              - "kms:*"
+            Resource: "*"
+          - Sid: 'Allow encryption by EncryptDataFunction Lambda'
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action:
+              - "kms:GenerateDataKey"
+            Resource: "*"
+            Condition:
+              ArnEquals:
+                "aws:SourceArn": !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${AWS::StackName}-EncryptDataFunction"
+      Tags:
+        - Key: Product
+          Value: GOV.UK Sign In
+        - Key: System
+          Value: Account Management Backend
+        - Key: Owner
+          Value: govuk-accounts-tech@digital.cabinet-office.gov.uk
+        - Key: Environment
+          Value: !Ref "Environment"
+        - Key: Source
+          Value: "https://github.com/alphagov/di-account-management-backend/blob/main/infrastructure/template.yaml"
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-GeneratorKey"
+
+  GeneratorKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub "alias/${AWS::StackName}-GeneratorKey"
+      TargetKeyId: !GetAtt GeneratorKey.Arn
+
+  # MetricFilters to be implemented (copy from VC store as placeholder)
+
+  # GeneratorKeyLegitUseMetricFilter:
+  #   Type: AWS::Logs::MetricFilter
+  #   Properties:
+  #     FilterPattern:
+  #       Fn::Join:
+  #         - ""
+  #         - - '{($.eventSource = kms.amazonaws.com) && ($.eventName = GenerateDataKey) && ($.requestParameters.keyId = "'
+  #           - !GetAtt GeneratorKey.Arn
+  #           - '") && ($.userIdentity.arn = "arn:aws:sts::'
+  #           - !Sub "${AWS::AccountId}:assumed-role/${EncryptDataFunctionRole}/${EncryptDataFunction}"
+  #           - '")}'
+  #     LogGroupName: !Sub "{{resolve:ssm:/${CloudtrailStackName}/CloudTrail/Logs/Name}}"
+  #     MetricTransformations:
+  #       - MetricValue: 1
+  #         MetricNamespace: !Ref SystemTagValue
+  #         MetricName: GeneratorKeyLegitUse
+  #         Unit: Count
+  #         Dimensions:
+  #           - Key: "EventName"
+  #             Value: "$.eventName"
+
+  # GeneratorKeyMisuseMetricFilter:
+  #   Type: AWS::Logs::MetricFilter
+  #   Properties:
+  #     FilterPattern:
+  #       Fn::Join:
+  #         - ""
+  #         - - '{$.eventSource = kms.amazonaws.com && $.requestParameters.keyId = "'
+  #           - !GetAtt GeneratorKey.Arn
+  #           - '" && (($.eventName = GenerateDataKey && $.userIdentity.arn != "arn:aws:sts::'
+  #           - !Sub "${AWS::AccountId}:assumed-role/${EncryptDataFunctionRole}/${EncryptDataFunction}"
+  #           - '") || ($.eventName != GenerateDataKey && $.eventName != DescribeKey && '
+  #           - '$.userAgent != "cloudformation.amazonaws.com" && $.userAgent != "config.amazonaws.com"))}'
+  #     LogGroupName: !Sub "{{resolve:ssm:/${CloudtrailStackName}/CloudTrail/Logs/Name}}"
+  #     MetricTransformations:
+  #       - MetricValue: 1
+  #         MetricNamespace: !Ref SystemTagValue
+  #         MetricName: GeneratorKeyMisuse
+  #         Unit: Count
+
+  # GeneratorKeyMisuseAlarm:
+  #   Type: AWS::CloudWatch::Alarm
+  #   Properties:
+  #     AlarmDescription: "CloudTrail: KMS - Generator Key GenerateDataKey misuse"
+  #     Namespace: !Ref SystemTagValue
+  #     MetricName: GeneratorKeyMisuse
+  #     Statistic: Sum
+  #     Period: 60
+  #     EvaluationPeriods: 1
+  #     ComparisonOperator: GreaterThanThreshold
+  #     Threshold: 0
+  #     AlarmActions:
+  #       - !Sub "{{resolve:ssm:/${CloudtrailStackName}/SNS/AlertTopic/ARN}}"
+  #     TreatMissingData: notBreaching

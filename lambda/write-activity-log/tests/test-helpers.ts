@@ -1,5 +1,9 @@
 import { SQSEvent, SQSRecord } from "aws-lambda";
-import { Activity, ActivityLogEntry } from "../models";
+import {
+  Activity,
+  ActivityLogEntry,
+  EncryptedActivityLogEntry,
+} from "../models";
 
 export const eventId = "event_id";
 export const eventType = "TXMA_EVENT";
@@ -72,4 +76,13 @@ const TEST_SQS_RECORD: SQSRecord = {
 
 export const TEST_SQS_EVENT: SQSEvent = {
   Records: [TEST_SQS_RECORD, TEST_SQS_RECORD],
+};
+
+export const TEST_ENCRYPTED_ACTIVITY_LOG_ENTRY: EncryptedActivityLogEntry = {
+  event_type: eventType,
+  session_id: sessionId,
+  user_id: userId,
+  timestamp,
+  truncated: isTruncated,
+  activities: "ASDFASDFASDF",
 };

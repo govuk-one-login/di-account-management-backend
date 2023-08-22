@@ -2,9 +2,7 @@ import { KmsKeyringNode, buildEncrypt } from "@aws-crypto/client-node";
 import { buildKmsKeyring } from "./kms-keyring-builder";
 import { getHashedAccessCheckValue } from "./get-access-check-value";
 
-const MAX_ENCRYPTED_DATA_KEY: number = Number(
-  String(process.env.MAX_ENCRYPTED_DATA_KEY)
-);
+const MAX_ENCRYPTED_DATA_KEY: number = 5;
 const { GENERATOR_KEY_ARN } = process.env;
 const { VERIFY_ACCESS_PARAM_NAME } = process.env;
 const { AWS_REGION } = process.env;

@@ -19,6 +19,7 @@
     "@babel/preset-env": "^7.19.3",
     "@babel/preset-typescript": "^7.18.6",
     "@types/jest": "^29.5.1",
+    "@types/jest-when": "^3.5.2",
     "@typescript-eslint/eslint-plugin": "^5.40.0",
     "aws-sdk-client-mock": "^2.0.0",
     "aws-sdk-client-mock-jest": "^2.0.0",
@@ -37,10 +38,13 @@
     "typescript": "^5.1.6"
   },
   "dependencies": {
+    "@aws-crypto/client-node": "^4.0.0",
     "@aws-lambda-powertools/parameters": "^1.12.1",
     "@aws-sdk/client-dynamodb": "^3.382.0",
+    "@aws-sdk/client-secrets-manager": "^3.395.0",
     "@aws-sdk/client-sqs": "^3.382.0",
     "@aws-sdk/lib-dynamodb": "^3.382.0",
-    "@types/aws-lambda": "^8.10.119"
+    "@types/aws-lambda": "^8.10.119",
+    "jest-when": "^3.6.0"
   }
 }

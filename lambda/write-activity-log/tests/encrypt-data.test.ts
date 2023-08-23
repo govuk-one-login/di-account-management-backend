@@ -4,13 +4,24 @@ import {
   SecretsManagerClient,
 } from "@aws-sdk/client-secrets-manager";
 import { buildEncrypt, MessageHeader } from "@aws-crypto/client-node";
-import { when } from "jest-when";
 import { encryptData } from "../encrypt-data";
 import { TEST_ACTIVITY_LOG_ENTRY } from "./test-helpers";
 
 const mockedSecretsManager = mockClient(SecretsManagerClient).on(
   GetSecretValueCommand
 );
+
+jest.mock("@aws-crypto/client-node", () => ({
+  __esModule: true,
+  buildEncrypt: jest.fn(() => ({
+    encrypt: jest.fn(() => {
+      return {
+        result: Buffer.from("testEncryptedDataString"),
+        messageHeader: {} as MessageHeader,
+      };
+    }),
+  })),
+}));
 
 describe("encryptData", () => {
   let encryptDataInput: any;
@@ -36,10 +47,7 @@ describe("encryptData", () => {
     mockedSecretsManager.resolves({
       SecretString: "testSecretValue",
     });
-    when(buildEncrypt().encrypt).mockResolvedValue({
-      result: Buffer.from("testEncryptedDataString"),
-      messageHeader: {} as MessageHeader,
-    });
+
     const result = await encryptData(
       encryptDataInput.activityLogData,
       encryptDataInput.userId

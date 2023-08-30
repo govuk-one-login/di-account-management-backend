@@ -18,8 +18,23 @@ import {
 } from "./test-helpers";
 
 jest.mock(`../encrypt-data`, () => ({
-  encryptData: jest.fn().mockReturnValue(`an-encrypted-activity-array`),
+  __esModule: true,
+  default: jest.fn(() => ({
+    return: "an-encrypted-activity-array",
+  })),
 }));
+
+// jest.mock("@aws-crypto/client-node", () => ({
+//   __esModule: true,
+//   buildEncrypt: jest.fn(() => ({
+//     encrypt: jest.fn(() => {
+//       return {
+//         result: Buffer.from("testEncryptedDataString"),
+//         messageHeader: {} as MessageHeader,
+//       };
+//     }),
+//   })),
+// }));
 
 const dynamoMock = mockClient(DynamoDBDocumentClient);
 const sqsMock = mockClient(SQSClient);

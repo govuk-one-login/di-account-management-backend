@@ -15,7 +15,7 @@ import {
   ActivityLogEntry,
   EncryptedActivityLogEntry,
 } from "./models";
-import { encryptData } from "./encrypt-data";
+import encryptData from "./encrypt-data";
 
 const dynamoClient = new DynamoDBClient({});
 const dynamoDocClient = DynamoDBDocumentClient.from(dynamoClient);

@@ -1,6 +1,6 @@
 import { KmsKeyringNode, buildEncrypt } from "@aws-crypto/client-node";
-import { buildKmsKeyring } from "./kms-keyring-builder";
-import { getHashedAccessCheckValue } from "./get-access-check-value";
+import buildKmsKeyring from "./kms-keyring-builder";
+import getHashedAccessCheckValue from "./get-access-check-value";
 
 const MAX_ENCRYPTED_DATA_KEY = 5;
 const ENCODING = "base64";
@@ -9,7 +9,7 @@ let kmsKeyring: KmsKeyringNode;
 const encryptClientConfig = { maxEncryptedDataKeys: MAX_ENCRYPTED_DATA_KEY };
 let encryptClient = buildEncrypt(encryptClientConfig);
 
-export const encryptData = async (
+const encryptData = async (
   dataToEncrypt: any,
   userId: string
 ): Promise<string> => {
@@ -66,3 +66,5 @@ export const encryptData = async (
 
   throw new Error(`an environment variable is not present`);
 };
+
+export default encryptData;

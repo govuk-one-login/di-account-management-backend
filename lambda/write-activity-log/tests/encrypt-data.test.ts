@@ -5,7 +5,7 @@ import {
 } from "@aws-sdk/client-secrets-manager";
 import { buildEncrypt, MessageHeader } from "@aws-crypto/client-node";
 import { when } from "jest-when";
-import { encryptData } from "../encrypt-data";
+import encryptData from "../encrypt-data";
 import { TEST_ACTIVITY_LOG_ENTRY } from "./test-helpers";
 
 const mockedSecretsManager = mockClient(SecretsManagerClient).on(

@@ -49,7 +49,7 @@ async function formWrappingKeysArray(
   return [wrappingKeyArn, backupWrappingKeyArn];
 }
 
-export const buildKmsKeyring = async (
+const buildKmsKeyring = async (
   generatorKeyId?: string,
   wrappingKeyArn?: string,
   backupWrappingKeyArn?: string
@@ -70,3 +70,5 @@ export const buildKmsKeyring = async (
 
   return new KmsKeyringNode(kmsKeyRingConfig);
 };
+
+export default buildKmsKeyring;

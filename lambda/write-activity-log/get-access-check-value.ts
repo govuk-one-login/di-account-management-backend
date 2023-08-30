@@ -12,9 +12,7 @@ const SecretValueEncoding = "hex";
  * @throws {@link TypeError}
  * Thrown when the secret value is falsy
  */
-export const getHashedAccessCheckValue = async (
-  secretId: string
-): Promise<string> => {
+const getHashedAccessCheckValue = async (secretId: string): Promise<string> => {
   let accessCheckValue: string | undefined;
   try {
     accessCheckValue = await getSecret(secretId, { maxAge: 900 });
@@ -37,3 +35,5 @@ export const getHashedAccessCheckValue = async (
     .update(accessCheckValue)
     .digest(SecretValueEncoding);
 };
+
+export default getHashedAccessCheckValue;

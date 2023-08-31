@@ -1577,7 +1577,6 @@ Resources:
           WRAPPING_KEY_ARN: !GetAtt WrapperKey.Arn
           BACKUP_WRAPPING_KEY_ARN: "arn:aws:kms:eu-west-2:748818073862:key/a8e91d3f-9c46-4f35-bd1a-f7dbc2901f5e"  #will need replacing with a dynamic import
           VERIFY_ACCESS_VALUE: !Sub "{{resolve:secretsmanager:/${AWS::StackName}/Config/Storage/VerificationSecret}}"
-          AWS_REGION: !Sub "${AWS::Region}"
           ACCOUNT_ID: !Sub "${AWS::AccountId}"
           ENVIRONMENT: !Ref Environment
       VpcConfig:

@@ -16,7 +16,7 @@ const encryptData = async (
   const { GENERATOR_KEY_ARN } = process.env;
   const { WRAPPING_KEY_ARN } = process.env;
   const { BACKUP_WRAPPING_KEY_ARN } = process.env;
-  const { VERIFY_ACCESS_PARAM_NAME } = process.env;
+  const { VERIFY_ACCESS_VALUE } = process.env;
   const { AWS_REGION } = process.env;
   const { ACCOUNT_ID } = process.env;
   const { ENVIRONMENT } = process.env;
@@ -30,16 +30,14 @@ const encryptData = async (
   const { encrypt } = encryptClient;
 
   if (
-    VERIFY_ACCESS_PARAM_NAME !== undefined &&
+    VERIFY_ACCESS_VALUE !== undefined &&
     AWS_REGION !== undefined &&
     ACCOUNT_ID !== undefined &&
     ENVIRONMENT !== undefined
   ) {
     let accessCheckValue;
     try {
-      accessCheckValue = await getHashedAccessCheckValue(
-        VERIFY_ACCESS_PARAM_NAME
-      );
+      accessCheckValue = await getHashedAccessCheckValue(VERIFY_ACCESS_VALUE);
     } catch (error) {
       console.error("Unable to obtain Access Verification value.");
       throw error;

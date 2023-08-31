@@ -34,7 +34,7 @@ describe("encryptData", () => {
 
     process.env.GENERATOR_KEY_ARN =
       "arn:aws:kms:eu-west-2:111122223333:key/bc436485-5092-42b8-92a3-0aa8b93536dc";
-    process.env.VERIFY_ACCESS_PARAM_NAME = "access-param-test-value";
+    process.env.VERIFY_ACCESS_VALUE = "access-param-test-value";
     process.env.ACCOUNT_ID = "12345";
     process.env.AWS_REGION = "GLOBAL";
     process.env.ENVIRONMENT = "dev";
@@ -69,7 +69,7 @@ describe("encryptData", () => {
           accountId: process.env.ACCOUNT_ID,
           origin: process.env.AWS_REGION,
           accessCheckValue:
-            "a393a60804eeb859d0f2d938c530b352b826583b9d648b95a8acdc6e75da85e4",
+            "02403d3cf4369e4e6a73dd7ffbe46a076e8c4667b845e4b5273dc8e0083e1c9b",
           stage: process.env.ENVIRONMENT,
           userId: "test_user_123",
         },

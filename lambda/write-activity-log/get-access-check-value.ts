@@ -12,24 +12,9 @@ const SecretValueEncoding = "hex";
  * @throws {@link TypeError}
  * Thrown when the secret value is falsy
  */
-const getHashedAccessCheckValue = async (secretId: string): Promise<string> => {
-  let accessCheckValue: string | undefined;
-  try {
-    accessCheckValue = await getSecret(secretId, { maxAge: 900 });
-  } catch (error: unknown) {
-    console.error(
-      `Invalid configuration - Failed to get Access Verification value held in SecretsManager (${secretId}).`,
-      { error }
-    );
-    throw new Error("Failed to get Access Verification value.");
-  }
-
-  if (!accessCheckValue) {
-    console.error(
-      `Invalid configuration - The Verifying Access value held in SecretsManager (${secretId}) undefined or empty.`
-    );
-    throw new TypeError(`The Verifying Access value is invalid or empty.`);
-  }
+const getHashedAccessCheckValue = async (
+  accessCheckValue: string
+): Promise<string> => {
   return crypto
     .createHash(SecretValueAlgorithm)
     .update(accessCheckValue)

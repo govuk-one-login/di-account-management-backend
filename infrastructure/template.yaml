@@ -2511,7 +2511,7 @@ Resources:
         IncludeSpace: false
         RequireEachIncludedType: true
         PasswordLength: 32
-      KmsKeyId: !GetAtt SecretsManagerEncryptionKey.Arn
+      KmsKeyId: !Sub "alias/${AccountManagementFrontendStackName}-SecretsKmsKey"
       Tags:
         - Key: Product
           Value: GOV.UK Sign In
@@ -2530,7 +2530,7 @@ Resources:
     Type: AWS::SecretsManager::ResourcePolicy
     Properties:
       BlockPublicPolicy: false
-      SecretId: !Ref StorageSecret
+      SecretId: !Ref StorageVerificationSecret
       ResourcePolicy:
         Version: "2012-10-17"
         Statement:
@@ -2538,4 +2538,4 @@ Resources:
             Principal:
               Service: lambda.amazonaws.com
             Action: secretsmanager:GetSecretValue # pragma: allowlist secret
-            Resource: !Ref StorageSecret
+            Resource: !Ref StorageVerificationSecret

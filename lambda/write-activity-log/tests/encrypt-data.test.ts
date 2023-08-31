@@ -53,7 +53,7 @@ describe("encryptData", () => {
       messageHeader: {} as MessageHeader,
     });
     const result = await encryptData(
-      encryptDataInput.activityLogData,
+      JSON.stringify(encryptDataInput.activityLogData),
       encryptDataInput.userId
     );
     expect(result).toEqual("dGVzdEVuY3J5cHRlZERhdGFTdHJpbmc=");
@@ -63,7 +63,7 @@ describe("encryptData", () => {
         generatorKeyId:
           "arn:aws:kms:eu-west-2:111122223333:key/bc436485-5092-42b8-92a3-0aa8b93536dc",
       },
-      encryptDataInput.activityLogData,
+      JSON.stringify(encryptDataInput.activityLogData),
       {
         encryptionContext: {
           accountId: process.env.ACCOUNT_ID,

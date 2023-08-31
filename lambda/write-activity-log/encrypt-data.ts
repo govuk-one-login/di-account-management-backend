@@ -10,7 +10,7 @@ const encryptClientConfig = { maxEncryptedDataKeys: MAX_ENCRYPTED_DATA_KEY };
 let encryptClient = buildEncrypt(encryptClientConfig);
 
 const encryptData = async (
-  dataToEncrypt: any,
+  dataToEncrypt: string,
   userId: string
 ): Promise<string> => {
   const { GENERATOR_KEY_ARN } = process.env;

@@ -74,7 +74,7 @@ export const handler = async (event: SQSEvent): Promise<void> => {
         const activityLogEntry: ActivityLogEntry = JSON.parse(record.body);
         validateActivityLogEntry(activityLogEntry);
         const encryptedActivities: string = await encryptData(
-          activityLogEntry.activities,
+          JSON.stringify(activityLogEntry.activities),
           activityLogEntry.user_id
         );
         const encryptedActivityLog: EncryptedActivityLogEntry = {

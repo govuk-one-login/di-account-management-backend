@@ -1576,7 +1576,7 @@ Resources:
           GENERATOR_KEY_ARN: !GetAtt GeneratorKey.Arn
           WRAPPING_KEY_ARN: !GetAtt WrapperKey.Arn
           BACKUP_WRAPPING_KEY_ARN: "arn:aws:kms:eu-west-2:748818073862:key/a8e91d3f-9c46-4f35-bd1a-f7dbc2901f5e"  #will need replacing with a dynamic import
-          VERIFY_ACCESS_PARAM_NAME:  
+          VERIFY_ACCESS_VALUE: !Sub "{{resolve:secretsmanager:/${AWS::StackName}/Config/Storage/VerificationSecret}}"
           AWS_REGION: !Sub "${AWS::Region}"
           ACCOUNT_ID: !Sub "${AWS::AccountId}"
           ENVIRONMENT: !Ref Environment
@@ -2497,3 +2497,45 @@ Resources:
   #     AlarmActions:
   #       - !Sub "{{resolve:ssm:/${CloudtrailStackName}/SNS/AlertTopic/ARN}}"
   #     TreatMissingData: notBreaching
+
+  StorageVerificationSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub "/${AWS::StackName}/Config/Storage/VerificationSecret"
+      Description: Encryption context secret value
+      GenerateSecretString:
+        ExcludeLowercase: false
+        ExcludeNumbers: false
+        ExcludePunctuation: true
+        ExcludeUppercase: false
+        IncludeSpace: false
+        RequireEachIncludedType: true
+        PasswordLength: 32
+      KmsKeyId: !GetAtt SecretsManagerEncryptionKey.Arn
+      Tags:
+        - Key: Product
+          Value: GOV.UK Sign In
+        - Key: System
+          Value: Account Management Backend
+        - Key: Owner
+          Value: govuk-accounts-tech@digital.cabinet-office.gov.uk
+        - Key: Environment
+          Value: !Ref "Environment"
+        - Key: Source
+          Value: "https://github.com/alphagov/di-account-management-backend/blob/main/infrastructure/template.yaml"
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-GeneratorKey"
+
+  StorageSecretResourcePolicy:
+    Type: AWS::SecretsManager::ResourcePolicy
+    Properties:
+      BlockPublicPolicy: false
+      SecretId: !Ref StorageSecret
+      ResourcePolicy:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: secretsmanager:GetSecretValue # pragma: allowlist secret
+            Resource: !Ref StorageSecret

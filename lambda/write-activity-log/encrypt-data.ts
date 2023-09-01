@@ -50,7 +50,9 @@ const encryptData = async (
       console.error("Unable to obtain Access Verification value.");
       throw error;
     }
-
+    console.log(
+      `encrypting string with user_id: ${userId} about to construct encryption context`
+    );
     const encryptionContext = {
       origin: AWS_REGION,
       accountId: ACCOUNT_ID,
@@ -58,7 +60,11 @@ const encryptData = async (
       userId,
       accessCheckValue,
     };
-
+    console.log(
+      `encrypting string with user_id: ${userId} constructing encryption context: ${JSON.stringify(
+        encryptionContext
+      )}`
+    );
     try {
       const { result } = await encrypt(kmsKeyring, dataToEncrypt, {
         encryptionContext,

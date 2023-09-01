@@ -10,11 +10,11 @@ const encryptClientConfig = { maxEncryptedDataKeys: MAX_ENCRYPTED_DATA_KEY };
 let encryptClient = buildEncrypt(encryptClientConfig);
 
 const encryptData = async (
-  dataToEncrypt: string,
+  toEncrypt: string,
   userId: string
 ): Promise<string> => {
   console.log(
-    `encrypting string with user_id: ${userId} and string to encrypt: ${dataToEncrypt}`
+    `encrypting string with user_id: ${userId} and string to encrypt: ${toEncrypt}`
   );
   const { GENERATOR_KEY_ARN } = process.env;
   const { WRAPPING_KEY_ARN } = process.env;
@@ -30,7 +30,11 @@ const encryptData = async (
     BACKUP_WRAPPING_KEY_ARN
   );
 
-  console.log(`encrypting string with user_id: ${userId} kms keyring built`);
+  console.log(
+    `encrypting string with user_id: ${userId} kms keyring: ${JSON.stringify(
+      kmsKeyring
+    )}`
+  );
   encryptClient ??= buildEncrypt(encryptClientConfig);
   const { encrypt } = encryptClient;
 
@@ -66,7 +70,7 @@ const encryptData = async (
       )}`
     );
     try {
-      const { result } = await encrypt(kmsKeyring, dataToEncrypt, {
+      const { result } = await encrypt(kmsKeyring, toEncrypt, {
         encryptionContext,
       });
       const response = result.toString(ENCODING);

@@ -2418,8 +2418,7 @@ Resources:
               - "kms:GenerateDataKey"
             Resource: "*"
             Condition:
-              ArnEquals:
-                "aws:SourceArn": !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${AWS::StackName}-write-activity-log"
+              ArnEquals: !GetAtt WriteActivityLogFunction.Arn
       Tags:
         - Key: Product
           Value: GOV.UK Sign In

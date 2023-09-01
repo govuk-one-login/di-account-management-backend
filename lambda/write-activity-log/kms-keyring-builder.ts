@@ -1,7 +1,7 @@
 import { KmsKeyringNode } from "@aws-crypto/client-node";
 
 interface KMSKeyRingConfig {
-  generatorKeyId?: string;
+  generatorKeyArn?: string;
   keyIds: string[];
 }
 
@@ -50,7 +50,7 @@ async function formWrappingKeysArray(
 }
 
 const buildKmsKeyring = async (
-  generatorKeyId?: string,
+  generatorKeyArn?: string,
   wrappingKeyArn?: string,
   backupWrappingKeyArn?: string
 ): Promise<KmsKeyringNode> => {
@@ -60,12 +60,12 @@ const buildKmsKeyring = async (
     };
   }
 
-  if (generatorKeyId) {
-    if (!RegexpKMSKeyArn.test(generatorKeyId)) {
+  if (generatorKeyArn) {
+    if (!RegexpKMSKeyArn.test(generatorKeyArn)) {
       console.error(`INVALID_KMS_KEY_ARN ARN for Generator key is invalid.`);
       throw new TypeError("ARN for Generator key is invalid.");
     }
-    kmsKeyRingConfig.generatorKeyId = generatorKeyId;
+    kmsKeyRingConfig.generatorKeyArn = generatorKeyArn;
   }
 
   return new KmsKeyringNode(kmsKeyRingConfig);

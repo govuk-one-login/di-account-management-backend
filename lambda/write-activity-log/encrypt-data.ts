@@ -13,6 +13,9 @@ const encryptData = async (
   dataToEncrypt: string,
   userId: string
 ): Promise<string> => {
+  console.log(
+    `encrypting string with user_id: ${userId} and string to encrypt: ${dataToEncrypt}`
+  );
   const { GENERATOR_KEY_ARN } = process.env;
   const { WRAPPING_KEY_ARN } = process.env;
   const { BACKUP_WRAPPING_KEY_ARN } = process.env;
@@ -26,6 +29,8 @@ const encryptData = async (
     WRAPPING_KEY_ARN,
     BACKUP_WRAPPING_KEY_ARN
   );
+
+  console.log(`encrypting string with user_id: ${userId} kms keyring built`);
   encryptClient ??= buildEncrypt(encryptClientConfig);
   const { encrypt } = encryptClient;
 
@@ -38,6 +43,9 @@ const encryptData = async (
     let accessCheckValue;
     try {
       accessCheckValue = await getHashedAccessCheckValue(VERIFY_ACCESS_VALUE);
+      console.log(
+        `encrypting string with user_id: ${userId} got hashed access check value: ${accessCheckValue}`
+      );
     } catch (error) {
       console.error("Unable to obtain Access Verification value.");
       throw error;
@@ -55,7 +63,11 @@ const encryptData = async (
       const { result } = await encrypt(kmsKeyring, dataToEncrypt, {
         encryptionContext,
       });
-      return result.toString(ENCODING);
+      const response = result.toString(ENCODING);
+      console.log(
+        `encrypting string with user_id: ${userId} returning encrypted string ${response}`
+      );
+      return response;
     } catch (error: unknown) {
       console.error("Failed to encrypt data.", { error });
       throw error;

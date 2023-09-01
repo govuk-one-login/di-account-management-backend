@@ -71,11 +71,21 @@ export const handler = async (event: SQSEvent): Promise<void> => {
   await Promise.all(
     event.Records.map(async (record) => {
       try {
+        console.log(`enter handler`);
         const activityLogEntry: ActivityLogEntry = JSON.parse(record.body);
+        console.log(
+          `activity log user_id: ${activityLogEntry.user_id} extracted from the SQS event`
+        );
         validateActivityLogEntry(activityLogEntry);
+        console.log(
+          `activity log user_id: ${activityLogEntry.user_id} validated`
+        );
         const encryptedActivities: string = await encryptData(
           JSON.stringify(activityLogEntry.activities),
           activityLogEntry.user_id
+        );
+        console.log(
+          `handler has got encrypted response for: ${activityLogEntry.user_id}`
         );
         const encryptedActivityLog: EncryptedActivityLogEntry = {
           event_type: activityLogEntry.event_type,
@@ -85,6 +95,9 @@ export const handler = async (event: SQSEvent): Promise<void> => {
           activities: encryptedActivities,
           truncated: activityLogEntry.truncated,
         };
+        console.log(
+          `handler will call write function for: ${activityLogEntry.user_id}`
+        );
         await writeActivityLogEntry(encryptedActivityLog);
       } catch (err) {
         const message: SendMessageRequest = {

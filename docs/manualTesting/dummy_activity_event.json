@@ -1,6 +1,6 @@
 {
   "id": {
-    "S": "test-6"
+    "S": "test-8"
   },
   "timestamp": {
     "N": "1680025702022"
@@ -35,10 +35,10 @@
             "S": "4ZXtByWAlfg5cqeP9ET56M-wY"
           },
          "session_id": {
-            "S": "session123"
+            "S": "sess8"
           },
           "user_id": {
-            "S": "user123ABC"
+            "S": "user123AB"
           }
         }
       }

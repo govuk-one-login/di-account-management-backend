@@ -24,18 +24,6 @@ jest.mock(`../encrypt-data`, () => ({
   })),
 }));
 
-// jest.mock("@aws-crypto/client-node", () => ({
-//   __esModule: true,
-//   buildEncrypt: jest.fn(() => ({
-//     encrypt: jest.fn(() => {
-//       return {
-//         result: Buffer.from("testEncryptedDataString"),
-//         messageHeader: {} as MessageHeader,
-//       };
-//     }),
-//   })),
-// }));
-
 const dynamoMock = mockClient(DynamoDBDocumentClient);
 const sqsMock = mockClient(SQSClient);
 

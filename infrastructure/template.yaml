@@ -1656,6 +1656,17 @@ Resources:
             Resource:
               - !GetAtt QueueKmsKey.Arn
               - !GetAtt DatabaseKmsKey.Arn
+          - Effect: Allow
+            Action: 
+              - "kms:GenerateDataKey"
+            Resource:
+              - !GetAtt GeneratorKey.Arn
+          - Effect: Allow
+            Action: 
+              - "kms:GenerateDataKey"
+            Resource:
+              - "arn:aws:kms:eu-west-2:748818073862:key/a8e91d3f-9c46-4f35-bd1a-f7dbc2901f5e"
+              
 
   WriteActivityLogFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -2410,15 +2421,6 @@ Resources:
             Action:
               - "kms:*"
             Resource: "*"
-          - Sid: 'Allow encryption by Write Activity Log Lambda'
-            Effect: Allow
-            Principal:
-              Service: lambda.amazonaws.com
-            Action:
-              - "kms:GenerateDataKey"
-            Resource: "*"
-            Condition:
-              ArnEquals: !GetAtt WriteActivityLogFunction.Arn
       Tags:
         - Key: Product
           Value: GOV.UK Sign In

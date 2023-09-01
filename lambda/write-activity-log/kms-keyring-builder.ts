@@ -1,7 +1,7 @@
 import { KmsKeyringNode } from "@aws-crypto/client-node";
 
 interface KMSKeyRingConfig {
-  generatorKeyArn?: string;
+  generatorKeyId?: string;
   keyIds: string[];
 }
 
@@ -65,7 +65,7 @@ const buildKmsKeyring = async (
       console.error(`INVALID_KMS_KEY_ARN ARN for Generator key is invalid.`);
       throw new TypeError("ARN for Generator key is invalid.");
     }
-    kmsKeyRingConfig.generatorKeyArn = generatorKeyArn;
+    kmsKeyRingConfig.generatorKeyId = generatorKeyArn;
   }
 
   return new KmsKeyringNode(kmsKeyRingConfig);

@@ -2399,7 +2399,7 @@ Resources:
     Properties:
       Description: A generator key for generating a plaintext data key
       Enabled: true
-      EnableKeyRotation: true
+      EnableKeyRotation: true #when the key is rotated how is data encrypted with the old key decrypted?
       KeyPolicy:
         Version: "2012-10-17"
         Statement:
@@ -2410,7 +2410,7 @@ Resources:
             Action:
               - "kms:*"
             Resource: "*"
-          - Sid: 'Allow encryption by EncryptDataFunction Lambda'
+          - Sid: 'Allow encryption by Write Activity Log Lambda'
             Effect: Allow
             Principal:
               Service: lambda.amazonaws.com
@@ -2419,7 +2419,7 @@ Resources:
             Resource: "*"
             Condition:
               ArnEquals:
-                "aws:SourceArn": !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${AWS::StackName}-EncryptDataFunction"
+                "aws:SourceArn": !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${AWS::StackName}-write-activity-log"
       Tags:
         - Key: Product
           Value: GOV.UK Sign In

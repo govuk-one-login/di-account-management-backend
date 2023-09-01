@@ -1575,7 +1575,7 @@ Resources:
           DLQ_URL: !Ref WriteActivityLogDeadLetterQueue
           GENERATOR_KEY_ARN: !GetAtt GeneratorKey.Arn
           WRAPPING_KEY_ARN: !GetAtt WrapperKey.Arn
-          BACKUP_WRAPPING_KEY_ARN: "arn:aws:kms:eu-west-2:748818073862:key/a8e91d3f-9c46-4f35-bd1a-f7dbc2901f5e"  #will need replacing with a dynamic import
+          BACKUP_WRAPPING_KEY_ARN: !GetAtt TempBackupWrapperKey.Arn
           VERIFY_ACCESS_VALUE: !Sub "{{resolve:secretsmanager:/${AWS::StackName}/Config/Storage/VerificationSecret}}"
           ACCOUNT_ID: !Sub "${AWS::AccountId}"
           ENVIRONMENT: !Ref Environment
@@ -1658,15 +1658,11 @@ Resources:
               - !GetAtt DatabaseKmsKey.Arn
           - Effect: Allow
             Action: 
-              - "kms:GenerateDataKey"
+              - kms:*
             Resource:
               - !GetAtt GeneratorKey.Arn
-          - Effect: Allow
-            Action: 
-              - "kms:GenerateDataKey"
-            Resource:
-              - "arn:aws:kms:eu-west-2:748818073862:key/a8e91d3f-9c46-4f35-bd1a-f7dbc2901f5e"
-              
+              - !GetAtt TempBackupWrapperKey.Arn
+              - !GetAtt WrapperKey.Arn
 
   WriteActivityLogFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -2344,6 +2340,48 @@ Resources:
         - Key: Name
           Value: !Sub "${AWS::StackName}-BackupWrapperKey"
   
+  WrapperKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub "alias/${AWS::StackName}-WrapperKey"
+      TargetKeyId: !GetAtt WrapperKey.Arn
+
+  TempBackupWrapperKey:
+    Type: AWS::KMS::Key
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      Description: A key used to encrypt the data key for envelope encryption
+      EnableKeyRotation: true
+      KeyPolicy:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: "Allow IAM to manage access to the key"
+            Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action: "kms:*"
+            Resource: "*"
+      Tags:
+        - Key: Product
+          Value: GOV.UK Sign In
+        - Key: System
+          Value: Account Management Backend
+        - Key: Owner
+          Value: govuk-accounts-tech@digital.cabinet-office.gov.uk
+        - Key: Environment
+          Value: !Ref "Environment"
+        - Key: Source
+          Value: "https://github.com/alphagov/di-account-management-backend/blob/main/infrastructure/template.yaml"
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-TempBackupWrapperKey"
+  
+  TempBackupWrapperKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub "alias/${AWS::StackName}-TempBackupWrapperKey"
+      TargetKeyId: !GetAtt TempBackupWrapperKey.Arn
+
   # MetricFilters to be implemented (copy from VC store as placeholder)
 
   # WrappingKeyLegitUseMetricFilter:

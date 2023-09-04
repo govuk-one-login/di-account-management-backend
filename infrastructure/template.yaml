@@ -1576,7 +1576,7 @@ Resources:
           DLQ_URL: !Ref WriteActivityLogDeadLetterQueue
           GENERATOR_KEY_ARN: !GetAtt GeneratorKey.Arn
           WRAPPING_KEY_ARN: !GetAtt WrapperKey.Arn
-          BACKUP_WRAPPING_KEY_ARN: !Sub '{{resolve:ssm:/${AWS::StackName}/${Environment}/Backup/KMS/WrappingKey/ARN}}'
+          # BACKUP_WRAPPING_KEY_ARN: !Sub '{{resolve:ssm:/${AWS::StackName}/${Environment}/Backup/KMS/WrappingKey/ARN}}'
           VERIFY_ACCESS_VALUE: !Sub "{{resolve:secretsmanager:/${AWS::StackName}/Config/Storage/VerificationSecret}}"
           ACCOUNT_ID: !Sub "${AWS::AccountId}"
           ENVIRONMENT: !Ref Environment
@@ -1663,7 +1663,7 @@ Resources:
             Resource:
               - !GetAtt GeneratorKey.Arn
               - !GetAtt WrapperKey.Arn
-              - !Sub '{{resolve:ssm:/${AWS::StackName}/${Environment}/Backup/KMS/WrappingKey/ARN}}'
+              # - !Sub '{{resolve:ssm:/${AWS::StackName}/${Environment}/Backup/KMS/WrappingKey/ARN}}'
           # - Effect: Allow
           #   Action:
           #     - ssm:getParameter

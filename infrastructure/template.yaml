@@ -1575,7 +1575,7 @@ Resources:
           DLQ_URL: !Ref WriteActivityLogDeadLetterQueue
           GENERATOR_KEY_ARN: !GetAtt GeneratorKey.Arn
           WRAPPING_KEY_ARN: !GetAtt WrapperKey.Arn
-          BACKUP_WRAPPING_KEY_ARN: !GetAtt TempBackupWrapperKey.Arn
+          BACKUP_WRAPPING_KEY_ARN: !Sub '{{resolve:ssm:/${AWS::StackName}/${Environment}/Backup/KMS/WrappingKey/ARN}}'
           VERIFY_ACCESS_VALUE: !Sub "{{resolve:secretsmanager:/${AWS::StackName}/Config/Storage/VerificationSecret}}"
           ACCOUNT_ID: !Sub "${AWS::AccountId}"
           ENVIRONMENT: !Ref Environment
@@ -1658,11 +1658,16 @@ Resources:
               - !GetAtt DatabaseKmsKey.Arn
           - Effect: Allow
             Action: 
-              - kms:*
+              - kms:* #TODO: update to limit privelages 
             Resource:
               - !GetAtt GeneratorKey.Arn
-              - !GetAtt TempBackupWrapperKey.Arn
               - !GetAtt WrapperKey.Arn
+              - !Sub '{{resolve:ssm:/${AWS::StackName}/${Environment}/Backup/KMS/WrappingKey/ARN}}'
+          # - Effect: Allow
+          #   Action:
+          #     - ssm:getParameter
+          #   Resource:
+          #     - !GetAtt BackupWrappingKeyArnSSM.Arn
 
   WriteActivityLogFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -2346,41 +2351,41 @@ Resources:
       AliasName: !Sub "alias/${AWS::StackName}-WrapperKey"
       TargetKeyId: !GetAtt WrapperKey.Arn
 
-  TempBackupWrapperKey:
-    Type: AWS::KMS::Key
-    DeletionPolicy: Retain
-    UpdateReplacePolicy: Retain
-    Properties:
-      Description: A key used to encrypt the data key for envelope encryption
-      EnableKeyRotation: true
-      KeyPolicy:
-        Version: "2012-10-17"
-        Statement:
-          - Sid: "Allow IAM to manage access to the key"
-            Effect: Allow
-            Principal:
-              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
-            Action: "kms:*"
-            Resource: "*"
-      Tags:
-        - Key: Product
-          Value: GOV.UK Sign In
-        - Key: System
-          Value: Account Management Backend
-        - Key: Owner
-          Value: govuk-accounts-tech@digital.cabinet-office.gov.uk
-        - Key: Environment
-          Value: !Ref "Environment"
-        - Key: Source
-          Value: "https://github.com/alphagov/di-account-management-backend/blob/main/infrastructure/template.yaml"
-        - Key: Name
-          Value: !Sub "${AWS::StackName}-TempBackupWrapperKey"
+  # TempBackupWrapperKey:
+  #   Type: AWS::KMS::Key
+  #   DeletionPolicy: Retain
+  #   UpdateReplacePolicy: Retain
+  #   Properties:
+  #     Description: A key used to encrypt the data key for envelope encryption
+  #     EnableKeyRotation: true
+  #     KeyPolicy:
+  #       Version: "2012-10-17"
+  #       Statement:
+  #         - Sid: "Allow IAM to manage access to the key"
+  #           Effect: Allow
+  #           Principal:
+  #             AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+  #           Action: "kms:*"
+  #           Resource: "*"
+  #     Tags:
+  #       - Key: Product
+  #         Value: GOV.UK Sign In
+  #       - Key: System
+  #         Value: Account Management Backend
+  #       - Key: Owner
+  #         Value: govuk-accounts-tech@digital.cabinet-office.gov.uk
+  #       - Key: Environment
+  #         Value: !Ref "Environment"
+  #       - Key: Source
+  #         Value: "https://github.com/alphagov/di-account-management-backend/blob/main/infrastructure/template.yaml"
+  #       - Key: Name
+  #         Value: !Sub "${AWS::StackName}-TempBackupWrapperKey"
   
-  TempBackupWrapperKeyAlias:
-    Type: AWS::KMS::Alias
-    Properties:
-      AliasName: !Sub "alias/${AWS::StackName}-TempBackupWrapperKey"
-      TargetKeyId: !GetAtt TempBackupWrapperKey.Arn
+  # TempBackupWrapperKeyAlias:
+  #   Type: AWS::KMS::Alias
+  #   Properties:
+  #     AliasName: !Sub "alias/${AWS::StackName}-TempBackupWrapperKey"
+  #     TargetKeyId: !GetAtt TempBackupWrapperKey.Arn
 
   # MetricFilters to be implemented (copy from VC store as placeholder)
 
@@ -2577,3 +2582,11 @@ Resources:
               Service: lambda.amazonaws.com
             Action: secretsmanager:GetSecretValue # pragma: allowlist secret
             Resource: !Ref StorageVerificationSecret
+
+  BackupWrappingKeyArnSSM:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Description: "The ARN of the Wrapping KMS key in the backup account manually set with the Backup Stack's WrappingKeyArn"
+      Name: !Sub "/${AWS::StackName}/${Environment}/Backup/KMS/WrappingKey/ARN"
+      Type: String
+      Value: "please-set-me"

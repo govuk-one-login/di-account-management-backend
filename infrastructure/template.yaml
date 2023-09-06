@@ -1658,10 +1658,14 @@ Resources:
               - !GetAtt QueueKmsKey.Arn
               - !GetAtt DatabaseKmsKey.Arn
           - Effect: Allow
-            Action: 
-              - kms:* #TODO: update to limit privelages 
+            Action:
+              - "kms:GenerateDataKey"
             Resource:
               - !GetAtt GeneratorKey.Arn
+          - Effect: Allow
+            Action: 
+              - kms:Encrypt
+            Resource:
               - !GetAtt WrapperKey.Arn
               - !Sub '{{resolve:ssm:/${AWS::StackName}/${Environment}/Backup/KMS/WrappingKey/ARN}}'
           # - Effect: Allow

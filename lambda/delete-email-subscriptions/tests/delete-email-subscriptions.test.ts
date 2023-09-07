@@ -61,7 +61,7 @@ describe("validateUserData", () => {
     );
     expect(() => {
       validateUserData(userData);
-    }).toThrowError(`userData is not valid : ${JSON.stringify(userData)}`);
+    }).toThrowError(`userData is not valid`);
   });
 
   test("that it does not throw an error if the SNS message is missing the non-required attribute legacy_subject_id", () => {

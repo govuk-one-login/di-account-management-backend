@@ -54,7 +54,7 @@ export const deleteEmailSubscription = async (userData: UserData) => {
 
   const response = await fetch(deleteUrl, config);
   if (!response.ok) {
-    const message = `Unable to send DELETE request to GOV.UK API for ${userData.public_subject_id}. Status code : ${response.status}`;
+    const message = `Unable to send DELETE request to GOV.UK API. Status code : ${response.status}`;
     throw new Error(message);
   }
 };

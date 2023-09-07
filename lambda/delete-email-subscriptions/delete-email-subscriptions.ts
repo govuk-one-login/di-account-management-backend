@@ -48,9 +48,6 @@ export const deleteEmailSubscription = async (userData: UserData) => {
     process.env;
   const deleteUrl = getDeleteUrl(GOV_ACCOUNTS_PUBLISHING_API_URL, userData);
   const config = getRequestConfig(GOV_ACCOUNTS_PUBLISHING_API_TOKEN);
-  console.log(
-    `Sending DELETE request to ${deleteUrl} with config ${config} to GOV.UK Subscriptions API.`
-  );
 
   const response = await fetch(deleteUrl, config);
   if (!response.ok) {

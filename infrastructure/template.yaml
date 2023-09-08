@@ -1668,11 +1668,6 @@ Resources:
             Resource:
               - !GetAtt WrapperKey.Arn
               - !Sub '{{resolve:ssm:/${AWS::StackName}/${Environment}/Backup/KMS/WrappingKey/ARN}}'
-          # - Effect: Allow
-          #   Action:
-          #     - ssm:getParameter
-          #   Resource:
-          #     - !GetAtt BackupWrappingKeyArnSSM.Arn
 
   WriteActivityLogFunctionLogGroup:
     Type: AWS::Logs::LogGroup

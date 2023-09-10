@@ -4,7 +4,43 @@ import buildKmsKeyring from "../kms-keyring-builder";
 const exampleArn =
   "arn:aws:kms:eu-west-2:111122223333:key/bc436485-5092-42b8-92a3-0aa8b93536dc";
 
-describe.only("kmsKeyringBuilder", () => {
+describe("kmsKeyringBuilder", () => {
+
+  // Test order is important as once the wrapping keys have been validated buildKmsKeyring will not do so again. 
+
+  test("throws error when wrapper key is not valid ARN", async () => {
+    await expect(async () => {
+      await buildKmsKeyring(exampleArn, "not-valid-arn", exampleArn);
+    }).rejects.toThrowError(
+      "Invalid configuration - ARN for main envelope encryption wrapping key is invalid."
+    );
+  });
+
+  test("throws error when wrapper key is not defined", async () => {
+    await expect(async () => {
+      await buildKmsKeyring(exampleArn, undefined, exampleArn);
+    }).rejects.toThrowError(
+      "Invalid configuration - ARN for main envelope encryption wrapping key is undefined."
+    );
+  });
+
+
+  test("throws error when generator key is not present", async () => {
+    await expect(async () => {
+      await buildKmsKeyring(undefined, exampleArn, exampleArn);
+    }).rejects.toThrowError(
+      "Invalid configuration - ARN for envelope encryption Generator key is undefined"
+      );
+  });
+  
+  test("throws error when generator key is not valid ARN", async () => {
+    await expect(async () => {
+      await buildKmsKeyring("not-valid-arn", exampleArn, exampleArn);
+    }).rejects.toThrowError(
+      "Invalid configuration - ARN for envelope encryption Generator key is invalid."
+    );
+  });
+  
   test("construct KmsKeyring corretly", async () => {
     const kmsKeyring: KmsKeyringNode = await buildKmsKeyring(
       exampleArn,
@@ -15,28 +51,5 @@ describe.only("kmsKeyringBuilder", () => {
     expect(kmsKeyring.generatorKeyId).toEqual(exampleArn);
     expect(kmsKeyring.keyIds[0]).toEqual(exampleArn);
   });
-
-  test("throws error when generator key is not valid ARN", async () => {
-    await expect(async () => {
-      await buildKmsKeyring("not-valid-arn", exampleArn);
-    }).rejects.toThrowError(
-      "ARN for envelope encryption Generator key is invalid."
-    );
-  });
-
-  test("throws error when wrapper key is not valid ARN", async () => {
-    await expect(async () => {
-      await buildKmsKeyring(exampleArn, "not-valid-arn", exampleArn);
-    }).rejects.toThrowError(
-      "ARN for main envelope encryption wrapping key is invalid."
-    );
-  });
-
-  test("throws error when wrapper key is not defined", async () => {
-    await expect(async () => {
-      await buildKmsKeyring(exampleArn, undefined, exampleArn);
-    }).rejects.toThrowError(
-      "ARN for main envelope encryption wrapping key is undefined."
-    );
-  });
 });
+    

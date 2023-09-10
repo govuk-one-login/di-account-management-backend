@@ -5,8 +5,10 @@ const exampleArn =
   "arn:aws:kms:eu-west-2:111122223333:key/bc436485-5092-42b8-92a3-0aa8b93536dc";
 
 describe("kmsKeyringBuilder", () => {
-
-  // Test order is important as once the wrapping keys have been validated buildKmsKeyring will not do so again. 
+  /* 
+  Test order is important as once the wrapping keys have been validated 
+  buildKmsKeyring will not do so again.
+  */
 
   test("throws error when wrapper key is not valid ARN", async () => {
     await expect(async () => {
@@ -24,15 +26,14 @@ describe("kmsKeyringBuilder", () => {
     );
   });
 
-
   test("throws error when generator key is not present", async () => {
     await expect(async () => {
       await buildKmsKeyring(undefined, exampleArn, exampleArn);
     }).rejects.toThrowError(
       "Invalid configuration - ARN for envelope encryption Generator key is undefined"
-      );
+    );
   });
-  
+
   test("throws error when generator key is not valid ARN", async () => {
     await expect(async () => {
       await buildKmsKeyring("not-valid-arn", exampleArn, exampleArn);
@@ -40,7 +41,7 @@ describe("kmsKeyringBuilder", () => {
       "Invalid configuration - ARN for envelope encryption Generator key is invalid."
     );
   });
-  
+
   test("construct KmsKeyring corretly", async () => {
     const kmsKeyring: KmsKeyringNode = await buildKmsKeyring(
       exampleArn,
@@ -52,4 +53,3 @@ describe("kmsKeyringBuilder", () => {
     expect(kmsKeyring.keyIds[0]).toEqual(exampleArn);
   });
 });
-    

@@ -21,11 +21,6 @@ async function formWrappingKeysArray(
       "Invalid configuration - ARN for main envelope encryption wrapping key is undefined."
     );
   }
-  if (!wrappingKeyArn) {
-    throw new TypeError(
-      "Invalid configuration - ARN for main envelope encryption wrapping key is undefined."
-    );
-  }
   if (!RegexpKMSKeyArn.test(wrappingKeyArn)) {
     console.log("DEBUG wrap key not valid");
     throw new TypeError(

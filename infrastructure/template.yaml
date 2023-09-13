@@ -1549,6 +1549,7 @@ Resources:
     Type: AWS::Serverless::Function
     DependsOn:
       - WriteActivityLogFunctionLogGroup
+      - BackupWrappingKeyArnSSM
     Properties:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-write-activity-log
       Architectures: ["arm64"]
@@ -1573,6 +1574,12 @@ Resources:
         Variables:
           TABLE_NAME: !Ref ActivityLogStoreTableName
           DLQ_URL: !Ref WriteActivityLogDeadLetterQueue
+          GENERATOR_KEY_ARN: !GetAtt GeneratorKey.Arn
+          WRAPPING_KEY_ARN: !GetAtt WrapperKey.Arn
+          BACKUP_WRAPPING_KEY_ARN: !Sub '{{resolve:ssm:/${AWS::StackName}/${Environment}/Backup/KMS/WrappingKey/ARN}}'
+          VERIFY_ACCESS_VALUE: !Sub "{{resolve:secretsmanager:/${AWS::StackName}/Config/Storage/VerificationSecret}}"
+          ACCOUNT_ID: !Sub "${AWS::AccountId}"
+          ENVIRONMENT: !Ref Environment
       VpcConfig:
         SubnetIds:
           - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdA
@@ -1650,6 +1657,17 @@ Resources:
             Resource:
               - !GetAtt QueueKmsKey.Arn
               - !GetAtt DatabaseKmsKey.Arn
+          - Effect: Allow
+            Action:
+              - "kms:GenerateDataKey"
+            Resource:
+              - !GetAtt GeneratorKey.Arn
+          - Effect: Allow
+            Action: 
+              - kms:Encrypt
+            Resource:
+              - !GetAtt WrapperKey.Arn
+              - !Sub '{{resolve:ssm:/${AWS::StackName}/${Environment}/Backup/KMS/WrappingKey/ARN}}'
 
   WriteActivityLogFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -2296,7 +2314,121 @@ Resources:
       Name: !Sub "/${AWS::StackName}/KMS/SnsKmsKey/ID"
       Type: String
       Value: !Ref SnsKmsKey
+
+  WrapperKey:
+    Type: AWS::KMS::Key
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      Description: A key used to encrypt the data key for envelope encryption
+      EnableKeyRotation: true
+      KeyPolicy:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: "Allow IAM to manage access to the key"
+            Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action: "kms:*"
+            Resource: "*"
+      Tags:
+        - Key: Product
+          Value: GOV.UK Sign In
+        - Key: System
+          Value: Account Management Backend
+        - Key: Owner
+          Value: govuk-accounts-tech@digital.cabinet-office.gov.uk
+        - Key: Environment
+          Value: !Ref "Environment"
+        - Key: Source
+          Value: "https://github.com/alphagov/di-account-management-backend/blob/main/infrastructure/template.yaml"
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-BackupWrapperKey"
   
+  WrapperKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub "alias/${AWS::StackName}-WrapperKey"
+      TargetKeyId: !GetAtt WrapperKey.Arn
+
+  GeneratorKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: A generator key for generating a plaintext data key
+      Enabled: true
+      EnableKeyRotation: true
+      KeyPolicy:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: 'Allow root account access'
+            Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action:
+              - "kms:*"
+            Resource: "*"
+      Tags:
+        - Key: Product
+          Value: GOV.UK Sign In
+        - Key: System
+          Value: Account Management Backend
+        - Key: Owner
+          Value: govuk-accounts-tech@digital.cabinet-office.gov.uk
+        - Key: Environment
+          Value: !Ref "Environment"
+        - Key: Source
+          Value: "https://github.com/alphagov/di-account-management-backend/blob/main/infrastructure/template.yaml"
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-GeneratorKey"
+
+  GeneratorKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub "alias/${AWS::StackName}-GeneratorKey"
+      TargetKeyId: !GetAtt GeneratorKey.Arn
+
+  StorageVerificationSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub "/${AWS::StackName}/Config/Storage/VerificationSecret"
+      Description: Encryption context secret value
+      GenerateSecretString:
+        ExcludeLowercase: false
+        ExcludeNumbers: false
+        ExcludePunctuation: true
+        ExcludeUppercase: false
+        IncludeSpace: false
+        RequireEachIncludedType: true
+        PasswordLength: 32
+      KmsKeyId: !Sub "alias/${AccountManagementFrontendStackName}-SecretsKmsKey"
+      Tags:
+        - Key: Product
+          Value: GOV.UK Sign In
+        - Key: System
+          Value: Account Management Backend
+        - Key: Owner
+          Value: govuk-accounts-tech@digital.cabinet-office.gov.uk
+        - Key: Environment
+          Value: !Ref "Environment"
+        - Key: Source
+          Value: "https://github.com/alphagov/di-account-management-backend/blob/main/infrastructure/template.yaml"
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-GeneratorKey"
+
+  StorageSecretResourcePolicy:
+    Type: AWS::SecretsManager::ResourcePolicy
+    Properties:
+      BlockPublicPolicy: false
+      SecretId: !Ref StorageVerificationSecret
+      ResourcePolicy:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: secretsmanager:GetSecretValue # pragma: allowlist secret
+            Resource: !Ref StorageVerificationSecret
+
   BackupWrappingKeyArnSSM:
     Type: AWS::SSM::Parameter
     Properties:

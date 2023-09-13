@@ -1,0 +1,50 @@
+{
+  "id": {
+    "S": "test-12"
+  },
+  "timestamp": {
+    "N": "1680025702022"
+  },
+  "event": {
+    "M": {
+      "timestamp": {
+        "N": "1680025701"
+      },
+      "client_id": {
+        "S": "lite"
+      },
+      "event_id": {
+        "S": "8994ba43-c7c5-480e-24-cb305cf43f55"
+      },
+      "event_name": {
+        "S": "AUTH_AUTH_CODE_ISSUED"
+      },
+      "timestamp_formatted": {
+        "S": "2023-03-28T17:48:21.000Z"
+      },
+      "txma": {
+        "M": {
+          "config_version": {
+            "S": "1.0.1"
+          }
+        }
+      },
+      "user": {
+        "M": {
+          "govuk_signin_journey_id": {
+            "S": "4ZXtByWAlfg5cqeP9ET56M-wY"
+          },
+          "session_id": {
+            "S": "sess12"
+          },
+          "user_id": {
+            "S": "user123AB"
+          }
+        }
+      }
+    }
+  },
+  "remove_at": {
+    "N": "1687801702"
+  }
+}

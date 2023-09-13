@@ -34,7 +34,7 @@
           "govuk_signin_journey_id": {
             "S": "4ZXtByWAlfg5cqeP9ET56M-wY"
           },
-         "session_id": {
+          "session_id": {
             "S": "sess12"
           },
           "user_id": {

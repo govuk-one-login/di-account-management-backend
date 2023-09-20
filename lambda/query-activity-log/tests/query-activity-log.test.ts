@@ -3,7 +3,7 @@ import { mockClient } from "aws-sdk-client-mock";
 import { SendMessageCommand, SQSClient } from "@aws-sdk/client-sqs";
 import { DynamoDBDocumentClient, QueryCommand } from "@aws-sdk/lib-dynamodb";
 
-import * as decryptData from "../decrypt-data";
+import { decryptData } from "../decrypt-data";
 
 import {
   decryptActivityLog,
@@ -32,8 +32,9 @@ const dynamoMock = mockClient(DynamoDBDocumentClient);
 const sqsMock = mockClient(SQSClient);
 
 jest.mock("../decrypt-data", () => ({
-  __esModule: true,
-  default: jest.fn(),
+  decryptData: jest.fn(async (data: string) => {
+    return data;
+  }),
 }));
 
 const userActivityLog: UserActivityLog = {
@@ -176,49 +177,37 @@ describe("sendSqsMessage", () => {
 });
 
 describe("decryptActivityLog", () => {
-  let decryptMock: jest.SpyInstance;
-  beforeEach(() => {
-    decryptMock = jest
-      .spyOn(decryptData, "default")
-      .mockImplementation(async (data: string) => {
-        return data;
-      });
-  });
-
   afterEach(() => {
     jest.clearAllMocks();
   });
 
   test("returns undefined if no input provided", async () => {
-    const result = await decryptActivityLog();
+    const result = await decryptActivityLog(userId);
     expect(result).toBe(undefined);
   });
 
   test("returns an ActivityLogEntry", async () => {
-    const result = await decryptActivityLog(TEST_ENCRYPTED_ACTIVITY_LOG_ENTRY);
+    const result = await decryptActivityLog(
+      userId,
+      TEST_ENCRYPTED_ACTIVITY_LOG_ENTRY
+    );
     expect(result).toStrictEqual(TEST_ACTIVITY_LOG_ENTRY);
   });
 
   test("calls decryptData", async () => {
-    await decryptActivityLog(TEST_ENCRYPTED_ACTIVITY_LOG_ENTRY);
-    expect(decryptMock).toHaveBeenCalledTimes(1);
+    await decryptActivityLog(userId, TEST_ENCRYPTED_ACTIVITY_LOG_ENTRY);
+    expect(decryptData).toHaveBeenCalledTimes(1);
   });
 });
 
 describe("handler", () => {
   let consoleLogMock: jest.SpyInstance;
-  let decryptMock: jest.SpyInstance;
   beforeEach(() => {
     dynamoMock.reset();
     sqsMock.reset();
     process.env.TABLE_NAME = tableName;
     process.env.OUTPUT_QUEUE_URL = queueUrl;
     consoleLogMock = jest.spyOn(global.console, "log").mockImplementation();
-    decryptMock = jest
-      .spyOn(decryptData, "default")
-      .mockImplementation(async (data: string) => {
-        return data;
-      });
     sqsMock.on(SendMessageCommand).resolves({ MessageId: messageId });
     dynamoMock
       .on(QueryCommand)
@@ -241,7 +230,7 @@ describe("handler", () => {
       QueueUrl: queueUrl,
       MessageBody: JSON.stringify(userActivityLog),
     });
-    expect(decryptMock).toHaveBeenCalledTimes(2);
+    expect(decryptData).toHaveBeenCalledTimes(2);
   });
 
   test("Ignores any Non allowed event", async () => {

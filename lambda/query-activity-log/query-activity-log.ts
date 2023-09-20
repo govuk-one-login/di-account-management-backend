@@ -16,7 +16,7 @@ import {
   UserData,
   allowedTxmaEvents,
 } from "./models";
-import decryptData from "./decrypt-data";
+import { decryptData } from "./decrypt-data";
 
 const marshallOptions = {
   convertClassInstanceToMap: true,
@@ -51,13 +51,14 @@ export const queryActivityLog = async (
 };
 
 export const decryptActivityLog = async (
+  userId: string,
   encrypted?: EncryptedActivityLogEntry | undefined
 ): Promise<ActivityLogEntry | undefined> => {
   if (!encrypted) {
     return undefined;
   }
   const activities = JSON.parse(
-    await decryptData(encrypted.activities)
+    await decryptData(encrypted.activities, userId)
   ) as Activity[];
 
   return {
@@ -132,7 +133,10 @@ export const handler = async (event: DynamoDBStreamEvent): Promise<void> => {
             txmaEvent.user.user_id,
             txmaEvent.user.session_id
           );
-          const decrypted = await decryptActivityLog(results);
+          const decrypted = await decryptActivityLog(
+            txmaEvent.user.user_id,
+            results
+          );
           const messageId = await sendSqsMessage(
             JSON.stringify(createUserActivityLog(txmaEvent, decrypted)),
             OUTPUT_QUEUE_URL

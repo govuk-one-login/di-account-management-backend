@@ -29,6 +29,15 @@ export interface ActivityLogEntry {
   truncated: boolean;
 }
 
+export interface EncryptedActivityLogEntry {
+  event_type: string;
+  session_id: string;
+  user_id: string;
+  timestamp: number;
+  activities: string;
+  truncated: boolean;
+}
+
 export interface UserActivityLog {
   txmaEvent: TxmaEvent;
   activityLogEntry: ActivityLogEntry | undefined;

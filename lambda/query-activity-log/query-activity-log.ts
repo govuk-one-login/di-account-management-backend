@@ -8,12 +8,15 @@ import {
   SQSClient,
 } from "@aws-sdk/client-sqs";
 import {
+  Activity,
   ActivityLogEntry,
+  EncryptedActivityLogEntry,
   TxmaEvent,
   UserActivityLog,
   UserData,
   allowedTxmaEvents,
 } from "./models";
+import decryptData from "./decrypt-data";
 
 const marshallOptions = {
   convertClassInstanceToMap: true,
@@ -29,7 +32,7 @@ const dynamoDocClient = DynamoDBDocumentClient.from(
 export const queryActivityLog = async (
   userId: string,
   sessionId: string
-): Promise<ActivityLogEntry | undefined> => {
+): Promise<EncryptedActivityLogEntry | undefined> => {
   const { TABLE_NAME } = process.env;
   const command = {
     TableName: TABLE_NAME,
@@ -42,7 +45,29 @@ export const queryActivityLog = async (
   };
 
   const response = await dynamoDocClient.send(new QueryCommand(command));
-  return response.Items ? (response.Items[0] as ActivityLogEntry) : undefined;
+  return response.Items
+    ? (response.Items[0] as EncryptedActivityLogEntry)
+    : undefined;
+};
+
+export const decryptActivityLog = async (
+  encrypted?: EncryptedActivityLogEntry | undefined
+): Promise<ActivityLogEntry | undefined> => {
+  if (!encrypted) {
+    return undefined;
+  }
+  const activities = JSON.parse(
+    await decryptData(encrypted.activities)
+  ) as Activity[];
+
+  return {
+    session_id: encrypted.session_id,
+    user_id: encrypted.user_id,
+    event_type: encrypted.event_type,
+    timestamp: encrypted.timestamp,
+    activities,
+    truncated: encrypted.truncated,
+  };
 };
 
 export const validateUser = (user: UserData): void => {
@@ -107,8 +132,9 @@ export const handler = async (event: DynamoDBStreamEvent): Promise<void> => {
             txmaEvent.user.user_id,
             txmaEvent.user.session_id
           );
+          const decrypted = await decryptActivityLog(results);
           const messageId = await sendSqsMessage(
-            JSON.stringify(createUserActivityLog(txmaEvent, results)),
+            JSON.stringify(createUserActivityLog(txmaEvent, decrypted)),
             OUTPUT_QUEUE_URL
           );
           console.log(`[Message sent to QUEUE] with message id = ${messageId}`);

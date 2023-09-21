@@ -3,7 +3,10 @@ import { mockClient } from "aws-sdk-client-mock";
 import { SendMessageCommand, SQSClient } from "@aws-sdk/client-sqs";
 import { DynamoDBDocumentClient, QueryCommand } from "@aws-sdk/lib-dynamodb";
 
+import { decryptData } from "../decrypt-data";
+
 import {
+  decryptActivityLog,
   handler,
   queryActivityLog,
   sendSqsMessage,
@@ -12,44 +15,31 @@ import {
 } from "../query-activity-log";
 import {
   MUCKY_DYNAMODB_STREAM_EVENT,
+  TEST_ACTIVITY_LOG_ENTRY,
   TEST_DYNAMO_STREAM_EVENT,
+  TEST_ENCRYPTED_ACTIVITY_LOG_ENTRY,
   TEST_TXMA_EVENT,
-  clientId,
-  eventId,
-  eventType,
   messageId,
   queueUrl,
   randomEventType,
   sessionId,
   tableName,
-  timestamp,
   userId,
 } from "./test-helpers";
-import { Activity, ActivityLogEntry, UserActivityLog } from "../models";
+import { UserActivityLog } from "../models";
 
 const dynamoMock = mockClient(DynamoDBDocumentClient);
 const sqsMock = mockClient(SQSClient);
-const activityList: Activity[] = [
-  {
-    type: "service_visited",
-    client_id: clientId,
-    timestamp,
-    event_id: eventId,
-  },
-];
 
-const activityLogEntry: ActivityLogEntry = {
-  event_type: eventType,
-  session_id: sessionId,
-  user_id: userId,
-  timestamp,
-  activities: activityList,
-  truncated: true,
-};
+jest.mock("../decrypt-data", () => ({
+  decryptData: jest.fn(async (data: string) => {
+    return data;
+  }),
+}));
 
 const userActivityLog: UserActivityLog = {
   txmaEvent: TEST_TXMA_EVENT,
-  activityLogEntry,
+  activityLogEntry: TEST_ACTIVITY_LOG_ENTRY,
 };
 
 describe("queryActivityLog", () => {
@@ -58,7 +48,9 @@ describe("queryActivityLog", () => {
 
     process.env.TABLE_NAME = tableName;
 
-    dynamoMock.on(QueryCommand).resolves({ Items: [activityLogEntry] });
+    dynamoMock
+      .on(QueryCommand)
+      .resolves({ Items: [TEST_ENCRYPTED_ACTIVITY_LOG_ENTRY] });
   });
 
   afterEach(() => {
@@ -66,20 +58,14 @@ describe("queryActivityLog", () => {
   });
 
   test("Query activity log", async () => {
-    const activityLog: ActivityLogEntry | undefined = await queryActivityLog(
-      userId,
-      sessionId
-    );
+    const activityLog = await queryActivityLog(userId, sessionId);
     expect(activityLog).not.toBeNull();
-    expect(activityLog).toEqual(activityLogEntry);
+    expect(activityLog).toEqual(TEST_ENCRYPTED_ACTIVITY_LOG_ENTRY);
   });
 
   test("Query user service empty list", async () => {
     dynamoMock.on(QueryCommand).resolves({ Items: undefined });
-    const activityLog: ActivityLogEntry | undefined = await queryActivityLog(
-      userId,
-      sessionId
-    );
+    const activityLog = await queryActivityLog(userId, sessionId);
     expect(activityLog).not.toBeNull();
     expect(activityLog).toBeUndefined();
   });
@@ -190,6 +176,30 @@ describe("sendSqsMessage", () => {
   });
 });
 
+describe("decryptActivityLog", () => {
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  test("returns undefined if no input provided", async () => {
+    const result = await decryptActivityLog(userId);
+    expect(result).toBe(undefined);
+  });
+
+  test("returns an ActivityLogEntry", async () => {
+    const result = await decryptActivityLog(
+      userId,
+      TEST_ENCRYPTED_ACTIVITY_LOG_ENTRY
+    );
+    expect(result).toStrictEqual(TEST_ACTIVITY_LOG_ENTRY);
+  });
+
+  test("calls decryptData", async () => {
+    await decryptActivityLog(userId, TEST_ENCRYPTED_ACTIVITY_LOG_ENTRY);
+    expect(decryptData).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe("handler", () => {
   let consoleLogMock: jest.SpyInstance;
   beforeEach(() => {
@@ -199,7 +209,9 @@ describe("handler", () => {
     process.env.OUTPUT_QUEUE_URL = queueUrl;
     consoleLogMock = jest.spyOn(global.console, "log").mockImplementation();
     sqsMock.on(SendMessageCommand).resolves({ MessageId: messageId });
-    dynamoMock.on(QueryCommand).resolves({ Items: [activityLogEntry] });
+    dynamoMock
+      .on(QueryCommand)
+      .resolves({ Items: [TEST_ENCRYPTED_ACTIVITY_LOG_ENTRY] });
   });
 
   afterEach(() => {
@@ -218,6 +230,7 @@ describe("handler", () => {
       QueueUrl: queueUrl,
       MessageBody: JSON.stringify(userActivityLog),
     });
+    expect(decryptData).toHaveBeenCalledTimes(2);
   });
 
   test("Ignores any Non allowed event", async () => {

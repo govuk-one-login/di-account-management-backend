@@ -1401,6 +1401,8 @@ Resources:
           TABLE_NAME: !Ref ActivityLogStoreTableName
           DLQ_URL: !Ref QueryActivityLogDeadLetterQueue
           OUTPUT_QUEUE_URL: !Ref ActivityLogToFormatQueue
+          ENVIRONMENT: !Ref Environment
+          ACCOUNT_ID: !Sub "${AWS::AccountId}"
       VpcConfig:
         SubnetIds:
           - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdA
@@ -1576,7 +1578,7 @@ Resources:
           DLQ_URL: !Ref WriteActivityLogDeadLetterQueue
           GENERATOR_KEY_ARN: !GetAtt GeneratorKey.Arn
           WRAPPING_KEY_ARN: !GetAtt WrapperKey.Arn
-          BACKUP_WRAPPING_KEY_ARN: !Sub '{{resolve:ssm:/${AWS::StackName}/${Environment}/Backup/KMS/WrappingKey/ARN}}'
+          BACKUP_WRAPPING_KEY_ARN: !Sub "{{resolve:ssm:/${AWS::StackName}/${Environment}/Backup/KMS/WrappingKey/ARN}}"
           VERIFY_ACCESS_VALUE: !Sub "{{resolve:secretsmanager:/${AWS::StackName}/Config/Storage/VerificationSecret}}"
           ACCOUNT_ID: !Sub "${AWS::AccountId}"
           ENVIRONMENT: !Ref Environment
@@ -1663,11 +1665,11 @@ Resources:
             Resource:
               - !GetAtt GeneratorKey.Arn
           - Effect: Allow
-            Action: 
+            Action:
               - kms:Encrypt
             Resource:
               - !GetAtt WrapperKey.Arn
-              - !Sub '{{resolve:ssm:/${AWS::StackName}/${Environment}/Backup/KMS/WrappingKey/ARN}}'
+              - !Sub "{{resolve:ssm:/${AWS::StackName}/${Environment}/Backup/KMS/WrappingKey/ARN}}"
 
   WriteActivityLogFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -2344,7 +2346,7 @@ Resources:
           Value: "https://github.com/alphagov/di-account-management-backend/blob/main/infrastructure/template.yaml"
         - Key: Name
           Value: !Sub "${AWS::StackName}-BackupWrapperKey"
-  
+
   WrapperKeyAlias:
     Type: AWS::KMS::Alias
     Properties:
@@ -2360,7 +2362,7 @@ Resources:
       KeyPolicy:
         Version: "2012-10-17"
         Statement:
-          - Sid: 'Allow root account access'
+          - Sid: "Allow root account access"
             Effect: Allow
             Principal:
               AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"

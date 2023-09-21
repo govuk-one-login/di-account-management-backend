@@ -1,5 +1,11 @@
 import { DynamoDBStreamEvent, DynamoDBRecord } from "aws-lambda";
-import { TxmaEvent, UserData } from "../models";
+import {
+  Activity,
+  ActivityLogEntry,
+  EncryptedActivityLogEntry,
+  TxmaEvent,
+  UserData,
+} from "../models";
 
 export const eventType = "AUTH_AUTH_CODE_ISSUED";
 export const randomEventType = "AUTH_OTHER_RANDOM_EVENT";
@@ -12,6 +18,13 @@ export const tableName = "TableName";
 export const messageId = "MyMessageId";
 export const queueUrl = "http://my_queue_url";
 export const timestamp = date.valueOf();
+export const activity: Activity = {
+  type: eventType,
+  client_id: clientId,
+  timestamp,
+  event_id: eventId,
+};
+export const activities = [activity, activity];
 const timestampFormatted = date.toISOString();
 const govukSigninJourneyId = "abc123";
 
@@ -88,4 +101,22 @@ export const TEST_TXMA_EVENT: TxmaEvent = generateTestTxmaEvent();
 
 export const MUCKY_DYNAMODB_STREAM_EVENT: DynamoDBStreamEvent = {
   Records: [generateDynamoSteamRecord(randomEventType)],
+};
+
+export const TEST_ACTIVITY_LOG_ENTRY: ActivityLogEntry = {
+  session_id: sessionId,
+  user_id: userId,
+  event_type: eventType,
+  timestamp,
+  activities,
+  truncated: false,
+};
+
+export const TEST_ENCRYPTED_ACTIVITY_LOG_ENTRY: EncryptedActivityLogEntry = {
+  session_id: sessionId,
+  user_id: userId,
+  event_type: eventType,
+  timestamp,
+  activities: JSON.stringify(activities),
+  truncated: false,
 };

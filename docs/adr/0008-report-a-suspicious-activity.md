@@ -22,6 +22,29 @@ We need to make sure that:
 We will set up an SNS topic for a report of a suspicious event, triggered upon a user submitting the contact form.
 
 The event will contain user details along with the events details .
+The format of the SNS payload should be
+
+```
+{
+    user_id: USER_ID,
+    email_address: USER_EMAIL
+    persistent_session_id: CURRENT_SESSION_ID,
+    reported_event: {
+        event_type: EVENT_TYPE,
+        session_id: SESSION_ID,
+        user_id: USER_ID,
+        timestamp: TIMESTAMP,
+        activities: {
+            type: EVENT_TYPE,
+            client_id: CLIENT_ID
+            timestamp: TIMESTAMP,
+            event_id: EVENT_ID
+        }
+
+    }
+
+}
+```
 
 We will subscribe 2 lambda to the topic for now.
 

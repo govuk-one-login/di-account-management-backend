@@ -23,6 +23,7 @@ jest.mock("@aws-crypto/client-node", () => ({
 const awsRegion = "aws-region";
 const accountId = "account-id";
 const environment = "environment";
+const accessCheckValue = "accessCheckValue";
 const userId = "user-id";
 
 describe("generateExpectedContext", () => {
@@ -30,12 +31,14 @@ describe("generateExpectedContext", () => {
     process.env.AWS_REGION = awsRegion;
     process.env.ACCOUNT_ID = accountId;
     process.env.ENVIRONMENT = environment;
+    process.env.VERIFY_ACCESS_VALUE = accessCheckValue;
   });
 
   afterEach(() => {
     delete process.env.AWS_REGION;
     delete process.env.ACCOUNT_ID;
     delete process.env.ENVIRONMENT;
+    delete process.env.VERIFY_ACCESS_VALUE;
   });
 
   test("throws an error when AWS_REGION is not defined", () => {
@@ -59,6 +62,13 @@ describe("generateExpectedContext", () => {
     }).toThrowError("Missing ENVIRONMENT environment variable");
   });
 
+  test("throws an error when VERIFY_ACCESS_VALUE is not defined", () => {
+    delete process.env.VERIFY_ACCESS_VALUE;
+    expect(() => {
+      generateExpectedContext(userId);
+    }).toThrowError("Missing VERIFY_ACCESS_VALUE environment variable");
+  });
+
   test("returns the encryption context", () => {
     const result = generateExpectedContext(userId);
     const expected = {
@@ -66,6 +76,7 @@ describe("generateExpectedContext", () => {
       accountId,
       stage: environment,
       userId,
+      accessCheckValue,
     };
     expect(result).toEqual(expected);
   });
@@ -77,6 +88,7 @@ describe("validateEncryptionContext", () => {
     process.env.AWS_REGION = awsRegion;
     process.env.ACCOUNT_ID = accountId;
     process.env.ENVIRONMENT = environment;
+    process.env.VERIFY_ACCESS_VALUE = accessCheckValue;
     expected = generateExpectedContext(userId);
   });
 
@@ -92,6 +104,7 @@ describe("validateEncryptionContext", () => {
       accountId,
       stage: environment,
       userId: "wrong-user-id",
+      accessCheckValue,
     };
     expect(() => {
       validateEncryptionContext(wrongContext, expected);
@@ -124,6 +137,7 @@ describe("decryptActivities", () => {
           accountId,
           stage: environment,
           userId,
+          accessCheckValue,
         } as EncryptionContext,
       } as MessageHeader,
     });
@@ -131,6 +145,7 @@ describe("decryptActivities", () => {
     process.env.AWS_REGION = awsRegion;
     process.env.ACCOUNT_ID = accountId;
     process.env.ENVIRONMENT = environment;
+    process.env.VERIFY_ACCESS_VALUE = accessCheckValue;
 
     await decryptData(encryptedActivities, userId);
     expect(buildDecrypt).toHaveBeenCalled();

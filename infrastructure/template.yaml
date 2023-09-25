@@ -1403,6 +1403,8 @@ Resources:
           OUTPUT_QUEUE_URL: !Ref ActivityLogToFormatQueue
           ENVIRONMENT: !Ref Environment
           ACCOUNT_ID: !Sub "${AWS::AccountId}"
+          GENERATOR_KEY_ARN: !GetAtt GeneratorKey.Arn
+          WRAPPING_KEY_ARN: !GetAtt WrapperKey.Arn
       VpcConfig:
         SubnetIds:
           - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdA

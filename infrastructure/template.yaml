@@ -2353,6 +2353,14 @@ Resources:
       AliasName: !Sub "alias/${AWS::StackName}-WrapperKey"
       TargetKeyId: !GetAtt WrapperKey.Arn
 
+  WrapperKeyIDSSMParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Description: The ID of the encryption wrapper key
+      Name: !Sub "/${AWS::StackName}/KMS/WrapperKey/ID"
+      Type: String
+      Value: !Ref WrapperKey
+
   GeneratorKey:
     Type: AWS::KMS::Key
     Properties:
@@ -2388,6 +2396,14 @@ Resources:
     Properties:
       AliasName: !Sub "alias/${AWS::StackName}-GeneratorKey"
       TargetKeyId: !GetAtt GeneratorKey.Arn
+
+  GeneratorKeyIDSSMParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Description: The ID of the encryption generator key
+      Name: !Sub "/${AWS::StackName}/KMS/GeneratorKey/ID"
+      Type: String
+      Value: !Ref GeneratorKey
 
   StorageVerificationSecret:
     Type: AWS::SecretsManager::Secret

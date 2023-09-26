@@ -1,3 +1,4 @@
 .aws-sam/
 build.toml
 .idea
+.DS_Store

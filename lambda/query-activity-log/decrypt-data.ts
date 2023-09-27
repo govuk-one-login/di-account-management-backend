@@ -14,7 +14,8 @@ const decryptClient = buildDecrypt(decryptClientConfig);
 let keyring: KmsKeyringNode;
 
 export function generateExpectedContext(userId: string): EncryptionContext {
-  const { AWS_REGION, ACCOUNT_ID, ENVIRONMENT } = process.env;
+  const { AWS_REGION, ACCOUNT_ID, ENVIRONMENT, VERIFY_ACCESS_VALUE } =
+    process.env;
   if (AWS_REGION === undefined) {
     throw new Error("Missing AWS_REGION environment variable");
   }
@@ -27,11 +28,16 @@ export function generateExpectedContext(userId: string): EncryptionContext {
     throw new Error("Missing ENVIRONMENT environment variable");
   }
 
+  if (VERIFY_ACCESS_VALUE === undefined) {
+    throw new Error("Missing VERIFY_ACCESS_VALUE environment variable");
+  }
+
   return {
     origin: AWS_REGION,
     accountId: ACCOUNT_ID,
     stage: ENVIRONMENT,
     userId,
+    accessCheckValue: VERIFY_ACCESS_VALUE,
   };
 }
 

@@ -7,6 +7,7 @@ import buildKmsKeyring from "./kms-keyring-builder";
 
 const MAX_ENCRYPTED_DATA_KEY = 5;
 const DECODING = "utf8";
+const ENCODING = "base64";
 
 const decryptClientConfig = { maxEncryptedDataKeys: MAX_ENCRYPTED_DATA_KEY };
 const decryptClient = buildDecrypt(decryptClientConfig);
@@ -56,7 +57,10 @@ export async function decryptData(
 ): Promise<string> {
   try {
     keyring ??= await buildKmsKeyring();
-    const result = await decryptClient.decrypt(keyring, data);
+    const result = await decryptClient.decrypt(
+      keyring,
+      Buffer.from(data, ENCODING)
+    );
     validateEncryptionContext(
       result.messageHeader.encryptionContext,
       generateExpectedContext(userId)

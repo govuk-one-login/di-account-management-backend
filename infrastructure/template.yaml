@@ -1403,8 +1403,6 @@ Resources:
           OUTPUT_QUEUE_URL: !Ref ActivityLogToFormatQueue
           ENVIRONMENT: !Ref Environment
           ACCOUNT_ID: !Sub "${AWS::AccountId}"
-          GENERATOR_KEY_ARN: !GetAtt GeneratorKey.Arn
-          WRAPPING_KEY_ARN: !GetAtt WrapperKey.Arn
       VpcConfig:
         SubnetIds:
           - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdA
@@ -1489,6 +1487,12 @@ Resources:
             Resource:
               - !GetAtt QueueKmsKey.Arn
               - !GetAtt DatabaseKmsKey.Arn
+          - Effect: Allow
+            Action:
+              - kms:Decrypt
+            Resource:
+              - !GetAtt WrapperKey.Arn
+              - !GetAtt GeneratorKey.Arn
 
   QueryActivityLogDeadLetterQueue:
     Type: AWS::SQS::Queue
@@ -2355,14 +2359,6 @@ Resources:
       AliasName: !Sub "alias/${AWS::StackName}-WrapperKey"
       TargetKeyId: !GetAtt WrapperKey.Arn
 
-  WrapperKeyIDSSMParameter:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Description: The ID of the encryption wrapper key
-      Name: !Sub "/${AWS::StackName}/KMS/WrapperKey/ID"
-      Type: String
-      Value: !Ref WrapperKey
-
   GeneratorKey:
     Type: AWS::KMS::Key
     Properties:
@@ -2398,14 +2394,6 @@ Resources:
     Properties:
       AliasName: !Sub "alias/${AWS::StackName}-GeneratorKey"
       TargetKeyId: !GetAtt GeneratorKey.Arn
-
-  GeneratorKeyIDSSMParameter:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Description: The ID of the encryption generator key
-      Name: !Sub "/${AWS::StackName}/KMS/GeneratorKey/ID"
-      Type: String
-      Value: !Ref GeneratorKey
 
   StorageVerificationSecret:
     Type: AWS::SecretsManager::Secret

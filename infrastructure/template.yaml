@@ -135,6 +135,18 @@ Mappings:
     production:
       AccountNumber: "499563136613"
 
+  TxmaAccounts:
+    dev:
+      AccountNumber: "248098332657"
+    build:
+      AccountNumber: "750703655225"
+    staging:
+      AccountNumber: "178023842775"
+    integration:
+      AccountNumber: "729485541398"
+    production:
+      AccountNumber: "451773080033"
+
 Resources:
   ######################################
   # Dummy events store
@@ -309,6 +321,76 @@ Resources:
       KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
+
+  ########################################
+  # Output queue for audit events to TxMA
+  ########################################
+
+  AuditOutputQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      KmsMasterKeyId: !Ref AuditEncryptionKey
+      MessageRetentionPeriod: 1209600
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt AuditDeadLetterQueue.Arn
+        maxReceiveCount: 5
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+
+  AuditOutputQueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues:
+        - !Ref AuditOutputQueue
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !FindInMap [TxmaAccounts, !Ref Environment, AccountNumber]
+            Action:
+              - sqs:ChangeMessageVisibility
+              - sqs:DeleteMessage
+              - sqs:GetQueueAttributes
+              - sqs:ReceiveMessage
+            Resource: !GetAtt AuditOutputQueue.Arn
+
+  AuditDeadLetterQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      KmsMasterKeyId: !Ref AuditEncryptionKey
+      MessageRetentionPeriod: 1209600
+      RedriveAllowPolicy:
+        redrivePermission: allowAll
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+
+  AuditEncryptionKey:
+    Type: AWS::KMS::Key
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Retain
+    Properties:
+      EnableKeyRotation: true
+      KeyPolicy:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub arn:aws:iam::${AWS::AccountId}:root
+            Action: kms:*
+            Resource:
+              - "*"
+          - Effect: Allow
+            Principal:
+              AWS: !FindInMap [TxmaAccounts, !Ref Environment, AccountNumber]
+            Action: kms:Decrypt
+            Resource:
+              - "*"
+
+  AuditEncryptionKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub "alias/${AWS::StackName}/${Environment}/AuditEncryptionKey"
+      TargetKeyId: !Ref AuditEncryptionKey
 
   ######################
   # Save Raw Events

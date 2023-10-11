@@ -914,13 +914,13 @@ Resources:
       FilterPattern: ""
       LogGroupName: !Ref WriteUserServicesFunctionLogGroup
 
-  WriteDeadLetterQueueAlarm:
+  WriteUserServicesDeadLetterQueueAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
       AlarmName:
         !Join [
           "-",
-          [!Ref AWS::StackName, !Ref Environment, WriteDeadLetterQueueAlarm],
+          [!Ref AWS::StackName, !Ref Environment, WriteUserServicesDeadLetterQueueAlarm],
         ]
       Namespace: "AWS/SQS"
       MetricName: "ApproximateNumberOfMessagesVisible"

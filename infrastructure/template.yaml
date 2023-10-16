@@ -392,6 +392,30 @@ Resources:
       AliasName: !Sub "alias/${AWS::StackName}/${Environment}/AuditEncryptionKey"
       TargetKeyId: !Ref AuditEncryptionKey
 
+  AuditQueueArnParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Description: The ARN of the audit event output queue
+      Name: !Sub "/${AWS::StackName}/SQS/AuditQueue/ARN"
+      Type: String
+      Value: !GetAtt AuditOutputQueue.Arn
+
+  AuditQueueUrlParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Description: The URL of the audit event output queue
+      Name: !Sub "/${AWS::StackName}/SQS/AuditQueue/URL"
+      Type: String
+      Value: !Ref AuditOutputQueue
+
+  AuditQueueKeyArnParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Description: The ARN of the KMS key encrypting the audit event output queue
+      Name: !Sub "/${AWS::StackName}/KMS/AuditQueueKey/ARN"
+      Type: String
+      Value: !GetAtt AuditEncryptionKey.Arn
+
   ######################
   # Save Raw Events
   ######################

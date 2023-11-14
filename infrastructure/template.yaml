@@ -68,6 +68,12 @@ Conditions:
     - !Equals [!Ref Environment, dev]
     - !Equals [!Ref Environment, build]
 
+  ExportLogsToSplunk:
+    Fn::Or:
+      - !Equals [!Ref Environment, staging]
+      - !Equals [!Ref Environment, integration]
+      - !Equals [!Ref Environment, production]
+
 Globals:
   Function:
     CodeSigningConfigArn: !If
@@ -543,7 +549,7 @@ Resources:
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   SaveRawEventsCSLSSubscription:
-    Condition: IsNotDevelopment
+    Condition: ExportLogsToSplunk
     Type: AWS::Logs::SubscriptionFilter
     Properties:
       DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
@@ -714,7 +720,7 @@ Resources:
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   QueryUserServicesCSLSSubscription:
-    Condition: IsNotDevelopment
+    Condition: ExportLogsToSplunk
     Type: AWS::Logs::SubscriptionFilter
     Properties:
       DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
@@ -860,7 +866,7 @@ Resources:
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   FormatUserServicesCSLSSubscription:
-    Condition: IsNotDevelopment
+    Condition: ExportLogsToSplunk
     Type: AWS::Logs::SubscriptionFilter
     Properties:
       DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
@@ -1013,7 +1019,7 @@ Resources:
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   WriteUserServicesCSLSSubscription:
-    Condition: IsNotDevelopment
+    Condition: ExportLogsToSplunk
     Type: AWS::Logs::SubscriptionFilter
     Properties:
       DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
@@ -1216,7 +1222,7 @@ Resources:
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   DeleteUserServicesCSLSSubscription:
-    Condition: IsNotDevelopment
+    Condition: ExportLogsToSplunk
     Type: AWS::Logs::SubscriptionFilter
     Properties:
       DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
@@ -1455,7 +1461,7 @@ Resources:
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   DeleteEmailSubscriptionsCSLSSubscription:
-    Condition: IsNotDevelopment
+    Condition: ExportLogsToSplunk
     Type: AWS::Logs::SubscriptionFilter
     Properties:
       DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
@@ -1618,7 +1624,7 @@ Resources:
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   QueryActivityLogCSLSSubscription:
-    Condition: IsNotDevelopment
+    Condition: ExportLogsToSplunk
     Type: AWS::Logs::SubscriptionFilter
     Properties:
       DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
@@ -1793,7 +1799,7 @@ Resources:
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   WriteActivityLogCSLSSubscription:
-    Condition: IsNotDevelopment
+    Condition: ExportLogsToSplunk
     Type: AWS::Logs::SubscriptionFilter
     Properties:
       DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
@@ -1936,7 +1942,7 @@ Resources:
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   FormatActivityLogCSLSSubscription:
-    Condition: IsNotDevelopment
+    Condition: ExportLogsToSplunk
     Type: AWS::Logs::SubscriptionFilter
     Properties:
       DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
@@ -2146,7 +2152,7 @@ Resources:
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   DeleteActivityLogCSLSSubscription:
-    Condition: IsNotDevelopment
+    Condition: ExportLogsToSplunk
     Type: AWS::Logs::SubscriptionFilter
     Properties:
       DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"

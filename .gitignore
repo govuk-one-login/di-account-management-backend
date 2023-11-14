@@ -2,3 +2,4 @@
 build.toml
 .idea
 .DS_Store
+.vscode/

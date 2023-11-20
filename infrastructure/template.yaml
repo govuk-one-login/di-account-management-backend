@@ -2551,10 +2551,3 @@ Resources:
             Action: secretsmanager:GetSecretValue # pragma: allowlist secret
             Resource: !Ref StorageVerificationSecret
 
-  BackupWrappingKeyArnSSM:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Description: "The ARN of the Wrapping KMS key in the backup account manually set with the Backup Stack's WrappingKeyArn"
-      Name: !Sub "/${AWS::StackName}/${Environment}/Backup/KMS/WrappingKey/ARN"
-      Type: String
-      Value: "please-set-me"

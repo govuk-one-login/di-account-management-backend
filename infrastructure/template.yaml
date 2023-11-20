@@ -1058,6 +1058,13 @@ Resources:
       KmsMasterKeyId: !Ref SnsKmsKey
       TopicName: UserAccountDeletion
 
+  ReportSuspiciousActivityTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: ReportSuspiciousActivityTopic
+      KmsMasterKeyId: !Ref SnsKmsKey
+      TopicName: ReportSuspiciousActivity
+
   UserAccountDeletionTopicPolicy:
     Condition: IsNotDevelopment
     Type: AWS::SNS::TopicPolicy

@@ -50,7 +50,23 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@8f4b7f84864484a7bf31766abe9204da3cbe65b3 # pin@v3
         with:
+          ref: ${{ inputs.gitRef }}
           fetch-depth: 0
+
+      - name: Fetch Commit SHA
+        id: gitRefSHA
+        if: ${{ github.event.inputs.choice }} == "Commit SHA"
+        run: echo GIT_REF_SHA=${{ inputs.gitRef }} >> $GITHUB_ENV
+
+      - name: Fetch Commit SHA by Branch name
+        id: gitRefBranch
+        if: ${{ github.event.inputs.choice }} == "Branch name"
+        run: echo GIT_REF_SHA=$(git log -1 ${{ inputs.gitRef }} --pretty=format:%H) >> $GITHUB_ENV
+
+      - name: Fetch Commit SHA by Tag
+        id: gitRefTag
+        if: ${{ github.event.inputs.choice }} == "Tag"
+        run: echo GIT_REF_SHA=$(git rev-list -n 1 ${{ inputs.gitRef }}) >> $GITHUB_ENV
 
       - name: Install Node.js
         uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # pin@v3

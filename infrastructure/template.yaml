@@ -1671,7 +1671,6 @@ Resources:
     Type: AWS::Serverless::Function
     DependsOn:
       - WriteActivityLogFunctionLogGroup
-      - BackupWrappingKeyArnSSM
     Properties:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-write-activity-log
       Architectures: ["arm64"]

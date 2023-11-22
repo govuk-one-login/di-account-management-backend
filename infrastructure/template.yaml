@@ -1058,13 +1058,6 @@ Resources:
       KmsMasterKeyId: !Ref SnsKmsKey
       TopicName: UserAccountDeletion
 
-  ReportSuspiciousActivityTopic:
-    Type: AWS::SNS::Topic
-    Properties:
-      DisplayName: ReportSuspiciousActivityTopic
-      KmsMasterKeyId: !Ref SnsKmsKey
-      TopicName: ReportSuspiciousActivity
-
   UserAccountDeletionTopicPolicy:
     Condition: IsNotDevelopment
     Type: AWS::SNS::TopicPolicy
@@ -2565,3 +2558,18 @@ Resources:
       Name: !Sub "/${AWS::StackName}/${Environment}/Backup/KMS/WrappingKey/ARN"
       Type: String
       Value: "please-set-me"
+
+  SuspiciousActivityTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: SuspiciousActivityTopic
+      KmsMasterKeyId: !Ref SnsKmsKey
+      TopicName: SuspiciousActivity
+
+  SuspiciousActivityTopicArnSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: SuspiciousActivityTopicARN
+      Description: ARN of the SNS topic for reporting suspicious activity
+      SecretString:
+        !Ref SuspiciousActivityTopic

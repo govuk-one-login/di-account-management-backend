@@ -22,7 +22,11 @@ jest.mock("@aws-crypto/client-node", () => ({
 }));
 
 describe("encryptData", () => {
-  let encryptDataInput: any;
+  let encryptDataInput: {
+    activityLogData: string;
+    userId: string;
+    jwt: string;
+  };
 
   beforeEach(() => {
     const activityLogEntry = JSON.stringify(TEST_ACTIVITY_LOG_ENTRY);
@@ -30,6 +34,7 @@ describe("encryptData", () => {
     encryptDataInput = {
       activityLogData: activityLogEntry,
       userId: "test_user_123",
+      jwt: "",
     };
 
     process.env.GENERATOR_KEY_ARN =

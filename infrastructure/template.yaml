@@ -2567,3 +2567,18 @@ Resources:
       FilterPattern: ""
       LogGroupName: !Sub "${AWS::StackName}-FlowLogLogGroup"
 
+
+  SuspiciousActivityTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: SuspiciousActivityTopic
+      KmsMasterKeyId: !Ref SnsKmsKey
+      TopicName: SuspiciousActivity
+
+  SuspiciousActivityArnParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Description: The ARN of the Suspicious Activity Topic
+      Name: !Sub "/${AWS::StackName}/SNS/SuspiciousActivity/ARN"
+      Type: String
+      Value: !Ref SuspiciousActivityTopic

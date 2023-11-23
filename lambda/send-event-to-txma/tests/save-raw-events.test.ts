@@ -7,9 +7,9 @@ import { mockClient } from "aws-sdk-client-mock";
 import {
   handler,
   validateTxmaEventBody,
-  writeRawTxmaEvent,
+  sendAuditEvent,
   validateUser,
-} from "../report-suspicious-activity";
+} from "../send-event-to-txma";
 import { TEST_SQS_EVENT, makeTxmaEvent, user } from "./test-helpers";
 
 const dynamoMock = mockClient(DynamoDBDocumentClient);
@@ -34,7 +34,7 @@ describe("writeRawTxmaEvent", () => {
   });
 
   test("writes raw events to DynamoDB", async () => {
-    await writeRawTxmaEvent(makeTxmaEvent());
+    await sendAuditEvent(makeTxmaEvent());
     expect(dynamoMock.commandCalls(PutCommand).length).toEqual(1);
     expect(dynamoMock).toHaveReceivedCommandWith(PutCommand, {
       TableName: process.env.TABLE_NAME,

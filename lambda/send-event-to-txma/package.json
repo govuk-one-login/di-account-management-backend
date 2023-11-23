@@ -1,7 +1,7 @@
 {
   "name": "save-raw-events",
   "version": "1.0.0",
-  "description": "A Lambda function to write events to DynamoDB without modification",
+  "description": "A Lambda function to send audit activity to TxMA ",
   "main": "save-raw-events.js",
   "scripts": {
     "test": "jest",
@@ -37,9 +37,7 @@
     "typescript": "^5.1.6"
   },
   "dependencies": {
-    "@aws-sdk/client-dynamodb": "^3.382.0",
-    "@aws-sdk/client-sqs": "^3.382.0",
-    "@aws-sdk/lib-dynamodb": "^3.382.0",
-    "@types/aws-lambda": "^8.10.119"
+    "@aws-sdk/client-sqs": "^3.454.0",
+    "@types/aws-lambda": "^8.10.129"
   }
 }

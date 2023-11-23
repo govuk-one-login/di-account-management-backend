@@ -2566,10 +2566,10 @@ Resources:
       KmsMasterKeyId: !Ref SnsKmsKey
       TopicName: SuspiciousActivity
 
-  SuspiciousActivityTopicSecret:
-    Type: AWS::SecretsManager::Secret
+  SuspiciousActivityArnParameter:
+    Type: AWS::SSM::Parameter
     Properties:
-      Name: !Sub "/${AWS::StackName}/Config/Storage/SuspiciousActivityTopicSecret"
-      Description: ARN of the SNS topic for reporting suspicious activity
-      SecretString:
-        !Ref SuspiciousActivityTopic
+      Description: The ARN of the Suspicious Activity Topic
+      Name: !Sub "/${AWS::StackName}/SNS/SuspiciousActivity/ARN"
+      Type: String
+      Value: !Ref SuspiciousActivityTopic

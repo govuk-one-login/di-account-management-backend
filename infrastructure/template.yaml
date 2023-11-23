@@ -2558,3 +2558,18 @@ Resources:
       Name: !Sub "/${AWS::StackName}/${Environment}/Backup/KMS/WrappingKey/ARN"
       Type: String
       Value: "please-set-me"
+
+  SuspiciousActivityTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: SuspiciousActivityTopic
+      KmsMasterKeyId: !Ref SnsKmsKey
+      TopicName: SuspiciousActivity
+
+  SuspiciousActivityArnParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Description: The ARN of the Suspicious Activity Topic
+      Name: !Sub "/${AWS::StackName}/SNS/SuspiciousActivity/ARN"
+      Type: String
+      Value: !Ref SuspiciousActivityTopic

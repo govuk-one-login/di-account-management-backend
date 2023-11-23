@@ -8,7 +8,7 @@ interface ValidationRules {
 
 function validateObject(
   obj: Record<string, any>,
-  rules: ValidationRules | undefined
+  rules: ValidationRules
 ): boolean {
   // eslint-disable-next-line no-restricted-syntax
   for (const key in rules) {
@@ -32,14 +32,3 @@ function validateObject(
   return true;
 }
 
-// Example usage:
-
-const user = {
-  username: "john_doe",
-  age: 25,
-  email: "john@example.com",
-  address: {
-    city: "London",
-    postalCode: "SW1A 1AA",
-  },
-};

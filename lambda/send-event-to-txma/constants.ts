@@ -9,4 +9,8 @@ export enum EventNamesEnum {
 export enum ValidationRulesKeyEnum {
   HOME_REPORT_SUSPICIOUS_ACTIVITY = "HOME_REPORT_SUSPICIOUS_ACTIVITY",
   TXMA_EVENT = "TXMA_EVENT",
+  reported_event = "reported_event",
+  activities = "activities",
+  user = "user",
+  extensions = "extensions",
 }

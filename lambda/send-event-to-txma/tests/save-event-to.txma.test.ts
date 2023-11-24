@@ -15,22 +15,18 @@ import { TEST_SQS_EVENT, makeTxmaEvent, user } from "./test-helpers";
 const dynamoMock = mockClient(DynamoDBDocumentClient);
 const sqsMock = mockClient(SQSClient);
 
-const TABLE_NAME = "TABLE_NAME";
-const UUID = "12345";
+const EVENT_NAME = "HOME_REPORT_SUSPICIOUS_ACTIVITY";
 const TIMESTAMP = 1668505677;
 
-describe("writeRawTxmaEvent", () => {
+describe("sendAuditEventToTxMA", () => {
   beforeEach(() => {
-    dynamoMock.reset();
-    process.env.TABLE_NAME = TABLE_NAME;
+    process.env.EVENT_NAME = EVENT_NAME;
     jest.spyOn(Date, "now").mockImplementation(() => TIMESTAMP);
-    jest.spyOn(crypto, "randomUUID").mockImplementation(() => UUID);
   });
 
   afterEach(() => {
     jest.clearAllMocks();
     jest.spyOn(Date, "now").mockRestore();
-    jest.spyOn(crypto, "randomUUID").mockRestore();
   });
 
   test("writes raw events to DynamoDB", async () => {

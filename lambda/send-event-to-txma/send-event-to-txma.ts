@@ -79,36 +79,36 @@ export const handler = async (event: SQSEvent): Promise<void> => {
   await Promise.all(
     event.Records.map(async (record: { body: string }) => {
       try {
-        if (!EVENT_NAME) {
-          throw new Error(
-            "Event name must be provided as an environment variable"
-          );
-        }
-        const receivedEvent: any = JSON.parse(record.body);
-
-        if (
-          validateObject(receivedEvent, VALIDATOR_RULES_MAP.get(EVENT_NAME))
-        ) {
-          const txmaEvent = transformToTxMAEvent(receivedEvent, EVENT_NAME);
+        if (EVENT_NAME) {
+          const receivedEvent: any = JSON.parse(record.body);
           if (
-            validateObject(
-              txmaEvent,
-              VALIDATOR_RULES_MAP.get(ValidationRulesKeyEnum.TXMA_EVENT)
-            )
+            validateObject(receivedEvent, VALIDATOR_RULES_MAP.get(EVENT_NAME))
           ) {
-            await sendAuditEvent(txmaEvent);
+            const txmaEvent = transformToTxMAEvent(receivedEvent, EVENT_NAME);
+            if (
+              validateObject(
+                txmaEvent,
+                VALIDATOR_RULES_MAP.get(ValidationRulesKeyEnum.TXMA_EVENT)
+              )
+            ) {
+              await sendAuditEvent(txmaEvent);
+            } else {
+              throw new Error(
+                `Generated TXMA Event: ${JSON.stringify(
+                  txmaEvent
+                )} failed validation.`
+              );
+            }
           } else {
             throw new Error(
-              `Generated TXMA Event: ${JSON.stringify(
-                txmaEvent
+              `Received Event: ${JSON.stringify(
+                receivedEvent
               )} failed validation.`
             );
           }
         } else {
           throw new Error(
-            `Received Event: ${JSON.stringify(
-              receivedEvent
-            )} failed validation.`
+            "Event name must be provided as an environment variable"
           );
         }
       } catch (err) {

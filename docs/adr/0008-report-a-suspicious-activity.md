@@ -32,6 +32,7 @@ The format of the SNS payload should be
     user_id: USER_ID,
     email_address: USER_EMAIL
     persistent_session_id: CURRENT_SESSION_ID,
+    session_id: SESSION_ID,
     reported: true
     reported_event: {
         event_type: EVENT_TYPE,

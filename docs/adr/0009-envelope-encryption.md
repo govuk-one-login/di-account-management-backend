@@ -4,6 +4,8 @@
 
 We will store a second envelope encryption key in a separate AWS account for disaster recovery.
 
+> NOTE: The below architecture has been superseded by [ADR 0010](./0010-simplify-activity-log-data-structure-pipeline.md)
+
 ![Architectural Design diagram a backup KMS key stored in a separate AWS account](images/ADR-0009-envelope-encryption.png)
 
 ## Context

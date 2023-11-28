@@ -74,6 +74,12 @@ Conditions:
       - !Equals [!Ref Environment, integration]
       - !Equals [!Ref Environment, production]
 
+  StoreActivityLogData:
+    Fn::Or:
+      - !Equals [!Ref Environment, build]
+      - !Equals [!Ref Environment, dev]
+      - !Equals [!Ref Environment, staging]
+
 Globals:
   Function:
     CodeSigningConfigArn: !If
@@ -1026,13 +1032,13 @@ Resources:
       FilterPattern: ""
       LogGroupName: !Ref WriteUserServicesFunctionLogGroup
 
-  WriteDeadLetterQueueAlarm:
+  WriteUserServicesDeadLetterQueueAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
       AlarmName:
         !Join [
           "-",
-          [!Ref AWS::StackName, !Ref Environment, WriteDeadLetterQueueAlarm],
+          [!Ref AWS::StackName, !Ref Environment, WriteUserServicesDeadLetterQueueAlarm],
         ]
       Namespace: "AWS/SQS"
       MetricName: "ApproximateNumberOfMessagesVisible"
@@ -1496,7 +1502,10 @@ Resources:
           Type: DynamoDB
           Properties:
             BatchSize: 1
-            Stream: !GetAtt DummyEventStore.StreamArn
+            Stream: !If
+                - StoreActivityLogData
+                - !GetAtt RawEventsStore.StreamArn
+                - !GetAtt DummyEventStore.StreamArn
             Enabled: true
             DestinationConfig:
               OnFailure:
@@ -1589,10 +1598,18 @@ Resources:
               - dynamodb:GetShardIterator
               - dynamodb:ListStreams
             Resource:
-              - !GetAtt DummyEventStore.StreamArn
-              - !Sub
-                - "${Arn}/*"
-                - Arn: !GetAtt DummyEventStore.StreamArn
+            - !If
+                - StoreActivityLogData
+                - !GetAtt RawEventsStore.StreamArn
+                - !GetAtt DummyEventStore.StreamArn
+            - !If
+                - StoreActivityLogData
+                - !Sub
+                  - "${Arn}/*"
+                  - Arn: !GetAtt RawEventsStore.StreamArn
+                - !Sub
+                  - "${Arn}/*"
+                  - Arn: !GetAtt DummyEventStore.StreamArn
           - Effect: Allow
             Action:
               - kms:Decrypt
@@ -2558,3 +2575,18 @@ Resources:
       Name: !Sub "/${AWS::StackName}/${Environment}/Backup/KMS/WrappingKey/ARN"
       Type: String
       Value: "please-set-me"
+
+  SuspiciousActivityTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: SuspiciousActivityTopic
+      KmsMasterKeyId: !Ref SnsKmsKey
+      TopicName: SuspiciousActivity
+
+  SuspiciousActivityArnParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Description: The ARN of the Suspicious Activity Topic
+      Name: !Sub "/${AWS::StackName}/SNS/SuspiciousActivity/ARN"
+      Type: String
+      Value: !Ref SuspiciousActivityTopic

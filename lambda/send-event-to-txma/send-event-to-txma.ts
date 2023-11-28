@@ -13,6 +13,7 @@ import {
   ValidationRulesKeyEnum,
 } from "./constants";
 import VALIDATOR_RULES_MAP from "./validator-rules";
+import validateObject from "./validator";
 
 export const transformToTxMAEvent = (
   suspiciousEvent: any,
@@ -21,7 +22,6 @@ export const transformToTxMAEvent = (
   let txmaEvent = null;
   if (eventName === EventNamesEnum.HOME_REPORT_SUSPICIOUS_ACTIVITY) {
     txmaEvent = {
-      event_timestamp_ms: new Date().valueOf(),
       component_id: COMPONENT_ID,
       event_name: REPORT_SUSPICIOUS_ACTIVITY_EVENT_NAME,
       user: {
@@ -33,6 +33,10 @@ export const transformToTxMAEvent = (
         reported_session_id: suspiciousEvent.reported_event.session_id,
       },
     };
+  } else {
+    throw new Error(
+      "Unsupported event - There is no transformation logic for this event"
+    );
   }
   return txmaEvent;
 };
@@ -64,11 +68,9 @@ export async function sendAuditEvent(
 
   try {
     return await sendSqsMessage(JSON.stringify(txmaEvent), TXMA_QUEUE_URL);
-  } catch (error: unknown) {
+  } catch (error: any) {
     console.error(
-      `Error occurred trying to send the audit event to the TxMA queue: ${JSON.stringify(
-        error
-      )}`
+      `Error occurred trying to send the audit event to the TxMA queue: ${error.message}`
     );
     throw error;
   }

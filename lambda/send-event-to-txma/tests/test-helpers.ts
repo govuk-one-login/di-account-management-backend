@@ -1,31 +1,27 @@
 import { SQSEvent, SQSRecord } from "aws-lambda";
-import { TxmaEvent, UserData } from "../models";
-
-const userId = "user_id";
-const eventId = "ab12345a-a12b-3ced-ef12-12a3b4cd5678";
-const sessionId = "Upt1k+cYtXSwadQHvxsfDg==";
-const eventName = "AUTH_AUTH_CODE_ISSUED";
-const clientId = "client_id";
-
-export const user: UserData = {
-  user_id: userId,
-  session_id: sessionId,
-};
-
-export const date = new Date();
-
-export const makeTxmaEvent = (): TxmaEvent => ({
-  event_name: eventName,
-  event_id: eventId,
-  timestamp: date.valueOf(),
-  client_id: clientId,
-  user,
-});
 
 const TEST_SQS_RECORD: SQSRecord = {
   messageId: "19dd0b57-b21e-4ac1-bd88-01bbb068cb78",
   receiptHandle: "MessageReceiptHandle",
-  body: JSON.stringify(makeTxmaEvent()),
+  body: JSON.stringify({
+    user_id: "1234567",
+    email_address: "test@test.com",
+    persistent_session_id: "111111",
+    session_id: "111112",
+    reported: true,
+    reported_event: {
+      event_type: "HOME_REPORT_SUSPICIOUS_ACTIVITY",
+      session_id: "111111",
+      user_id: "1111111",
+      timestamp: 1609462861,
+      activities: {
+        type: "HOME_REPORT_SUSPICIOUS_ACTIVITY",
+        client_id: "111111",
+        timestamp: 1609462861,
+        event_id: "1111111",
+      },
+    },
+  }),
   attributes: {
     ApproximateReceiveCount: "1",
     SentTimestamp: "1523232000000",

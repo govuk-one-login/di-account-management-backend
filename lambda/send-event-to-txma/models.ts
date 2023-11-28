@@ -1,5 +1,4 @@
 export interface TxmaEvent {
-  event_timestamp_ms: number;
   event_name: string;
   component_id: string;
   user: UserData;
@@ -19,7 +18,7 @@ export interface ReportedEvent {
   event_type: string;
   session_id: string;
   user_id: string;
-  timestamp: string;
+  timestamp: number;
   activities: ReportedActivity;
 }
 
@@ -35,6 +34,6 @@ export interface SuspiciousActivityEvent {
 export interface ReportedActivity {
   type: string;
   client_id: string;
-  timestamp: string;
+  timestamp: number;
   event_id: string;
 }

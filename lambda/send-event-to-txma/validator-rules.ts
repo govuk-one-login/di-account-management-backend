@@ -28,18 +28,17 @@ VALIDATOR_RULES_MAP.set(
       session_id: [(value) => typeof value === "string" && value.length > 0],
       user_id: [(value) => typeof value === "string" && value.length > 0],
       timestamp: [(value) => typeof value === "number"],
-    },
-    activities: {
-      type: [(value) => typeof value === "string" && value.length > 0],
-      client_id: [(value) => typeof value === "string" && value.length > 0],
-      timestamp: [(value) => typeof value === "number"],
-      event_id: [(value) => typeof value === "string" && value.length > 0],
+      activities: {
+        type: [(value) => typeof value === "string" && value.length > 0],
+        client_id: [(value) => typeof value === "string" && value.length > 0],
+        timestamp: [(value) => typeof value === "number"],
+        event_id: [(value) => typeof value === "string" && value.length > 0],
+      },
     },
   }
 );
 
 VALIDATOR_RULES_MAP.set(ValidationRulesKeyEnum.TXMA_EVENT, {
-  event_timestamp_ms: [(value) => typeof value === "number"],
   event_name: [(value) => typeof value === "string" && value.length > 0],
   component_id: [(value) => typeof value === "string" && value.length > 0],
   user: {

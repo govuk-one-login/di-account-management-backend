@@ -1054,7 +1054,11 @@ Resources:
       AlarmName:
         !Join [
           "-",
-          [!Ref AWS::StackName, !Ref Environment, WriteUserServicesDeadLetterQueueAlarm],
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            WriteUserServicesDeadLetterQueueAlarm,
+          ],
         ]
       Namespace: "AWS/SQS"
       MetricName: "ApproximateNumberOfMessagesVisible"
@@ -1519,9 +1523,9 @@ Resources:
           Properties:
             BatchSize: 1
             Stream: !If
-                - StoreActivityLogData
-                - !GetAtt RawEventsStore.StreamArn
-                - !GetAtt DummyEventStore.StreamArn
+              - StoreActivityLogData
+              - !GetAtt RawEventsStore.StreamArn
+              - !GetAtt DummyEventStore.StreamArn
             Enabled: true
             DestinationConfig:
               OnFailure:
@@ -1614,11 +1618,11 @@ Resources:
               - dynamodb:GetShardIterator
               - dynamodb:ListStreams
             Resource:
-            - !If
+              - !If
                 - StoreActivityLogData
                 - !GetAtt RawEventsStore.StreamArn
                 - !GetAtt DummyEventStore.StreamArn
-            - !If
+              - !If
                 - StoreActivityLogData
                 - !Sub
                   - "${Arn}/*"
@@ -2646,8 +2650,9 @@ Resources:
     Properties:
       DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
       FilterPattern: ""
-      LogGroupName: !Sub "${AWS::StackName}-FlowLogLogGroup"
-
+      LogGroupName:
+        Fn::ImportValue:
+          Fn::Sub: "${VpcStackName}-FlowLogLogGroup"
 
   SuspiciousActivityTopic:
     Type: AWS::SNS::Topic

@@ -2646,8 +2646,9 @@ Resources:
     Properties:
       DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
       FilterPattern: ""
-      LogGroupName: !Sub "${AWS::StackName}-FlowLogLogGroup"
-
+      LogGroupName:
+        Fn::ImportValue:
+          Fn::Sub: "${VpcStackName}-FlowLogLogGroup"
 
   SuspiciousActivityTopic:
     Type: AWS::SNS::Topic

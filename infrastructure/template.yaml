@@ -2248,16 +2248,16 @@ Resources:
   ######################
   # Send Suspicious Activity to TxMA
   ######################
-  SendSuspiciousActivityToTxMASubscription:
+  SendSuspiciousActivitySubscription:
     Type: AWS::SNS::Subscription
     Properties:
-      Endpoint: !GetAtt SendSuspiciousActivityToTxMAFunction.Arn
+      Endpoint: !GetAtt SendSuspiciousActivityFunction.Arn
       Protocol: lambda
       RedrivePolicy:
-        deadLetterTargetArn: !GetAtt SendSuspiciousActivityToTxMADeadLetterQueue.Arn
+        deadLetterTargetArn: !GetAtt SendSuspiciousActivityDeadLetterQueue.Arn
       TopicArn: !Ref SuspiciousActivityTopic
 
-  SendSuspiciousActivityToTxMADeadLetterQueue:
+  SendSuspiciousActivityDeadLetterQueue:
     Type: AWS::SQS::Queue
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
@@ -2265,23 +2265,23 @@ Resources:
       MessageRetentionPeriod: 1209600
       KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
 
-  SendSuspiciousActivityToTxMADeadLetterQueuePolicy:
+  SendSuspiciousActivityDeadLetterQueuePolicy:
     Type: AWS::SQS::QueuePolicy
     Properties:
       Queues:
-        - !Ref SendSuspiciousActivityToTxMADeadLetterQueue
+        - !Ref SendSuspiciousActivityDeadLetterQueue
       PolicyDocument:
         Statement:
           - Effect: Allow
             Principal:
               Service: sns.amazonaws.com
             Action: "sqs:SendMessage"
-            Resource: !GetAtt SendSuspiciousActivityToTxMADeadLetterQueue.Arn
+            Resource: !GetAtt SendSuspiciousActivityDeadLetterQueue.Arn
             Condition:
               ArnEquals:
                 "aws:SourceArn": !Ref SuspiciousActivityTopic
 
-  SendSuspiciousActivityToTxMADeadLetterQueueAlarm:
+  SendSuspiciousActivityDeadLetterQueueAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
       AlarmName:
@@ -2290,14 +2290,14 @@ Resources:
           [
             !Ref AWS::StackName,
             !Ref Environment,
-            SendSuspiciousActivityToTxMADeadLetterQueue,
+            SendSuspiciousActivityDeadLetterQueue,
           ],
         ]
       Namespace: "AWS/SQS"
       MetricName: "ApproximateNumberOfMessagesVisible"
       Dimensions:
         - Name: "QueueName"
-          Value: !GetAtt SendSuspiciousActivityToTxMADeadLetterQueue.QueueName
+          Value: !GetAtt SendSuspiciousActivityDeadLetterQueue.QueueName
       Statistic: "Sum"
       Period: 300
       EvaluationPeriods: 1
@@ -2307,29 +2307,29 @@ Resources:
         - !Ref AlarmNotificationTopic
       ActionsEnabled: true
 
-  SendSuspiciousActivityToTxMAFunction:
+  SendSuspiciousActivityFunction:
     DependsOn:
-      - SendSuspiciousActivityToTxMAFunctionLogGroup
+      - SendSuspiciousActivityFunctionLogGroup
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub ${Environment}-${AWS::StackName}-send-suspicious-activity-to-txma
+      FunctionName: !Sub ${Environment}-${AWS::StackName}-send-suspicious-activity
       Architectures: [ "arm64" ]
       CodeUri: ../lambda/send-event-to-txma/
       DeadLetterQueue:
         Type: SQS
-        TargetArn: !GetAtt SendSuspiciousActivityToTxMADeadLetterQueue.Arn
+        TargetArn: !GetAtt SendSuspiciousActivityDeadLetterQueue.Arn
       Handler: send-event-to-txma.handler
       KmsKeyArn: !GetAtt LambdaKMSKey.Arn
       PackageType: Zip
       MemorySize: 128
       ReservedConcurrentExecutions: 10
       Runtime: nodejs18.x
-      Role: !GetAtt SendSuspiciousActivityToTxMARole.Arn
+      Role: !GetAtt SendSuspiciousActivityRole.Arn
       Timeout: 5
       Environment:
         Variables:
           EVENT_NAME: HOME_REPORT_SUSPICIOUS_ACTIVITY
-          DLQ_URL: !Ref SendSuspiciousActivityToTxMADeadLetterQueue
+          DLQ_URL: !Ref SendSuspiciousActivityDeadLetterQueue
           TXMA_QUEUE_URL: !Ref AuditOutputQueue
       VpcConfig:
         SubnetIds:
@@ -2346,7 +2346,7 @@ Resources:
         EntryPoints:
           - send-event-to-txma.ts
 
-  SendSuspiciousActivityToTxMARole:
+  SendSuspiciousActivityRole:
     Type: AWS::IAM::Role
     Properties:
       PermissionsBoundary: !If
@@ -2356,7 +2356,7 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
-        - !Ref SendSuspiciousActivityToTxMAPolicy
+        - !Ref SendSuspiciousActivityPolicy
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -2367,7 +2367,7 @@ Resources:
             Action:
               - "sts:AssumeRole"
 
-  SendSuspiciousActivityToTxMAPolicy:
+  SendSuspiciousActivityPolicy:
     Type: AWS::IAM::ManagedPolicy
     Properties:
       PolicyDocument:
@@ -2377,7 +2377,7 @@ Resources:
             Action:
               - sqs:SendMessage
             Resource:
-              - !GetAtt SendSuspiciousActivityToTxMADeadLetterQueue.Arn
+              - !GetAtt SendSuspiciousActivityDeadLetterQueue.Arn
               - !GetAtt AuditOutputQueue.Arn
           - Effect: Allow
             Action:
@@ -2390,19 +2390,19 @@ Resources:
               - !GetAtt LambdaKMSKey.Arn
               - !GetAtt AuditEncryptionKey.Arn
 
-  SendSuspiciousActivityToTxMALambdaInvokePermission:
+  SendSuspiciousActivityLambdaInvokePermission:
     Type: AWS::Lambda::Permission
     Properties:
       Action: lambda:InvokeFunction
       Principal: sns.amazonaws.com
       SourceArn:
         Ref: SuspiciousActivityTopic
-      FunctionName: !GetAtt SendSuspiciousActivityToTxMAFunction.Arn
+      FunctionName: !GetAtt SendSuspiciousActivityFunction.Arn
 
-  SendSuspiciousActivityToTxMAFunctionLogGroup:
+  SendSuspiciousActivityFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-send-suspicious-activity-to-txma"
+      LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-send-suspicious-activity"
       RetentionInDays: 30
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 

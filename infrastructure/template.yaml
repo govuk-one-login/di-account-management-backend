@@ -2406,14 +2406,6 @@ Resources:
       RetentionInDays: 30
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
-  SendSuspiciousActivityToTxMACSLSSubscription:
-    Condition: ExportLogsToSplunk
-    Type: AWS::Logs::SubscriptionFilter
-    Properties:
-      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
-      FilterPattern: ""
-      LogGroupName: !Ref SendSuspiciousActivityToTxMAFunctionLogGroup
-
   #######################
   # Monitoring
   #######################

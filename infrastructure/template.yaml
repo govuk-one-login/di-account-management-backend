@@ -2731,6 +2731,15 @@ Resources:
       Type: String
       Value: "please-set-me"
 
+  VPCFlowLogsSplunkSubscription:
+    Condition: ExportLogsToSplunk
+    Type: AWS::Logs::SubscriptionFilter
+    Properties:
+      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
+      FilterPattern: ""
+      LogGroupName: !Sub "${AWS::StackName}-FlowLogLogGroup"
+
+
   SuspiciousActivityTopic:
     Type: AWS::SNS::Topic
     Properties:

@@ -2243,30 +2243,18 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-send-suspicious-activity
-      Architectures: [ "arm64" ]
       CodeUri: ../lambda/send-event-to-txma/
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt SendSuspiciousActivityDeadLetterQueue.Arn
       Handler: send-event-to-txma.handler
-      KmsKeyArn: !GetAtt LambdaKMSKey.Arn
       PackageType: Zip
-      MemorySize: 128
-      ReservedConcurrentExecutions: 10
-      Runtime: nodejs18.x
       Role: !GetAtt SendSuspiciousActivityRole.Arn
-      Timeout: 5
       Environment:
         Variables:
           EVENT_NAME: HOME_REPORT_SUSPICIOUS_ACTIVITY
           DLQ_URL: !Ref SendSuspiciousActivityDeadLetterQueue
           TXMA_QUEUE_URL: !Ref AuditOutputQueue
-      VpcConfig:
-        SubnetIds:
-          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdA
-          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdB
-        SecurityGroupIds:
-          - Fn::ImportValue: !Sub ${VpcStackName}-AWSServicesEndpointSecurityGroupId
     Metadata:
       BuildMethod: esbuild
       BuildProperties:

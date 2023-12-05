@@ -45,6 +45,21 @@ We could use this single table with all relevant event data to power all planned
 
 This may allow us to migrate users' data from the existing user services table into this new structure and further simplify our backend.
 
+### Access patterns
+
+In this new design, there are 4 ways we'll need to query from or write to this table:
+
+1. Write from the `write-activity-log` Lambda when a new event is recieved.
+2. Query for all a user's events from the frontend.
+3. Query for a single event from the frontend.
+4. Update a single event to mark that it's been reported from a new Lambda in the backend
+
+Using a composite primary key for the table of `user_id` and `event_id` allows us to meet all these access patterns without needing any secondary indices.
+
+We can query a composite primary key using only the partition key, so we'll use `user_id` as the partition key and be able to retrieve all a user's events with only their `user_id`.
+We'll also have access to the user's `user_id` when we need to query for or update a single event - either from the user's session in the frontend or in the SNS message in the backend.
+This means we'll be able to use the full composite key to retrieve or write back a single event without a table scan.
+
 ## Consequences
 
 - We will need to do extra work in our backend to remove the `query-activity-log` lambda.

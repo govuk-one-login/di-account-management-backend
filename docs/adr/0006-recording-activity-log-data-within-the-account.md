@@ -32,6 +32,8 @@ After exploring a range of options, we have decided to repeat the model we used 
 - Use dead letter queues to monitor and capture data from handled errors.
 - Draw events into the system from a Raw Event Store that captures all events from TxMA.
 
+> NOTE: The below architecture has been superseded by [ADR 0010](./0010-simplify-activity-log-data-structure-pipeline.md)
+
 We will store a record indexed by `user_id` and then update that record as the user "visits" more services. This will make querying for a user's data very fast which is important, as the query will be blocking the synchronous user-facing HTTP request to load the service dashboard.
 
 This means the time between us receiving an event from TxMA and writing it to the data store will be slightly longer since we're doing the data processing upfront. That's ok because data ingestion is an asynchronous, non-user facing process. Based on our previous investigations we'd expect the full pipeline to process a record in under 1 second in the worst case scenario when each lambda has to cold start which is an acceptable latency.

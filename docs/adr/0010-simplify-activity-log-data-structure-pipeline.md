@@ -6,20 +6,20 @@ We will change the activity log data structure to store each event as a separate
 
 We will encrypt the `event_type` attribute on each item to preserve user privacy.
 
-We will add a new secondary index on `event_id` to allow us to query DynamoDB for individual events.
+We will use a composite primary key for the table of `user_id` and `event_id`.
+This will allow us to retrieve all events for a user (by querying with the `user_id`) and individual events (by querying with `user_id` and `event_id`).
 
 The new structure for each item in DynamoDB will be:
 
-```typescript
-interface EncryptedActivityLogEntry {
-  event_type: string;
-  session_id: string;
-  user_id: string;
-  timestamp: number;
-  client_id: string;
-  reported_suspicious: boolean;
-}
-```
+| Property              | Column Type   | Data Type | Description                                                                                    |
+| --------------------- | ------------- | --------- | ---------------------------------------------------------------------------------------------- |
+| `user_id`             | partition key | string    | The unencrypted user ID from the incoming event                                                |
+| `event_id`            | sort key      | string    | The unencrypted event ID from the incoming event                                               |
+| `event_type`          |               | string    | The envelope encrypted event type from the incoming event                                      |
+| `session_id`          |               | string    | The unencrypted session ID from the incoming event                                             |
+| `client_id`           |               | string    | The unencrypted client ID from the incoming event                                              |
+| `timestamp`           |               | string    | The unencrypted timestamp from the incoming event                                              |
+| `reported_suspicious` |               | boolean   | If the user has reported this event as suspicious. This will always be false on initial write. |
 
 This data structure is much simpler than before which allows us to simplify the pipeline.
 We no longer need to query DynamoDB for an existing item before updating it, so we can remove the `query-activity-log` Lambda.

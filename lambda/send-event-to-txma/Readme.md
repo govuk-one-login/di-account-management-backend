@@ -2,7 +2,7 @@
 
 ## Summary
 - We expect to be sending multiple events to TxMA, so we have built this handler to be re-usable by multiple lambdas. 
-- All Lambdas are configured in the AWS SAM template here: [https://github.com/alphagov/di-account-management-backend/blob/main/infrastructure/template.yaml] 
+- All Lambdas are configured in the AWS SAM template here: [https://github.com/govuk-one-login/di-account-management-backend/blob/main/infrastructure/template.yaml] 
 
 ## Key Requirements
 - The lambda should validate the fields in the received event

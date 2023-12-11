@@ -12,7 +12,7 @@
   "license": "OGL",
   "repository": {
     "type": "git",
-    "url": "https://github.com/alphagov/di-account-management-backend.git"
+    "url": "https://github.com/govuk-one-login/di-account-management-backend.git"
   },
   "devDependencies": {
     "@babel/core": "^7.19.3",

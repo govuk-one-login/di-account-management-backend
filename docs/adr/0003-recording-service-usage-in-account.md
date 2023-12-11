@@ -8,7 +8,7 @@ This will then be read by a series of GOV.UK Account team managed Lambdas that p
 
 Code standards follow [GOV.UK One Login's Serverless Best Practices](https://govukverify.atlassian.net/wiki/spaces/DISBP/overview) for lambdas and [DI Dev Platform](https://govukverify.atlassian.net/wiki/spaces/PLAT/overview) guides for deployment.
 
-Code and configuration will be stored in a new repository [di-account-management-backend](https://github.com/alphagov/di-account-management-backend).
+Code and configuration will be stored in a new repository [di-account-management-backend](https://github.com/govuk-one-login/di-account-management-backend).
 
 ## Context
 
@@ -85,7 +85,7 @@ export interface Service {
 }
 ```
 
-See [models.ts](https://github.com/alphagov/di-account-management-backend/blob/main/lambda/write-user-services/models.ts)
+See [models.ts](https://github.com/govuk-one-login/di-account-management-backend/blob/main/lambda/write-user-services/models.ts)
 
 ### Data storage
 

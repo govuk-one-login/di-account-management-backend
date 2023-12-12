@@ -55,7 +55,7 @@ Parameters:
   SourceTagValue:
     Description: Value for the Source Tag
     Type: String
-    Default: alphagov/di-account-management-backend/deploy/template.yaml
+    Default: govuk-one-login/di-account-management-backend/deploy/template.yaml
   SystemTagValue:
     Description: Value for the System Tag
     Type: String
@@ -262,7 +262,7 @@ Resources:
         - Key: Environment
           Value: !Ref "Environment"
         - Key: Source
-          Value: "https://github.com/alphagov/di-account-management-backend/blob/main/infrastructure/template.yaml"
+          Value: "https://github.com/govuk-one-login/di-account-management-backend/blob/main/infrastructure/template.yaml"
 
   ######################################
   # Raw events store
@@ -305,7 +305,7 @@ Resources:
         - Key: Environment
           Value: !Ref "Environment"
         - Key: Source
-          Value: "https://github.com/alphagov/di-account-management-backend/blob/main/infrastructure/template.yaml"
+          Value: "https://github.com/govuk-one-login/di-account-management-backend/blob/main/infrastructure/template.yaml"
 
   ######################################
   # User services store
@@ -333,7 +333,7 @@ Resources:
         - Key: Environment
           Value: !Ref "Environment"
         - Key: Source
-          Value: "https://github.com/alphagov/di-account-management-backend/blob/main/infrastructre/template.yaml"
+          Value: "https://github.com/govuk-one-login/di-account-management-backend/blob/main/infrastructre/template.yaml"
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
       SSESpecification:
@@ -380,7 +380,7 @@ Resources:
         - Key: Environment
           Value: !Ref "Environment"
         - Key: Source
-          Value: "https://github.com/alphagov/di-account-management-backend/blob/main/infrastructre/template.yaml"
+          Value: "https://github.com/govuk-one-login/di-account-management-backend/blob/main/infrastructre/template.yaml"
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
       SSESpecification:
@@ -2586,7 +2586,7 @@ Resources:
         - Key: Environment
           Value: !Ref "Environment"
         - Key: Source
-          Value: "https://github.com/alphagov/di-account-management-backend/blob/main/infrastructure/template.yaml"
+          Value: "https://github.com/govuk-one-login/di-account-management-backend/blob/main/infrastructure/template.yaml"
         - Key: Name
           Value: !Sub "${AWS::StackName}-BackupWrapperKey"
 
@@ -2622,7 +2622,7 @@ Resources:
         - Key: Environment
           Value: !Ref "Environment"
         - Key: Source
-          Value: "https://github.com/alphagov/di-account-management-backend/blob/main/infrastructure/template.yaml"
+          Value: "https://github.com/govuk-one-login/di-account-management-backend/blob/main/infrastructure/template.yaml"
         - Key: Name
           Value: !Sub "${AWS::StackName}-GeneratorKey"
 
@@ -2705,7 +2705,7 @@ Resources:
         - Key: Environment
           Value: !Ref "Environment"
         - Key: Source
-          Value: "https://github.com/alphagov/di-account-management-backend/blob/main/infrastructure/template.yaml"
+          Value: "https://github.com/govuk-one-login/di-account-management-backend/blob/main/infrastructure/template.yaml"
         - Key: Name
           Value: !Sub "${AWS::StackName}-GeneratorKey"
 

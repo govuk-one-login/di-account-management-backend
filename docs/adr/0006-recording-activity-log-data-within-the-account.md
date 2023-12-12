@@ -20,7 +20,7 @@ It reaffirms the decisions referenced in 0003-recording-service-usage-in-account
 
 As in our existing data stores we are following the same key assumption that standard AWS security practices of access controls and default DynamoDB encryption meet our security standards given the sensitivity of user data stored. Data will be encrypted at rest with an AWS managed key, as [the default encryption configuration](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/EncryptionAtRest.html) for a DynamoDB table.
 
-The data to power this feature will originate in the Authentication and IPV core applications. From there it will be sent to the Transaction Audit and Monitoring system (TxMA). All access to TxMA data is gated through the [TxMA self service application](https://github.com/alphagov/di-txma-event-self-serve) and process. We have no access to any audit data other than what they have approved. The Account Management Frontend remains a consuming reader of events from elsewhere in the system.
+The data to power this feature will originate in the Authentication and IPV core applications. From there it will be sent to the Transaction Audit and Monitoring system (TxMA). All access to TxMA data is gated through the [TxMA self service application](https://github.com/govuk-one-login/txma-event-self-serve) and process. We have no access to any audit data other than what they have approved. The Account Management Frontend remains a consuming reader of events from elsewhere in the system.
 
 ## Decision
 
@@ -143,7 +143,7 @@ export interface ActivityLogEntry {
 }
 ```
 
-See [shared-models.ts](https://github.com/alphagov/di-account-management-backend/blob/main/lambda/shared-models.ts)
+See [shared-models.ts](https://github.com/govuk-one-login/di-account-management-backend/blob/main/lambda/shared-models.ts)
 
 ### Data storage
 
@@ -173,6 +173,6 @@ Having spent time on the spike, we decided to revert to the initial data model t
 - The Raw Event store expands its scope to read in `AUTH_IPV_AUTHORISATION_REQUESTED` events.
 - The existing service cards store will need to filter out `AUTH_IPV_AUTHORISATION_REQUESTED` events.
 - A new site of persisted user data will be created on the programme.
-- Users data will need to be removed if an account is deleted. We can follow a similar model to [our existing delete infrastrucure](https://github.com/alphagov/di-account-management-backend/blob/main/docs/adr/0005-deleting-service-usage-in-account.md).
+- Users data will need to be removed if an account is deleted. We can follow a similar model to [our existing delete infrastrucure](https://github.com/govuk-one-login/di-account-management-backend/blob/main/docs/adr/0005-deleting-service-usage-in-account.md).
 - Stored user data will need to be considered for any future Subject Access Request policy.
 - GOV.UK Account team will need to ensure security of persisted data meets whatever security standards GOV.UK One Login Architects wish to provide.

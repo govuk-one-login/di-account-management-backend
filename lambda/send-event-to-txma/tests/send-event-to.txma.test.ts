@@ -28,6 +28,9 @@ describe("sendAuditEventToTxMA", () => {
   test("send audit event successfully", async () => {
     const consoleLog = jest.spyOn(console, "log").mockImplementation();
     const txMAEvent = {
+      timestamp: 1726268400,
+      event_timestamp_ms: 1726268400000,
+      event_timestamp_ms_formatted: "2024-09-13T23:00:00.000Z",
       component_id: "https://home.account.gov.uk",
       event_name: "HOME_REPORT_SUSPICIOUS_ACTIVITY",
       extensions: {
@@ -136,11 +139,13 @@ describe("transform", () => {
         },
       },
     };
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date(Date.UTC(2023, 20, 12)));
   });
 
   afterEach(() => {
+    jest.useRealTimers();
     jest.clearAllMocks();
-    jest.spyOn(Date, "now").mockRestore();
   });
 
   test("transforms suspicious activity event to TxMA event successfully", async () => {
@@ -149,6 +154,9 @@ describe("transform", () => {
       EVENT_NAME
     );
     const expected = {
+      timestamp: 1726099200,
+      event_timestamp_ms: 1726099200000,
+      event_timestamp_ms_formatted: "2024-09-12T00:00:00.000Z",
       component_id: "https://home.account.gov.uk",
       event_name: "HOME_REPORT_SUSPICIOUS_ACTIVITY",
       extensions: {
@@ -180,9 +188,12 @@ describe("handler", () => {
     process.env.EVENT_NAME = "HOME_REPORT_SUSPICIOUS_ACTIVITY";
     process.env.TXMA_QUEUE_URL = "TXMA_QUEUE_URL";
     sqsMock.on(SendMessageCommand).resolves({ MessageId: "MessageId" });
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date(Date.UTC(2023, 20, 12)));
   });
 
   afterEach(() => {
+    jest.useRealTimers();
     jest.clearAllMocks();
   });
 
@@ -193,6 +204,9 @@ describe("handler", () => {
     expect(sqsMock).toHaveReceivedCommandWith(SendMessageCommand, {
       QueueUrl: "TXMA_QUEUE_URL",
       MessageBody: JSON.stringify({
+        timestamp: 1726099200,
+        event_timestamp_ms: 1726099200000,
+        event_timestamp_ms_formatted: "2024-09-12T00:00:00.000Z",
         component_id: "https://home.account.gov.uk",
         event_name: "HOME_REPORT_SUSPICIOUS_ACTIVITY",
         user: {

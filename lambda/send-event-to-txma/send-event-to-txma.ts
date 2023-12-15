@@ -5,7 +5,7 @@ import {
   SendMessageRequest,
   SQSClient,
 } from "@aws-sdk/client-sqs";
-import { TxmaEvent } from "./models";
+import {CurrentTimeDescriptor, TxmaEvent} from "./models";
 import {
   COMPONENT_ID,
   EventNamesEnum,
@@ -15,10 +15,26 @@ import {
 import VALIDATOR_RULES_MAP from "./validator-rules";
 import validateObject from "./validator";
 
+/**
+ * A function for calculating and returning an object containing the current timestamp.
+ *
+ * @returns CurrentTimeDescriptor object, containing different formats of the current time
+ */
+export function getCurrentTimestamp(date = new Date()): CurrentTimeDescriptor {
+  return {
+    milliseconds: date.valueOf(),
+    isoString: date.toISOString(),
+    seconds: Math.floor(date.valueOf() / 1000),
+  };
+}
 export const transformToTxMAEvent = (event: any, eventName: string): any => {
   let txmaEvent = null;
+  const timestamps = getCurrentTimestamp();
   if (eventName === EventNamesEnum.HOME_REPORT_SUSPICIOUS_ACTIVITY) {
     txmaEvent = {
+      timestamp: timestamps.seconds,
+      event_timestamp_ms: timestamps.milliseconds,
+      event_timestamp_ms_formatted: timestamps.isoString,
       component_id: COMPONENT_ID,
       event_name: REPORT_SUSPICIOUS_ACTIVITY_EVENT_NAME,
       user: {

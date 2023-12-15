@@ -14,6 +14,12 @@ export interface Extensions {
   reported_session_id: string;
 }
 
+export interface CurrentTimeDescriptor {
+  isoString: string;
+  milliseconds: number;
+  seconds: number;
+}
+
 export interface ReportedEvent {
   event_type: string;
   session_id: string;

@@ -1,34 +1,22 @@
 import { SQSEvent, SQSRecord } from "aws-lambda";
-import {
-  Activity,
-  ActivityLogEntry,
-  EncryptedActivityLogEntry,
-} from "../models";
+import { ActivityLogEntry, EncryptedActivityLogEntry } from "../models";
 
 export const eventId = "event_id";
 export const eventType = "TXMA_EVENT";
 export const sessionId = "123456789";
 export const userId = "qwerty";
 export const timestamp = 123456789;
-export const isTruncated = false;
 export const clientId = "client-id-value";
-
-export const activities: Activity[] = [
-  {
-    client_id: clientId,
-    timestamp,
-    type: eventType,
-    event_id: eventId,
-  },
-];
+export const reportedSuspicious = true;
 
 export const TEST_ACTIVITY_LOG_ENTRY: ActivityLogEntry = {
   event_type: eventType,
   session_id: sessionId,
   user_id: userId,
   timestamp,
-  truncated: isTruncated,
-  activities,
+  event_id: eventId,
+  client_id: clientId,
+  reported_suspicious: reportedSuspicious,
 };
 
 const NO_ACTIVITY_ARRAY = { ...TEST_ACTIVITY_LOG_ENTRY, activities: undefined };
@@ -45,16 +33,8 @@ export const ACTIVITY_LOG_ENTRY_NO_TIMESTAMP: ActivityLogEntry = JSON.parse(
   JSON.stringify(NO_TIMESTAMP)
 );
 
-const ACTIVITY_UNDEFINED_TYPE = {
-  client_id: clientId,
-  timestamp,
-};
-const TEST_ACTIVITY_UNDEFINED_TYPE: Activity = JSON.parse(
-  JSON.stringify(ACTIVITY_UNDEFINED_TYPE)
-);
 export const TEST_ACTIVITY_LOG_WITH_ACTIVITY_TYPE_UNDEFINED = {
   ...TEST_ACTIVITY_LOG_ENTRY,
-  activities: [TEST_ACTIVITY_UNDEFINED_TYPE],
 };
 
 const TEST_SQS_RECORD: SQSRecord = {
@@ -83,6 +63,7 @@ export const TEST_ENCRYPTED_ACTIVITY_LOG_ENTRY: EncryptedActivityLogEntry = {
   session_id: sessionId,
   user_id: userId,
   timestamp,
-  truncated: isTruncated,
-  activities: "ASDFASDFASDF",
+  client_id: clientId,
+  event_id: eventId,
+  reported_suspicious: reportedSuspicious,
 };

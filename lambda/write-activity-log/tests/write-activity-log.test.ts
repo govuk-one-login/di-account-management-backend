@@ -11,9 +11,7 @@ import {
   ACTIVITY_LOG_ENTRY_NO_TIMESTAMP,
   ACTIVITY_LOG_ENTRY_NO_USER_ID,
   TEST_ACTIVITY_LOG_ENTRY,
-  ACTIVITY_LOG_ENTRY_NO_ACTIVITY_ARRAY,
   TEST_SQS_EVENT,
-  TEST_ACTIVITY_LOG_WITH_ACTIVITY_TYPE_UNDEFINED,
   TEST_ENCRYPTED_ACTIVITY_LOG_ENTRY,
 } from "./test-helpers";
 
@@ -36,12 +34,6 @@ describe("ValidateActivityLogEntries", () => {
     expect(validateActivityLogEntry(TEST_ACTIVITY_LOG_ENTRY));
   });
 
-  test("throws error when activities array is absent", () => {
-    expect(() => {
-      validateActivityLogEntry(ACTIVITY_LOG_ENTRY_NO_ACTIVITY_ARRAY);
-    }).toThrowError(new Error(`Could not validate activity log entry`));
-  });
-
   test("throws an error when user_id is missing", () => {
     expect(() => {
       validateActivityLogEntry(ACTIVITY_LOG_ENTRY_NO_USER_ID);
@@ -53,15 +45,9 @@ describe("ValidateActivityLogEntries", () => {
       validateActivityLogEntry(ACTIVITY_LOG_ENTRY_NO_TIMESTAMP);
     }).toThrowError(new Error(`Could not validate activity log entry`));
   });
-
-  test("throws an error when an activity has type missing", () => {
-    expect(() => {
-      validateActivityLogEntry(TEST_ACTIVITY_LOG_WITH_ACTIVITY_TYPE_UNDEFINED);
-    }).toThrowError(new Error(`Could not validate activity log entry`));
-  });
 });
 
-describe("writeActivitwriteActivityLogEntryyLog", () => {
+describe("writeActivityLogEntry", () => {
   beforeEach(() => {
     dynamoMock.reset();
   });

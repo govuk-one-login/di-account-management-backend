@@ -10,25 +10,12 @@ import {
   SendMessageRequest,
   SQSClient,
 } from "@aws-sdk/client-sqs";
-import {
-  Activity,
-  ActivityLogEntry,
-  EncryptedActivityLogEntry,
-} from "./models";
+import { ActivityLogEntry, EncryptedActivityLogEntry } from "./models";
 import encryptData from "./encrypt-data";
 
 const dynamoClient = new DynamoDBClient({});
 const dynamoDocClient = DynamoDBDocumentClient.from(dynamoClient);
 const sqsClient = new SQSClient({});
-
-const validateActivity = (activity: Activity): boolean => {
-  return (
-    activity.client_id !== undefined &&
-    activity.timestamp !== undefined &&
-    activity.type !== undefined &&
-    activity.event_id !== undefined
-  );
-};
 
 export const validateActivityLogEntry = (
   activityLogEntry: ActivityLogEntry
@@ -38,10 +25,10 @@ export const validateActivityLogEntry = (
       activityLogEntry.user_id !== undefined &&
       activityLogEntry.session_id !== undefined &&
       activityLogEntry.timestamp !== undefined &&
-      activityLogEntry.truncated !== undefined &&
       activityLogEntry.event_type !== undefined &&
-      activityLogEntry.activities !== undefined &&
-      activityLogEntry.activities.every(validateActivity)
+      activityLogEntry.event_id !== undefined &&
+      activityLogEntry.client_id !== undefined &&
+      activityLogEntry.reported_suspicious !== undefined
     )
   ) {
     throw new Error(`Could not validate activity log entry`);
@@ -58,9 +45,10 @@ export const writeActivityLogEntry = async (
       user_id: activityLogEntry.user_id,
       timestamp: activityLogEntry.timestamp,
       session_id: activityLogEntry.session_id,
-      activities: activityLogEntry.activities,
       event_type: activityLogEntry.event_type,
-      truncated: activityLogEntry.truncated,
+      event_id: activityLogEntry.event_id,
+      client_id: activityLogEntry.client_id,
+      reported_suspicious: activityLogEntry.reported_suspicious,
     },
   });
   return dynamoDocClient.send(command);
@@ -73,17 +61,17 @@ export const handler = async (event: SQSEvent): Promise<void> => {
       try {
         const activityLogEntry: ActivityLogEntry = JSON.parse(record.body);
         validateActivityLogEntry(activityLogEntry);
-        const encryptedActivities: string = await encryptData(
-          JSON.stringify(activityLogEntry.activities),
-          activityLogEntry.user_id
-        );
         const encryptedActivityLog: EncryptedActivityLogEntry = {
-          event_type: activityLogEntry.event_type,
+          event_id: activityLogEntry.event_id,
+          event_type: await encryptData(
+            activityLogEntry.event_type,
+            activityLogEntry.user_id
+          ),
           session_id: activityLogEntry.session_id,
           user_id: activityLogEntry.user_id,
           timestamp: activityLogEntry.timestamp,
-          activities: encryptedActivities,
-          truncated: activityLogEntry.truncated,
+          client_id: activityLogEntry.client_id,
+          reported_suspicious: activityLogEntry.reported_suspicious,
         };
         await writeActivityLogEntry(encryptedActivityLog);
       } catch (err) {

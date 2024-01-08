@@ -1,4 +1,6 @@
-import { SQSEvent } from "aws-lambda";
+import { DynamoDBStreamEvent } from "aws-lambda";
+import { AttributeValue } from "@aws-sdk/client-dynamodb";
+import { unmarshall } from "@aws-sdk/util-dynamodb";
 
 import {
   SendMessageCommand,
@@ -6,74 +8,43 @@ import {
   SQSClient,
 } from "@aws-sdk/client-sqs";
 import {
-  Activity,
   ActivityLogEntry,
+  allowedTxmaEvents,
+  REPORT_SUSPICIOUS_ACTIVITY_DEFAULT,
   TxmaEvent,
-  UserActivityLog,
-  UserData,
 } from "./models";
-
-const activityFromTxmaEvent = (txmaEvent: TxmaEvent): Activity => ({
-  type: txmaEvent.event_name,
-  client_id: txmaEvent.client_id,
-  timestamp: txmaEvent.timestamp,
-  event_id: txmaEvent.event_id,
-});
 
 const createNewActivityLogEntryFromTxmaEvent = (
   txmaEvent: TxmaEvent
 ): ActivityLogEntry => ({
+  event_id: txmaEvent.event_id,
   event_type: txmaEvent.event_name,
-  session_id: txmaEvent.user.session_id,
-  user_id: txmaEvent.user.user_id,
+  session_id: txmaEvent.session_id,
+  user_id: txmaEvent.user_id,
+  client_id: txmaEvent.client_id,
   timestamp: txmaEvent.timestamp,
-  activities: [activityFromTxmaEvent(txmaEvent)],
-  truncated: false,
+  reported_suspicious: REPORT_SUSPICIOUS_ACTIVITY_DEFAULT,
 });
-
-export const validateUser = (user: UserData): void => {
-  if (!user.user_id || !user.session_id) {
-    throw new Error(`Could not validate User`);
-  }
-};
 
 export const validateTxmaEventBody = (txmaEvent: TxmaEvent): void => {
   if (
-    txmaEvent.timestamp !== undefined &&
-    txmaEvent.event_name !== undefined &&
-    txmaEvent.client_id !== undefined &&
-    txmaEvent.user !== undefined &&
-    txmaEvent.event_id !== undefined
+    txmaEvent.event_id === undefined ||
+    txmaEvent.user_id === undefined ||
+    txmaEvent.timestamp === undefined ||
+    txmaEvent.timestamp_ms === undefined ||
+    txmaEvent.timestamp_ms_formatted === undefined ||
+    txmaEvent.event_name === undefined ||
+    txmaEvent.session_id === undefined ||
+    txmaEvent.client_id === undefined
   ) {
-    validateUser(txmaEvent.user);
-  } else {
-    throw new Error(`Could not validate UserServices`);
+    throw new Error(`Could not validate TXMA Event Body`);
   }
 };
 
-export const validateUserActivityLog = (
-  userActivityLog: UserActivityLog
-): void => {
-  if (!userActivityLog.txmaEvent) {
-    throw new Error(`Could not validate UserActivityLog`);
-  } else {
-    validateTxmaEventBody(userActivityLog.txmaEvent);
-  }
-};
-
-export const formatIntoActivitLogEntry = (
-  userActivityLog: UserActivityLog
+export const formatIntoActivityLogEntry = (
+  txmaEvent: TxmaEvent
 ): ActivityLogEntry => {
-  if (userActivityLog.activityLogEntry === undefined) {
-    return createNewActivityLogEntryFromTxmaEvent(userActivityLog.txmaEvent);
-  }
-  if (userActivityLog.activityLogEntry.activities.length < 100) {
-    userActivityLog.activityLogEntry.activities.push(
-      activityFromTxmaEvent(userActivityLog.txmaEvent)
-    );
-    return userActivityLog.activityLogEntry;
-  }
-  return { ...userActivityLog.activityLogEntry, truncated: true };
+  return createNewActivityLogEntryFromTxmaEvent(txmaEvent);
 };
 
 export const sendSqsMessage = async (
@@ -86,27 +57,42 @@ export const sendSqsMessage = async (
     QueueUrl: queueUrl,
     MessageBody: messageBody,
   };
+  console.log(`[Send Message Request is] :  ${JSON.stringify(message)}`);
   const result = await client.send(new SendMessageCommand(message));
   return result.MessageId;
 };
 
-export const handler = async (event: SQSEvent): Promise<void> => {
+export const handler = async (event: DynamoDBStreamEvent): Promise<void> => {
   const { OUTPUT_QUEUE_URL, DLQ_URL } = process.env;
   const { Records } = event;
 
   await Promise.all(
     Records.map(async (record) => {
       try {
-        const userActivityLog: UserActivityLog = JSON.parse(record.body);
-        validateUserActivityLog(userActivityLog);
-        const formattedRecord = formatIntoActivitLogEntry(userActivityLog);
-        const messageId = await sendSqsMessage(
-          JSON.stringify(formattedRecord),
-          OUTPUT_QUEUE_URL
-        );
-        console.log(`[Message sent to QUEUE] with message id = ${messageId}`);
+        const txmaEvent = unmarshall(
+          record.dynamodb?.NewImage?.event.M as {
+            [key: string]: AttributeValue;
+          }
+        ) as TxmaEvent;
+        if (allowedTxmaEvents.includes(txmaEvent.event_name)) {
+          validateTxmaEventBody(txmaEvent);
+          const formattedRecord = formatIntoActivityLogEntry(txmaEvent);
+          const messageId = await sendSqsMessage(
+            JSON.stringify(formattedRecord),
+            OUTPUT_QUEUE_URL
+          );
+          console.log(`[Message sent to QUEUE] with message id = ${messageId}`);
+        } else {
+          console.log(
+            `DB stream sent a ${txmaEvent.event_name} event. Irrelevant for activity log so ignoring`
+          );
+        }
       } catch (err) {
-        const messageId = await sendSqsMessage(record.body, DLQ_URL);
+        console.error(
+          "[Error occurred] unable to format activity log event",
+          err
+        );
+        const messageId = await sendSqsMessage(JSON.stringify(record), DLQ_URL);
         console.error(
           `[Message sent to DLQ] with message id = ${messageId}`,
           err

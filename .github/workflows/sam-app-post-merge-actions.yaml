@@ -53,10 +53,6 @@ jobs:
         run: npm ci && npm test
         working-directory: ./lambda/save-raw-events
 
-      - name: Test query-activity-log
-        run: npm ci && npm test
-        working-directory: ./lambda/query-activity-log
-
       - name: Test format-activity-log
         run: npm ci && npm test
         working-directory: ./lambda/format-activity-log

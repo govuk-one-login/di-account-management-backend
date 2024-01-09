@@ -1,24 +1,19 @@
-export interface Activity {
-  type: string;
-  client_id: string;
-  timestamp: number;
-  event_id: string;
-}
-
 export interface ActivityLogEntry {
+  event_id: string;
   event_type: string;
   session_id: string;
   user_id: string;
   timestamp: number;
-  activities: Activity[];
-  truncated: boolean;
+  client_id: string;
+  reported_suspicious: boolean;
 }
 
 export interface EncryptedActivityLogEntry {
+  event_id: string;
   event_type: string;
   session_id: string;
   user_id: string;
   timestamp: number;
-  activities: string;
-  truncated: boolean;
+  client_id: string;
+  reported_suspicious: boolean;
 }

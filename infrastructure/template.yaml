@@ -1666,10 +1666,19 @@ Resources:
       CodeUri: ../lambda/format-activity-log/
       PackageType: Zip
       Events:
-        ActivityLogToFormatQueue:
-          Type: SQS
+        DynamoStream:
+          Type: DynamoDB
           Properties:
-            Queue: !GetAtt ActivityLogToFormatQueue.Arn
+            BatchSize: 1
+            Stream: !GetAtt RawEventsStore.StreamArn
+            Enabled: true
+            DestinationConfig:
+              OnFailure:
+                Destination: !GetAtt FormatActivityLogDeadLetterQueue.Arn
+            StartingPosition: LATEST
+            FilterCriteria:
+              Filters:
+                - Pattern: '{ "eventName": ["INSERT"] }'
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt FormatActivityLogDeadLetterQueue.Arn
@@ -1679,6 +1688,10 @@ Resources:
         Variables:
           DLQ_URL: !Ref FormatActivityLogDeadLetterQueue
           OUTPUT_QUEUE_URL: !Ref ActivityLogToWriteQueue
+          ENVIRONMENT: !Ref Environment
+          ACCOUNT_ID: !Sub "${AWS::AccountId}"
+          GENERATOR_KEY_ARN: !GetAtt GeneratorKey.Arn
+          WRAPPING_KEY_ARN: !GetAtt WrapperKey.Arn
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -1739,10 +1752,29 @@ Resources:
             Resource: !GetAtt ActivityLogToWriteQueue.Arn
           - Effect: Allow
             Action:
+              - dynamodb:DescribeStream
+              - dynamodb:GetRecords
+              - dynamodb:GetShardIterator
+              - dynamodb:ListStreams
+            Resource:
+              - !GetAtt RawEventsStore.StreamArn
+              - !Sub
+                - "${Arn}/*"
+                - Arn: !GetAtt RawEventsStore.StreamArn
+          - Effect: Allow
+            Action:
               - kms:Decrypt
               - kms:GenerateDataKey*
               - kms:ReEncrypt*
-            Resource: !GetAtt QueueKmsKey.Arn
+            Resource:
+              - !GetAtt QueueKmsKey.Arn
+              - !GetAtt DatabaseKmsKey.Arn
+          - Effect: Allow
+            Action:
+              - kms:Decrypt
+            Resource:
+              - !GetAtt WrapperKey.Arn
+              - !GetAtt GeneratorKey.Arn
 
   FormatActivityLogFunctionLogGroup:
     Type: AWS::Logs::LogGroup

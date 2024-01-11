@@ -13,7 +13,7 @@ We will also be able to use this data to debug any problems with the events that
 
 ### Architecture
 
-We will insert a new compenent before the existing pipeline to process a user's services.
+We will insert a new component before the existing pipeline to process a user's services.
 There will be a new lambda function which writes the unmodified event from TxMA to a new DynamoDB table.
 We'll then subscribe the lambda function at the start of the user services pipeline to the DynamoDB Stream for this new table.
 

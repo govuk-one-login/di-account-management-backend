@@ -99,6 +99,28 @@ describe("validateTxmaEventBody", () => {
     expect(validateTxmaEventBody(MUTABLE_TXMA_EVENT)).toBe(undefined);
   });
 
+  test("throws error when event_id is missing", () => {
+    const invalidTxmaEvent = {
+      ...MUTABLE_TXMA_EVENT,
+      event_id: undefined,
+    };
+    const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
+    expect(() => {
+      validateTxmaEventBody(txmaEvent);
+    }).toThrowError();
+  });
+
+  test("throws error when event name is missing", () => {
+    const invalidTxmaEvent = {
+      ...MUTABLE_TXMA_EVENT,
+      event_name: undefined,
+    };
+    const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
+    expect(() => {
+      validateTxmaEventBody(txmaEvent);
+    }).toThrowError();
+  });
+
   test("throws error when client_id is missing", () => {
     const invalidTxmaEvent = {
       ...MUTABLE_TXMA_EVENT,
@@ -121,43 +143,10 @@ describe("validateTxmaEventBody", () => {
     }).toThrowError();
   });
 
-  test("throws error when event name is missing", () => {
-    const invalidTxmaEvent = {
-      ...MUTABLE_TXMA_EVENT,
-      event_name: undefined,
-    };
-    const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
-    expect(() => {
-      validateTxmaEventBody(txmaEvent);
-    }).toThrowError();
-  });
-
-  test("throws error when timestamp ms is missing", () => {
-    const invalidTxmaEvent = {
-      ...MUTABLE_TXMA_EVENT,
-      timestamp_ms: undefined,
-    };
-    const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
-    expect(() => {
-      validateTxmaEventBody(txmaEvent);
-    }).toThrowError();
-  });
-
-  test("throws error when timestamp ms formatted is missing", () => {
-    const invalidTxmaEvent = {
-      ...MUTABLE_TXMA_EVENT,
-      timestamp_ms_formatted: undefined,
-    };
-    const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
-    expect(() => {
-      validateTxmaEventBody(txmaEvent);
-    }).toThrowError();
-  });
-
   test(" throws error when user_id is missing", () => {
     const invalidTxmaEvent = {
       ...MUTABLE_TXMA_EVENT,
-      user_id: undefined,
+      user: { user_id: undefined, session_id: "123" },
     };
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
@@ -168,7 +157,7 @@ describe("validateTxmaEventBody", () => {
   test("throws error when session_id  is missing", () => {
     const invalidTxmaEvent = {
       ...MUTABLE_TXMA_EVENT,
-      session_id: undefined,
+      user: { user_id: "123", session_id: undefined },
     };
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {

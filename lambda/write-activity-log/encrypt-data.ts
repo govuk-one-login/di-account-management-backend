@@ -55,11 +55,11 @@ const encryptData = async (
       accessCheckValue,
     };
     try {
-      console.time("encrypt");
+      console.time(" carry out encrypt");
       const { result } = await encrypt(kmsKeyring, toEncrypt, {
         encryptionContext,
       });
-      console.timeEnd("encrypt");
+      console.timeEnd("carry out encrypt");
       const response = result.toString(ENCODING);
       return response;
     } catch (error: unknown) {

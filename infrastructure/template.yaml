@@ -122,7 +122,7 @@ Globals:
     KmsKeyArn: !GetAtt LambdaKMSKey.Arn
     ReservedConcurrentExecutions: 10
     Runtime: nodejs18.x
-    Timeout: 5
+    Timeout: 60
     VpcConfig:
       SubnetIds:
           - Fn::ImportValue: !Sub "${VpcStackName}-ProtectedSubnetIdA"
@@ -1516,6 +1516,7 @@ Resources:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-write-activity-log
       CodeUri: ../lambda/write-activity-log/
       PackageType: Zip
+      Timeout: 60
       Events:
         ActivityLogToWriteQueue:
           Type: SQS

@@ -20,13 +20,16 @@ const encryptData = async (
   const { AWS_REGION } = process.env;
   const { ACCOUNT_ID } = process.env;
   const { ENVIRONMENT } = process.env;
-
+  console.time("buildKmsKeyring");
   kmsKeyring ??= await buildKmsKeyring(
     GENERATOR_KEY_ARN,
     WRAPPING_KEY_ARN,
     BACKUP_WRAPPING_KEY_ARN
   );
+  console.timeEnd("buildKmsKeyring");
+  console.time("buildEncrypt");
   encryptClient ??= buildEncrypt(encryptClientConfig);
+  console.timeEnd("buildEncrypt");
   const { encrypt } = encryptClient;
 
   if (
@@ -37,7 +40,9 @@ const encryptData = async (
   ) {
     let accessCheckValue;
     try {
+      console.time("getHashedAccessCheckValue");
       accessCheckValue = await getHashedAccessCheckValue(VERIFY_ACCESS_VALUE);
+      console.timeEnd("getHashedAccessCheckValue");
     } catch (error) {
       console.error("Unable to obtain Access Verification value.");
       throw error;
@@ -50,9 +55,11 @@ const encryptData = async (
       accessCheckValue,
     };
     try {
+      console.time("encrypt");
       const { result } = await encrypt(kmsKeyring, toEncrypt, {
         encryptionContext,
       });
+      console.timeEnd("encrypt");
       const response = result.toString(ENCODING);
       return response;
     } catch (error: unknown) {

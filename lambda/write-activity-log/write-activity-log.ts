@@ -59,8 +59,13 @@ export const handler = async (event: SQSEvent): Promise<void> => {
   await Promise.all(
     event.Records.map(async (record) => {
       try {
+        console.time("parseActivityLogEntry");
         const activityLogEntry: ActivityLogEntry = JSON.parse(record.body);
+        console.timeEnd("parseActivityLogEntry");
+        console.time("validateActivityLogEntry");
         validateActivityLogEntry(activityLogEntry);
+        console.timeEnd("validateActivityLogEntry");
+        console.time("encryptActivityLogEntry");
         const encryptedActivityLog: EncryptedActivityLogEntry = {
           event_id: activityLogEntry.event_id,
           event_type: await encryptData(
@@ -73,7 +78,10 @@ export const handler = async (event: SQSEvent): Promise<void> => {
           client_id: activityLogEntry.client_id,
           reported_suspicious: activityLogEntry.reported_suspicious,
         };
+        console.timeEnd("encryptActivityLogEntry");
+        console.time("writeActivityLogEntry");
         await writeActivityLogEntry(encryptedActivityLog);
+        console.timeEnd("writeActivityLogEntry");
       } catch (err) {
         const message: SendMessageRequest = {
           QueueUrl: DLQ_URL,

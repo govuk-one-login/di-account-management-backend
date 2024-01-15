@@ -19,8 +19,8 @@ const createNewActivityLogEntryFromTxmaEvent = (
 ): ActivityLogEntry => ({
   event_id: txmaEvent.event_id,
   event_type: txmaEvent.event_name,
-  session_id: txmaEvent.session_id,
-  user_id: txmaEvent.user_id,
+  session_id: txmaEvent.user?.session_id,
+  user_id: txmaEvent.user?.user_id,
   client_id: txmaEvent.client_id,
   timestamp: txmaEvent.timestamp,
   reported_suspicious: REPORT_SUSPICIOUS_ACTIVITY_DEFAULT,
@@ -29,12 +29,10 @@ const createNewActivityLogEntryFromTxmaEvent = (
 export const validateTxmaEventBody = (txmaEvent: TxmaEvent): void => {
   if (
     txmaEvent.event_id === undefined ||
-    txmaEvent.user_id === undefined ||
-    txmaEvent.timestamp === undefined ||
-    txmaEvent.timestamp_ms === undefined ||
-    txmaEvent.timestamp_ms_formatted === undefined ||
     txmaEvent.event_name === undefined ||
-    txmaEvent.session_id === undefined ||
+    txmaEvent.user?.user_id === undefined ||
+    txmaEvent.timestamp === undefined ||
+    txmaEvent.user?.session_id === undefined ||
     txmaEvent.client_id === undefined
   ) {
     throw new Error(`Could not validate TXMA Event Body`);

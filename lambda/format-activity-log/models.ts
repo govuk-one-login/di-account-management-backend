@@ -7,12 +7,10 @@ export interface UserData {
 export interface TxmaEvent {
   event_id: string;
   event_name: string;
-  session_id: string;
-  user_id: string;
   timestamp: number;
-  timestamp_ms: number;
-  timestamp_ms_formatted: string;
+  timestamp_formatted: string;
   client_id: string;
+  user: UserData;
 }
 
 export interface ActivityLogEntry {

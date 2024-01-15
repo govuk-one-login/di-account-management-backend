@@ -1,5 +1,5 @@
 import { DynamoDBRecord, DynamoDBStreamEvent } from "aws-lambda";
-import { TxmaEvent, ActivityLogEntry } from "../models";
+import { TxmaEvent, ActivityLogEntry, UserData } from "../models";
 
 export const txmaEventId = "12345678";
 export const eventType = "AUTH_AUTH_CODE_ISSUED";
@@ -12,15 +12,19 @@ export const queueUrl = "http://my_queue_url";
 export const messageId = "MyMessageId";
 export const tableName = "tableName";
 
+const MUTABLE_USER_DATA: UserData = {
+  user_id: userId,
+  govuk_signin_journey_id: "234567",
+  session_id: sessionId,
+};
+
 export const MUTABLE_TXMA_EVENT: TxmaEvent = {
   event_id: txmaEventId,
   timestamp,
-  timestamp_ms_formatted: "x",
-  timestamp_ms: 1234,
+  timestamp_formatted: "x",
   event_name: eventType,
   client_id: clientId,
-  session_id: sessionId,
-  user_id: userId,
+  user: MUTABLE_USER_DATA,
 };
 
 export const MUTABLE_ACTIVITY_LOG_ENTRY: ActivityLogEntry = {
@@ -48,30 +52,17 @@ const generateDynamoSteamRecord = (
       timestamp: { N: `${Date.now()}` },
       event: {
         M: {
-          event_id: {
-            S: txmaEventId,
+          event_name: { S: txmaEventName },
+          event_id: { S: txmaEventId },
+          user: {
+            M: {
+              user_id: { S: userId },
+              session_id: { S: sessionId },
+            },
           },
-          event_name: {
-            S: `${txmaEventName}`,
-          },
-          timestamp: {
-            N: `${timestamp}`,
-          },
-          timestamp_ms_formatted: {
-            S: "12345",
-          },
-          timestamp_ms: {
-            N: `${timestamp}`,
-          },
-          client_id: {
-            S: clientId,
-          },
-          session_id: {
-            S: sessionId,
-          },
-          user_id: {
-            S: userId,
-          },
+          client_id: { S: clientId },
+          txma: { M: { configVersion: { S: "2.2.1" } } },
+          timestamp: { N: `${timestamp}` },
         },
       },
     },

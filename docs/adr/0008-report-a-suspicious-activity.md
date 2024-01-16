@@ -36,16 +36,11 @@ The format of the SNS payload should be
     reported: true
     reported_event: {
         event_type: EVENT_TYPE,
-        session_id: SESSION_ID,
+        session_id: EVENT_SESSION_ID,
         user_id: USER_ID,
         timestamp: TIMESTAMP,
-        activities: {
-            type: EVENT_TYPE,
-            client_id: CLIENT_ID
-            timestamp: TIMESTAMP,
-            event_id: EVENT_ID
-        }
-
+        client_id: CLIENT_ID
+        event_id: EVENT_ID
     }
 
 }

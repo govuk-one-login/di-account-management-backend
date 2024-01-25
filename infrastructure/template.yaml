@@ -2644,3 +2644,15 @@ Resources:
       Name: !Sub "/${AWS::StackName}/SNS/SuspiciousActivity/ARN"
       Type: String
       Value: !Ref SuspiciousActivityTopic
+
+Outputs:
+  GeneratorKey:
+    Description: A generator key for generating a plaintext data key
+    Value: !Ref GeneratorKey
+    Export:
+      Name: !Sub "${AWS::StackName}-GeneratorKey"
+  WrappingKey:
+    Description: A key used to encrypt the data key for envelope encryption
+    Value: !Ref WrapperKey
+    Export:
+      Name: !Sub "${AWS::StackName}-WrappingKey"

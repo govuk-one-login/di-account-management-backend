@@ -1,0 +1,11 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.SQSServiceException = void 0;
+const tslib_1 = require("tslib");
+tslib_1.__exportStar(require("./SQSClient"), exports);
+tslib_1.__exportStar(require("./SQS"), exports);
+tslib_1.__exportStar(require("./commands"), exports);
+tslib_1.__exportStar(require("./pagination"), exports);
+tslib_1.__exportStar(require("./models"), exports);
+var SQSServiceException_1 = require("./models/SQSServiceException");
+Object.defineProperty(exports, "SQSServiceException", { enumerable: true, get: function () { return SQSServiceException_1.SQSServiceException; } });

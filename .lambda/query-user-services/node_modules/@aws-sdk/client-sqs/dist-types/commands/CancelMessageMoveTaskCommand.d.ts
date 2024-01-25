@@ -1,0 +1,99 @@
+import { EndpointParameterInstructions } from "@smithy/middleware-endpoint";
+import { Command as $Command } from "@smithy/smithy-client";
+import { Handler, HttpHandlerOptions as __HttpHandlerOptions, MetadataBearer as __MetadataBearer, MiddlewareStack } from "@smithy/types";
+import { CancelMessageMoveTaskRequest, CancelMessageMoveTaskResult } from "../models/models_0";
+import { ServiceInputTypes, ServiceOutputTypes, SQSClientResolvedConfig } from "../SQSClient";
+/**
+ * @public
+ */
+export { __MetadataBearer, $Command };
+/**
+ * @public
+ *
+ * The input for {@link CancelMessageMoveTaskCommand}.
+ */
+export interface CancelMessageMoveTaskCommandInput extends CancelMessageMoveTaskRequest {
+}
+/**
+ * @public
+ *
+ * The output of {@link CancelMessageMoveTaskCommand}.
+ */
+export interface CancelMessageMoveTaskCommandOutput extends CancelMessageMoveTaskResult, __MetadataBearer {
+}
+/**
+ * @public
+ * <p>Cancels a specified message movement task. A message movement can only be cancelled
+ *             when the current status is RUNNING. Cancelling a message movement task does not revert
+ *             the messages that have already been moved. It can only stop the messages that have not
+ *             been moved yet.</p>
+ *          <note>
+ *             <ul>
+ *                <li>
+ *                   <p>This action is currently limited to supporting message redrive from <a href="https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-dead-letter-queues.html">dead-letter queues (DLQs)</a> only. In this context, the source
+ *                         queue is the dead-letter queue (DLQ), while the destination queue can be the
+ *                         original source queue (from which the messages were driven to the
+ *                         dead-letter-queue), or a custom destination queue. </p>
+ *                </li>
+ *                <li>
+ *                   <p>Currently, only standard queues are supported.</p>
+ *                </li>
+ *                <li>
+ *                   <p>Only one active message movement task is supported per queue at any given
+ *                         time.</p>
+ *                </li>
+ *             </ul>
+ *          </note>
+ * @example
+ * Use a bare-bones client and the command you need to make an API call.
+ * ```javascript
+ * import { SQSClient, CancelMessageMoveTaskCommand } from "@aws-sdk/client-sqs"; // ES Modules import
+ * // const { SQSClient, CancelMessageMoveTaskCommand } = require("@aws-sdk/client-sqs"); // CommonJS import
+ * const client = new SQSClient(config);
+ * const input = { // CancelMessageMoveTaskRequest
+ *   TaskHandle: "STRING_VALUE", // required
+ * };
+ * const command = new CancelMessageMoveTaskCommand(input);
+ * const response = await client.send(command);
+ * // { // CancelMessageMoveTaskResult
+ * //   ApproximateNumberOfMessagesMoved: Number("long"),
+ * // };
+ *
+ * ```
+ *
+ * @param CancelMessageMoveTaskCommandInput - {@link CancelMessageMoveTaskCommandInput}
+ * @returns {@link CancelMessageMoveTaskCommandOutput}
+ * @see {@link CancelMessageMoveTaskCommandInput} for command's `input` shape.
+ * @see {@link CancelMessageMoveTaskCommandOutput} for command's `response` shape.
+ * @see {@link SQSClientResolvedConfig | config} for SQSClient's `config` shape.
+ *
+ * @throws {@link ResourceNotFoundException} (client fault)
+ *  <p>One or more specified resources don't exist.</p>
+ *
+ * @throws {@link UnsupportedOperation} (client fault)
+ *  <p>Error code 400. Unsupported operation.</p>
+ *
+ * @throws {@link SQSServiceException}
+ * <p>Base exception class for all service exceptions from SQS service.</p>
+ *
+ */
+export declare class CancelMessageMoveTaskCommand extends $Command<CancelMessageMoveTaskCommandInput, CancelMessageMoveTaskCommandOutput, SQSClientResolvedConfig> {
+    readonly input: CancelMessageMoveTaskCommandInput;
+    static getEndpointParameterInstructions(): EndpointParameterInstructions;
+    /**
+     * @public
+     */
+    constructor(input: CancelMessageMoveTaskCommandInput);
+    /**
+     * @internal
+     */
+    resolveMiddleware(clientStack: MiddlewareStack<ServiceInputTypes, ServiceOutputTypes>, configuration: SQSClientResolvedConfig, options?: __HttpHandlerOptions): Handler<CancelMessageMoveTaskCommandInput, CancelMessageMoveTaskCommandOutput>;
+    /**
+     * @internal
+     */
+    private serialize;
+    /**
+     * @internal
+     */
+    private deserialize;
+}

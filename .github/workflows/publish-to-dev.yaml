@@ -81,7 +81,7 @@ jobs:
         run: sam validate
 
       - name: SAM build
-        run: sam build
+        run: sam build --manifest package.json
 
       - name: Deploy SAM app
         uses: alphagov/di-devplatform-upload-action@1db904c002e0f98dbcb5ab453ceb1b71de5f7dd3 # pin@v2

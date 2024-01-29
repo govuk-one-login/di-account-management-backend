@@ -1,9 +1,13 @@
+// TODO: remove lint exclusion
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import VALIDATOR_RULES_MAP, {
   ValidationRule,
   ValidationRules,
 } from "./validator-rules";
 
 function validateObject(
+  // TODO: Remove lint exclusion
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   event?: Record<string, any>,
   validationRules?: ValidationRules | undefined
 ): boolean {

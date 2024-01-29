@@ -1,3 +1,5 @@
+// TODO: Remove lint exclusion
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { SNSEvent } from "aws-lambda";
 import {
   SendMessageCommand,

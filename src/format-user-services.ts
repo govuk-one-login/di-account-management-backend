@@ -4,7 +4,12 @@ import {
   SQSClient,
 } from "@aws-sdk/client-sqs";
 import { SQSEvent, SQSRecord } from "aws-lambda";
-import type { UserData, UserRecordEvent, Service, TxmaEvent } from "./common/format-user-services-models";
+import type {
+  UserData,
+  UserRecordEvent,
+  Service,
+  TxmaEvent,
+} from "./common/format-user-services-models";
 
 const validateUserService = (service: Service): void => {
   if (

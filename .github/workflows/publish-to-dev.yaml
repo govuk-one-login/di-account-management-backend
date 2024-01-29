@@ -78,11 +78,9 @@ jobs:
           aws-region: eu-west-2
 
       - name: SAM validate
-        working-directory: ./infrastructure
         run: sam validate
 
       - name: SAM build
-        working-directory: ./infrastructure
         run: sam build
 
       - name: Deploy SAM app
@@ -90,4 +88,3 @@ jobs:
         with:
           artifact-bucket-name: ${{ secrets.DEV_ARTIFACT_BUCKET_NAME }}
           signing-profile-name: ${{ secrets.DEV_SIGNING_PROFILE_NAME }}
-          working-directory: ./infrastructure

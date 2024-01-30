@@ -7,10 +7,7 @@ import { buildEncrypt, MessageHeader } from "@aws-crypto/client-node";
 import { when } from "jest-when";
 import encryptData from "../common/encrypt-data";
 import { SQSEvent, SQSRecord } from "aws-lambda";
-import {
-  ActivityLogEntry,
-  EncryptedActivityLogEntry,
-} from "../common/write-activity-log-models";
+import { ActivityLogEntry, EncryptedActivityLogEntry } from "../common/model";
 
 export const eventId = "event_id";
 export const eventType = "TXMA_EVENT";

@@ -1,6 +1,6 @@
 import validateObject from "../common/validator";
 import validatorRules, { ValidationRules } from "../common/validator-rules";
-import { SuspiciousActivityEvent } from "../common/send-event-to-txma-models";
+import { SuspiciousActivityEvent } from "../common/model";
 
 describe("validate", () => {
   let suspiciousActivityEvent: SuspiciousActivityEvent;

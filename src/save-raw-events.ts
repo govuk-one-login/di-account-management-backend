@@ -11,7 +11,7 @@ import {
   SendMessageRequest,
   SQSClient,
 } from "@aws-sdk/client-sqs";
-import { TxmaEvent, UserData } from "./common/save-raw-events-models";
+import { TxmaEvent, UserData } from "./common/model";
 
 const marshallOptions = {
   convertClassInstanceToMap: true,

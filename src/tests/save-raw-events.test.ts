@@ -11,7 +11,7 @@ import {
   validateUser,
 } from "../save-raw-events";
 import { SQSEvent, SQSRecord } from "aws-lambda";
-import { TxmaEvent, UserData } from "../common/save-raw-events-models";
+import { TxmaEvent, UserData } from "../common/model";
 
 const userId = "user_id";
 const eventId = "ab12345a-a12b-3ced-ef12-12a3b4cd5678";

@@ -14,7 +14,7 @@ import {
   UserData,
   UserRecordEvent,
   UserServices,
-} from "./common/query-user-services-models";
+} from "./common/model";
 
 const marshallOptions = {
   convertClassInstanceToMap: true,

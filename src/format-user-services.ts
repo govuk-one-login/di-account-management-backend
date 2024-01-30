@@ -9,7 +9,7 @@ import type {
   UserRecordEvent,
   Service,
   TxmaEvent,
-} from "./common/format-user-services-models";
+} from "./common/model";
 
 const validateUserService = (service: Service): void => {
   if (
@@ -76,12 +76,13 @@ export const validateAndParseSQSRecord = (
   return parsedRecord;
 };
 
-export const newServicePresenter = (TxmaEvent: TxmaEvent): Service => ({
-  client_id: TxmaEvent.client_id,
-  count_successful_logins: 1,
-  last_accessed: TxmaEvent.timestamp,
-  last_accessed_pretty: prettifyDate(TxmaEvent.timestamp),
-});
+export const newServicePresenter = (TxmaEvent: TxmaEvent): Service =>
+  <Service>{
+    client_id: TxmaEvent.client_id,
+    count_successful_logins: 1,
+    last_accessed: TxmaEvent.timestamp,
+    last_accessed_pretty: prettifyDate(TxmaEvent.timestamp),
+  };
 
 export const existingServicePresenter = (
   service: Service,

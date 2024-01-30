@@ -10,7 +10,7 @@ import {
   SendMessageRequest,
   SQSClient,
 } from "@aws-sdk/client-sqs";
-import { Service, UserServices } from "./common/write-user-services-models";
+import { Service, UserServices } from "./common/model";
 
 const marshallOptions = {
   convertClassInstanceToMap: true,

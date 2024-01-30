@@ -7,10 +7,7 @@ import {
   SendMessageRequest,
   SQSClient,
 } from "@aws-sdk/client-sqs";
-import {
-  CurrentTimeDescriptor,
-  TxmaEvent,
-} from "./common/send-event-to-txma-models";
+import { CurrentTimeDescriptor, TxmaEvent } from "./common/model";
 import {
   COMPONENT_ID,
   EventNamesEnum,

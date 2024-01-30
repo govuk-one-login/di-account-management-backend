@@ -7,7 +7,7 @@ import {
   UserServices,
   TxmaEvent,
   UserData,
-} from "../common/query-user-services-models";
+} from "../common/model";
 import "aws-sdk-client-mock-jest";
 import {
   handler,

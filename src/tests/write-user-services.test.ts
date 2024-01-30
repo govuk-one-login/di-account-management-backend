@@ -7,7 +7,7 @@ import {
   validateServices,
   validateUserServices,
 } from "../write-user-services";
-import { Service, UserServices } from "../common/write-user-services-models";
+import { Service, UserServices } from "../common/model";
 import { SQSEvent, SQSRecord } from "aws-lambda";
 
 export const date = new Date();

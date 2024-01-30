@@ -10,10 +10,7 @@ import {
   SendMessageRequest,
   SQSClient,
 } from "@aws-sdk/client-sqs";
-import {
-  ActivityLogEntry,
-  EncryptedActivityLogEntry,
-} from "./common/write-activity-log-models";
+import { ActivityLogEntry, EncryptedActivityLogEntry } from "./common/model";
 import encryptData from "./common/encrypt-data";
 
 const dynamoClient = new DynamoDBClient({});

@@ -19,7 +19,7 @@ import {
   UserRecordEvent,
   UserServices,
   TxmaEvent,
-} from "../common/format-user-services-models";
+} from "../common/model";
 
 export const makeServiceRecord = (
   clientId: string,
@@ -61,9 +61,13 @@ export const makeTxmaEvent = (clientId: string, userId: string): TxmaEvent => ({
   event_name: "event_1",
   event_id: "event_id",
   timestamp: 1670850655485,
+  timestamp_formatted: "",
   client_id: clientId,
   user: {
     user_id: userId,
+    access_token: "",
+    govuk_signin_journey_id: "",
+    public_subject_id: "",
   },
 });
 

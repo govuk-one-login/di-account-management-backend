@@ -8,7 +8,7 @@ import {
   sendSqsMessage,
   transformToTxMAEvent,
 } from "../send-suspicious-activity";
-import { SuspiciousActivityEvent } from "../common/send-event-to-txma-models";
+import { SuspiciousActivityEvent } from "../common/model";
 import { SNSEvent, SNSEventRecord, SNSMessage } from "aws-lambda";
 
 const TEST_SNS_MESSAGE: SNSMessage = {
@@ -72,9 +72,9 @@ describe("sendAuditEventToTxMA", () => {
     const consoleLog = jest.spyOn(console, "log").mockImplementation();
     const txMAEvent = {
       timestamp: 1726268400,
-      event_timestamp_ms: 1726268400000,
-      event_timestamp_ms_formatted: "2024-09-13T23:00:00.000Z",
+      timestamp_formatted: "2024-09-13T23:00:00.000Z",
       component_id: "https://home.account.gov.uk",
+      event_id: "event-id",
       event_name: "HOME_REPORT_SUSPICIOUS_ACTIVITY",
       extensions: {
         reported_session_id: "111111",
@@ -99,7 +99,10 @@ describe("sendAuditEventToTxMA", () => {
   test("send audit event fails and handles error correctly", async () => {
     const consoleError = jest.spyOn(console, "error").mockImplementation();
     const txMAEvent = {
+      timestamp: 1726268400,
+      timestamp_formatted: "2024-09-13T23:00:00.000Z",
       component_id: "https://home.account.gov.uk",
+      event_id: "event-id",
       event_name: "HOME_REPORT_SUSPICIOUS_ACTIVITY",
       extensions: {
         reported_session_id: "111111",

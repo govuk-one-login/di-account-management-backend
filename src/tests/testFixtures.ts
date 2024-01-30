@@ -28,6 +28,7 @@ export const randomEventType = "AUTH_OTHER_RANDOM_EVENT";
 export const queueUrl = "http://my_queue_url";
 export const messageId = "MyMessageId";
 export const tableName = "tableName";
+export const indexName = 'indexName';
 
 export const user: UserData = {
   user_id: userId,

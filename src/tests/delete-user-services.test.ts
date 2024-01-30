@@ -2,15 +2,18 @@ import "aws-sdk-client-mock-jest";
 import { DynamoDBDocumentClient, DeleteCommand } from "@aws-sdk/lib-dynamodb";
 import { SendMessageCommand, SQSClient } from "@aws-sdk/client-sqs";
 import { mockClient } from "aws-sdk-client-mock";
+import type { SNSEvent, SNSMessage, SNSEventRecord } from "aws-lambda";
 import {
   handler,
   validateUserData,
   deleteUserData,
 } from "../delete-user-services";
+import { UserData } from "../common/model";
 
-import type { SNSEvent, SNSMessage, SNSEventRecord } from "aws-lambda";
-
-export const TEST_USER_DATA = {
+export const TEST_USER_DATA: UserData = {
+  govuk_signin_journey_id: "",
+  access_token: "",
+  public_subject_id: "",
   user_id: "user-id",
 };
 

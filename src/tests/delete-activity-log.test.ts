@@ -10,39 +10,25 @@ import {
   handler,
   validateUserData,
 } from "../delete-activity-log";
-import {
-  Activity,
-  ActivityLogEntry,
-} from "../common/delete-activity-log-models";
+import { ActivityLogEntry, UserData } from "../common/model";
 import type { SNSEvent, SNSMessage, SNSEventRecord } from "aws-lambda";
 
 const dynamoMock = mockClient(DynamoDBDocumentClient);
 const sqsMock = mockClient(SQSClient);
 
 export const eventType = "AUTH_AUTH_CODE_ISSUED";
-export const randomEventType = "AUTH_OTHER_RANDOM_EVENT";
 export const userId = "user_id";
 export const sessionId = "session_id";
-export const clientId = "client_id";
 export const date = new Date();
-export const tableName = "TableName";
 export const timestamp = date.valueOf();
-
-const activityList: Activity[] = [
-  {
-    type: "service_visited",
-    client_id: clientId,
-    timestamp,
-  },
-];
-
 const activityLogEntry: ActivityLogEntry = {
+  client_id: "",
+  event_id: "",
+  reported_suspicious: false,
   event_type: eventType,
   session_id: sessionId,
   user_id: userId,
   timestamp,
-  activities: activityList,
-  truncated: true,
 };
 const activityLogEntry1: ActivityLogEntry = {
   ...activityLogEntry,
@@ -69,7 +55,10 @@ const deleteRequest = {
 };
 
 // From test--helpers
-export const TEST_USER_DATA = {
+export const TEST_USER_DATA: UserData = {
+  govuk_signin_journey_id: "",
+  access_token: "",
+  public_subject_id: "",
   user_id: "user-id",
 };
 
@@ -121,8 +110,14 @@ describe("deleteUserData", () => {
   });
 
   test("multiple requests made to DB to get all request", async () => {
+    const userData: UserData = {
+      govuk_signin_journey_id: "",
+      access_token: "",
+      public_subject_id: "",
+      user_id: userId,
+    };
     const activityRecords: ActivityLogEntry[] | undefined =
-      await getAllActivitiesoForUser({ user_id: userId });
+      await getAllActivitiesoForUser(userData);
     expect(activityRecords?.[0]).toEqual(activityLogEntry1);
     expect(activityRecords?.[1]).toEqual(activityLogEntry2);
     expect(activityRecords?.[2]).toEqual(activityLogEntry3);

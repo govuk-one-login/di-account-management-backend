@@ -10,10 +10,7 @@ import {
   SendMessageRequest,
   SQSClient,
 } from "@aws-sdk/client-sqs";
-import {
-  ActivityLogEntry,
-  UserData,
-} from "./common/delete-activity-log-models";
+import { ActivityLogEntry, UserData } from "./common/model";
 
 const marshallOptions = {
   convertClassInstanceToMap: true,

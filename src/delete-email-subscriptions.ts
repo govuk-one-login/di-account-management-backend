@@ -4,7 +4,7 @@ import {
   SendMessageRequest,
   SendMessageCommand,
 } from "@aws-sdk/client-sqs";
-import { UserData } from "./common/delete-email-subscriptions-models";
+import { UserData } from "./common/model";
 
 const sqsClient = new SQSClient({});
 

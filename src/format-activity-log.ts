@@ -12,19 +12,20 @@ import {
   allowedTxmaEvents,
   REPORT_SUSPICIOUS_ACTIVITY_DEFAULT,
   TxmaEvent,
-} from "./common/format-activity-log-models";
+} from "./common/model";
 
 const createNewActivityLogEntryFromTxmaEvent = (
   txmaEvent: TxmaEvent
-): ActivityLogEntry => ({
-  event_id: txmaEvent.event_id,
-  event_type: txmaEvent.event_name,
-  session_id: txmaEvent.user?.session_id,
-  user_id: txmaEvent.user?.user_id,
-  client_id: txmaEvent.client_id,
-  timestamp: txmaEvent.timestamp,
-  reported_suspicious: REPORT_SUSPICIOUS_ACTIVITY_DEFAULT,
-});
+): ActivityLogEntry =>
+  <ActivityLogEntry>{
+    event_id: txmaEvent.event_id,
+    event_type: txmaEvent.event_name,
+    session_id: txmaEvent.user?.session_id,
+    user_id: txmaEvent.user?.user_id,
+    client_id: txmaEvent.client_id,
+    timestamp: txmaEvent.timestamp,
+    reported_suspicious: REPORT_SUSPICIOUS_ACTIVITY_DEFAULT,
+  };
 
 export const validateTxmaEventBody = (txmaEvent: TxmaEvent): void => {
   if (

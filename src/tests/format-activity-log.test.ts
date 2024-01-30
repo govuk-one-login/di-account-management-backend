@@ -8,11 +8,7 @@ import {
   validateTxmaEventBody,
 } from "../format-activity-log";
 import { DynamoDBRecord, DynamoDBStreamEvent } from "aws-lambda";
-import {
-  TxmaEvent,
-  ActivityLogEntry,
-  UserData,
-} from "../common/format-activity-log-models";
+import { TxmaEvent, ActivityLogEntry, UserData } from "../common/model";
 
 export const txmaEventId = "12345678";
 export const eventType = "AUTH_AUTH_CODE_ISSUED";
@@ -26,6 +22,8 @@ export const messageId = "MyMessageId";
 export const tableName = "tableName";
 
 const MUTABLE_USER_DATA: UserData = {
+  access_token: "",
+  public_subject_id: "",
   user_id: userId,
   govuk_signin_journey_id: "234567",
   session_id: sessionId,

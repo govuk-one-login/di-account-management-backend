@@ -9,7 +9,6 @@ on:
 defaults:
   run:
     shell: bash
-    working-directory: ./infrastructure
 
 jobs:
   deploy:
@@ -33,37 +32,9 @@ jobs:
       - name: Install ESbuild
         run: npm install -g esbuild@0.15.12
 
-      - name: Test query-user-services
+      - name: Test
         run: npm ci && npm test
-        working-directory: ./lambda/query-user-services
-
-      - name: Test format-user-services
-        run: npm ci && npm test
-        working-directory: ./lambda/format-user-services
-
-      - name: Test write-user-services
-        run: npm ci && npm test
-        working-directory: ./lambda/write-user-services
-
-      - name: Test delete-user-services
-        run: npm ci && npm test
-        working-directory: ./lambda/delete-user-services
-
-      - name: Test save-raw-events
-        run: npm ci && npm test
-        working-directory: ./lambda/save-raw-events
-
-      - name: Test format-activity-log
-        run: npm ci && npm test
-        working-directory: ./lambda/format-activity-log
-
-      - name: Test write-activity-log
-        run: npm ci && npm test
-        working-directory: ./lambda/write-activity-log
-
-      - name: Test delete-activity-log
-        run: npm ci && npm test
-        working-directory: ./lambda/delete-activity-log
+        working-directory: ./
 
       - name: Set up Python 3.9
         uses: actions/setup-python@d27e3f3d7c64b4bbf8e4abfb9b63b83e846e0435 # pin@v4

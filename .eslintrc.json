@@ -1,0 +1,31 @@
+{
+  "parser": "@typescript-eslint/parser",
+  "overrides": [
+    {
+      "files": ["src/**/*.ts"]
+    }
+  ],
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:prettier/recommended"
+  ],
+  "plugins": [
+    "@typescript-eslint"
+  ],
+  "settings": {
+    "import/resolver": {
+      "typescript": {
+        "alwaysTryTypes": true,
+        "paths": "./tsconfig.json"
+      }
+    }
+  },
+  "rules": {
+    "no-console": "off",
+    "import/no-extraneous-dependencies": [
+      "off",
+      { "devDependencies": ["**/*.test.ts"] }
+    ]
+  }
+}

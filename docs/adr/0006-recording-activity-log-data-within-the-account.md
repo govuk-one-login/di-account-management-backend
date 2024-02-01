@@ -143,7 +143,7 @@ export interface ActivityLogEntry {
 }
 ```
 
-See [shared-models.ts](https://github.com/alphagov/di-account-management-backend/blob/main/lambda/shared-models.ts)
+See [model.ts](https://github.com/alphagov/di-account-management-backend/blob/main/src/common/model.ts)
 
 ### Data storage
 

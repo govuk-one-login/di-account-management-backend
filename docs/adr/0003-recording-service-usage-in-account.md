@@ -85,7 +85,7 @@ export interface Service {
 }
 ```
 
-See [models.ts](https://github.com/alphagov/di-account-management-backend/blob/main/lambda/write-user-services/models.ts)
+See [model.ts](https://github.com/alphagov/di-account-management-backend/blob/main/src/common/model.ts)
 
 ### Data storage
 

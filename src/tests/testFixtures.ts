@@ -28,11 +28,23 @@ export const randomEventType = "AUTH_OTHER_RANDOM_EVENT";
 export const queueUrl = "http://my_queue_url";
 export const messageId = "MyMessageId";
 export const tableName = "tableName";
+export const indexName = "indexName";
 
 export const user: UserData = {
   user_id: userId,
   session_id: sessionId,
 };
+
+export const TEST_ACTIVITY_LOG_ENTRY: ActivityLogEntry = {
+  event_type: eventType,
+  session_id: sessionId,
+  user_id: userId,
+  timestamp,
+  event_id: eventId,
+  client_id: clientId,
+  reported_suspicious: reportedSuspicious,
+};
+
 export const TEST_USER_DATA: UserData = {
   user_id: "user-id",
   access_token: "access_token",
@@ -67,11 +79,32 @@ export const TEST_SNS_MESSAGE: SNSMessage = {
   Subject: "Subject",
 };
 
+export const TEST_SNS_EVENT_MESSAGE: SNSMessage = {
+  SignatureVersion: "SignatureVersion",
+  Timestamp: "Timestamp",
+  Signature: "Signature",
+  SigningCertUrl: "SigningCertUrl",
+  MessageId: "MessageId",
+  Message: JSON.stringify(TEST_ACTIVITY_LOG_ENTRY),
+  MessageAttributes: {},
+  Type: "Type",
+  UnsubscribeUrl: "unsubscribeUrl",
+  TopicArn: "TopicArn",
+  Subject: "Subject",
+};
+
 export const TEST_SNS_EVENT_RECORD: SNSEventRecord = {
   EventVersion: "1",
   EventSubscriptionArn: "arn",
   EventSource: "source",
   Sns: TEST_SNS_MESSAGE,
+};
+
+export const TEST_SNS_EVENT_RECORD_WITH_EVENT: SNSEventRecord = {
+  EventVersion: "1",
+  EventSubscriptionArn: "arn",
+  EventSource: "source",
+  Sns: TEST_SNS_EVENT_MESSAGE,
 };
 
 export const TEST_SNS_EVENT: SNSEvent = {
@@ -82,14 +115,8 @@ export const TEST_SNS_EVENT_WITH_TWO_RECORDS: SNSEvent = {
   Records: [TEST_SNS_EVENT_RECORD, TEST_SNS_EVENT_RECORD],
 };
 
-export const TEST_ACTIVITY_LOG_ENTRY: ActivityLogEntry = {
-  event_type: eventType,
-  session_id: sessionId,
-  user_id: userId,
-  timestamp,
-  event_id: eventId,
-  client_id: clientId,
-  reported_suspicious: reportedSuspicious,
+export const TEST_SNS_EVENT_WITH_EVENT: SNSEvent = {
+  Records: [TEST_SNS_EVENT_RECORD_WITH_EVENT],
 };
 
 const NO_ACTIVITY_ARRAY = { ...TEST_ACTIVITY_LOG_ENTRY, activities: undefined };

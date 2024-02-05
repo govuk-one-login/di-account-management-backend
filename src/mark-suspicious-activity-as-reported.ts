@@ -9,6 +9,7 @@ import {
   DynamoDBDocumentClient,
   UpdateCommand,
   QueryCommand,
+  QueryCommandOutput,
 } from "@aws-sdk/lib-dynamodb";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { ActivityLogEntry } from "./common/model";
@@ -43,11 +44,11 @@ export const getItemByEventId = async (
     },
   });
 
-  const result = await dynamoDocClient.send(getItem);
+  const result: QueryCommandOutput = await dynamoDocClient.send(getItem);
 
-  if (result?.Items?.length !== 1) {
+  if (result.Items?.length !== 1) {
     throw Error(
-      `Expecting exactly 1 result from getItemByEventId, but got ${result?.Items?.length}`
+      `Expecting exactly 1 result from getItemByEventId, but got ${result.Items?.length}`
     );
   }
   const item = result.Items[0];
@@ -87,6 +88,11 @@ export const handler = async (event: SNSEvent): Promise<void> => {
         if (!INDEX_NAME) {
           throw new Error(
             "Cannot handle event as index name has not been provided in the environment"
+          );
+        }
+        if (!DLQ_URL) {
+          throw new Error(
+            "Cannot handle event as DLQ url has not been provided in the environment"
           );
         }
         const receivedEvent: ActivityLogEntry = JSON.parse(record.Sns.Message);

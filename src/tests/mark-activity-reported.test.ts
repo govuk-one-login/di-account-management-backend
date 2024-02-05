@@ -4,7 +4,7 @@ import {
   handler,
   markEventAsReported,
   sendSqsMessage,
-} from "../mark-suspicious-activity-as-reported";
+} from "../mark-activity-reported";
 import { SendMessageCommand, SQSClient } from "@aws-sdk/client-sqs";
 import { mockClient } from "aws-sdk-client-mock";
 import {

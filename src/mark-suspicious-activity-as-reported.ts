@@ -13,6 +13,7 @@ import {
 } from "@aws-sdk/lib-dynamodb";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { ActivityLogEntry } from "./common/model";
+import redact from "./common/redact";
 
 const dynamoClient = new DynamoDBClient({});
 const dynamoDocClient = DynamoDBDocumentClient.from(dynamoClient);
@@ -104,6 +105,10 @@ export const handler = async (event: SNSEvent): Promise<void> => {
         );
         await markEventAsReported(TABLE_NAME, user_id, timestamp);
       } catch (err) {
+        console.error(
+          "Error marking event as reported, sending to DLQ",
+          redact(record.Sns.Message, ["user_id"])
+        );
         const response = await sendSqsMessage(record.Sns.Message, DLQ_URL);
         console.error(
           `[Message sent to DLQ] with message id = ${response.MessageId}`,

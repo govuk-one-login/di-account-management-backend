@@ -1,5 +1,3 @@
-import { QueryCommandOutput } from "@aws-sdk/lib-dynamodb";
-
 export interface UserData {
   user_id: string;
   email?: string;

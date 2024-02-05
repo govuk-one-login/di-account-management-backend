@@ -2099,12 +2099,12 @@ Resources:
       - MarkActivityReportedLogGroup
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub ${Environment}-${AWS::StackName}-mark-suspicious-activity-reported
+      FunctionName: !Sub ${Environment}-${AWS::StackName}-mark-activity-reported
       CodeUri: src
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt MarkActivityReportedDeadLetterQueue.Arn
-      Handler: mark-suspicious-activity-as-reported.handler
+      Handler: mark-activity-as-reported.handler
       PackageType: Zip
       Role: !GetAtt MarkActivityReportedRole.Arn
       Environment:
@@ -2119,7 +2119,7 @@ Resources:
         Target: "es2020"
         Sourcemap: true
         EntryPoints:
-          - mark-suspicious-activity-as-reported.ts
+          - mark-activity-as-reported.ts
 
   MarkActivityReportedRole:
     Type: AWS::IAM::Role
@@ -2187,7 +2187,7 @@ Resources:
   MarkActivityReportedLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-mark-suspicious-activity-reported"
+      LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-mark-activity-reported"
       RetentionInDays: 30
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 

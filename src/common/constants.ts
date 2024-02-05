@@ -22,3 +22,4 @@ export const allowedTxmaEvents: Array<string> = [
 ];
 
 export const REPORT_SUSPICIOUS_ACTIVITY_DEFAULT = false;
+export const CREATE_TICKET_PATH = "/tickets.json";

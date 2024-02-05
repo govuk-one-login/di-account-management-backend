@@ -19,6 +19,19 @@ export interface Service {
   last_accessed_pretty: string;
 }
 
+export interface Error {
+  message: string;
+}
+
+interface HttpErrorResponse {
+  statusText: string;
+  status: number;
+}
+
+export interface HttpError {
+  response: HttpErrorResponse;
+}
+
 export interface UserServices {
   user_id: string;
   services: Service[];
@@ -68,7 +81,7 @@ export interface ReportedEvent {
   activities: ReportedActivity;
 }
 
-export interface SuspiciousActivityEvent {
+export interface TxMASuspiciousActivityEvent {
   user_id: string;
   email_address: string;
   persistent_session_id: string;
@@ -95,4 +108,37 @@ export interface EncryptedActivityLogEntry {
   timestamp: number;
   client_id: string;
   reported_suspicious: boolean;
+}
+
+export interface SuspiciousActivityEvent {
+  event_id: string;
+  event_name: string;
+  timestamp: number;
+  timestamp_formatted: string;
+  client_id: string;
+  user: UserData;
+  reported_suspicious: boolean;
+}
+
+interface Comment {
+  body?: string;
+  html_body?: string;
+  public?: boolean;
+}
+
+export interface CreateTicketPayload {
+  ticket: CreateTicket;
+}
+
+export interface CreateTicket {
+  comment: Comment;
+  subject?: string;
+  group_id?: number;
+  tags?: ReadonlyArray<string> | null;
+  requester?: RequesterAnonymous;
+}
+
+interface RequesterAnonymous {
+  name?: string;
+  email?: string;
 }

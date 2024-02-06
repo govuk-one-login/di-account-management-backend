@@ -5,12 +5,7 @@ import {
   SendMessageRequest,
   SQSClient,
 } from "@aws-sdk/client-sqs";
-import {
-  DynamoDBDocumentClient,
-  UpdateCommand,
-  QueryCommand,
-  QueryCommandOutput,
-} from "@aws-sdk/lib-dynamodb";
+import { DynamoDBDocumentClient, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { ActivityLogEntry } from "./common/model";
 import redact from "./common/redact";
@@ -31,41 +26,16 @@ export const sendSqsMessage = async (
   return client.send(new SendMessageCommand(message));
 };
 
-export const getItemByEventId = async (
-  tableName: string,
-  indexName: string,
-  eventId: string
-): Promise<{ user_id: string; timestamp: number }> => {
-  const getItem = new QueryCommand({
-    TableName: tableName,
-    IndexName: indexName,
-    KeyConditionExpression: "event_id = :event_id",
-    ExpressionAttributeValues: {
-      ":event_id": eventId,
-    },
-  });
-
-  const result: QueryCommandOutput = await dynamoDocClient.send(getItem);
-
-  if (result.Items?.length !== 1) {
-    throw Error(
-      `Expecting exactly 1 result from getItemByEventId, but got ${result.Items?.length}`
-    );
-  }
-  const item = result.Items[0];
-  return { user_id: item.user_id, timestamp: item.timestamp };
-};
-
 export const markEventAsReported = async (
   tableName: string,
   user_id: string,
-  timestamp: number
+  event_id: string
 ) => {
   const command = new UpdateCommand({
     TableName: tableName,
     Key: {
       user_id,
-      timestamp,
+      event_id,
     },
     UpdateExpression: "set reported_suspicious = :reported_suspicious",
     ExpressionAttributeValues: {
@@ -97,13 +67,11 @@ export const handler = async (event: SNSEvent): Promise<void> => {
           );
         }
         const receivedEvent: ActivityLogEntry = JSON.parse(record.Sns.Message);
-
-        const { user_id, timestamp } = await getItemByEventId(
+        await markEventAsReported(
           TABLE_NAME,
-          INDEX_NAME,
+          receivedEvent.user_id,
           receivedEvent.event_id
         );
-        await markEventAsReported(TABLE_NAME, user_id, timestamp);
       } catch (err) {
         console.error(
           "Error marking event as reported, sending to DLQ",

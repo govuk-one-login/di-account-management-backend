@@ -80,7 +80,7 @@ const newDeleteRequest = (activityLogEntry: ActivityLogEntry) => ({
   DeleteRequest: {
     Key: {
       user_id: { S: activityLogEntry.user_id },
-      timestamp: { N: activityLogEntry.timestamp.toString() },
+      event_id: { S: activityLogEntry.event_id },
     },
   },
 });

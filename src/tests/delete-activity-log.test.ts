@@ -21,12 +21,14 @@ const sqsMock = mockClient(SQSClient);
 
 export const eventType = "AUTH_AUTH_CODE_ISSUED";
 export const userId = "user_id";
+export const eventId = "event_id";
 export const sessionId = "session_id";
+export const evenetId = "event_id";
 export const date = new Date();
 export const timestamp = date.valueOf();
 const activityLogEntry: ActivityLogEntry = {
   client_id: "",
-  event_id: "",
+  event_id: eventId,
   reported_suspicious: false,
   event_type: eventType,
   session_id: sessionId,
@@ -52,7 +54,7 @@ const deleteRequest = {
   DeleteRequest: {
     Key: {
       user_id: { S: userId },
-      timestamp: { N: timestamp.toString() },
+      event_id: { S: eventId },
     },
   },
 };

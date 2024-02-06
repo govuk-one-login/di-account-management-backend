@@ -30,6 +30,35 @@ export const messageId = "MyMessageId";
 export const tableName = "tableName";
 export const indexName = "indexName";
 
+export const createSnsEvent = (message: unknown): SNSEvent => {
+  const TEST_SNS_MESSAGE: SNSMessage = {
+    SignatureVersion: "SignatureVersion",
+    Timestamp: "Timestamp",
+    Signature: "Signature",
+    SigningCertUrl: "SigningCertUrl",
+    MessageId: "MessageId",
+    Message: JSON.stringify(message),
+    MessageAttributes: {},
+    Type: "Type",
+    UnsubscribeUrl: "unsubscribeUrl",
+    TopicArn: "TopicArn",
+    Subject: "Subject",
+  };
+
+  const TEST_SNS_EVENT_RECORD: SNSEventRecord = {
+    EventVersion: "1",
+    EventSubscriptionArn: "arn",
+    EventSource: "source",
+    Sns: TEST_SNS_MESSAGE,
+  };
+
+  const TEST_SNS_EVENT: SNSEvent = {
+    Records: [TEST_SNS_EVENT_RECORD],
+  };
+
+  return TEST_SNS_EVENT;
+};
+
 export const user: UserData = {
   user_id: userId,
   session_id: sessionId,
@@ -276,4 +305,18 @@ export const TEST_SQS_EVENT_WITH_USER_SERVICES: SQSEvent = {
     TEST_SQS_RECORD_WITH_USER_SERVICES,
     TEST_SQS_RECORD_WITH_USER_SERVICES,
   ],
+};
+
+export const testSuspiciousActivityEvent = {
+  event_id: "event_id",
+  event_name: "event_name",
+  timestamp: 1609462861,
+  timestamp_formatted: "timestamp_formatted",
+  client_id: "client_id",
+  user: {
+    user_id: "user_id",
+    session_id: "session_id",
+    govuk_signin_journey_id: "govuk_signin_journey_id",
+  },
+  reported_suspicious: true,
 };

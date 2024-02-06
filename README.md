@@ -54,3 +54,16 @@ gds aws di-account-dev -- aws sqs send-message \
   --queue-url QUEUE_URL \
   --message-body '{"event_name":"event-name","timestamp":1666169856,"client_id":"client-id","user":{"user_id":"user_id"}}'
 ```
+
+## Sending support ticket for reported suspicious activity
+
+### Summary
+- When a suspicious activity is added to the SNS topic, this create-support-ticket lambda is triggered, it creates a Zendesk Ticket using the key value pair of the event body.
+
+### What the Lambda does
+- Ensure all environment variables required to successfully connect to, create ticket and send to Zendesk are provided
+- Validates the fields in the received event
+- Retrieves the values for the environment variable keys in AWS Secrets
+- Validates that values exist for the required keys - these include zendesk api credentials, groups, etc
+- Creates a zendesk ticket and sends to Zendesk
+- If any of the steps above fails, send the SNS record to DLQ for retry later

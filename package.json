@@ -24,6 +24,7 @@
     "@types/jest": "^29.2.4",
     "@types/jest-when": "^3.5.2",
     "@types/mocha": "^10.0.1",
+    "axios-mock-adapter": "1.22.0",
     "aws-sdk-client-mock": "^2.0.0",
     "aws-sdk-client-mock-jest": "^2.0.0",
     "babel-jest": "^29.1.2",
@@ -42,12 +43,15 @@
   },
   "dependencies": {
     "@aws-crypto/client-node": "^4.0.0",
+    "@aws-lambda-powertools/parameters": "^1.14.2",
     "@aws-sdk/client-dynamodb": "^3.382.0",
     "@aws-sdk/client-secrets-manager": "^3.395.0",
     "@aws-sdk/client-sqs": "^3.382.0",
     "@aws-sdk/lib-dynamodb": "^3.382.0",
     "@aws-sdk/util-dynamodb": "^3.382.0",
     "@types/aws-lambda": "^8.10.119",
+    "axios": "1.6.5",
+    "esbuild": "0.19.12",
     "jest-when": "^3.6.0"
   }
 }

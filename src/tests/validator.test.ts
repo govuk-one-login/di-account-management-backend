@@ -1,9 +1,9 @@
 import validateObject from "../common/validator";
 import validatorRules, { ValidationRules } from "../common/validator-rules";
-import { SuspiciousActivityEvent } from "../common/model";
+import { TxMASuspiciousActivityEvent } from "../common/model";
 
 describe("validate", () => {
-  let suspiciousActivityEvent: SuspiciousActivityEvent;
+  let suspiciousActivityEvent: TxMASuspiciousActivityEvent;
   let suspiciousActivityEventRule: ValidationRules | undefined;
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   beforeEach(() => {

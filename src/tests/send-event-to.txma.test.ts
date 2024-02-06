@@ -8,7 +8,7 @@ import {
   sendSqsMessage,
   transformToTxMAEvent,
 } from "../send-suspicious-activity";
-import { SuspiciousActivityEvent } from "../common/model";
+import { TxMASuspiciousActivityEvent } from "../common/model";
 import { SNSEvent, SNSEventRecord, SNSMessage } from "aws-lambda";
 
 const TEST_SNS_MESSAGE: SNSMessage = {
@@ -167,7 +167,7 @@ describe("sendSQSMessage", () => {
 });
 
 describe("transform", () => {
-  let suspiciousActivityEvent: SuspiciousActivityEvent;
+  let suspiciousActivityEvent: TxMASuspiciousActivityEvent;
   beforeEach(() => {
     process.env.EVENT_NAME = EVENT_NAME;
     suspiciousActivityEvent = {

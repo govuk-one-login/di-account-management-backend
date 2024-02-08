@@ -11,6 +11,7 @@ export const validateSuspiciousActivity = (
 };
 
 export const sendConfMail = async (email: string) => {
+  console.log("sending email");
   const client = new NotifyClient(
     "dev-4237628b-1a8d-457a-89c4-8b136c18b7d7-f95b42a3-614a-40d2-b878-17444cf88cd3"
   );
@@ -24,6 +25,7 @@ export const sendConfMail = async (email: string) => {
 
 export const handler = async (event: SNSEvent): Promise<void> => {
   const { DLQ_URL, NOTIFY_API_KEY } = process.env;
+  console.log("in the handler");
 
   await Promise.all(
     event.Records.map(async (record) => {
@@ -36,8 +38,10 @@ export const handler = async (event: SNSEvent): Promise<void> => {
         );
 
         validateSuspiciousActivity(receivedEvent);
+        console.log("validated");
 
         await sendConfMail("saral.kaushik@digital.cabinet-office.gov.uk");
+        console.log("email sent");
       } catch (err) {
         const response = await sendSqsMessage(record.Sns.Message, DLQ_URL);
         console.error(

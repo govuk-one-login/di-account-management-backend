@@ -2362,6 +2362,163 @@ Resources:
       FilterPattern: ""
       LogGroupName: !Ref SendSuspiciousActivityFunctionLogGroup
 
+  ######################
+  # Send confirmation for suspicious activity
+  ######################
+  SendConfEmailSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Endpoint: !GetAtt SendConfEmailFunction.Arn
+      Protocol: lambda
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt SendConfEmailDeadLetterQueue.Arn
+      TopicArn: !Ref SuspiciousActivityTopic
+
+  SendConfEmailDeadLetterQueue:
+    Type: AWS::SQS::Queue
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      MessageRetentionPeriod: 1209600
+      KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
+
+  SendConfEmailDeadLetterQueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues:
+        - !Ref SendConfEmailDeadLetterQueue
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: sns.amazonaws.com
+            Action: "sqs:SendMessage"
+            Resource: !GetAtt SendConfEmailDeadLetterQueue.Arn
+            Condition:
+              ArnEquals:
+                "aws:SourceArn": !Ref SuspiciousActivityTopic
+
+  SendConfEmailDeadLetterQueueAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            SendConfEmailDeadLetterQueue,
+          ],
+        ]
+      Namespace: "AWS/SQS"
+      MetricName: "ApproximateNumberOfMessagesVisible"
+      Dimensions:
+        - Name: "QueueName"
+          Value: !GetAtt SendConfEmailDeadLetterQueue.QueueName
+      Statistic: "Sum"
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: "GreaterThanOrEqualToThreshold"
+      AlarmActions:
+        - !Ref AlarmNotificationTopic
+      ActionsEnabled: true
+
+  SendConfEmailFunction:
+    DependsOn:
+      - SendConfEmailFunctionLogGroup
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${Environment}-${AWS::StackName}-send-conf-email
+      CodeUri: src
+      DeadLetterQueue:
+        Type: SQS
+        TargetArn: !GetAtt SendConfEmailDeadLetterQueue.Arn
+      Handler: send-conf-email.handler
+      PackageType: Zip
+      Role: !GetAtt SendConfEmailRole.Arn
+      Environment:
+        Variables:
+          DLQ_URL: !Ref SendConfEmailDeadLetterQueue
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        Sourcemap: true
+        EntryPoints:
+          - send-conf-email.ts
+
+  SendConfEmailRole:
+    Type: AWS::IAM::Role
+    Properties:
+      PermissionsBoundary: !If
+        - UsePermissionsBoundary
+        - !Ref PermissionsBoundary
+        - !Ref AWS::NoValue
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+        - !Ref SendConfEmailPolicy
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+
+  SendConfEmailPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - sqs:SendMessage
+            Resource:
+              - !GetAtt SendConfEmailDeadLetterQueue.Arn
+          - Effect: Allow
+            Action:
+              - "kms:Decrypt"
+              - "kms:GenerateDataKey"
+            Resource:
+              - !GetAtt SecretsKmsKey.Arn
+          - Effect: Allow
+            Action: secretsmanager:GetSecretValue # pragma: allowlist secret
+            Resource:
+              - !FindInMap [ EnvironmentConfiguration, !Ref Environment, zendeskGroupIdSecretArn ]
+              - !FindInMap [ EnvironmentConfiguration, !Ref Environment, zendeskTagsSecretArn ]
+              - !FindInMap [ EnvironmentConfiguration, !Ref Environment, zendeskApiTokenSecretArn ]
+              - !FindInMap [ EnvironmentConfiguration, !Ref Environment, zendeskApiUserSecretArn ]
+              - !FindInMap [ EnvironmentConfiguration, !Ref Environment, zendeskApiUrlSecretArn ]
+
+  SendConfEmailLambdaInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      Principal: sns.amazonaws.com
+      SourceArn:
+        Ref: SuspiciousActivityTopic
+      FunctionName: !GetAtt SendConfEmailFunction.Arn
+
+  SendConfEmailFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-send-conf-email"
+      RetentionInDays: 30
+      KmsKeyId: !GetAtt LoggingKmsKey.Arn
+
+  SendConfEmailToTxMACSLSSubscription:
+    Condition: ExportLogsToSplunk
+    Type: AWS::Logs::SubscriptionFilter
+    Properties:
+      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
+      FilterPattern: ""
+      LogGroupName: !Ref SendConfEmailFunctionLogGroup
 
   ######################
   # Create ticket for suspicious activity

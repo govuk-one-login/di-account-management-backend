@@ -24,14 +24,14 @@ export const sendConfMail = async (email: string) => {
 };
 
 export const handler = async (event: SNSEvent): Promise<void> => {
-  const { DLQ_URL, NOTIFY_API_KEY } = process.env;
+  const { DLQ_URL } = process.env;
   console.log("in the handler");
 
   await Promise.all(
     event.Records.map(async (record) => {
       try {
         assert(DLQ_URL);
-        assert(NOTIFY_API_KEY);
+        //assert(NOTIFY_API_KEY);
 
         const receivedEvent: SuspiciousActivityEvent = JSON.parse(
           record.Sns.Message

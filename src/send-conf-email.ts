@@ -30,12 +30,15 @@ export const handler = async (event: SNSEvent): Promise<void> => {
   await Promise.all(
     event.Records.map(async (record) => {
       try {
+        console.log("in the first record");
         assert(DLQ_URL);
-        //assert(NOTIFY_API_KEY);
+        // assert(NOTIFY_API_KEY);
 
         const receivedEvent: SuspiciousActivityEvent = JSON.parse(
           record.Sns.Message
         );
+
+        console.log("event", receivedEvent);
 
         validateSuspiciousActivity(receivedEvent);
         console.log("validated");

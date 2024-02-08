@@ -1,8 +1,9 @@
-import { SQSClient, SendMessageRequest } from "@aws-sdk/client-sqs";
 import {
+  SQSClient,
+  SendMessageRequest,
   SendMessageCommand,
   SendMessageCommandOutput,
-} from "@aws-sdk/client-sqs/dist-types/commands/SendMessageCommand";
+} from "@aws-sdk/client-sqs";
 
 export const sendSqsMessage = async (
   messageBody: string,

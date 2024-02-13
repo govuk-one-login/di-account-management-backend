@@ -9,12 +9,9 @@ Parameters:
   RawEventsStoreTableName:
     Type: String
     Default: raw_events
-  ActivityLogStoreTableName:
+  ActivityLogsStoreTableName:
     Type: String
-    Default: activity_logs
-  ActivityLogStoreEventIndexName:
-    Type: String
-    Default: EventIdIndex
+    Default: activity_log
   DummyEventStoreTableName:
     Type: String
     Default: dummy_events
@@ -384,7 +381,7 @@ Resources:
   #########################
   # User Activity Log store
   #########################
-  UserActivityLogStore:
+  UserActivityLogsStore:
     Type: AWS::DynamoDB::Table
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
@@ -392,8 +389,6 @@ Resources:
       AttributeDefinitions:
         - AttributeName: user_id
           AttributeType: S
-        - AttributeName: timestamp
-          AttributeType: N
         - AttributeName: session_id
           AttributeType: S
         - AttributeName: event_id
@@ -405,18 +400,12 @@ Resources:
               KeyType: HASH
           Projection:
             ProjectionType: ALL
-        - IndexName: !Ref ActivityLogStoreEventIndexName  
-          KeySchema:
-            - AttributeName: event_id
-              KeyType: HASH
-          Projection:
-            ProjectionType: ALL
       BillingMode: PAY_PER_REQUEST
-      TableName: !Ref ActivityLogStoreTableName
+      TableName: !Ref ActivityLogsStoreTableName
       KeySchema:
         - AttributeName: user_id
           KeyType: HASH
-        - AttributeName: timestamp
+        - AttributeName: event_id
           KeyType: RANGE
       Tags:
         - Key: Product
@@ -1564,7 +1553,7 @@ Resources:
       Role: !GetAtt WriteActivityRecordRole.Arn
       Environment:
         Variables:
-          TABLE_NAME: !Ref ActivityLogStoreTableName
+          TABLE_NAME: !Ref ActivityLogsStoreTableName
           DLQ_URL: !Ref WriteActivityLogDeadLetterQueue
           GENERATOR_KEY_ARN: !GetAtt GeneratorKey.Arn
           WRAPPING_KEY_ARN: !GetAtt WrapperKey.Arn
@@ -1631,10 +1620,10 @@ Resources:
               - dynamodb:PutItem
               - dynamodb:UpdateItem
             Resource:
-              - !GetAtt UserActivityLogStore.Arn
+              - !GetAtt UserActivityLogsStore.Arn
               - !Sub
                 - "${Arn}/*"
-                - Arn: !GetAtt UserActivityLogStore.Arn
+                - Arn: !GetAtt UserActivityLogsStore.Arn
           - Effect: Allow
             Action:
               - kms:Decrypt
@@ -1944,7 +1933,7 @@ Resources:
       Role: !GetAtt DeleteActivityLogRole.Arn
       Environment:
         Variables:
-          TABLE_NAME: !Ref ActivityLogStoreTableName
+          TABLE_NAME: !Ref ActivityLogsStoreTableName
           DLQ_URL: !Ref DeleteActivityLogDeadLetterQueue
     Metadata:
       BuildMethod: esbuild
@@ -1993,10 +1982,10 @@ Resources:
               - dynamodb:GetItem
               - dynamodb:BatchWriteItem
             Resource:
-              - !GetAtt UserActivityLogStore.Arn
+              - !GetAtt UserActivityLogsStore.Arn
               - !Sub
                 - "${Arn}/*"
-                - Arn: !GetAtt UserActivityLogStore.Arn
+                - Arn: !GetAtt UserActivityLogsStore.Arn
           - Effect: Allow
             Action:
               - kms:Decrypt
@@ -2134,8 +2123,7 @@ Resources:
       Role: !GetAtt MarkActivityReportedRole.Arn
       Environment:
         Variables:
-          TABLE_NAME: !Ref ActivityLogStoreTableName
-          INDEX_NAME: !Ref ActivityLogStoreEventIndexName
+          TABLE_NAME: !Ref ActivityLogsStoreTableName
           DLQ_URL: !Ref MarkActivityReportedDeadLetterQueue
     Metadata:
       BuildMethod: esbuild
@@ -2195,10 +2183,10 @@ Resources:
               - dynamodb:UpdateItem
               - dynamodb:Query
             Resource:
-              - !GetAtt UserActivityLogStore.Arn
+              - !GetAtt UserActivityLogsStore.Arn
               - !Sub
                 - "${Arn}/*"
-                - Arn: !GetAtt UserActivityLogStore.Arn
+                - Arn: !GetAtt UserActivityLogsStore.Arn
 
   MarkActivityReportedInvokePermission:
     Type: AWS::Lambda::Permission

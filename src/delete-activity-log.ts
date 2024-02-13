@@ -11,6 +11,7 @@ import {
   SQSClient,
 } from "@aws-sdk/client-sqs";
 import { ActivityLogEntry, UserData } from "./common/model";
+import assert from "node:assert";
 
 const marshallOptions = {
   convertClassInstanceToMap: true,
@@ -32,14 +33,14 @@ export const validateUserData = (userData: UserData): UserData => {
   throw new Error(`userData did not have a user_id`);
 };
 
-export const getAllActivitiesoForUser = async (
+export const getAllActivitiesForUser = async (
+  tableName: string,
   userData: UserData
 ): Promise<ActivityLogEntry[] | undefined> => {
   const queryResult: ActivityLogEntry[] = [];
-  const { TABLE_NAME } = process.env;
   let lastEvaluatedKey: Record<string, unknown> | undefined;
   const command = {
-    TableName: TABLE_NAME,
+    TableName: tableName,
     KeyConditionExpression: "user_id = :user_id",
     ExpressionAttributeValues: {
       ":user_id": userData.user_id,
@@ -47,7 +48,6 @@ export const getAllActivitiesoForUser = async (
     ScanIndexForward: true,
     ExclusiveStartKey: lastEvaluatedKey,
   };
-
   do {
     // eslint-disable-next-line no-await-in-loop
     const response = await dynamoDocClient.send(new QueryCommand(command));
@@ -80,7 +80,7 @@ const newDeleteRequest = (activityLogEntry: ActivityLogEntry) => ({
   DeleteRequest: {
     Key: {
       user_id: { S: activityLogEntry.user_id },
-      timestamp: { N: activityLogEntry.timestamp.toString() },
+      event_id: { S: activityLogEntry.event_id },
     },
   },
 });
@@ -94,6 +94,7 @@ export const buildBatchDeletionRequestArray = (
 };
 
 export const batchDeleteActivityLog = async (
+  tableName: string,
   activityLogEntries: ActivityLogEntry[]
 ) => {
   const batchArray = buildBatchDeletionRequestArray(activityLogEntries);
@@ -102,7 +103,7 @@ export const batchDeleteActivityLog = async (
       try {
         const batchcommand = new BatchWriteItemCommand({
           RequestItems: {
-            activity_logs: arrayOf25orFewerItems,
+            [tableName]: arrayOf25orFewerItems,
           },
         });
         await dynamoDocClient.send(batchcommand);
@@ -115,19 +116,23 @@ export const batchDeleteActivityLog = async (
 };
 
 export const handler = async (event: SNSEvent): Promise<void> => {
-  const { DLQ_URL } = process.env;
+  const { DLQ_URL, TABLE_NAME } = process.env;
 
   await Promise.all(
     event.Records.map(async (record) => {
       try {
+        assert(DLQ_URL);
+        assert(TABLE_NAME);
+
         const userData: UserData = JSON.parse(record.Sns.Message);
         validateUserData(userData);
         const activityRecords: ActivityLogEntry[] | undefined =
-          await getAllActivitiesoForUser(userData);
+          await getAllActivitiesForUser(TABLE_NAME, userData);
         if (activityRecords) {
-          await batchDeleteActivityLog(activityRecords);
+          await batchDeleteActivityLog(TABLE_NAME, activityRecords);
         }
       } catch (err) {
+        console.error("Error in handler", err);
         const message: SendMessageRequest = {
           QueueUrl: DLQ_URL,
           MessageBody: record.Sns.Message,

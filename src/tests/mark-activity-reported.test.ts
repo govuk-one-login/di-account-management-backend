@@ -1,59 +1,23 @@
 import "aws-sdk-client-mock-jest";
 import {
-  getItemByEventId,
   handler,
   markEventAsReported,
   sendSqsMessage,
 } from "../mark-activity-reported";
 import { SendMessageCommand, SQSClient } from "@aws-sdk/client-sqs";
 import { mockClient } from "aws-sdk-client-mock";
-import {
-  DynamoDBDocumentClient,
-  QueryCommand,
-  UpdateCommand,
-} from "@aws-sdk/lib-dynamodb";
+import { DynamoDBDocumentClient, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import {
   TEST_SNS_EVENT_WITH_EVENT,
   queueUrl,
   eventId,
   indexName,
   tableName,
-  timestamp,
   userId,
 } from "./testFixtures";
 
 const sqsMock = mockClient(SQSClient);
 const dynamoMock = mockClient(DynamoDBDocumentClient);
-
-describe("getItemByEventId", () => {
-  beforeEach(() => {
-    dynamoMock.reset();
-    dynamoMock.on(QueryCommand).resolves({
-      Items: [{ user_id: userId, timestamp: timestamp }],
-    });
-  });
-
-  afterEach(() => {
-    jest.clearAllMocks();
-  });
-
-  test("correctly retreives the event from the datastore", async () => {
-    await getItemByEventId(tableName, indexName, eventId);
-    expect(dynamoMock.commandCalls(QueryCommand).length).toEqual(1);
-    expect(dynamoMock).toHaveReceivedCommandWith(QueryCommand, {
-      TableName: tableName,
-      IndexName: indexName,
-      ExpressionAttributeValues: {
-        ":event_id": eventId,
-      },
-    });
-  });
-
-  test("returns the user id and timestamp", async () => {
-    const response = await getItemByEventId(tableName, indexName, eventId);
-    expect(response).toEqual({ user_id: userId, timestamp: timestamp });
-  });
-});
 
 describe("markEventAsReported", () => {
   beforeEach(() => {
@@ -65,13 +29,13 @@ describe("markEventAsReported", () => {
   });
 
   test("updates the correct event as reported", async () => {
-    await markEventAsReported(tableName, userId, timestamp);
+    await markEventAsReported(tableName, userId, eventId);
     expect(dynamoMock.commandCalls(UpdateCommand).length).toEqual(1);
     expect(dynamoMock).toHaveReceivedCommandWith(UpdateCommand, {
       TableName: tableName,
       Key: {
         user_id: userId,
-        timestamp: timestamp,
+        event_id: eventId,
       },
       UpdateExpression: "set reported_suspicious = :reported_suspicious",
       ExpressionAttributeValues: {
@@ -94,10 +58,6 @@ describe("handler", () => {
 
     dynamoMock.reset();
 
-    dynamoMock.on(QueryCommand).resolves({
-      Items: [{ user_id: userId, timestamp: timestamp }],
-    });
-
     sqsMock.on(SendMessageCommand).resolves({ MessageId: "MessageId" });
   });
 
@@ -108,23 +68,13 @@ describe("handler", () => {
 
   test("the handler makes the correct queries", async () => {
     await handler(TEST_SNS_EVENT_WITH_EVENT);
-    expect(dynamoMock.commandCalls(QueryCommand).length).toEqual(1);
     expect(dynamoMock.commandCalls(UpdateCommand).length).toEqual(1);
-
-    expect(dynamoMock).toHaveReceivedCommandWith(QueryCommand, {
-      TableName: tableName,
-      IndexName: indexName,
-      KeyConditionExpression: "event_id = :event_id",
-      ExpressionAttributeValues: {
-        ":event_id": eventId,
-      },
-    });
 
     expect(dynamoMock).toHaveReceivedCommandWith(UpdateCommand, {
       TableName: tableName,
       Key: {
         user_id: userId,
-        timestamp: timestamp,
+        event_id: eventId,
       },
       UpdateExpression: "set reported_suspicious = :reported_suspicious",
       ExpressionAttributeValues: {

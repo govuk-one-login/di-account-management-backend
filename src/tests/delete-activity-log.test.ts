@@ -6,7 +6,7 @@ import { BatchWriteItemCommand } from "@aws-sdk/client-dynamodb";
 import {
   batchDeleteActivityLog,
   buildBatchDeletionRequestArray,
-  getAllActivitiesoForUser,
+  getAllActivityLogEntriesForUser,
   handler,
   validateUserData,
 } from "../delete-activity-log";
@@ -14,6 +14,7 @@ import { ActivityLogEntry, UserData } from "../common/model";
 import {
   TEST_SNS_EVENT_WITH_TWO_RECORDS,
   TEST_USER_DATA,
+  eventId,
 } from "./testFixtures";
 
 const dynamoMock = mockClient(DynamoDBDocumentClient);
@@ -26,7 +27,7 @@ export const date = new Date();
 export const timestamp = date.valueOf();
 const activityLogEntry: ActivityLogEntry = {
   client_id: "",
-  event_id: "",
+  event_id: eventId,
   reported_suspicious: false,
   event_type: eventType,
   session_id: sessionId,
@@ -52,7 +53,7 @@ const deleteRequest = {
   DeleteRequest: {
     Key: {
       user_id: { S: userId },
-      timestamp: { N: timestamp.toString() },
+      event_id: { S: eventId },
     },
   },
 };
@@ -61,6 +62,7 @@ describe("deleteUserData", () => {
   beforeEach(() => {
     dynamoMock.reset();
     process.env.TABLE_NAME = "TABLE_NAME";
+    process.env.DQL_URL = "DQL_URL";
     // The mock will return activityLogEntry1 & 2 for the first set of requests
     // and further requests will return activityLogEntry3 & 4
     dynamoMock
@@ -87,7 +89,7 @@ describe("deleteUserData", () => {
       user_id: userId,
     };
     const activityRecords: ActivityLogEntry[] | undefined =
-      await getAllActivitiesoForUser(userData);
+      await getAllActivityLogEntriesForUser("TABLE_NAME", userData);
     expect(activityRecords?.[0]).toEqual(activityLogEntry1);
     expect(activityRecords?.[1]).toEqual(activityLogEntry2);
     expect(activityRecords?.[2]).toEqual(activityLogEntry3);
@@ -117,7 +119,7 @@ describe("deleteUserData", () => {
   test("test batch deletion request when 65 items to delete", () => {
     const arrayOf56Activities: ActivityLogEntry[] =
       Array(56).fill(activityLogEntry);
-    batchDeleteActivityLog(arrayOf56Activities);
+    batchDeleteActivityLog("TABLE_NAME", arrayOf56Activities);
     expect(dynamoMock.commandCalls(BatchWriteItemCommand).length).toEqual(3);
   });
 });
@@ -128,6 +130,7 @@ describe("handler", () => {
       dynamoMock.reset();
       sqsMock.reset();
       process.env.TABLE_NAME = "TABLE_NAME";
+      process.env.DLQ_URL = "DLQ_URL";
       dynamoMock.on(QueryCommand).resolves({ Items: [activityLogEntry] });
     });
 
@@ -147,6 +150,7 @@ describe("handler", () => {
       dynamoMock.reset();
       sqsMock.reset();
       process.env.TABLE_NAME = "TABLE_NAME";
+      process.env.DLQ_URL = "DLQ_URL";
       dynamoMock.on(QueryCommand).resolves({ Items: [] });
     });
 
@@ -179,7 +183,7 @@ describe("handler", () => {
 
     test("logs the error message", async () => {
       await handler(TEST_SNS_EVENT_WITH_TWO_RECORDS);
-      expect(consoleErrorMock).toHaveBeenCalledTimes(2);
+      expect(consoleErrorMock).toHaveBeenCalledTimes(4);
     });
 
     test("sends the event to the dead letter queue", async () => {

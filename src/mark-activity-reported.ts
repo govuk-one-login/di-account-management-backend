@@ -5,15 +5,11 @@ import {
   SendMessageRequest,
   SQSClient,
 } from "@aws-sdk/client-sqs";
-import {
-  DynamoDBDocumentClient,
-  UpdateCommand,
-  QueryCommand,
-  QueryCommandOutput,
-} from "@aws-sdk/lib-dynamodb";
+import { DynamoDBDocumentClient, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { ActivityLogEntry } from "./common/model";
 import redact from "./common/redact";
+import assert from "node:assert";
 
 const dynamoClient = new DynamoDBClient({});
 const dynamoDocClient = DynamoDBDocumentClient.from(dynamoClient);
@@ -31,41 +27,16 @@ export const sendSqsMessage = async (
   return client.send(new SendMessageCommand(message));
 };
 
-export const getItemByEventId = async (
-  tableName: string,
-  indexName: string,
-  eventId: string
-): Promise<{ user_id: string; timestamp: number }> => {
-  const getItem = new QueryCommand({
-    TableName: tableName,
-    IndexName: indexName,
-    KeyConditionExpression: "event_id = :event_id",
-    ExpressionAttributeValues: {
-      ":event_id": eventId,
-    },
-  });
-
-  const result: QueryCommandOutput = await dynamoDocClient.send(getItem);
-
-  if (result.Items?.length !== 1) {
-    throw Error(
-      `Expecting exactly 1 result from getItemByEventId, but got ${result.Items?.length}`
-    );
-  }
-  const item = result.Items[0];
-  return { user_id: item.user_id, timestamp: item.timestamp };
-};
-
 export const markEventAsReported = async (
   tableName: string,
   user_id: string,
-  timestamp: number
+  event_id: string
 ) => {
   const command = new UpdateCommand({
     TableName: tableName,
     Key: {
       user_id,
-      timestamp,
+      event_id,
     },
     UpdateExpression: "set reported_suspicious = :reported_suspicious",
     ExpressionAttributeValues: {
@@ -77,33 +48,20 @@ export const markEventAsReported = async (
 };
 
 export const handler = async (event: SNSEvent): Promise<void> => {
-  const { DLQ_URL, TABLE_NAME, INDEX_NAME } = process.env;
+  const { DLQ_URL, TABLE_NAME } = process.env;
   await Promise.all(
     event.Records.map(async (record) => {
       try {
-        if (!TABLE_NAME) {
-          throw new Error(
-            "Cannot handle event as table name has not been provided in the environment"
-          );
-        }
-        if (!INDEX_NAME) {
-          throw new Error(
-            "Cannot handle event as index name has not been provided in the environment"
-          );
-        }
-        if (!DLQ_URL) {
-          throw new Error(
-            "Cannot handle event as DLQ url has not been provided in the environment"
-          );
-        }
+        assert(DLQ_URL);
+        assert(TABLE_NAME);
+
         const receivedEvent: ActivityLogEntry = JSON.parse(record.Sns.Message);
 
-        const { user_id, timestamp } = await getItemByEventId(
+        await markEventAsReported(
           TABLE_NAME,
-          INDEX_NAME,
+          receivedEvent.user_id,
           receivedEvent.event_id
         );
-        await markEventAsReported(TABLE_NAME, user_id, timestamp);
       } catch (err) {
         console.error(
           "Error marking event as reported, sending to DLQ",

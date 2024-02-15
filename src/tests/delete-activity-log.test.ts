@@ -6,7 +6,7 @@ import { BatchWriteItemCommand } from "@aws-sdk/client-dynamodb";
 import {
   batchDeleteActivityLog,
   buildBatchDeletionRequestArray,
-  getAllActivitiesForUser,
+  getAllActivityLogEntriesForUser,
   handler,
   validateUserData,
 } from "../delete-activity-log";
@@ -89,7 +89,7 @@ describe("deleteUserData", () => {
       user_id: userId,
     };
     const activityRecords: ActivityLogEntry[] | undefined =
-      await getAllActivitiesForUser("TABLE_NAME", userData);
+      await getAllActivityLogEntriesForUser("TABLE_NAME", userData);
     expect(activityRecords?.[0]).toEqual(activityLogEntry1);
     expect(activityRecords?.[1]).toEqual(activityLogEntry2);
     expect(activityRecords?.[2]).toEqual(activityLogEntry3);

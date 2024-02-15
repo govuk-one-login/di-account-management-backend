@@ -33,7 +33,7 @@ export const validateUserData = (userData: UserData): UserData => {
   throw new Error(`userData did not have a user_id`);
 };
 
-export const getAllActivitiesForUser = async (
+export const getAllActivityLogEntriesForUser = async (
   tableName: string,
   userData: UserData
 ): Promise<ActivityLogEntry[] | undefined> => {
@@ -126,10 +126,10 @@ export const handler = async (event: SNSEvent): Promise<void> => {
 
         const userData: UserData = JSON.parse(record.Sns.Message);
         validateUserData(userData);
-        const activityRecords: ActivityLogEntry[] | undefined =
-          await getAllActivitiesForUser(TABLE_NAME, userData);
-        if (activityRecords) {
-          await batchDeleteActivityLog(TABLE_NAME, activityRecords);
+        const activityLogEntries: ActivityLogEntry[] | undefined =
+          await getAllActivityLogEntriesForUser(TABLE_NAME, userData);
+        if (activityLogEntries) {
+          await batchDeleteActivityLog(TABLE_NAME, activityLogEntries);
         }
       } catch (err) {
         console.error("Error in handler", err);

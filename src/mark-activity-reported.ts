@@ -9,6 +9,7 @@ import { DynamoDBDocumentClient, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { ActivityLogEntry } from "./common/model";
 import redact from "./common/redact";
+import assert from "node:assert";
 
 const dynamoClient = new DynamoDBClient({});
 const dynamoDocClient = DynamoDBDocumentClient.from(dynamoClient);
@@ -51,16 +52,9 @@ export const handler = async (event: SNSEvent): Promise<void> => {
   await Promise.all(
     event.Records.map(async (record) => {
       try {
-        if (!TABLE_NAME) {
-          throw new Error(
-            "Cannot handle event as table name has not been provided in the environment"
-          );
-        }
-        if (!DLQ_URL) {
-          throw new Error(
-            "Cannot handle event as DLQ url has not been provided in the environment"
-          );
-        }
+        assert(DLQ_URL);
+        assert(TABLE_NAME);
+
         const receivedEvent: ActivityLogEntry = JSON.parse(record.Sns.Message);
 
         await markEventAsReported(

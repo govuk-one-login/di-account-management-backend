@@ -15,6 +15,7 @@ export const sendConfMail = async (email: string) => {
   const client = new NotifyClient(
     "dev-4237628b-1a8d-457a-89c4-8b136c18b7d7-f95b42a3-614a-40d2-b878-17444cf88cd3"
   );
+  console.log("created client");
   return client.sendEmail("4e07abfb-18cf-49d9-a697-c1e53dc2da6f", email, {
     personalisation: {
       name: "Tom",

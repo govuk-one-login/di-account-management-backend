@@ -29,6 +29,10 @@ export const sendConfMail = async (activity: SuspiciousActivityEvent) => {
   );
   console.log("created client");
   const { activityData, user } = flattenActivityObject(activity);
+  console.log({
+    ...activityData,
+    ...user,
+  });
   return client.sendEmail("4e07abfb-18cf-49d9-a697-c1e53dc2da6f", user.email, {
     personalisation: {
       ...activityData,

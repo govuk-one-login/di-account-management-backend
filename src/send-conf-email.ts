@@ -33,6 +33,7 @@ export const sendConfMail = async (activity: SuspiciousActivityEvent) => {
     ...activityData,
     ...user,
   });
+  console.log("email", user.email);
   try {
     return client.sendEmail(
       "4e07abfb-18cf-49d9-a697-c1e53dc2da6f",

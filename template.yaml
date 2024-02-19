@@ -444,6 +444,7 @@ Resources:
     Properties:
       KmsMasterKeyId: !Ref AuditEncryptionKey
       MessageRetentionPeriod: 1209600
+      VisibilityTimeout: 70
       RedrivePolicy:
         deadLetterTargetArn: !GetAtt AuditDeadLetterQueue.Arn
         maxReceiveCount: 5

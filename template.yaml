@@ -2440,6 +2440,7 @@ Resources:
       Environment:
         Variables:
           DLQ_URL: !Ref SendConfEmailDeadLetterQueue
+          DEBUG: "axios"
     Metadata:
       BuildMethod: esbuild
       BuildProperties:

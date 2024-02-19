@@ -1,9 +1,20 @@
 import { SNSEvent } from "aws-lambda";
 import { sendSqsMessage } from "./common/sqs";
-import { SuspiciousActivityEvent } from "./common/model";
+import { SuspiciousActivityEvent, UserData } from "./common/model";
 import assert from "node:assert/strict";
 import { NotifyClient } from "notifications-node-client";
 import "axios-debug-log";
+
+export const flattenActivityObject = (
+  activity: SuspiciousActivityEvent
+): {
+  activityData: Omit<SuspiciousActivityEvent, "user">;
+  user: UserData;
+} => {
+  const { user, ...activityData } = activity;
+
+  return { user, activityData };
+};
 
 export const validateSuspiciousActivity = (
   suspiciousActivityEvent: SuspiciousActivityEvent
@@ -11,15 +22,17 @@ export const validateSuspiciousActivity = (
   assert(suspiciousActivityEvent.user?.email);
 };
 
-export const sendConfMail = async (email: string) => {
+export const sendConfMail = async (activity: SuspiciousActivityEvent) => {
   console.log("sending email");
   const client = new NotifyClient(
     "test-4237628b-1a8d-457a-89c4-8b136c18b7d7-a998abca-4854-408d-930d-a82189fc7459"
   );
   console.log("created client");
-  return client.sendEmail("4e07abfb-18cf-49d9-a697-c1e53dc2da6f", email, {
+  const { activityData, user } = flattenActivityObject(activity);
+  return client.sendEmail("4e07abfb-18cf-49d9-a697-c1e53dc2da6f", user.email, {
     personalisation: {
-      name: "Tom",
+      ...activityData,
+      ...user,
     },
     reference: "abc",
   });
@@ -45,7 +58,7 @@ export const handler = async (event: SNSEvent): Promise<void> => {
         validateSuspiciousActivity(receivedEvent);
         console.log("validated");
 
-        await sendConfMail("saral.kaushik@digital.cabinet-office.gov.uk");
+        await sendConfMail(receivedEvent);
         console.log("email sent");
       } catch (err) {
         const response = await sendSqsMessage(record.Sns.Message, DLQ_URL);

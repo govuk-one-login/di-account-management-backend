@@ -33,13 +33,21 @@ export const sendConfMail = async (activity: SuspiciousActivityEvent) => {
     ...activityData,
     ...user,
   });
-  return client.sendEmail("4e07abfb-18cf-49d9-a697-c1e53dc2da6f", user.email, {
-    personalisation: {
-      ...activityData,
-      ...user,
-    },
-    reference: "abc",
-  });
+  try {
+    return client.sendEmail(
+      "4e07abfb-18cf-49d9-a697-c1e53dc2da6f",
+      user.email,
+      {
+        personalisation: {
+          ...activityData,
+          ...user,
+        },
+        reference: "abc",
+      }
+    );
+  } catch (e) {
+    console.log(e);
+  }
 };
 
 export const handler = async (event: SNSEvent): Promise<void> => {

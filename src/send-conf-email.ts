@@ -13,7 +13,7 @@ export const validateSuspiciousActivity = (
 export const sendConfMail = async (email: string) => {
   console.log("sending email");
   const client = new NotifyClient(
-    "dev-4237628b-1a8d-457a-89c4-8b136c18b7d7-f95b42a3-614a-40d2-b878-17444cf88cd3"
+    "test-4237628b-1a8d-457a-89c4-8b136c18b7d7-a998abca-4854-408d-930d-a82189fc7459"
   );
   console.log("created client");
   return client.sendEmail("4e07abfb-18cf-49d9-a697-c1e53dc2da6f", email, {

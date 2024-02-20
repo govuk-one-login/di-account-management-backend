@@ -5,22 +5,38 @@ import assert from "node:assert/strict";
 import { NotifyClient } from "notifications-node-client";
 import "axios-debug-log";
 import { getSecret } from "@aws-lambda-powertools/parameters/secrets";
+import clientRegistry from "./config/clientRegistry.json";
 
-export const flattenActivityObject = (
+export const formatActivityObjectForNotify = (
   activity: SuspiciousActivityEvent
 ): {
-  activityData: Omit<SuspiciousActivityEvent, "user">;
-  user: UserData;
+  email: string;
+  clientName: string;
 } => {
-  const { user, ...activityData } = activity;
+  const { ENVIRONMENT_NAME } = process.env;
+  assert(ENVIRONMENT_NAME, "ENVIRONMENT_NAME env variable not set");
+  assert(
+    activity.user.email,
+    "Email address not present in Suspicious Activity Event"
+  );
 
-  return { user, activityData };
-};
+  assert(
+    clientRegistry[ENVIRONMENT_NAME as keyof typeof clientRegistry],
+    `${ENVIRONMENT_NAME} does not exist in config/clientRegistry.json`
+  );
 
-export const validateSuspiciousActivity = (
-  suspiciousActivityEvent: SuspiciousActivityEvent
-): void => {
-  assert(suspiciousActivityEvent.user?.email);
+  const registry =
+    clientRegistry[ENVIRONMENT_NAME as keyof typeof clientRegistry];
+
+  assert(
+    registry[activity.client_id as keyof typeof registry],
+    `${activity.client_id} does not exist in config/clientRegistry.json[${ENVIRONMENT_NAME}]`
+  );
+
+  return {
+    email: activity.user.email,
+    clientName: registry[activity.client_id as keyof typeof registry],
+  };
 };
 
 export const sendConfMail = async (
@@ -31,17 +47,13 @@ export const sendConfMail = async (
   console.log("sending email");
   const client = new NotifyClient(apiKey);
   console.log("created client");
-  const { activityData, user } = flattenActivityObject(activity);
-  console.log({
-    ...activityData,
-    ...user,
-  });
-  console.log("email", user.email);
+  const { email, clientName } = formatActivityObjectForNotify(activity);
+  console.log("email", email);
+  console.log("clientName", clientName);
   try {
-    return client.sendEmail(templateId, user.email, {
+    return client.sendEmail(templateId, email, {
       personalisation: {
-        ...activityData,
-        ...user,
+        clientName,
       },
       reference: "abc",
     });
@@ -69,8 +81,6 @@ export const handler = async (event: SNSEvent): Promise<void> => {
         const receivedEvent: SuspiciousActivityEvent = JSON.parse(
           record.Sns.Message
         );
-
-        validateSuspiciousActivity(receivedEvent);
 
         await sendConfMail(notifyApiKey as string, TEMPLATE_ID, receivedEvent);
       } catch (err) {

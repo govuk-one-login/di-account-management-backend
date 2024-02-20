@@ -1,0 +1,602 @@
+{
+  "production": {
+    "LcueBVCnGZw-YFdTZ4S07XbQx7I": {
+      "header": "GOV.UK email subscriptions",
+      "description": "See and manage the updates you get about GOV.UK pages you’re interested in.",
+      "link_text": "Go to your GOV.UK email subscriptions",
+      "link_href": "https://www.gov.uk/email/manage?from=your-services"
+    },
+    "ZL0kvRBP5xMy5OwONj8ARLPyuko": {
+      "header": "LITE (Licensing for International Trade and Enterprise)",
+      "description": "Apply for or manage export control licences for controlled goods.",
+      "link_text": "Go to your LITE account",
+      "link_href": "https://exporter.lite.private-beta.service.trade.gov.uk/"
+    },
+    "TGygWFxGDNn8ItyaecWCopqIX3s": {
+      "header": "Ofqual subject matter specialist account",
+      "description": "Apply to give specialist advice to Ofqual.",
+      "link_text": "Go to your Ofqual subject matter specialist account",
+      "link_href": "https://subject-matter-specialists.ofqual.gov.uk/"
+    },
+    "pDqO7_Hu-pq5wam5I4MlURXrv5k": {
+      "header": "Modern slavery statement registry",
+      "description": "Add or edit the statements that say what your organisation is doing to eliminate modern slavery from its supply chains.",
+      "link_text": "Go to your modern slavery statement registry account",
+      "link_href": "https://modern-slavery-statement-registry.service.gov.uk/manage-organisations"
+    },
+    "RqFZ83csmS4Mi4Y7s7ohD9-ekwU": {
+      "header": "Request a basic DBS check",
+      "link_text": "Request a basic DBS check",
+      "link_href": "https://www.gov.uk/request-copy-criminal-record"
+    },
+    "XwwVDyl5oJKtK0DVsuw3sICWkPU": {
+      "header": "Apply for a vehicle operator licence",
+      "link_text": "Apply for a vehicle operator licence",
+      "link_href": "https://www.gov.uk/apply-vehicle-operator-licence"
+    },
+    "LUIZbIuJ_xVZxwhkNAApcO4O_6o": {
+      "header": "Apply to become a registered social worker in England",
+      "link_text": "Apply to become a registered social worker in England",
+      "link_href": "https://www.socialworkengland.org.uk/registration/apply-for-registration"
+    },
+    "VsAkrtMBzAosSveAv4xsuUDyiSs": {
+      "header": "Sign your mortgage deed",
+      "link_text": "Sign your mortgage deed",
+      "link_href": "https://sign-your-mortgage-deed.landregistry.gov.uk"
+    },
+    "x3F_Iu0LgqJpegY5ni0QSB0uezw": {
+      "header": "Manage apprenticeships",
+      "description": "Manage your apprentices, training providers, recruitment and funding.",
+      "link_text": "Go to your apprenticeship service account",
+      "link_href": "https://accounts.manage-apprenticeships.service.gov.uk/service"
+    },
+    "tya4DoMpw_B7FK5YvuMAj3asc0A": {
+      "header": "Find and apply for a grant",
+      "description": "Search and apply for government grant funding",
+      "link_text": "Go to your grants account",
+      "link_href": "https://find-government-grants.service.cabinetoffice.gov.uk/apply/applicant"
+    },
+    "bGAwNKM0XvnxCAuDQ_rMhhP3dxM": {
+      "header": "Criminal injuries compensation",
+      "description": "Start or continue an application to get compensation for injuries and losses if you've been a victim of violent crime.",
+      "link_text": "Go to your criminal injuries compensation account",
+      "link_href": "https://claim-criminal-injuries-compensation.service.justice.gov.uk/account"
+    },
+    "9fduJ6KAE8WwCb1VCKp788BC8mM": {
+      "header": "Find a UK market conformity assessment body",
+      "description": "Manage conformity assessment bodies on the register.",
+      "link_text": "Go to your conformity assessment body account",
+      "link_href": "https://find-a-conformity-assessment-body.service.gov.uk/account/login"
+    },
+    "zbNToJPcre4BXEap0na8kOjniKg": {
+      "header": "Manage family support services and accounts",
+      "description": "Add and manage accounts and services in 'Find support for your family' and 'Connect families to support'.",
+      "link_text": "Go to your manage family support services account",
+      "link_href": "https://manage-family-support-services-and-accounts.education.gov.uk/Account/login-callback"
+    },
+    "cqGoT1LYLsjn-iwGcDTzamckhZU": {
+      "header": "Connect families to support",
+      "description": "Find local support services for children, young people, parents and carers.",
+      "link_text": "Go to your connect families to support account",
+      "link_href": "https://www.connect-families-to-support.education.gov.uk/Account/login-callback"
+    },
+    "dVrdJ7aemrvR0YlX7lDRaXnz0mE": {
+      "header": "Apprenticeship assessment service (AAS)",
+      "description": "Assess apprenticeships.",
+      "link_text": "Go to your apprenticeship assessments account",
+      "link_href": "https://assessors.apprenticeships.education.gov.uk/account/signin"
+    },
+    "FakIq5aYsHQ02dBOc6XwyA1wRRs": {
+      "header": "Great British Insulation Scheme (GBIS)",
+      "description": "Send your completed customer energy efficiency measures to Ofgem for review.",
+      "link_text": "Go to your GBIS dashboard",
+      "link_href": "https://gbinsulationscheme.ofgem.gov.uk/"
+    },
+    "zFeCxrwpLCUHFm-C4_CztwWtLfQ": {
+      "header": "Apply for an HM Armed Forces Veteran Card",
+      "link_text": "Apply for an HM Armed Forces Veteran Card",
+      "link_href": "https://www.gov.uk/veteran-card"
+    },
+    "txsGLvMYYCPaWPZRq2L7XxEnyro": {
+      "header": "Early years child development training",
+      "description": "Training on child development, including advice on supporting child development in your early years setting.",
+      "link_text": "Go to your early years child development training account",
+      "link_href": "https://child-development-training.education.gov.uk/my-modules"
+    }
+  },
+  "integration": {
+    "CEr97IZfEPQFgBxq8QNcM8LFxw4": {
+      "header": "GOV.UK email subscriptions",
+      "description": "See and manage the updates you get about GOV.UK pages you’re interested in.",
+      "link_text": "Go to your GOV.UK email subscriptions",
+      "link_href": "https://www.staging.publishing.service.gov.uk/email/manage?from=your-services"
+    },
+    "JO3ET6EtFN3FzjGC3yRP2qpuoHQ": {
+      "header": "LITE (Licensing for International Trade and Enterprise)",
+      "description": "Apply for or manage export control licences for controlled goods.",
+      "link_text": "Go to your LITE account",
+      "link_href": "https://exporter.lite.private-beta.service.trade.gov.uk/"
+    },
+    "TGygWFxGDNn8ItyaecWCopqIX3s": {
+      "header": "Ofqual subject matter specialist account",
+      "description": "Apply to give specialist advice to Ofqual.",
+      "link_text": "Go to your Ofqual subject matter specialist account",
+      "link_href": "https://subject-matter-specialists.ofqual.gov.uk/"
+    },
+    "pDqO7_Hu-pq5wam5I4MlURXrv5k": {
+      "header": "Modern slavery statement registry",
+      "description": "Add or edit the statements that say what your organisation is doing to eliminate modern slavery from its supply chains.",
+      "link_text": "Go to your modern slavery statement registry account",
+      "link_href": "https://modern-slavery-statement-registry.service.gov.uk/manage-organisations"
+    },
+    "Dw7Cxas8W7O2usHMHok95elKDRU": {
+      "header": "Request a basic DBS check",
+      "link_text": "Request a basic DBS check",
+      "link_href": "https://www.gov.uk/request-copy-criminal-record"
+    },
+    "oLciSn5b6-cqcJjzgMMwCw1moD8": {
+      "header": "Apply for a vehicle operator licence",
+      "link_text": "Apply for a vehicle operator licence",
+      "link_href": "https://www.gov.uk/apply-vehicle-operator-licence"
+    },
+    "LUIZbIuJ_xVZxwhkNAApcO4O_6o": {
+      "header": "Apply to become a registered social worker in England",
+      "link_text": "Apply to become a registered social worker in England",
+      "link_href": "https://www.socialworkengland.org.uk/registration/apply-for-registration"
+    },
+    "VsAkrtMBzAosSveAv4xsuUDyiSs": {
+      "header": "Sign your mortgage deed",
+      "link_text": "Sign your mortgage deed",
+      "link_href": "https://sign-your-mortgage-deed.landregistry.gov.uk"
+    },
+    "x3F_Iu0LgqJpegY5ni0QSB0uezw": {
+      "header": "Manage apprenticeships",
+      "description": "Manage your apprentices, training providers, recruitment and funding.",
+      "link_text": "Go to your apprenticeship service account",
+      "link_href": "https://accounts.manage-apprenticeships.service.gov.uk/service"
+    },
+    "bGAwNKM0XvnxCAuDQ_rMhhP3dxM": {
+      "header": "Criminal injuries compensation",
+      "description": "Start or continue an application to get compensation for injuries and losses if you've been a victim of violent crime.",
+      "link_text": "Go to your criminal injuries compensation account",
+      "link_href": "https://claim-criminal-injuries-compensation.service.justice.gov.uk/account"
+    },
+    "KiYrXyFTTy0JFZyYJI22WuxPIf8": {
+      "header": "Find a UK market conformity assessment body",
+      "description": "Manage conformity assessment bodies on the register.",
+      "link_text": "Go to your conformity assessment body account",
+      "link_href": "https://find-a-conformity-assessment-body.service.gov.uk/account/login"
+    },
+    "zbNToJPcre4BXEap0na8kOjniKg": {
+      "header": "Manage family support services and accounts",
+      "description": "Add and manage accounts and services in 'Find support for your family' and 'Connect families to support'.",
+      "link_text": "Go to your manage family support services account",
+      "link_href": "https://manage-family-support-services-and-accounts.education.gov.uk/Account/login-callback"
+    },
+    "cqGoT1LYLsjn-iwGcDTzamckhZU": {
+      "header": "Connect families to support",
+      "description": "Find local support services for children, young people, parents and carers.",
+      "link_text": "Go to your connect families to support account",
+      "link_href": "https://www.connect-families-to-support.education.gov.uk/Account/login-callback"
+    },
+    "dVrdJ7aemrvR0YlX7lDRaXnz0mE": {
+      "header": "Apprenticeship assessment service (AAS)",
+      "description": "Assess apprenticeships.",
+      "link_text": "Go to your apprenticeship assessments account",
+      "link_href": "https://assessors.apprenticeships.education.gov.uk/account/signin"
+    },
+    "FakIq5aYsHQ02dBOc6XwyA1wRRs": {
+      "header": "Great British Insulation Scheme (GBIS)",
+      "description": "Send your completed customer energy efficiency measures to Ofgem for review.",
+      "link_text": "Go to your GBIS dashboard",
+      "link_href": "https://gbinsulationscheme.ofgem.gov.uk/"
+    },
+    "zFeCxrwpLCUHFm-C4_CztwWtLfQ": {
+      "header": "Apply for an HM Armed Forces Veteran Card",
+      "link_text": "Apply for an HM Armed Forces Veteran Card",
+      "link_href": "https://www.gov.uk/veteran-card"
+    },
+    "txsGLvMYYCPaWPZRq2L7XxEnyro": {
+      "header": "Early years child development training",
+      "description": "Training on child development, including advice on supporting child development in your early years setting.",
+      "link_text": "Go to your early years child development training account",
+      "link_href": "https://child-development-training.education.gov.uk/my-modules"
+    }
+  },
+  "staging": {
+    "gov-uk": {
+      "header": "GOV.UK email subscriptions",
+      "description": "See and manage the updates you get about GOV.UK pages you’re interested in.",
+      "link_text": "Go to your GOV.UK email subscriptions",
+      "link_href": "https://www.integration.publishing.service.gov.uk/email/manage?from=your-services"
+    },
+    "lite": {
+      "header": "LITE (Licensing for International Trade and Enterprise)",
+      "description": "Apply for or manage export control licences for controlled goods.",
+      "link_text": "Go to your LITE account",
+      "link_href": "https://exporter.lite.private-beta.service.trade.gov.uk/"
+    },
+    "ofqual": {
+      "header": "Ofqual subject matter specialist account",
+      "description": "Apply to give specialist advice to Ofqual.",
+      "link_text": "Go to your Ofqual subject matter specialist account",
+      "link_href": "https://subject-matter-specialists.ofqual.gov.uk/"
+    },
+    "modernSlavery": {
+      "header": "Modern slavery statement registry",
+      "description": "Add or edit the statements that say what your organisation is doing to eliminate modern slavery from its supply chains.",
+      "link_text": "Go to your modern slavery statement registry account",
+      "link_href": "https://modern-slavery-statement-registry.service.gov.uk/manage-organisations"
+    },
+    "dbs": {
+      "header": "Request a basic DBS check",
+      "link_text": "Request a basic DBS check",
+      "link_href": "https://www.gov.uk/request-copy-criminal-record"
+    },
+    "vehicleOperatorLicense": {
+      "header": "Apply for a vehicle operator licence",
+      "link_text": "Apply for a vehicle operator licence",
+      "link_href": "https://www.gov.uk/apply-vehicle-operator-licence"
+    },
+    "socialWorkEngland": {
+      "header": "Apply to become a registered social worker in England",
+      "link_text": "Apply to become a registered social worker in England",
+      "link_href": "https://www.socialworkengland.org.uk/registration/apply-for-registration"
+    },
+    "mortgageDeed": {
+      "header": "Sign your mortgage deed",
+      "link_text": "Sign your mortgage deed",
+      "link_href": "https://sign-your-mortgage-deed.landregistry.gov.uk"
+    },
+    "apprenticeshipsService": {
+      "header": "Manage apprenticeships",
+      "description": "Manage your apprentices, training providers, recruitment and funding.",
+      "link_text": "Go to your apprenticeship service account",
+      "link_href": "https://accounts.manage-apprenticeships.service.gov.uk/service"
+    },
+    "criminalInjuriesCompensation": {
+      "header": "Criminal injuries compensation",
+      "description": "Start or continue an application to get compensation for injuries and losses if you've been a victim of violent crime.",
+      "link_text": "Go to your criminal injuries compensation account",
+      "link_href": "https://claim-criminal-injuries-compensation.service.justice.gov.uk/account"
+    },
+    "ukmcab": {
+      "header": "Find a UK market conformity assessment body",
+      "description": "Manage conformity assessment bodies on the register.",
+      "link_text": "Go to your conformity assessment body account",
+      "link_href": "https://find-a-conformity-assessment-body.service.gov.uk/account/login"
+    },
+    "manageFamilySupport": {
+      "header": "Manage family support services and accounts",
+      "description": "Add and manage accounts and services in 'Find support for your family' and 'Connect families to support'.",
+      "link_text": "Go to your manage family support services account",
+      "link_href": "https://manage-family-support-services-and-accounts.education.gov.uk/Account/login-callback"
+    },
+    "connectFamilies": {
+      "header": "Connect families to support",
+      "description": "Find local support services for children, young people, parents and carers.",
+      "link_text": "Go to your connect families to support account",
+      "link_href": "https://www.connect-families-to-support.education.gov.uk/Account/login-callback"
+    },
+    "aas": {
+      "header": "Apprenticeship assessment service (AAS)",
+      "description": "Assess apprenticeships.",
+      "link_text": "Go to your apprenticeship assessments account",
+      "link_href": "https://assessors.apprenticeships.education.gov.uk/account/signin"
+    },
+    "gbis": {
+      "header": "Great British Insulation Scheme (GBIS)",
+      "description": "Send your completed customer energy efficiency measures to Ofgem for review.",
+      "link_text": "Go to your GBIS dashboard",
+      "link_href": "https://gbinsulationscheme.ofgem.gov.uk/"
+    },
+    "veteransCard": {
+      "header": "Apply for an HM Armed Forces Veteran Card",
+      "link_text": "Apply for an HM Armed Forces Veteran Card",
+      "link_href": "https://www.gov.uk/veteran-card"
+    },
+    "childDevelopmentTraining": {
+      "header": "Early years child development training",
+      "description": "Training on child development, including advice on supporting child development in your early years setting.",
+      "link_text": "Go to your early years child development training account",
+      "link_href": "https://child-development-training.education.gov.uk/my-modules"
+    }
+  },
+  "build": {
+    "gov-uk": {
+      "header": "GOV.UK email subscriptions",
+      "description": "See and manage the updates you get about GOV.UK pages you’re interested in.",
+      "link_text": "Go to your GOV.UK email subscriptions",
+      "link_href": "https://www.integration.publishing.service.gov.uk/email/manage?from=your-services"
+    },
+    "lite": {
+      "header": "LITE (Licensing for International Trade and Enterprise)",
+      "description": "Apply for or manage export control licences for controlled goods.",
+      "link_text": "Go to your LITE account",
+      "link_href": "https://exporter.lite.private-beta.service.trade.gov.uk/"
+    },
+    "ofqual": {
+      "header": "Ofqual subject matter specialist account",
+      "description": "Apply to give specialist advice to Ofqual.",
+      "link_text": "Go to your Ofqual subject matter specialist account",
+      "link_href": "https://subject-matter-specialists.ofqual.gov.uk/"
+    },
+    "modernSlavery": {
+      "header": "Modern slavery statement registry",
+      "description": "Add or edit the statements that say what your organisation is doing to eliminate modern slavery from its supply chains.",
+      "link_text": "Go to your modern slavery statement registry account",
+      "link_href": "https://modern-slavery-statement-registry.service.gov.uk/manage-organisations"
+    },
+    "dbs": {
+      "header": "Request a basic DBS check",
+      "link_text": "Request a basic DBS check",
+      "link_href": "https://www.gov.uk/request-copy-criminal-record"
+    },
+    "vehicleOperatorLicense": {
+      "header": "Apply for a vehicle operator licence",
+      "link_text": "Apply for a vehicle operator licence",
+      "link_href": "https://www.gov.uk/apply-vehicle-operator-licence"
+    },
+    "socialWorkEngland": {
+      "header": "Apply to become a registered social worker in England",
+      "link_text": "Apply to become a registered social worker in England",
+      "link_href": "https://www.socialworkengland.org.uk/registration/apply-for-registration"
+    },
+    "mortgageDeed": {
+      "header": "Sign your mortgage deed",
+      "link_text": "Sign your mortgage deed",
+      "link_href": "https://sign-your-mortgage-deed.landregistry.gov.uk"
+    },
+    "apprenticeshipsService": {
+      "header": "Manage apprenticeships",
+      "description": "Manage your apprentices, training providers, recruitment and funding.",
+      "link_text": "Go to your apprenticeship service account",
+      "link_href": "https://accounts.manage-apprenticeships.service.gov.uk/service"
+    },
+    "criminalInjuriesCompensation": {
+      "header": "Criminal injuries compensation",
+      "description": "Start or continue an application to get compensation for injuries and losses if you've been a victim of violent crime.",
+      "link_text": "Go to your criminal injuries compensation account",
+      "link_href": "https://claim-criminal-injuries-compensation.service.justice.gov.uk/account"
+    },
+    "ukmcab": {
+      "header": "Find a UK market conformity assessment body",
+      "description": "Manage conformity assessment bodies on the register.",
+      "link_text": "Go to your conformity assessment body account",
+      "link_href": "https://find-a-conformity-assessment-body.service.gov.uk/account/login"
+    },
+    "manageFamilySupport": {
+      "header": "Manage family support services and accounts",
+      "description": "Add and manage accounts and services in 'Find support for your family' and 'Connect families to support'.",
+      "link_text": "Go to your manage family support services account",
+      "link_href": "https://manage-family-support-services-and-accounts.education.gov.uk/Account/login-callback"
+    },
+    "connectFamilies": {
+      "header": "Connect families to support",
+      "description": "Find local support services for children, young people, parents and carers.",
+      "link_text": "Go to your connect families to support account",
+      "link_href": "https://www.connect-families-to-support.education.gov.uk/Account/login-callback"
+    },
+    "aas": {
+      "header": "Apprenticeship assessment service (AAS)",
+      "description": "Assess apprenticeships.",
+      "link_text": "Go to your apprenticeship assessments account",
+      "link_href": "https://assessors.apprenticeships.education.gov.uk/account/signin"
+    },
+    "gbis": {
+      "header": "Great British Insulation Scheme (GBIS)",
+      "description": "Send your completed customer energy efficiency measures to Ofgem for review.",
+      "link_text": "Go to your GBIS dashboard",
+      "link_href": "https://gbinsulationscheme.ofgem.gov.uk/"
+    },
+    "veteransCard": {
+      "header": "Apply for an HM Armed Forces Veteran Card",
+      "link_text": "Apply for an HM Armed Forces Veteran Card",
+      "link_href": "https://www.gov.uk/veteran-card"
+    },
+    "childDevelopmentTraining": {
+      "header": "Early years child development training",
+      "description": "Training on child development, including advice on supporting child development in your early years setting.",
+      "link_text": "Go to your early years child development training account",
+      "link_href": "https://child-development-training.education.gov.uk/my-modules"
+    }
+  },
+  "dev": {
+    "gov-uk": {
+      "header": "GOV.UK email subscriptions",
+      "description": "See and manage the updates you get about GOV.UK pages you’re interested in.",
+      "link_text": "Go to your GOV.UK email subscriptions",
+      "link_href": "https://www.integration.publishing.service.gov.uk/email/manage?from=your-services"
+    },
+    "lite": {
+      "header": "LITE (Licensing for International Trade and Enterprise)",
+      "description": "Apply for or manage export control licences for controlled goods.",
+      "link_text": "Go to your LITE account",
+      "link_href": "https://exporter.lite.private-beta.service.trade.gov.uk/"
+    },
+    "ofqual": {
+      "header": "Ofqual subject matter specialist account",
+      "description": "Apply to give specialist advice to Ofqual.",
+      "link_text": "Go to your Ofqual subject matter specialist account",
+      "link_href": "https://subject-matter-specialists.ofqual.gov.uk/"
+    },
+    "modernSlavery": {
+      "header": "Modern slavery statement registry",
+      "description": "Add or edit the statements that say what your organisation is doing to eliminate modern slavery from its supply chains.",
+      "link_text": "Go to your modern slavery statement registry account",
+      "link_href": "https://modern-slavery-statement-registry.service.gov.uk/manage-organisations"
+    },
+    "dbs": {
+      "header": "Request a basic DBS check",
+      "link_text": "Request a basic DBS check",
+      "link_href": "https://www.gov.uk/request-copy-criminal-record"
+    },
+    "vehicleOperatorLicense": {
+      "header": "Apply for a vehicle operator licence",
+      "link_text": "Apply for a vehicle operator licence",
+      "link_href": "https://www.gov.uk/apply-vehicle-operator-licence"
+    },
+    "socialWorkEngland": {
+      "header": "Apply to become a registered social worker in England",
+      "link_text": "Apply to become a registered social worker in England",
+      "link_href": "https://www.socialworkengland.org.uk/registration/apply-for-registration"
+    },
+    "mortgageDeed": {
+      "header": "Sign your mortgage deed",
+      "link_text": "Sign your mortgage deed",
+      "link_href": "https://sign-your-mortgage-deed.landregistry.gov.uk"
+    },
+    "apprenticeshipsService": {
+      "header": "Manage apprenticeships",
+      "description": "Manage your apprentices, training providers, recruitment and funding.",
+      "link_text": "Go to your apprenticeship service account",
+      "link_href": "https://accounts.manage-apprenticeships.service.gov.uk/service"
+    },
+    "criminalInjuriesCompensation": {
+      "header": "Criminal injuries compensation",
+      "description": "Start or continue an application to get compensation for injuries and losses if you've been a victim of violent crime.",
+      "link_text": "Go to your criminal injuries compensation account",
+      "link_href": "https://claim-criminal-injuries-compensation.service.justice.gov.uk/account"
+    },
+    "ukmcab": {
+      "header": "Find a UK market conformity assessment body",
+      "description": "Manage conformity assessment bodies on the register.",
+      "link_text": "Go to your conformity assessment body account",
+      "link_href": "https://find-a-conformity-assessment-body.service.gov.uk/account/login"
+    },
+    "manageFamilySupport": {
+      "header": "Manage family support services and accounts",
+      "description": "Add and manage accounts and services in 'Find support for your family' and 'Connect families to support'.",
+      "link_text": "Go to your manage family support services account",
+      "link_href": "https://manage-family-support-services-and-accounts.education.gov.uk/Account/login-callback"
+    },
+    "connectFamilies": {
+      "header": "Connect families to support",
+      "description": "Find local support services for children, young people, parents and carers.",
+      "link_text": "Go to your connect families to support account",
+      "link_href": "https://www.connect-families-to-support.education.gov.uk/Account/login-callback"
+    },
+    "aas": {
+      "header": "Apprenticeship assessment service (AAS)",
+      "description": "Assess apprenticeships.",
+      "link_text": "Go to your apprenticeship assessments account",
+      "link_href": "https://assessors.apprenticeships.education.gov.uk/account/signin"
+    },
+    "gbis": {
+      "header": "Great British Insulation Scheme (GBIS)",
+      "description": "Send your completed customer energy efficiency measures to Ofgem for review.",
+      "link_text": "Go to your GBIS dashboard",
+      "link_href": "https://gbinsulationscheme.ofgem.gov.uk/"
+    },
+    "veteransCard": {
+      "header": "Apply for an HM Armed Forces Veteran Card",
+      "link_text": "Apply for an HM Armed Forces Veteran Card",
+      "link_href": "https://www.gov.uk/veteran-card"
+    },
+    "childDevelopmentTraining": {
+      "header": "Early years child development training",
+      "description": "Training on child development, including advice on supporting child development in your early years setting.",
+      "link_text": "Go to your early years child development training account",
+      "link_href": "https://child-development-training.education.gov.uk/my-modules"
+    }
+  },
+  "local": {
+    "gov-uk": {
+      "header": "GOV.UK email subscriptions",
+      "description": "See and manage the updates you get about GOV.UK pages you’re interested in.",
+      "link_text": "Go to your GOV.UK email subscriptions",
+      "link_href": "https://www.integration.publishing.service.gov.uk/email/manage?from=your-services"
+    },
+    "lite": {
+      "header": "LITE (Licensing for International Trade and Enterprise)",
+      "description": "Apply for or manage export control licences for controlled goods.",
+      "link_text": "Go to your LITE account",
+      "link_href": "https://exporter.lite.private-beta.service.trade.gov.uk/"
+    },
+    "ofqual": {
+      "header": "Ofqual subject matter specialist account",
+      "description": "Apply to give specialist advice to Ofqual.",
+      "link_text": "Go to your Ofqual subject matter specialist account",
+      "link_href": "https://subject-matter-specialists.ofqual.gov.uk/"
+    },
+    "modernSlavery": {
+      "header": "Modern slavery statement registry",
+      "description": "Add or edit the statements that say what your organisation is doing to eliminate modern slavery from its supply chains.",
+      "link_text": "Go to your modern slavery statement registry account",
+      "link_href": "https://modern-slavery-statement-registry.service.gov.uk/manage-organisations"
+    },
+    "dbs": {
+      "header": "Request a basic DBS check",
+      "link_text": "Request a basic DBS check",
+      "link_href": "https://www.gov.uk/request-copy-criminal-record"
+    },
+    "vehicleOperatorLicense": {
+      "header": "Apply for a vehicle operator licence",
+      "link_text": "Apply for a vehicle operator licence",
+      "link_href": "https://www.gov.uk/apply-vehicle-operator-licence"
+    },
+    "socialWorkEngland": {
+      "header": "Apply to become a registered social worker in England",
+      "link_text": "Apply to become a registered social worker in England",
+      "link_href": "https://www.socialworkengland.org.uk/registration/apply-for-registration"
+    },
+    "mortgageDeed": {
+      "header": "Sign your mortgage deed",
+      "link_text": "Sign your mortgage deed",
+      "link_href": "https://sign-your-mortgage-deed.landregistry.gov.uk"
+    },
+    "apprenticeshipsService": {
+      "header": "Manage apprenticeships",
+      "description": "Manage your apprentices, training providers, recruitment and funding.",
+      "link_text": "Go to your apprenticeship service account",
+      "link_href": "https://accounts.manage-apprenticeships.service.gov.uk/service"
+    },
+    "criminalInjuriesCompensation": {
+      "header": "Criminal injuries compensation",
+      "description": "Start or continue an application to get compensation for injuries and losses if you've been a victim of violent crime.",
+      "link_text": "Go to your criminal injuries compensation account",
+      "link_href": "https://claim-criminal-injuries-compensation.service.justice.gov.uk/account"
+    },
+    "ukmcab": {
+      "header": "Find a UK market conformity assessment body",
+      "description": "Manage conformity assessment bodies on the register.",
+      "link_text": "Go to your conformity assessment body account",
+      "link_href": "https://find-a-conformity-assessment-body.service.gov.uk/account/login"
+    },
+    "manageFamilySupport": {
+      "header": "Manage family support services and accounts",
+      "description": "Add and manage accounts and services in 'Find support for your family' and 'Connect families to support'.",
+      "link_text": "Go to your manage family support services account",
+      "link_href": "https://manage-family-support-services-and-accounts.education.gov.uk/Account/login-callback"
+    },
+    "connectFamilies": {
+      "header": "Connect families to support",
+      "description": "Find local support services for children, young people, parents and carers.",
+      "link_text": "Go to your connect families to support account",
+      "link_href": "https://www.connect-families-to-support.education.gov.uk/Account/login-callback"
+    },
+    "aas": {
+      "header": "Apprenticeship assessment service (AAS)",
+      "description": "Assess apprenticeships.",
+      "link_text": "Go to your apprenticeship assessments account",
+      "link_href": "https://assessors.apprenticeships.education.gov.uk/account/signin"
+    },
+    "gbis": {
+      "header": "Great British Insulation Scheme (GBIS)",
+      "description": "Send your completed customer energy efficiency measures to Ofgem for review.",
+      "link_text": "Go to your GBIS dashboard",
+      "link_href": "https://gbinsulationscheme.ofgem.gov.uk/"
+    },
+    "veteransCard": {
+      "header": "Apply for an HM Armed Forces Veteran Card",
+      "link_text": "Apply for an HM Armed Forces Veteran Card",
+      "link_href": "https://www.gov.uk/veteran-card"
+    },
+    "childDevelopmentTraining": {
+      "header": "Early years child development training",
+      "description": "Training on child development, including advice on supporting child development in your early years setting.",
+      "link_text": "Go to your early years child development training account",
+      "link_href": "https://child-development-training.education.gov.uk/my-modules"
+    }
+  }
+}

@@ -2451,6 +2451,7 @@ Resources:
           DLQ_URL: !Ref SendConfEmailDeadLetterQueue
           NOTIFY_API_KEY: /account-mgmt-backend/notify-api-key
           TEMPLATE_ID: !Ref SusActivityEmailTemplateId
+          ENVIRONMENT_NAME: !Ref Environment
     Metadata:
       BuildMethod: esbuild
       BuildProperties:

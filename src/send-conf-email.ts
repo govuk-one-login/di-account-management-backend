@@ -95,6 +95,7 @@ export const handler = async (event: SNSEvent): Promise<void> => {
 
         await sendConfMail(notifyApiKey as string, TEMPLATE_ID, receivedEvent);
       } catch (err) {
+        console.error(`Error sending email for event`, err);
         const response = await sendSqsMessage(record.Sns.Message, DLQ_URL);
         console.error(
           `[Message sent to DLQ] with message id = ${response.MessageId}`,

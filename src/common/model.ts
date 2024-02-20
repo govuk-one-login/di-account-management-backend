@@ -142,3 +142,17 @@ interface RequesterAnonymous {
   name?: string;
   email?: string;
 }
+export type Client = {
+  header: string;
+  description?: string;
+  link_text: string;
+  link_href: string;
+};
+export type Environment = "production" |
+  "integration" |
+  "staging" |
+  "build" |
+  "dev" |
+  "local";
+type ClientRegistryEnvronment = Record<string, Client>;
+export type ClientRegistry = Record<Environment, ClientRegistryEnvronment>;

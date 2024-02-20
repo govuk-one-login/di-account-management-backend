@@ -3,36 +3,14 @@ import { sendSqsMessage } from "./common/sqs";
 import { SuspiciousActivityEvent } from "./common/model";
 import assert from "node:assert/strict";
 import { NotifyClient } from "notifications-node-client";
-import "axios-debug-log";
 import { getSecret } from "@aws-lambda-powertools/parameters/secrets";
 import clientRegistryEn from "./config/clientRegistry.en.json";
 import clientRegistryCy from "./config/clientRegistry.cy.json";
-
-type Client = {
-  header: string;
-  description?: string;
-  link_text: string;
-  link_href: string;
-};
-
-type ClientRegistryEnvironmentsEnum =
-  | "production"
-  | "integration"
-  | "staging"
-  | "build"
-  | "dev"
-  | "local";
-
-type ClientRegistryEnvronment = Record<string, Client>;
-
-type ClientRegistry = Record<
-  ClientRegistryEnvironmentsEnum,
-  ClientRegistryEnvronment
->;
+import { ClientRegistry, Environment, Client } from "./common/model";
 
 export const getClientInfo = (
   clientRegistry: ClientRegistry,
-  environment: ClientRegistryEnvironmentsEnum,
+  environment: Environment,
   id: string
 ) => {
   assert(
@@ -59,8 +37,7 @@ export const formatActivityObjectForEmail = (
   clientNameEn: string;
   clientNameCy: string;
 } => {
-  const envName = process.env
-    .ENVIRONMENT_NAME as ClientRegistryEnvironmentsEnum;
+  const envName = process.env.ENVIRONMENT_NAME as Environment;
   assert(envName, "ENVIRONMENT_NAME env variable not set");
 
   assert(

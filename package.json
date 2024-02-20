@@ -52,7 +52,6 @@
     "@aws-sdk/util-dynamodb": "^3.382.0",
     "@types/aws-lambda": "^8.10.119",
     "axios": "^1.6.5",
-    "axios-debug-log": "^1.0.0",
     "esbuild": "0.19.12",
     "jest-when": "^3.6.0",
     "notifications-node-client": "^8.0.0"

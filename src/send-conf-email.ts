@@ -7,35 +7,45 @@ import "axios-debug-log";
 import { getSecret } from "@aws-lambda-powertools/parameters/secrets";
 import clientRegistry from "./config/clientRegistry.json";
 
-export const formatActivityObjectForNotify = (
+type Client = {
+  header: string;
+  description: string;
+  link_text: string;
+  link_href: string;
+};
+
+export const formatActivityObjectForEmail = (
   activity: SuspiciousActivityEvent
 ): {
   email: string;
   clientName: string;
 } => {
-  const { ENVIRONMENT_NAME } = process.env;
-  assert(ENVIRONMENT_NAME, "ENVIRONMENT_NAME env variable not set");
+  const envName = process.env.ENVIRONMENT_NAME as keyof typeof clientRegistry;
+  assert(envName, "ENVIRONMENT_NAME env variable not set");
+
   assert(
     activity.user.email,
     "Email address not present in Suspicious Activity Event"
   );
 
   assert(
-    clientRegistry[ENVIRONMENT_NAME as keyof typeof clientRegistry],
-    `${ENVIRONMENT_NAME} does not exist in config/clientRegistry.json`
+    clientRegistry[envName],
+    `${envName} does not exist in config/clientRegistry.json`
   );
 
-  const registry =
-    clientRegistry[ENVIRONMENT_NAME as keyof typeof clientRegistry];
+  const registry = clientRegistry[envName];
+  const clientId = activity.client_id as keyof typeof registry;
 
   assert(
-    registry[activity.client_id as keyof typeof registry],
-    `${activity.client_id} does not exist in config/clientRegistry.json[${ENVIRONMENT_NAME}]`
+    registry[clientId],
+    `${activity.client_id} does not exist in config/clientRegistry.json[${envName}]`
   );
+
+  const client: Client = registry[clientId];
 
   return {
     email: activity.user.email,
-    clientName: registry[activity.client_id as keyof typeof registry],
+    clientName: client.header,
   };
 };
 
@@ -44,22 +54,14 @@ export const sendConfMail = async (
   templateId: string,
   activity: SuspiciousActivityEvent
 ) => {
-  console.log("sending email");
-  const client = new NotifyClient(apiKey);
-  console.log("created client");
-  const { email, clientName } = formatActivityObjectForNotify(activity);
-  console.log("email", email);
-  console.log("clientName", clientName);
-  try {
-    return client.sendEmail(templateId, email, {
-      personalisation: {
-        clientName,
-      },
-      reference: "abc",
-    });
-  } catch (e) {
-    console.log(e);
-  }
+  const notifyClient = new NotifyClient(apiKey);
+  const { email, clientName } = formatActivityObjectForEmail(activity);
+  return notifyClient.sendEmail(templateId, email, {
+    personalisation: {
+      clientName,
+    },
+    reference: activity.event_id,
+  });
 };
 
 export const handler = async (event: SNSEvent): Promise<void> => {

@@ -234,7 +234,7 @@ Mappings:
       zendeskApiTokenSecretArn: arn:aws:secretsmanager:eu-west-2:985326104449:secret:/account-mgmt-backend/zendesk-api-token-urjQGc
       zendeskApiUserSecretArn: arn:aws:secretsmanager:eu-west-2:985326104449:secret:/account-mgmt-backend/zendesk-api-user-key-oPuZZU
       zendeskApiUrlSecretArn: arn:aws:secretsmanager:eu-west-2:985326104449:secret:/account-mgmt-backend/zendesk-api-url-key-nhK90l
-      notifyApiKeySecretArn: arn:aws:secretsmanager:eu-west-2:985326104449:secret:account-mgmt-backend/notify-api-key-oogvHU
+      notifyApiKeySecretArn: arn:aws:secretsmanager:eu-west-2:985326104449:secret:/account-mgmt-backend/notify-api-key-4P84y7 
     build:
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
       zendeskGroupIdSecretArn: arn:aws:secretsmanager:eu-west-2:301577035144:secret:/account-mgmt-backend/zendesk-group-id-token-Ve5ojs

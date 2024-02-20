@@ -6,13 +6,13 @@ import { NotifyClient } from "notifications-node-client";
 import { getSecret } from "@aws-lambda-powertools/parameters/secrets";
 import clientRegistryEn from "./config/clientRegistry.en.json";
 import clientRegistryCy from "./config/clientRegistry.cy.json";
-import { ClientRegistry, Environment, Client } from "./common/model";
+import { ClientRegistry, Environment, RPClient } from "./common/model";
 
 export const getClientInfo = (
   clientRegistry: ClientRegistry,
   environment: Environment,
   id: string
-) => {
+): RPClient => {
   assert(
     clientRegistry[environment],
     `${environment} does not exist in client registry`
@@ -25,7 +25,7 @@ export const getClientInfo = (
     `${id} does not exist in ${environment} client registry]`
   );
 
-  const client: Client = registry[id];
+  const client: RPClient = registry[id];
 
   return client;
 };

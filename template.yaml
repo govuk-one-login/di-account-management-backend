@@ -60,6 +60,10 @@ Parameters:
     Description: Value for the System Tag
     Type: String
     Default: Accounts
+  SusActivityEmailTemplateId:
+    Description: The GOV.UK Notify template ID for the suspicious activity report confirmation email
+    Type: String
+    Default: 4e07abfb-18cf-49d9-a697-c1e53dc2da6f
 
 Conditions:
   UseCodeSigning:
@@ -230,6 +234,7 @@ Mappings:
       zendeskApiTokenSecretArn: arn:aws:secretsmanager:eu-west-2:985326104449:secret:/account-mgmt-backend/zendesk-api-token-urjQGc
       zendeskApiUserSecretArn: arn:aws:secretsmanager:eu-west-2:985326104449:secret:/account-mgmt-backend/zendesk-api-user-key-oPuZZU
       zendeskApiUrlSecretArn: arn:aws:secretsmanager:eu-west-2:985326104449:secret:/account-mgmt-backend/zendesk-api-url-key-nhK90l
+      notifyApiKeySecretArn: arn:aws:secretsmanager:eu-west-2:985326104449:secret:account-mgmt-backend/notify-api-key-oogvHU
     build:
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
       zendeskGroupIdSecretArn: arn:aws:secretsmanager:eu-west-2:301577035144:secret:/account-mgmt-backend/zendesk-group-id-token-Ve5ojs
@@ -237,6 +242,7 @@ Mappings:
       zendeskApiTokenSecretArn: arn:aws:secretsmanager:eu-west-2:301577035144:secret:/account-mgmt-backend/zendesk-api-token-ayNIV1
       zendeskApiUserSecretArn: arn:aws:secretsmanager:eu-west-2:301577035144:secret:/account-mgmt-backend/zendesk-api-user-key-7jR9fV
       zendeskApiUrlSecretArn: arn:aws:secretsmanager:eu-west-2:301577035144:secret:/account-mgmt-backend/zendesk-api-url-key-UpWdv7
+      notifyApiKeySecretArn: arn:aws:secretsmanager:eu-west-2:301577035144:secret:notify-api-key-UsC8G1 
     staging:
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
       zendeskGroupIdSecretArn: arn:aws:secretsmanager:eu-west-2:539729775994:secret:/account-mgmt-backend/zendesk-group-id-token-HE0BjN
@@ -244,6 +250,7 @@ Mappings:
       zendeskApiTokenSecretArn: arn:aws:secretsmanager:eu-west-2:539729775994:secret:/account-mgmt-backend/zendesk-api-token-5HZvs4
       zendeskApiUserSecretArn: arn:aws:secretsmanager:eu-west-2:539729775994:secret:/account-mgmt-backend/zendesk-api-user-key-0AiaN0
       zendeskApiUrlSecretArn: arn:aws:secretsmanager:eu-west-2:539729775994:secret:/account-mgmt-backend/zendesk-api-url-key-wGN16k
+      notifyApiKeySecretArn: arn:aws:secretsmanager:eu-west-2:539729775994:secret:account-mgmt-backend/notify-api-key-vSDgV4 
     integration:
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
       zendeskGroupIdSecretArn: arn:aws:secretsmanager:eu-west-2:666500506359:secret:/account-mgmt-backend/zendesk-group-id-token-djJbv6
@@ -251,6 +258,7 @@ Mappings:
       zendeskApiTokenSecretArn: arn:aws:secretsmanager:eu-west-2:666500506359:secret:/account-mgmt-backend/zendesk-api-token-fByFIz
       zendeskApiUserSecretArn: arn:aws:secretsmanager:eu-west-2:666500506359:secret:/account-mgmt-backend/zendesk-api-user-key-oVvUI5
       zendeskApiUrlSecretArn: arn:aws:secretsmanager:eu-west-2:666500506359:secret:/account-mgmt-backend/zendesk-api-url-key-b5ToSY
+      notifyApiKeySecretArn: arn:aws:secretsmanager:eu-west-2:666500506359:secret:/account-mgmt-backend/notify-api-key-nvDui4 
     production:
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceProductionVariables
       zendeskGroupIdSecretArn: arn:aws:secretsmanager:eu-west-2:026991849909:secret:/account-mgmt-backend/zendesk-group-id-token-mE55Wr
@@ -258,6 +266,7 @@ Mappings:
       zendeskApiTokenSecretArn: arn:aws:secretsmanager:eu-west-2:026991849909:secret:/account-mgmt-backend/zendesk-api-token-aZOj3s
       zendeskApiUserSecretArn: arn:aws:secretsmanager:eu-west-2:026991849909:secret:/account-mgmt-backend/zendesk-api-user-key-cMCENu
       zendeskApiUrlSecretArn: arn:aws:secretsmanager:eu-west-2:026991849909:secret:/account-mgmt-backend/zendesk-api-url-key-WNGekL
+      notifyApiKeySecretArn: arn:aws:secretsmanager:eu-west-2:026991849909:secret:/account-mgmt-backend/notify-api-key-Ve4Yk1 
 
 
 Resources:
@@ -2440,7 +2449,8 @@ Resources:
       Environment:
         Variables:
           DLQ_URL: !Ref SendConfEmailDeadLetterQueue
-          DEBUG: "axios"
+          NOTIFY_API_KEY: /account-mgmt-backend/notify-api-key
+          TEMPLATE_ID: !Ref SusActivityEmailTemplateId
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -2491,11 +2501,7 @@ Resources:
           - Effect: Allow
             Action: secretsmanager:GetSecretValue # pragma: allowlist secret
             Resource:
-              - !FindInMap [ EnvironmentConfiguration, !Ref Environment, zendeskGroupIdSecretArn ]
-              - !FindInMap [ EnvironmentConfiguration, !Ref Environment, zendeskTagsSecretArn ]
-              - !FindInMap [ EnvironmentConfiguration, !Ref Environment, zendeskApiTokenSecretArn ]
-              - !FindInMap [ EnvironmentConfiguration, !Ref Environment, zendeskApiUserSecretArn ]
-              - !FindInMap [ EnvironmentConfiguration, !Ref Environment, zendeskApiUrlSecretArn ]
+              - !FindInMap [ EnvironmentConfiguration, !Ref Environment, notifyApiKeySecretArn ]
 
   SendConfEmailLambdaInvokePermission:
     Type: AWS::Lambda::Permission

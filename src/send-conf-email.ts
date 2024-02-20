@@ -4,6 +4,7 @@ import { SuspiciousActivityEvent, UserData } from "./common/model";
 import assert from "node:assert/strict";
 import { NotifyClient } from "notifications-node-client";
 import "axios-debug-log";
+import { getSecret } from "@aws-lambda-powertools/parameters/secrets";
 
 export const flattenActivityObject = (
   activity: SuspiciousActivityEvent
@@ -22,11 +23,13 @@ export const validateSuspiciousActivity = (
   assert(suspiciousActivityEvent.user?.email);
 };
 
-export const sendConfMail = async (activity: SuspiciousActivityEvent) => {
+export const sendConfMail = async (
+  apiKey: string,
+  templateId: string,
+  activity: SuspiciousActivityEvent
+) => {
   console.log("sending email");
-  const client = new NotifyClient(
-    "test-4237628b-1a8d-457a-89c4-8b136c18b7d7-a998abca-4854-408d-930d-a82189fc7459"
-  );
+  const client = new NotifyClient(apiKey);
   console.log("created client");
   const { activityData, user } = flattenActivityObject(activity);
   console.log({
@@ -35,44 +38,41 @@ export const sendConfMail = async (activity: SuspiciousActivityEvent) => {
   });
   console.log("email", user.email);
   try {
-    return client.sendEmail(
-      "4e07abfb-18cf-49d9-a697-c1e53dc2da6f",
-      user.email,
-      {
-        personalisation: {
-          ...activityData,
-          ...user,
-        },
-        reference: "abc",
-      }
-    );
+    return client.sendEmail(templateId, user.email, {
+      personalisation: {
+        ...activityData,
+        ...user,
+      },
+      reference: "abc",
+    });
   } catch (e) {
     console.log(e);
   }
 };
 
 export const handler = async (event: SNSEvent): Promise<void> => {
-  const { DLQ_URL } = process.env;
-  console.log("in the handler");
+  const { DLQ_URL, NOTIFY_API_KEY, TEMPLATE_ID } = process.env;
 
   await Promise.all(
     event.Records.map(async (record) => {
       try {
-        console.log("in the first record");
-        assert(DLQ_URL);
-        // assert(NOTIFY_API_KEY);
+        assert(DLQ_URL, "DLQ_URL env variable not provided");
+        assert(NOTIFY_API_KEY, "NOTIFY_API_KEY env variable not provided");
+        assert(TEMPLATE_ID, "TEMPLATE_ID env variable not provided");
+
+        const notifyApiKey = await getSecret(NOTIFY_API_KEY, {
+          maxAge: 900,
+        });
+
+        assert(notifyApiKey, `${NOTIFY_API_KEY} secret not retrieved`);
 
         const receivedEvent: SuspiciousActivityEvent = JSON.parse(
           record.Sns.Message
         );
 
-        console.log("event", receivedEvent);
-
         validateSuspiciousActivity(receivedEvent);
-        console.log("validated");
 
-        await sendConfMail(receivedEvent);
-        console.log("email sent");
+        await sendConfMail(notifyApiKey as string, TEMPLATE_ID, receivedEvent);
       } catch (err) {
         const response = await sendSqsMessage(record.Sns.Message, DLQ_URL);
         console.error(

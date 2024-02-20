@@ -1,0 +1,597 @@
+{
+  "production": {
+    "LcueBVCnGZw-YFdTZ4S07XbQx7I": {
+      "header": "Tanysgrifiadau e-byst GOV.UK",
+      "description": "Gweld a rheoli’r diweddariadau rydych yn eu cael am dudalennau GOV.UK mae gennych ddiddordeb ynddynt.",
+      "link_text": "Ewch i’ch tanysgrifiadau e-byst GOV.UK",
+      "link_href": "https://www.gov.uk/email/manage?from=your-services"
+    },
+    "ZL0kvRBP5xMy5OwONj8ARLPyuko": {
+      "header": "LITE (Trwyddedu ar gyfer Masnach a Menter Ryngwladol)",
+      "description": "Gwneud cais am neu reoli trwyddedau rheoli allforio ar gyfer nwyddau a reolir.",
+      "link_text": "Ewch i’ch cyfrif LITE",
+      "link_href": "https://exporter.lite.private-beta.service.trade.gov.uk/"
+    },
+    "TGygWFxGDNn8ItyaecWCopqIX3s": {
+      "header": "Cyfrif arbenigwr pwnc Ofqual",
+      "description": "Gwneud gais i roi cyngor arbenigol i Ofqual.",
+      "link_text": "Ewch i'ch cyfrif arbenigwr pwnc Ofqual",
+      "link_href": "https://subject-matter-specialists.ofqual.gov.uk/"
+    },
+    "pDqO7_Hu-pq5wam5I4MlURXrv5k": {
+      "header": "Cofrestrfa datganiad caethwasiaeth modern",
+      "description": "Ychwanegu neu olygu'r datganiadau sy'n dweud beth mae eich sefydliad yn ei wneud i ddileu caethwasiaeth fodern o'i gadwyni cyflenwi.",
+      "link_text": "Ewch i'ch cyfrif cofrestrfa datganiad caethwasiaeth modern",
+      "link_href": "https://modern-slavery-statement-registry.service.gov.uk/manage-organisations"
+    },
+    "RqFZ83csmS4Mi4Y7s7ohD9-ekwU": {
+      "header": "Gwneud cais am wiriad DBS sylfaenol",
+      "link_text": "Gwneud cais am wiriad DBS sylfaenol",
+      "link_href": "https://www.gov.uk/gwneud-cais-copi-cofnod-troseddol"
+    },
+    "XwwVDyl5oJKtK0DVsuw3sICWkPU": {
+      "header": "Gwneud cais am drwydded gweithredwr cerbyd",
+      "link_text": "Gwneud cais am drwydded gweithredwr cerbyd",
+      "link_href": "https://www.gov.uk/apply-vehicle-operator-licence"
+    },
+    "LUIZbIuJ_xVZxwhkNAApcO4O_6o": {
+      "header": "Gwneud cais i ddod yn weithiwr cymdeithasol cofrestredig yn Lloegr",
+      "link_text": "Gwneud cais i ddod yn weithiwr cymdeithasol cofrestredig yn Lloegr",
+      "link_href": "https://www.socialworkengland.org.uk/registration/apply-for-registration"
+    },
+    "VsAkrtMBzAosSveAv4xsuUDyiSs": {
+      "header": "Llofnodwch eich gweithred morgais",
+      "link_text": "Llofnodwch eich gweithred morgais",
+      "link_href": "https://sign-your-mortgage-deed.landregistry.gov.uk"
+    },
+    "x3F_Iu0LgqJpegY5ni0QSB0uezw": {
+      "header": "Rheoli prentisiaethau",
+      "description": "Rheoli eich prentisiaid, darparwyr hyfforddiant, recriwtio a chyllid.",
+      "link_text": "Ewch i'ch cyfrif gwasanaeth prentisiaeth",
+      "link_href": "https://accounts.manage-apprenticeships.service.gov.uk/service"
+    },
+    "tya4DoMpw_B7FK5YvuMAj3asc0A": {
+      "header": "Darganfod a gwneud cais am grant",
+      "description": "Chwilio a gwneud cais am gyllid grant gan y llywodraeth",
+      "link_text": "Ewch i'ch cyfrif grantiau",
+      "link_href": "https://find-government-grants.service.cabinetoffice.gov.uk/apply/applicant"
+    },
+    "bGAwNKM0XvnxCAuDQ_rMhhP3dxM": {
+      "header": "Digolledau anafiadau troseddol",
+      "description": "Dechrau neu barhau â chais i gael eich digolledu am anafiadau neu golledion os ydych wedi bod yn ddioddefwr o drosedd treisiol.",
+      "link_text": "Ewch i’ch cyfrif digolledion anafiadau troseddol",
+      "link_href": "https://claim-criminal-injuries-compensation.service.justice.gov.uk/account"
+    },
+    "zbNToJPcre4BXEap0na8kOjniKg": {
+      "header": "Rheoli gwasanaethau a chyfrifon cymorth i deuluoedd",
+      "description": "Ychwanegu a rheoli cyfrifon a gwasanaethau yn 'Dod o hyd i gymorth i'ch teulu' a 'Cysylltu teuluoedd i gymorth'.",
+      "link_text": "Ewch i'ch cyfrif rheoli gwasanaethau cymorth i deuluoedd",
+      "link_href": "https://www.connect-families-to-support.education.gov.uk/Account/login-callback"
+    },
+    "cqGoT1LYLsjn-iwGcDTzamckhZU": {
+      "header": "Cysylltu teuluoedd i gymorth",
+      "description": "Darganfyddwch wasanaethau cymorth lleol ar gyfer plant, pobl ifanc, rhieni a gofalwyr.",
+      "link_text": "Ewch i'ch cyfrif cysylltu teuluoedd i gefnogi",
+      "link_href": "https://www.connect-families-to-support.education.gov.uk/Account/login-callback"
+    },
+    "dVrdJ7aemrvR0YlX7lDRaXnz0mE": {
+      "header": "Gwasanaeth asesu prentisiaeth (AAS)",
+      "description": "Asesu prentisiaethau.",
+      "link_text": "Ewch i'ch cyfrif asesiadau prentisiaeth",
+      "link_href": "https://assessors.apprenticeships.education.gov.uk/account/signin"
+    },
+    "FakIq5aYsHQ02dBOc6XwyA1wRRs": {
+      "header": "Cynllun Inswleiddio Prydain Fawr (GBIS)",
+      "description": "Anfonwch eich mesurau effeithlonrwydd ynni cwsmeriaid wedi'u cwblhau i Ofgem i'w hadolygu.",
+      "link_text": "Ewch i'ch dangosfwrdd GBIS",
+      "link_href": "https://gbinsulationscheme.ofgem.gov.uk/"
+    },
+    "zFeCxrwpLCUHFm-C4_CztwWtLfQ": {
+      "header": "Gwneud cais am Gerdyn Cyn-filwyr Lluoedd Arfog EF",
+      "link_text": "Gwneud cais am Gerdyn Cyn-filwyr Lluoedd Arfog EF",
+      "link_href": "https://www.gov.uk/veteran-card"
+    },
+    "txsGLvMYYCPaWPZRq2L7XxEnyro": {
+      "header": "Hyfforddiant datblygiad plant blynyddoedd cynnar",
+      "description": "Hyfforddiant ar ddatblygiad plant, gan gynnwys cyngor ar gefnogi datblygiad plant yn eich lleoliad blynyddoedd cynnar.",
+      "link_text": "Ewch i'ch cyfrif hyfforddiant datblygiad plant blynyddoedd cynnar",
+      "link_href": "https://child-development-training.education.gov.uk/my-modules"
+    }
+  },
+  "integration": {
+    "CEr97IZfEPQFgBxq8QNcM8LFxw4": {
+      "header": "Tanysgrifiadau e-byst GOV.UK",
+      "description": "Gweld a rheoli’r diweddariadau rydych yn eu cael am dudalennau GOV.UK mae gennych ddiddordeb ynddynt.",
+      "link_text": "Ewch i’ch tanysgrifiadau e-byst GOV.UK",
+      "link_href": "https://www.staging.publishing.service.gov.uk/email/manage?from=your-services"
+    },
+    "JO3ET6EtFN3FzjGC3yRP2qpuoHQ": {
+      "header": "LITE (Trwyddedu ar gyfer Masnach a Menter Ryngwladol)",
+      "description": "Gwneud cais am neu reoli trwyddedau rheoli allforio ar gyfer nwyddau a reolir.",
+      "link_text": "Ewch i’ch cyfrif LITE",
+      "link_href": "https://exporter.lite.private-beta.service.trade.gov.uk/"
+    },
+    "TGygWFxGDNn8ItyaecWCopqIX3s": {
+      "header": "Cyfrif arbenigwr pwnc Ofqual",
+      "description": "Gwneud gais i roi cyngor arbenigol i Ofqual.",
+      "link_text": "Ewch i'ch cyfrif arbenigwr pwnc Ofqual",
+      "link_href": "https://subject-matter-specialists.ofqual.gov.uk/"
+    },
+    "pDqO7_Hu-pq5wam5I4MlURXrv5k": {
+      "header": "Cofrestrfa datganiad caethwasiaeth modern",
+      "description": "Ychwanegu neu olygu'r datganiadau sy'n dweud beth mae eich sefydliad yn ei wneud i ddileu caethwasiaeth fodern o'i gadwyni cyflenwi.",
+      "link_text": "Ewch i'ch cyfrif cofrestrfa datganiad caethwasiaeth modern",
+      "link_href": "https://modern-slavery-statement-registry.service.gov.uk/manage-organisations"
+    },
+    "Dw7Cxas8W7O2usHMHok95elKDRU": {
+      "header": "Gwneud cais am wiriad DBS sylfaenol",
+      "link_text": "Gwneud cais am wiriad DBS sylfaenol",
+      "link_href": "https://www.gov.uk/gwneud-cais-copi-cofnod-troseddol"
+    },
+    "oLciSn5b6-cqcJjzgMMwCw1moD8": {
+      "header": "Gwneud cais am drwydded gweithredwr cerbyd",
+      "link_text": "Gwneud cais am drwydded gweithredwr cerbyd",
+      "link_href": "https://www.gov.uk/apply-vehicle-operator-licence"
+    },
+    "LUIZbIuJ_xVZxwhkNAApcO4O_6o": {
+      "header": "Gwneud cais i ddod yn weithiwr cymdeithasol cofrestredig yn Lloegr",
+      "link_text": "Gwneud cais i ddod yn weithiwr cymdeithasol cofrestredig yn Lloegr",
+      "link_href": "https://www.socialworkengland.org.uk/registration/apply-for-registration"
+    },
+    "VsAkrtMBzAosSveAv4xsuUDyiSs": {
+      "header": "Llofnodwch eich gweithred morgais",
+      "link_text": "Llofnodwch eich gweithred morgais",
+      "link_href": "https://sign-your-mortgage-deed.landregistry.gov.uk"
+    },
+    "x3F_Iu0LgqJpegY5ni0QSB0uezw": {
+      "header": "Rheoli prentisiaethau",
+      "description": "Rheoli eich prentisiaid, darparwyr hyfforddiant, recriwtio a chyllid.",
+      "link_text": "Ewch i'ch cyfrif gwasanaeth prentisiaeth",
+      "link_href": "https://accounts.manage-apprenticeships.service.gov.uk/service"
+    },
+    "bGAwNKM0XvnxCAuDQ_rMhhP3dxM": {
+      "header": "Digolledau anafiadau troseddol",
+      "description": "Dechrau neu barhau â chais i gael eich digolledu am anafiadau neu golledion os ydych wedi bod yn ddioddefwr o drosedd treisiol.",
+      "link_text": "Ewch i’ch cyfrif digolledion anafiadau troseddol",
+      "link_href": "https://claim-criminal-injuries-compensation.service.justice.gov.uk/account"
+    },
+    "KiYrXyFTTy0JFZyYJI22WuxPIf8" : {
+      "header": "Darganfod corff asesu cydymffurfiaeth marchnad y DU",
+      "description": "Rheoli cyrff asesu cydymffurfiaeth ar y gofrestr.",
+      "link_text": "Ewch i'ch cyfrif corff asesu cydymffurfiaeth",
+      "link_href": "https://find-a-conformity-assessment-body.service.gov.uk/account/login"
+    },
+    "zbNToJPcre4BXEap0na8kOjniKg": {
+      "header": "Rheoli gwasanaethau a chyfrifon cymorth i deuluoedd",
+      "description": "Ychwanegu a rheoli cyfrifon a gwasanaethau yn 'Dod o hyd i gymorth i'ch teulu' a 'Cysylltu teuluoedd i gymorth'.",
+      "link_text": "Ewch i'ch cyfrif rheoli gwasanaethau cymorth i deuluoedd",
+      "link_href": "https://www.connect-families-to-support.education.gov.uk/Account/login-callback"
+    },
+    "cqGoT1LYLsjn-iwGcDTzamckhZU": {
+      "header": "Cysylltu teuluoedd i gymorth",
+      "description": "Darganfyddwch wasanaethau cymorth lleol ar gyfer plant, pobl ifanc, rhieni a gofalwyr.",
+      "link_text": "Ewch i'ch cyfrif cysylltu teuluoedd i gefnogi",
+      "link_href": "https://www.connect-families-to-support.education.gov.uk/Account/login-callback"
+    },
+    "dVrdJ7aemrvR0YlX7lDRaXnz0mE": {
+      "header": "Gwasanaeth asesu prentisiaeth (AAS)",
+      "description": "Asesu prentisiaethau.",
+      "link_text": "Ewch i'ch cyfrif asesiadau prentisiaeth",
+      "link_href": "https://assessors.apprenticeships.education.gov.uk/account/signin"
+    },
+    "FakIq5aYsHQ02dBOc6XwyA1wRRs": {
+      "header": "Cynllun Inswleiddio Prydain Fawr (GBIS)",
+      "description": "Anfonwch eich mesurau effeithlonrwydd ynni cwsmeriaid wedi'u cwblhau i Ofgem i'w hadolygu.",
+      "link_text": "Ewch i'ch dangosfwrdd GBIS",
+      "link_href": "https://gbinsulationscheme.ofgem.gov.uk/"
+    },
+    "zFeCxrwpLCUHFm-C4_CztwWtLfQ": {
+      "header": "Gwneud cais am Gerdyn Cyn-filwyr Lluoedd Arfog EF",
+      "link_text": "Gwneud cais am Gerdyn Cyn-filwyr Lluoedd Arfog EF",
+      "link_href": "https://www.gov.uk/veteran-card"
+    },
+    "txsGLvMYYCPaWPZRq2L7XxEnyro": {
+      "header": "Hyfforddiant datblygiad plant blynyddoedd cynnar",
+      "description": "Hyfforddiant ar ddatblygiad plant, gan gynnwys cyngor ar gefnogi datblygiad plant yn eich lleoliad blynyddoedd cynnar.",
+      "link_text": "Ewch i'ch cyfrif hyfforddiant datblygiad plant blynyddoedd cynnar",
+      "link_href": "https://child-development-training.education.gov.uk/my-modules"
+    }
+  },
+  "staging": {
+    "gov-uk": {
+      "header": "Tanysgrifiadau e-byst GOV.UK",
+      "description": "Gweld a rheoli’r diweddariadau rydych yn eu cael am dudalennau GOV.UK mae gennych ddiddordeb ynddynt.",
+      "link_text": "Ewch i’ch tanysgrifiadau e-byst GOV.UK",
+      "link_href": "https://www.integration.publishing.service.gov.uk/email/manage?from=your-services"
+    },
+    "lite": {
+      "header": "LITE (Trwyddedu ar gyfer Masnach a Menter Ryngwladol)",
+      "description": "Gwneud cais am neu reoli trwyddedau rheoli allforio ar gyfer nwyddau a reolir.",
+      "link_text": "Ewch i’ch cyfrif LITE",
+      "link_href": "https://exporter.lite.private-beta.service.trade.gov.uk/"
+    },
+    "ofqual": {
+      "header": "Cyfrif arbenigwr pwnc Ofqual",
+      "description": "Gwneud gais i roi cyngor arbenigol i Ofqual.",
+      "link_text": "Ewch i'ch cyfrif arbenigwr pwnc Ofqual",
+      "link_href": "https://subject-matter-specialists.ofqual.gov.uk/"
+    },
+    "modernSlavery": {
+      "header": "Cofrestrfa datganiad caethwasiaeth modern",
+      "description": "Ychwanegu neu olygu'r datganiadau sy'n dweud beth mae eich sefydliad yn ei wneud i ddileu caethwasiaeth fodern o'i gadwyni cyflenwi.",
+      "link_text": "Ewch i'ch cyfrif cofrestrfa datganiad caethwasiaeth modern",
+      "link_href": "https://modern-slavery-statement-registry.service.gov.uk/manage-organisations"
+    },
+    "dbs": {
+      "header": "Gwneud cais am wiriad DBS sylfaenol",
+      "link_text": "Gwneud cais am wiriad DBS sylfaenol",
+      "link_href": "https://www.gov.uk/gwneud-cais-copi-cofnod-troseddol"
+    },
+    "vehicleOperatorLicense": {
+      "header": "Gwneud cais am drwydded gweithredwr cerbyd",
+      "link_text": "Gwneud cais am drwydded gweithredwr cerbyd",
+      "link_href": "https://www.gov.uk/apply-vehicle-operator-licence"
+    },
+    "socialWorkEngland": {
+      "header": "Gwneud cais i ddod yn weithiwr cymdeithasol cofrestredig yn Lloegr",
+      "link_text": "Gwneud cais i ddod yn weithiwr cymdeithasol cofrestredig yn Lloegr",
+      "link_href": "https://www.socialworkengland.org.uk/registration/apply-for-registration"
+    },
+    "mortgageDeed": {
+      "header": "Llofnodwch eich gweithred morgais",
+      "link_text": "Llofnodwch eich gweithred morgais",
+      "link_href": "https://sign-your-mortgage-deed.landregistry.gov.uk"
+    },
+    "apprenticeshipsService": {
+      "header": "Rheoli prentisiaethau",
+      "description": "Rheoli eich prentisiaid, darparwyr hyfforddiant, recriwtio a chyllid.",
+      "link_text": "Ewch i'ch cyfrif gwasanaeth prentisiaeth",
+      "link_href": "https://accounts.manage-apprenticeships.service.gov.uk/service"
+    },
+    "criminalInjuriesCompensation": {
+      "header": "Digolledau anafiadau troseddol",
+      "description": "Dechrau neu barhau â chais i gael eich digolledu am anafiadau neu golledion os ydych wedi bod yn ddioddefwr o drosedd treisiol.",
+      "link_text": "Ewch i’ch cyfrif digolledion anafiadau troseddol",
+      "link_href": "https://claim-criminal-injuries-compensation.service.justice.gov.uk/account"
+    },
+    "ukmcab" : {
+      "header": "Darganfod corff asesu cydymffurfiaeth marchnad y DU",
+      "description": "Rheoli cyrff asesu cydymffurfiaeth ar y gofrestr.",
+      "link_text": "Ewch i'ch cyfrif corff asesu cydymffurfiaeth",
+      "link_href": "https://find-a-conformity-assessment-body.service.gov.uk/account/login"
+    },
+    "manageFamilySupport": {
+      "header": "Rheoli gwasanaethau a chyfrifon cymorth i deuluoedd",
+      "description": "Ychwanegu a rheoli cyfrifon a gwasanaethau yn 'Dod o hyd i gymorth i'ch teulu' a 'Cysylltu teuluoedd i gymorth'.",
+      "link_text": "Ewch i'ch cyfrif rheoli gwasanaethau cymorth i deuluoedd",
+      "link_href": "https://www.connect-families-to-support.education.gov.uk/Account/login-callback"
+    },
+    "connectFamilies": {
+      "header": "Cysylltu teuluoedd i gymorth",
+      "description": "Darganfyddwch wasanaethau cymorth lleol ar gyfer plant, pobl ifanc, rhieni a gofalwyr.",
+      "link_text": "Ewch i'ch cyfrif cysylltu teuluoedd i gefnogi",
+      "link_href": "https://www.connect-families-to-support.education.gov.uk/Account/login-callback"
+    },
+    "aas": {
+      "header": "Gwasanaeth asesu prentisiaeth (AAS)",
+      "description": "Asesu prentisiaethau.",
+      "link_text": "Ewch i'ch cyfrif asesiadau prentisiaeth",
+      "link_href": "https://assessors.apprenticeships.education.gov.uk/account/signin"
+    },
+    "gbis": {
+      "header": "Cynllun Inswleiddio Prydain Fawr (GBIS)",
+      "description": "Anfonwch eich mesurau effeithlonrwydd ynni cwsmeriaid wedi'u cwblhau i Ofgem i'w hadolygu.",
+      "link_text": "Ewch i'ch dangosfwrdd GBIS",
+      "link_href": "https://gbinsulationscheme.ofgem.gov.uk/"
+    },
+    "veteransCard": {
+      "header": "Gwneud cais am Gerdyn Cyn-filwyr Lluoedd Arfog EF",
+      "link_text": "Gwneud cais am Gerdyn Cyn-filwyr Lluoedd Arfog EF",
+      "link_href": "https://www.gov.uk/veteran-card"
+    },
+    "childDevelopmentTraining": {
+      "header": "Hyfforddiant datblygiad plant blynyddoedd cynnar",
+      "description": "Hyfforddiant ar ddatblygiad plant, gan gynnwys cyngor ar gefnogi datblygiad plant yn eich lleoliad blynyddoedd cynnar.",
+      "link_text": "Ewch i'ch cyfrif hyfforddiant datblygiad plant blynyddoedd cynnar",
+      "link_href": "https://child-development-training.education.gov.uk/my-modules"
+    }
+  },
+  "build": {
+    "gov-uk": {
+      "header": "Tanysgrifiadau e-byst GOV.UK",
+      "description": "Gweld a rheoli’r diweddariadau rydych yn eu cael am dudalennau GOV.UK mae gennych ddiddordeb ynddynt.",
+      "link_text": "Ewch i’ch tanysgrifiadau e-byst GOV.UK",
+      "link_href": "https://www.integration.publishing.service.gov.uk/email/manage?from=your-services"
+    },
+    "lite": {
+      "header": "LITE (Trwyddedu ar gyfer Masnach a Menter Ryngwladol)",
+      "description": "Gwneud cais am neu reoli trwyddedau rheoli allforio ar gyfer nwyddau a reolir.",
+      "link_text": "Ewch i’ch cyfrif LITE",
+      "link_href": "https://exporter.lite.private-beta.service.trade.gov.uk/"
+    },
+    "ofqual": {
+      "header": "Cyfrif arbenigwr pwnc Ofqual",
+      "description": "Gwneud gais i roi cyngor arbenigol i Ofqual.",
+      "link_text": "Ewch i'ch cyfrif arbenigwr pwnc Ofqual",
+      "link_href": "https://subject-matter-specialists.ofqual.gov.uk/"
+    },
+    "modernSlavery": {
+      "header": "Cofrestrfa datganiad caethwasiaeth modern",
+      "description": "Ychwanegu neu olygu'r datganiadau sy'n dweud beth mae eich sefydliad yn ei wneud i ddileu caethwasiaeth fodern o'i gadwyni cyflenwi.",
+      "link_text": "Ewch i'ch cyfrif cofrestrfa datganiad caethwasiaeth modern",
+      "link_href": "https://modern-slavery-statement-registry.service.gov.uk/manage-organisations"
+    },
+    "dbs": {
+      "header": "Gwneud cais am wiriad DBS sylfaenol",
+      "link_text": "Gwneud cais am wiriad DBS sylfaenol",
+      "link_href": "https://www.gov.uk/gwneud-cais-copi-cofnod-troseddol"
+    },
+    "vehicleOperatorLicense": {
+      "header": "Gwneud cais am drwydded gweithredwr cerbyd",
+      "link_text": "Gwneud cais am drwydded gweithredwr cerbyd",
+      "link_href": "https://www.gov.uk/apply-vehicle-operator-licence"
+    },
+    "socialWorkEngland": {
+      "header": "Gwneud cais i ddod yn weithiwr cymdeithasol cofrestredig yn Lloegr",
+      "link_text": "Gwneud cais i ddod yn weithiwr cymdeithasol cofrestredig yn Lloegr",
+      "link_href": "https://www.socialworkengland.org.uk/registration/apply-for-registration"
+    },
+    "mortgageDeed": {
+      "header": "Llofnodwch eich gweithred morgais",
+      "link_text": "Llofnodwch eich gweithred morgais",
+      "link_href": "https://sign-your-mortgage-deed.landregistry.gov.uk"
+    },
+    "apprenticeshipsService": {
+      "header": "Rheoli prentisiaethau",
+      "description": "Rheoli eich prentisiaid, darparwyr hyfforddiant, recriwtio a chyllid.",
+      "link_text": "Ewch i'ch cyfrif gwasanaeth prentisiaeth",
+      "link_href": "https://accounts.manage-apprenticeships.service.gov.uk/service"
+    },
+    "criminalInjuriesCompensation": {
+      "header": "Digolledau anafiadau troseddol",
+      "description": "Dechrau neu barhau â chais i gael eich digolledu am anafiadau neu golledion os ydych wedi bod yn ddioddefwr o drosedd treisiol.",
+      "link_text": "Ewch i’ch cyfrif digolledion anafiadau troseddol",
+      "link_href": "https://claim-criminal-injuries-compensation.service.justice.gov.uk/account"
+    },
+    "ukmcab" : {
+      "header": "Darganfod corff asesu cydymffurfiaeth marchnad y DU",
+      "description": "Rheoli cyrff asesu cydymffurfiaeth ar y gofrestr.",
+      "link_text": "Ewch i'ch cyfrif corff asesu cydymffurfiaeth",
+      "link_href": "https://find-a-conformity-assessment-body.service.gov.uk/account/login"
+    },
+    "manageFamilySupport": {
+      "header": "Rheoli gwasanaethau a chyfrifon cymorth i deuluoedd",
+      "description": "Ychwanegu a rheoli cyfrifon a gwasanaethau yn 'Dod o hyd i gymorth i'ch teulu' a 'Cysylltu teuluoedd i gymorth'.",
+      "link_text": "Ewch i'ch cyfrif rheoli gwasanaethau cymorth i deuluoedd",
+      "link_href": "https://www.connect-families-to-support.education.gov.uk/Account/login-callback"
+    },
+    "connectFamilies": {
+      "header": "Cysylltu teuluoedd i gymorth",
+      "description": "Darganfyddwch wasanaethau cymorth lleol ar gyfer plant, pobl ifanc, rhieni a gofalwyr.",
+      "link_text": "Ewch i'ch cyfrif cysylltu teuluoedd i gefnogi",
+      "link_href": "https://www.connect-families-to-support.education.gov.uk/Account/login-callback"
+    },
+    "aas": {
+      "header": "Gwasanaeth asesu prentisiaeth (AAS)",
+      "description": "Asesu prentisiaethau.",
+      "link_text": "Ewch i'ch cyfrif asesiadau prentisiaeth",
+      "link_href": "https://assessors.apprenticeships.education.gov.uk/account/signin"
+    },
+    "gbis": {
+      "header": "Cynllun Inswleiddio Prydain Fawr (GBIS)",
+      "description": "Anfonwch eich mesurau effeithlonrwydd ynni cwsmeriaid wedi'u cwblhau i Ofgem i'w hadolygu.",
+      "link_text": "Ewch i'ch dangosfwrdd GBIS",
+      "link_href": "https://gbinsulationscheme.ofgem.gov.uk/"
+    },
+    "veteransCard": {
+      "header": "Gwneud cais am Gerdyn Cyn-filwyr Lluoedd Arfog EF",
+      "link_text": "Gwneud cais am Gerdyn Cyn-filwyr Lluoedd Arfog EF",
+      "link_href": "https://www.gov.uk/veteran-card"
+    },
+    "childDevelopmentTraining": {
+      "header": "Hyfforddiant datblygiad plant blynyddoedd cynnar",
+      "description": "Hyfforddiant ar ddatblygiad plant, gan gynnwys cyngor ar gefnogi datblygiad plant yn eich lleoliad blynyddoedd cynnar.",
+      "link_text": "Ewch i'ch cyfrif hyfforddiant datblygiad plant blynyddoedd cynnar",
+      "link_href": "https://child-development-training.education.gov.uk/my-modules"
+    }
+
+  },
+  "dev": {
+    "gov-uk": {
+      "header": "Tanysgrifiadau e-byst GOV.UK",
+      "description": "Gweld a rheoli’r diweddariadau rydych yn eu cael am dudalennau GOV.UK mae gennych ddiddordeb ynddynt.",
+      "link_text": "Ewch i’ch tanysgrifiadau e-byst GOV.UK",
+      "link_href": "https://www.integration.publishing.service.gov.uk/email/manage?from=your-services"
+    },
+    "lite": {
+      "header": "LITE (Trwyddedu ar gyfer Masnach a Menter Ryngwladol)",
+      "description": "Gwneud cais am neu reoli trwyddedau rheoli allforio ar gyfer nwyddau a reolir.",
+      "link_text": "Ewch i’ch cyfrif LITE",
+      "link_href": "https://exporter.lite.private-beta.service.trade.gov.uk/"
+    },
+    "ofqual": {
+      "header": "Cyfrif arbenigwr pwnc Ofqual",
+      "description": "Gwneud gais i roi cyngor arbenigol i Ofqual.",
+      "link_text": "Ewch i'ch cyfrif arbenigwr pwnc Ofqual",
+      "link_href": "https://subject-matter-specialists.ofqual.gov.uk/"
+    },
+    "modernSlavery": {
+      "header": "Cofrestrfa datganiad caethwasiaeth modern",
+      "description": "Ychwanegu neu olygu'r datganiadau sy'n dweud beth mae eich sefydliad yn ei wneud i ddileu caethwasiaeth fodern o'i gadwyni cyflenwi.",
+      "link_text": "Ewch i'ch cyfrif cofrestrfa datganiad caethwasiaeth modern",
+      "link_href": "https://modern-slavery-statement-registry.service.gov.uk/manage-organisations"
+    },
+    "dbs": {
+      "header": "Gwneud cais am wiriad DBS sylfaenol",
+      "link_text": "Gwneud cais am wiriad DBS sylfaenol",
+      "link_href": "https://www.gov.uk/gwneud-cais-copi-cofnod-troseddol"
+    },
+    "vehicleOperatorLicense": {
+      "header": "Gwneud cais am drwydded gweithredwr cerbyd",
+      "link_text": "Gwneud cais am drwydded gweithredwr cerbyd",
+      "link_href": "https://www.gov.uk/apply-vehicle-operator-licence"
+    },
+    "socialWorkEngland": {
+      "header": "Gwneud cais i ddod yn weithiwr cymdeithasol cofrestredig yn Lloegr",
+      "link_text": "Gwneud cais i ddod yn weithiwr cymdeithasol cofrestredig yn Lloegr",
+      "link_href": "https://www.socialworkengland.org.uk/registration/apply-for-registration"
+    },
+    "mortgageDeed": {
+      "header": "Llofnodwch eich gweithred morgais",
+      "link_text": "Llofnodwch eich gweithred morgais",
+      "link_href": "https://sign-your-mortgage-deed.landregistry.gov.uk"
+    },
+    "apprenticeshipsService": {
+      "header": "Rheoli prentisiaethau",
+      "description": "Rheoli eich prentisiaid, darparwyr hyfforddiant, recriwtio a chyllid.",
+      "link_text": "Ewch i'ch cyfrif gwasanaeth prentisiaeth",
+      "link_href": "https://accounts.manage-apprenticeships.service.gov.uk/service"
+    },
+    "criminalInjuriesCompensation": {
+      "header": "Digolledau anafiadau troseddol",
+      "description": "Dechrau neu barhau â chais i gael eich digolledu am anafiadau neu golledion os ydych wedi bod yn ddioddefwr o drosedd treisiol.",
+      "link_text": "Ewch i’ch cyfrif digolledion anafiadau troseddol",
+      "link_href": "https://claim-criminal-injuries-compensation.service.justice.gov.uk/account"
+    },
+    "ukmcab" : {
+      "header": "Darganfod corff asesu cydymffurfiaeth marchnad y DU",
+      "description": "Rheoli cyrff asesu cydymffurfiaeth ar y gofrestr.",
+      "link_text": "Ewch i'ch cyfrif corff asesu cydymffurfiaeth",
+      "link_href": "https://find-a-conformity-assessment-body.service.gov.uk/account/login"
+    },
+    "manageFamilySupport": {
+      "header": "Rheoli gwasanaethau a chyfrifon cymorth i deuluoedd",
+      "description": "Ychwanegu a rheoli cyfrifon a gwasanaethau yn 'Dod o hyd i gymorth i'ch teulu' a 'Cysylltu teuluoedd i gymorth'.",
+      "link_text": "Ewch i'ch cyfrif rheoli gwasanaethau cymorth i deuluoedd",
+      "link_href": "https://www.connect-families-to-support.education.gov.uk/Account/login-callback"
+    },
+    "connectFamilies": {
+      "header": "Cysylltu teuluoedd i gymorth",
+      "description": "Darganfyddwch wasanaethau cymorth lleol ar gyfer plant, pobl ifanc, rhieni a gofalwyr.",
+      "link_text": "Ewch i'ch cyfrif cysylltu teuluoedd i gefnogi",
+      "link_href": "https://www.connect-families-to-support.education.gov.uk/Account/login-callback"
+    },
+    "aas": {
+      "header": "Gwasanaeth asesu prentisiaeth (AAS)",
+      "description": "Asesu prentisiaethau.",
+      "link_text": "Ewch i'ch cyfrif asesiadau prentisiaeth",
+      "link_href": "https://assessors.apprenticeships.education.gov.uk/account/signin"
+    },
+    "gbis": {
+      "header": "Cynllun Inswleiddio Prydain Fawr (GBIS)",
+      "description": "Anfonwch eich mesurau effeithlonrwydd ynni cwsmeriaid wedi'u cwblhau i Ofgem i'w hadolygu.",
+      "link_text": "Ewch i'ch dangosfwrdd GBIS",
+      "link_href": "https://gbinsulationscheme.ofgem.gov.uk/"
+    },
+    "veteransCard": {
+      "header": "Gwneud cais am Gerdyn Cyn-filwyr Lluoedd Arfog EF",
+      "link_text": "Gwneud cais am Gerdyn Cyn-filwyr Lluoedd Arfog EF",
+      "link_href": "https://www.gov.uk/veteran-card"
+    },
+    "childDevelopmentTraining": {
+      "header": "Hyfforddiant datblygiad plant blynyddoedd cynnar",
+      "description": "Hyfforddiant ar ddatblygiad plant, gan gynnwys cyngor ar gefnogi datblygiad plant yn eich lleoliad blynyddoedd cynnar.",
+      "link_text": "Ewch i'ch cyfrif hyfforddiant datblygiad plant blynyddoedd cynnar",
+      "link_href": "https://child-development-training.education.gov.uk/my-modules"
+    }
+  },
+  "local": {
+    "gov-uk": {
+      "header": "Tanysgrifiadau e-byst GOV.UK",
+      "description": "Gweld a rheoli’r diweddariadau rydych yn eu cael am dudalennau GOV.UK mae gennych ddiddordeb ynddynt.",
+      "link_text": "Ewch i’ch tanysgrifiadau e-byst GOV.UK",
+      "link_href": "https://www.integration.publishing.service.gov.uk/email/manage?from=your-services"
+    },
+    "lite": {
+      "header": "LITE (Trwyddedu ar gyfer Masnach a Menter Ryngwladol)",
+      "description": "Gwneud cais am neu reoli trwyddedau rheoli allforio ar gyfer nwyddau a reolir.",
+      "link_text": "Ewch i’ch cyfrif LITE",
+      "link_href": "https://exporter.lite.private-beta.service.trade.gov.uk/"
+    },
+    "ofqual": {
+      "header": "Cyfrif arbenigwr pwnc Ofqual",
+      "description": "Gwneud gais i roi cyngor arbenigol i Ofqual.",
+      "link_text": "Ewch i'ch cyfrif arbenigwr pwnc Ofqual",
+      "link_href": "https://subject-matter-specialists.ofqual.gov.uk/"
+    },
+    "modernSlavery": {
+      "header": "Cofrestrfa datganiad caethwasiaeth modern",
+      "description": "Ychwanegu neu olygu'r datganiadau sy'n dweud beth mae eich sefydliad yn ei wneud i ddileu caethwasiaeth fodern o'i gadwyni cyflenwi.",
+      "link_text": "Ewch i'ch cyfrif cofrestrfa datganiad caethwasiaeth modern",
+      "link_href": "https://modern-slavery-statement-registry.service.gov.uk/manage-organisations"
+    },
+    "dbs": {
+      "header": "Gwneud cais am wiriad DBS sylfaenol",
+      "link_text": "Gwneud cais am wiriad DBS sylfaenol",
+      "link_href": "https://www.gov.uk/gwneud-cais-copi-cofnod-troseddol"
+    },
+    "vehicleOperatorLicense": {
+      "header": "Gwneud cais am drwydded gweithredwr cerbyd",
+      "link_text": "Gwneud cais am drwydded gweithredwr cerbyd",
+      "link_href": "https://www.gov.uk/apply-vehicle-operator-licence"
+    },
+    "socialWorkEngland": {
+      "header": "Gwneud cais i ddod yn weithiwr cymdeithasol cofrestredig yn Lloegr",
+      "link_text": "Gwneud cais i ddod yn weithiwr cymdeithasol cofrestredig yn Lloegr",
+      "link_href": "https://www.socialworkengland.org.uk/registration/apply-for-registration"
+    },
+    "mortgageDeed": {
+      "header": "Llofnodwch eich gweithred morgais",
+      "link_text": "Llofnodwch eich gweithred morgais",
+      "link_href": "https://sign-your-mortgage-deed.landregistry.gov.uk"
+    },
+    "apprenticeshipsService": {
+      "header": "Rheoli prentisiaethau",
+      "description": "Rheoli eich prentisiaid, darparwyr hyfforddiant, recriwtio a chyllid.",
+      "link_text": "Ewch i'ch cyfrif gwasanaeth prentisiaeth",
+      "link_href": "https://accounts.manage-apprenticeships.service.gov.uk/service"
+    },
+    "criminalInjuriesCompensation": {
+      "header": "Digolledau anafiadau troseddol",
+      "description": "Dechrau neu barhau â chais i gael eich digolledu am anafiadau neu golledion os ydych wedi bod yn ddioddefwr o drosedd treisiol.",
+      "link_text": "Ewch i’ch cyfrif digolledion anafiadau troseddol",
+      "link_href": "https://claim-criminal-injuries-compensation.service.justice.gov.uk/account"
+    },
+    "ukmcab" : {
+      "header": "Darganfod corff asesu cydymffurfiaeth marchnad y DU",
+      "description": "Rheoli cyrff asesu cydymffurfiaeth ar y gofrestr.",
+      "link_text": "Ewch i'ch cyfrif corff asesu cydymffurfiaeth",
+      "link_href": "https://find-a-conformity-assessment-body.service.gov.uk/account/login"
+    },
+    "manageFamilySupport": {
+      "header": "Rheoli gwasanaethau a chyfrifon cymorth i deuluoedd",
+      "description": "Ychwanegu a rheoli cyfrifon a gwasanaethau yn 'Dod o hyd i gymorth i'ch teulu' a 'Cysylltu teuluoedd i gymorth'.",
+      "link_text": "Ewch i'ch cyfrif rheoli gwasanaethau cymorth i deuluoedd",
+      "link_href": "https://www.connect-families-to-support.education.gov.uk/Account/login-callback"
+    },
+    "connectFamilies": {
+      "header": "Cysylltu teuluoedd i gymorth",
+      "description": "Darganfyddwch wasanaethau cymorth lleol ar gyfer plant, pobl ifanc, rhieni a gofalwyr.",
+      "link_text": "Ewch i'ch cyfrif cysylltu teuluoedd i gefnogi",
+      "link_href": "https://www.connect-families-to-support.education.gov.uk/Account/login-callback"
+    },
+    "aas": {
+      "header": "Gwasanaeth asesu prentisiaeth (AAS)",
+      "description": "Asesu prentisiaethau.",
+      "link_text": "Ewch i'ch cyfrif asesiadau prentisiaeth",
+      "link_href": "https://assessors.apprenticeships.education.gov.uk/account/signin"
+    },
+    "gbis": {
+      "header": "Cynllun Inswleiddio Prydain Fawr (GBIS)",
+      "description": "Anfonwch eich mesurau effeithlonrwydd ynni cwsmeriaid wedi'u cwblhau i Ofgem i'w hadolygu.",
+      "link_text": "Ewch i'ch dangosfwrdd GBIS",
+      "link_href": "https://gbinsulationscheme.ofgem.gov.uk/"
+    },
+    "veteransCard": {
+      "header": "Gwneud cais am Gerdyn Cyn-filwyr Lluoedd Arfog EF",
+      "link_text": "Gwneud cais am Gerdyn Cyn-filwyr Lluoedd Arfog EF",
+      "link_href": "https://www.gov.uk/veteran-card"
+    },
+    "childDevelopmentTraining": {
+      "header": "Hyfforddiant datblygiad plant blynyddoedd cynnar",
+      "description": "Hyfforddiant ar ddatblygiad plant, gan gynnwys cyngor ar gefnogi datblygiad plant yn eich lleoliad blynyddoedd cynnar.",
+      "link_text": "Ewch i'ch cyfrif hyfforddiant datblygiad plant blynyddoedd cynnar",
+      "link_href": "https://child-development-training.education.gov.uk/my-modules"
+    }
+  }
+}

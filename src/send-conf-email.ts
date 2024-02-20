@@ -1,6 +1,6 @@
 import { SNSEvent } from "aws-lambda";
 import { sendSqsMessage } from "./common/sqs";
-import { SuspiciousActivityEvent, UserData } from "./common/model";
+import { SuspiciousActivityEvent } from "./common/model";
 import assert from "node:assert/strict";
 import { NotifyClient } from "notifications-node-client";
 import "axios-debug-log";

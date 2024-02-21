@@ -12,9 +12,6 @@ Parameters:
   ActivityLogsStoreTableName:
     Type: String
     Default: activity_logs
-  ActivityLogsStoreEventIndexName:
-    Type: String
-    Default: EventIdIndex
   DummyEventStoreTableName:
     Type: String
     Default: dummy_events

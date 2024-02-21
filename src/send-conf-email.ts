@@ -30,13 +30,17 @@ export const getClientInfo = (
   return client;
 };
 
+const formatTimestamp = (timestamp: number, language: string) => {
+  const date = new Date(timestamp);
+  return {
+    date: Intl.DateTimeFormat(language, { dateStyle: "long" }).format(date),
+    time: Intl.DateTimeFormat(language, { timeStyle: "short" }).format(date),
+  };
+};
+
 export const formatActivityObjectForEmail = (
   activity: SuspiciousActivityEvent
-): {
-  email: string;
-  clientNameEn: string;
-  clientNameCy: string;
-} => {
+) => {
   const envName = process.env.ENVIRONMENT_NAME as Environment;
   assert(envName, "ENVIRONMENT_NAME env variable not set");
 
@@ -48,10 +52,24 @@ export const formatActivityObjectForEmail = (
   const clientEn = getClientInfo(clientRegistryEn, envName, activity.client_id);
   const clientCy = getClientInfo(clientRegistryCy, envName, activity.client_id);
 
+  assert(
+    activity.timestamp,
+    "Timestamp not present in Suspicious Activity Event"
+  );
+
+  const datetimeEn = formatTimestamp(activity.timestamp, "en-GB");
+  const datetimeCy = formatTimestamp(activity.timestamp, "cy");
+
   return {
     email: activity.user.email,
-    clientNameEn: clientEn.header,
-    clientNameCy: clientCy.header,
+    personalisation: {
+      clientNameEn: clientEn.header,
+      clientNameCy: clientCy.header,
+      dateEn: datetimeEn.date,
+      dateCy: datetimeCy.date,
+      timeEn: datetimeEn.time,
+      timeCy: datetimeCy.time,
+    },
   };
 };
 
@@ -61,14 +79,10 @@ export const sendConfMail = async (
   activity: SuspiciousActivityEvent
 ) => {
   const notifyClient = new NotifyClient(apiKey);
-  const { email, clientNameEn, clientNameCy } =
-    formatActivityObjectForEmail(activity);
+  const { email, personalisation } = formatActivityObjectForEmail(activity);
 
   return notifyClient.sendEmail(templateId, email, {
-    personalisation: {
-      clientNameEn,
-      clientNameCy,
-    },
+    personalisation,
     reference: activity.event_id,
   });
 };

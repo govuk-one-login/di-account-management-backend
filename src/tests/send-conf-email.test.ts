@@ -30,8 +30,14 @@ describe("formatActivityObjectForEmail", () => {
 
     expect(result).toEqual({
       email: "test@example.com",
-      clientNameEn: "GOV.UK email subscriptions",
-      clientNameCy: "Tanysgrifiadau e-byst GOV.UK",
+      personalisation: {
+        clientNameEn: "GOV.UK email subscriptions",
+        clientNameCy: "Tanysgrifiadau e-byst GOV.UK",
+        dateCy: "29 Medi 1970",
+        dateEn: "29 September 1970",
+        timeCy: "03:30",
+        timeEn: "03:30",
+      },
     });
   });
 
@@ -91,6 +97,10 @@ describe("sendConfMail", () => {
         personalisation: {
           clientNameEn: "GOV.UK email subscriptions",
           clientNameCy: "Tanysgrifiadau e-byst GOV.UK",
+          dateCy: "29 Medi 1970",
+          dateEn: "29 September 1970",
+          timeCy: "03:30",
+          timeEn: "03:30",
         },
         reference: "123",
       }

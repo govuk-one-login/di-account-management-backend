@@ -1765,7 +1765,7 @@ Resources:
               - sqs:ReceiveMessage
               - sqs:DeleteMessage
               - sqs:GetQueueAttributes
-            Resource: !GetAtt ActivityLogToFormatQueue.Arn
+            Resource: !GetAtt ActivityLogsToFormatQueue.Arn
           - Effect: Allow
             Action:
               - sqs:SendMessage

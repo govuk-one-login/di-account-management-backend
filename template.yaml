@@ -395,8 +395,6 @@ Resources:
           AttributeType: S
         - AttributeName: session_id
           AttributeType: S
-        - AttributeName: timestamp
-          AttributeType: N
       KeySchema:
         - AttributeName: user_id
           KeyType: HASH
@@ -406,12 +404,6 @@ Resources:
         - IndexName: SessionIdIndex
           KeySchema:
             - AttributeName: session_id
-              KeyType: HASH
-          Projection:
-            ProjectionType: ALL
-        - IndexName: TimestampIndex
-          KeySchema:
-            - AttributeName: timestamp
               KeyType: HASH
           Projection:
             ProjectionType: ALL

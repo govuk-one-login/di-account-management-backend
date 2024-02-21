@@ -33,8 +33,14 @@ export const getClientInfo = (
 const formatTimestamp = (timestamp: number, language: string) => {
   const date = new Date(timestamp);
   return {
-    date: Intl.DateTimeFormat(language, { dateStyle: "long" }).format(date),
-    time: Intl.DateTimeFormat(language, { timeStyle: "short" }).format(date),
+    date: Intl.DateTimeFormat(language, {
+      dateStyle: "long",
+      timeZone: "Europe/London",
+    }).format(date),
+    time: Intl.DateTimeFormat(language, {
+      timeStyle: "short",
+      timeZone: "Europe/London",
+    }).format(date),
   };
 };
 

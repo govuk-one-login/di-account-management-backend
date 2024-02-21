@@ -4,6 +4,7 @@ import {
   DynamoDBDocumentClient,
   PutCommand,
   PutCommandOutput,
+  QueryCommand,
 } from "@aws-sdk/lib-dynamodb";
 import {
   SendMessageCommand,
@@ -50,6 +51,20 @@ export const writeActivityLogEntry = async (
       client_id: activityLogEntry.client_id,
       reported_suspicious: activityLogEntry.reported_suspicious,
     },
+  });
+  return dynamoDocClient.send(command);
+};
+
+export const getPreviousActivityLogEntry = async (user_id: string) => {
+  const { TABLE_NAME } = process.env;
+  const command = new QueryCommand({
+    TableName: TABLE_NAME,
+    KeyConditionExpression: "user_id = :user_id",
+    ExpressionAttributeValues: {
+      ":user_id": user_id,
+    },
+    Limit: 1,
+    ScanIndexForward: false,
   });
   return dynamoDocClient.send(command);
 };

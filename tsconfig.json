@@ -12,6 +12,5 @@
     "types": ["jest", "node"],
     "resolveJsonModule": true
   },
-  "exclude": ["node_modules"],
-  "include": ["./src", "./@custom_types"]
+  "exclude": ["node_modules"]
 }

@@ -1545,7 +1545,7 @@ Resources:
       Role: !GetAtt WriteActivityRecordRole.Arn
       Environment:
         Variables:
-          TABLE_NAME: "ActivityLogsStoreTableName"
+          TABLE_NAME: !Ref ActivityLogsStoreTableName
           DLQ_URL: !Ref WriteActivityLogDeadLetterQueue
           GENERATOR_KEY_ARN: !GetAtt GeneratorKey.Arn
           WRAPPING_KEY_ARN: !GetAtt WrapperKey.Arn
@@ -1612,10 +1612,10 @@ Resources:
               - dynamodb:PutItem
               - dynamodb:UpdateItem
             Resource:
-              - "UserActivityLogsStore"
+              - !GetAtt UserActivityLogsStore.Arn
               - !Sub
                 - "${Arn}/*"
-                - Arn: "UserActivityLogsStore"
+                - Arn: !GetAtt UserActivityLogsStore.Arn
           - Effect: Allow
             Action:
               - kms:Decrypt
@@ -1765,7 +1765,7 @@ Resources:
               - sqs:ReceiveMessage
               - sqs:DeleteMessage
               - sqs:GetQueueAttributes
-            Resource: "ActivityLogsToFormatQueue"
+            Resource: !GetAtt ActivityLogToFormatQueue.Arn
           - Effect: Allow
             Action:
               - sqs:SendMessage
@@ -1925,7 +1925,7 @@ Resources:
       Role: !GetAtt DeleteActivityLogRole.Arn
       Environment:
         Variables:
-          TABLE_NAME: "ActivityLogsStoreTableName"
+          TABLE_NAME: !Ref ActivityLogsStoreTableName
           DLQ_URL: !Ref DeleteActivityLogDeadLetterQueue
     Metadata:
       BuildMethod: esbuild
@@ -1974,10 +1974,10 @@ Resources:
               - dynamodb:GetItem
               - dynamodb:BatchWriteItem
             Resource:
-              - "UserActivityLogsStore"
+              - !GetAtt UserActivityLogsStore.Arn
               - !Sub
                 - "${Arn}/*"
-                - Arn: "UserActivityLogsStore"
+                - Arn: !GetAtt UserActivityLogsStore.Arn
           - Effect: Allow
             Action:
               - kms:Decrypt
@@ -2115,8 +2115,7 @@ Resources:
       Role: !GetAtt MarkActivityReportedRole.Arn
       Environment:
         Variables:
-          TABLE_NAME: "ActivityLogsStoreTableName"
-          INDEX_NAME: "ActivityLogsStoreEventIndexName"
+          TABLE_NAME: !Ref ActivityLogsStoreTableName
           DLQ_URL: !Ref MarkActivityReportedDeadLetterQueue
     Metadata:
       BuildMethod: esbuild
@@ -2176,10 +2175,10 @@ Resources:
               - dynamodb:UpdateItem
               - dynamodb:Query
             Resource:
-              - "UserActivityLogsStore"
+              - !GetAtt UserActivityLogsStore.Arn
               - !Sub
                 - "${Arn}/*"
-                - Arn: "UserActivityLogsStore"
+                - Arn: !GetAtt UserActivityLogsStore.Arn
 
   MarkActivityReportedInvokePermission:
     Type: AWS::Lambda::Permission

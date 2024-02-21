@@ -413,6 +413,8 @@ Resources:
             ProjectionType: ALL
         - IndexName: TimestampIndex
           KeySchema:
+            - AttributeName: user_id
+              KeyType: HASH
             - AttributeName: timestamp
               KeyType: RANGE
           Projection:

@@ -9,9 +9,12 @@ Parameters:
   RawEventsStoreTableName:
     Type: String
     Default: raw_events
-  ActivityLogsStoreTableName:
+  ActivityLogStoreTableName:
     Type: String
     Default: activity_log
+  ActivityLogStoreEventIndexName:
+    Type: String
+    Default: EventIdIndex
   DummyEventStoreTableName:
     Type: String
     Default: dummy_events
@@ -225,39 +228,14 @@ Mappings:
   EnvironmentConfiguration:
     dev:
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
-      zendeskGroupIdSecretArn: arn:aws:secretsmanager:eu-west-2:985326104449:secret:/account-mgmt-backend/zendesk-group-id-token-1O5AvL
-      zendeskTagsSecretArn: arn:aws:secretsmanager:eu-west-2:985326104449:secret:/account-mgmt-backend/zendesk-tags-key-itMbyV
-      zendeskApiTokenSecretArn: arn:aws:secretsmanager:eu-west-2:985326104449:secret:/account-mgmt-backend/zendesk-api-token-urjQGc
-      zendeskApiUserSecretArn: arn:aws:secretsmanager:eu-west-2:985326104449:secret:/account-mgmt-backend/zendesk-api-user-key-oPuZZU
-      zendeskApiUrlSecretArn: arn:aws:secretsmanager:eu-west-2:985326104449:secret:/account-mgmt-backend/zendesk-api-url-key-nhK90l
     build:
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
-      zendeskGroupIdSecretArn: arn:aws:secretsmanager:eu-west-2:301577035144:secret:/account-mgmt-backend/zendesk-group-id-token-Ve5ojs
-      zendeskTagsSecretArn: arn:aws:secretsmanager:eu-west-2:301577035144:secret:/account-mgmt-backend/zendesk-tags-key-H64ZpC
-      zendeskApiTokenSecretArn: arn:aws:secretsmanager:eu-west-2:301577035144:secret:/account-mgmt-backend/zendesk-api-token-ayNIV1
-      zendeskApiUserSecretArn: arn:aws:secretsmanager:eu-west-2:301577035144:secret:/account-mgmt-backend/zendesk-api-user-key-7jR9fV
-      zendeskApiUrlSecretArn: arn:aws:secretsmanager:eu-west-2:301577035144:secret:/account-mgmt-backend/zendesk-api-url-key-UpWdv7
     staging:
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
-      zendeskGroupIdSecretArn: arn:aws:secretsmanager:eu-west-2:539729775994:secret:/account-mgmt-backend/zendesk-group-id-token-HE0BjN
-      zendeskTagsSecretArn: arn:aws:secretsmanager:eu-west-2:539729775994:secret:/account-mgmt-backend/zendesk-tags-key-IFQKUB
-      zendeskApiTokenSecretArn: arn:aws:secretsmanager:eu-west-2:539729775994:secret:/account-mgmt-backend/zendesk-api-token-5HZvs4
-      zendeskApiUserSecretArn: arn:aws:secretsmanager:eu-west-2:539729775994:secret:/account-mgmt-backend/zendesk-api-user-key-0AiaN0
-      zendeskApiUrlSecretArn: arn:aws:secretsmanager:eu-west-2:539729775994:secret:/account-mgmt-backend/zendesk-api-url-key-wGN16k
     integration:
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
-      zendeskGroupIdSecretArn: arn:aws:secretsmanager:eu-west-2:666500506359:secret:/account-mgmt-backend/zendesk-group-id-token-djJbv6
-      zendeskTagsSecretArn: arn:aws:secretsmanager:eu-west-2:666500506359:secret:/account-mgmt-backend/zendesk-tags-key-q35WDl
-      zendeskApiTokenSecretArn: arn:aws:secretsmanager:eu-west-2:666500506359:secret:/account-mgmt-backend/zendesk-api-token-fByFIz
-      zendeskApiUserSecretArn: arn:aws:secretsmanager:eu-west-2:666500506359:secret:/account-mgmt-backend/zendesk-api-user-key-oVvUI5
-      zendeskApiUrlSecretArn: arn:aws:secretsmanager:eu-west-2:666500506359:secret:/account-mgmt-backend/zendesk-api-url-key-b5ToSY
     production:
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceProductionVariables
-      zendeskGroupIdSecretArn: arn:aws:secretsmanager:eu-west-2:026991849909:secret:/account-mgmt-backend/zendesk-group-id-token-mE55Wr
-      zendeskTagsSecretArn: arn:aws:secretsmanager:eu-west-2:026991849909:secret:/account-mgmt-backend/zendesk-tags-key-FAHfJf
-      zendeskApiTokenSecretArn: arn:aws:secretsmanager:eu-west-2:026991849909:secret:/account-mgmt-backend/zendesk-api-token-aZOj3s
-      zendeskApiUserSecretArn: arn:aws:secretsmanager:eu-west-2:026991849909:secret:/account-mgmt-backend/zendesk-api-user-key-cMCENu
-      zendeskApiUrlSecretArn: arn:aws:secretsmanager:eu-west-2:026991849909:secret:/account-mgmt-backend/zendesk-api-url-key-WNGekL
 
 
 Resources:
@@ -381,15 +359,15 @@ Resources:
   #########################
   # User Activity Log store
   #########################
-  UserActivityLogsStore:
+  UserActivityLogStore:
     Type: AWS::DynamoDB::Table
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
     Properties:
+      TableName: !Ref ActivityLogStoreTableName
+      BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: user_id
-          AttributeType: S
-        - AttributeName: session_id
           AttributeType: S
         - AttributeName: event_id
           AttributeType: S
@@ -400,13 +378,17 @@ Resources:
               KeyType: HASH
           Projection:
             ProjectionType: ALL
-      BillingMode: PAY_PER_REQUEST
-      TableName: !Ref ActivityLogsStoreTableName
       KeySchema:
         - AttributeName: user_id
           KeyType: HASH
         - AttributeName: event_id
           KeyType: RANGE
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+        SSEType: KMS
+        KMSMasterKeyId: !GetAtt DatabaseKmsKey.Arn
       Tags:
         - Key: Product
           Value: GOV.UK Sign In
@@ -418,12 +400,6 @@ Resources:
           Value: !Ref "Environment"
         - Key: Source
           Value: "https://github.com/alphagov/di-account-management-backend/blob/main/infrastructre/template.yaml"
-      PointInTimeRecoverySpecification:
-        PointInTimeRecoveryEnabled: true
-      SSESpecification:
-        SSEEnabled: true
-        SSEType: KMS
-        KMSMasterKeyId: !GetAtt DatabaseKmsKey.Arn
 
   ######################################
   # TxMA Event Queue (Dummy for now)
@@ -1554,7 +1530,7 @@ Resources:
       Role: !GetAtt WriteActivityRecordRole.Arn
       Environment:
         Variables:
-          TABLE_NAME: !Ref ActivityLogsStoreTableName
+          TABLE_NAME: !Ref ActivityLogStoreTableName
           DLQ_URL: !Ref WriteActivityLogDeadLetterQueue
           GENERATOR_KEY_ARN: !GetAtt GeneratorKey.Arn
           WRAPPING_KEY_ARN: !GetAtt WrapperKey.Arn
@@ -1621,10 +1597,10 @@ Resources:
               - dynamodb:PutItem
               - dynamodb:UpdateItem
             Resource:
-              - !GetAtt UserActivityLogsStore.Arn
+              - !GetAtt UserActivityLogStore.Arn
               - !Sub
                 - "${Arn}/*"
-                - Arn: !GetAtt UserActivityLogsStore.Arn
+                - Arn: !GetAtt UserActivityLogStore.Arn
           - Effect: Allow
             Action:
               - kms:Decrypt
@@ -1934,7 +1910,7 @@ Resources:
       Role: !GetAtt DeleteActivityLogRole.Arn
       Environment:
         Variables:
-          TABLE_NAME: !Ref ActivityLogsStoreTableName
+          TABLE_NAME: !Ref ActivityLogStoreTableName
           DLQ_URL: !Ref DeleteActivityLogDeadLetterQueue
     Metadata:
       BuildMethod: esbuild
@@ -1983,10 +1959,10 @@ Resources:
               - dynamodb:GetItem
               - dynamodb:BatchWriteItem
             Resource:
-              - !GetAtt UserActivityLogsStore.Arn
+              - !GetAtt UserActivityLogStore.Arn
               - !Sub
                 - "${Arn}/*"
-                - Arn: !GetAtt UserActivityLogsStore.Arn
+                - Arn: !GetAtt UserActivityLogStore.Arn
           - Effect: Allow
             Action:
               - kms:Decrypt
@@ -2124,7 +2100,8 @@ Resources:
       Role: !GetAtt MarkActivityReportedRole.Arn
       Environment:
         Variables:
-          TABLE_NAME: !Ref ActivityLogsStoreTableName
+          TABLE_NAME: !Ref ActivityLogStoreTableName
+          INDEX_NAME: !Ref ActivityLogStoreEventIndexName
           DLQ_URL: !Ref MarkActivityReportedDeadLetterQueue
     Metadata:
       BuildMethod: esbuild
@@ -2184,10 +2161,10 @@ Resources:
               - dynamodb:UpdateItem
               - dynamodb:Query
             Resource:
-              - !GetAtt UserActivityLogsStore.Arn
+              - !GetAtt UserActivityLogStore.Arn
               - !Sub
                 - "${Arn}/*"
-                - Arn: !GetAtt UserActivityLogsStore.Arn
+                - Arn: !GetAtt UserActivityLogStore.Arn
 
   MarkActivityReportedInvokePermission:
     Type: AWS::Lambda::Permission

@@ -9,10 +9,10 @@ Parameters:
   RawEventsStoreTableName:
     Type: String
     Default: raw_events
-  ActivityLogStoreTableName:
+  ActivityLogsStoreTableName:
     Type: String
-    Default: activity_log
-  ActivityLogStoreEventIndexName:
+    Default: activity_logs
+  ActivityLogsStoreEventIndexName:
     Type: String
     Default: EventIdIndex
   DummyEventStoreTableName:
@@ -384,12 +384,12 @@ Resources:
   #########################
   # User Activity Log store
   #########################
-  UserActivityLogStore:
+  UserActivityLogsStore:
     Type: AWS::DynamoDB::Table
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
     Properties:
-      TableName: !Ref ActivityLogStoreTableName
+      TableName: "ActivityLogsStoreTableName"
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: user_id
@@ -1518,7 +1518,7 @@ Resources:
       FilterPattern: ""
       LogGroupName: !Ref DeleteEmailSubscriptionsFunctionLogGroup
 
-  ActivityLogToFormatQueue:
+  ActivityLogsToFormatQueue:
     Type: AWS::SQS::Queue
     Properties:
       KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
@@ -1548,7 +1548,7 @@ Resources:
       Role: !GetAtt WriteActivityRecordRole.Arn
       Environment:
         Variables:
-          TABLE_NAME: !Ref ActivityLogStoreTableName
+          TABLE_NAME: "ActivityLogsStoreTableName"
           DLQ_URL: !Ref WriteActivityLogDeadLetterQueue
           GENERATOR_KEY_ARN: !GetAtt GeneratorKey.Arn
           WRAPPING_KEY_ARN: !GetAtt WrapperKey.Arn
@@ -1615,10 +1615,10 @@ Resources:
               - dynamodb:PutItem
               - dynamodb:UpdateItem
             Resource:
-              - !GetAtt UserActivityLogStore.Arn
+              - "UserActivityLogsStore"
               - !Sub
                 - "${Arn}/*"
-                - Arn: !GetAtt UserActivityLogStore.Arn
+                - Arn: "UserActivityLogsStore"
           - Effect: Allow
             Action:
               - kms:Decrypt
@@ -1768,7 +1768,7 @@ Resources:
               - sqs:ReceiveMessage
               - sqs:DeleteMessage
               - sqs:GetQueueAttributes
-            Resource: !GetAtt ActivityLogToFormatQueue.Arn
+            Resource: "ActivityLogsToFormatQueue"
           - Effect: Allow
             Action:
               - sqs:SendMessage
@@ -1928,7 +1928,7 @@ Resources:
       Role: !GetAtt DeleteActivityLogRole.Arn
       Environment:
         Variables:
-          TABLE_NAME: !Ref ActivityLogStoreTableName
+          TABLE_NAME: "ActivityLogsStoreTableName"
           DLQ_URL: !Ref DeleteActivityLogDeadLetterQueue
     Metadata:
       BuildMethod: esbuild
@@ -1977,10 +1977,10 @@ Resources:
               - dynamodb:GetItem
               - dynamodb:BatchWriteItem
             Resource:
-              - !GetAtt UserActivityLogStore.Arn
+              - "UserActivityLogsStore"
               - !Sub
                 - "${Arn}/*"
-                - Arn: !GetAtt UserActivityLogStore.Arn
+                - Arn: "UserActivityLogsStore"
           - Effect: Allow
             Action:
               - kms:Decrypt
@@ -2118,8 +2118,8 @@ Resources:
       Role: !GetAtt MarkActivityReportedRole.Arn
       Environment:
         Variables:
-          TABLE_NAME: !Ref ActivityLogStoreTableName
-          INDEX_NAME: !Ref ActivityLogStoreEventIndexName
+          TABLE_NAME: "ActivityLogsStoreTableName"
+          INDEX_NAME: "ActivityLogsStoreEventIndexName"
           DLQ_URL: !Ref MarkActivityReportedDeadLetterQueue
     Metadata:
       BuildMethod: esbuild
@@ -2179,10 +2179,10 @@ Resources:
               - dynamodb:UpdateItem
               - dynamodb:Query
             Resource:
-              - !GetAtt UserActivityLogStore.Arn
+              - "UserActivityLogsStore"
               - !Sub
                 - "${Arn}/*"
-                - Arn: !GetAtt UserActivityLogStore.Arn
+                - Arn: "UserActivityLogsStore"
 
   MarkActivityReportedInvokePermission:
     Type: AWS::Lambda::Permission

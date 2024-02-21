@@ -381,7 +381,7 @@ Resources:
   #########################
   # User Activity Log store
   #########################
-  UserActivityLogStore:
+  UserActivityLogsStore:
     Type: AWS::DynamoDB::Table
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
@@ -1621,10 +1621,10 @@ Resources:
               - dynamodb:PutItem
               - dynamodb:UpdateItem
             Resource:
-              - !GetAtt UserActivityLogStore.Arn
+              - !GetAtt UserActivityLogsStore.Arn
               - !Sub
                 - "${Arn}/*"
-                - Arn: !GetAtt UserActivityLogStore.Arn
+                - Arn: !GetAtt UserActivityLogsStore.Arn
           - Effect: Allow
             Action:
               - kms:Decrypt
@@ -1983,10 +1983,10 @@ Resources:
               - dynamodb:GetItem
               - dynamodb:BatchWriteItem
             Resource:
-              - !GetAtt UserActivityLogStore.Arn
+              - !GetAtt UserActivityLogsStore.Arn
               - !Sub
                 - "${Arn}/*"
-                - Arn: !GetAtt UserActivityLogStore.Arn
+                - Arn: !GetAtt UserActivityLogsStore.Arn
           - Effect: Allow
             Action:
               - kms:Decrypt
@@ -2184,10 +2184,10 @@ Resources:
               - dynamodb:UpdateItem
               - dynamodb:Query
             Resource:
-              - !GetAtt UserActivityLogStore.Arn
+              - !GetAtt UserActivityLogsStore.Arn
               - !Sub
                 - "${Arn}/*"
-                - Arn: !GetAtt UserActivityLogStore.Arn
+                - Arn: !GetAtt UserActivityLogsStore.Arn
 
   MarkActivityReportedInvokePermission:
     Type: AWS::Lambda::Permission

@@ -47,10 +47,11 @@ export const getActivityLogSessionGroupId = async (
   const command = new QueryCommand({
     TableName: TABLE_NAME,
     IndexName: INDEX_NAME,
-    KeyConditionExpression: "user_id = :user_id AND timestamp > :timestamp",
+    KeyConditionExpression:
+      "user_id = :user_id AND timestamp > :activity_timestamp",
     ExpressionAttributeValues: {
       ":user_id": user_id,
-      ":timestamp": newEventTimestamp - SESSION_LENGTH_SECONDS,
+      ":activity_timestamp": newEventTimestamp - SESSION_LENGTH_SECONDS,
     },
     Limit: 1,
     ScanIndexForward: false,

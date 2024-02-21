@@ -12,6 +12,9 @@ Parameters:
   ActivityLogsStoreTableName:
     Type: String
     Default: activity_log
+  ActivityLogsTimestampIndexName:
+    Type: String
+    Default: TimestampIndex
   DummyEventStoreTableName:
     Type: String
     Default: dummy_events
@@ -411,7 +414,7 @@ Resources:
               KeyType: HASH
           Projection:
             ProjectionType: ALL
-        - IndexName: TimestampIndex
+        - IndexName: !Ref ActivityLogsTimestampIndexName
           KeySchema:
             - AttributeName: user_id
               KeyType: HASH
@@ -1575,6 +1578,7 @@ Resources:
         Variables:
           TABLE_NAME: !Ref ActivityLogsStoreTableName
           DLQ_URL: !Ref WriteActivityLogDeadLetterQueue
+          INDEX_NAME: !Ref ActivityLogsTimestampIndexName
           GENERATOR_KEY_ARN: !GetAtt GeneratorKey.Arn
           WRAPPING_KEY_ARN: !GetAtt WrapperKey.Arn
           BACKUP_WRAPPING_KEY_ARN: !Sub "{{resolve:ssm:/${AWS::StackName}/${Environment}/Backup/KMS/WrappingKey/ARN}}"

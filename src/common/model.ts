@@ -98,6 +98,7 @@ export interface ActivityLogEntry {
   timestamp: number;
   client_id: string;
   reported_suspicious: boolean;
+  timestamp_group_id: string;
 }
 
 export interface EncryptedActivityLogEntry {
@@ -108,6 +109,7 @@ export interface EncryptedActivityLogEntry {
   timestamp: number;
   client_id: string;
   reported_suspicious: boolean;
+  timestamp_group_id: string;
 }
 
 export interface SuspiciousActivityEvent {

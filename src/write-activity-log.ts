@@ -13,6 +13,9 @@ import {
 } from "@aws-sdk/client-sqs";
 import { ActivityLogEntry, EncryptedActivityLogEntry } from "./common/model";
 import encryptData from "./common/encrypt-data";
+import { randomUUID } from "crypto";
+
+const SESSION_LENGTH_SECONDS = 3600;
 
 const dynamoClient = new DynamoDBClient({});
 const dynamoDocClient = DynamoDBDocumentClient.from(dynamoClient);
@@ -36,10 +39,33 @@ export const validateActivityLogEntry = (
   }
 };
 
+export const getActivityLogSessionGroupId = async (
+  user_id: string,
+  newEventTimestamp: number
+) => {
+  const { TABLE_NAME, INDEX_NAME } = process.env;
+  const command = new QueryCommand({
+    TableName: TABLE_NAME,
+    IndexName: INDEX_NAME,
+    KeyConditionExpression: "user_id = :user_id AND timestamp > :timestamp",
+    ExpressionAttributeValues: {
+      ":user_id": user_id,
+      ":timestamp": newEventTimestamp - SESSION_LENGTH_SECONDS,
+    },
+    Limit: 1,
+    ScanIndexForward: false,
+  });
+
+  const result = await dynamoDocClient.send(command);
+
+  return result.Items?.[0].timestamp_group_id || randomUUID();
+};
+
 export const writeActivityLogEntry = async (
   activityLogEntry: EncryptedActivityLogEntry
 ): Promise<PutCommandOutput> => {
   const { TABLE_NAME } = process.env;
+
   const command = new PutCommand({
     TableName: TABLE_NAME,
     Item: {
@@ -50,21 +76,8 @@ export const writeActivityLogEntry = async (
       event_id: activityLogEntry.event_id,
       client_id: activityLogEntry.client_id,
       reported_suspicious: activityLogEntry.reported_suspicious,
+      timestamp_group_id: activityLogEntry.timestamp_group_id,
     },
-  });
-  return dynamoDocClient.send(command);
-};
-
-export const getPreviousActivityLogEntry = async (user_id: string) => {
-  const { TABLE_NAME } = process.env;
-  const command = new QueryCommand({
-    TableName: TABLE_NAME,
-    KeyConditionExpression: "user_id = :user_id",
-    ExpressionAttributeValues: {
-      ":user_id": user_id,
-    },
-    Limit: 1,
-    ScanIndexForward: false,
   });
   return dynamoDocClient.send(command);
 };
@@ -87,6 +100,10 @@ export const handler = async (event: SQSEvent): Promise<void> => {
           timestamp: activityLogEntry.timestamp,
           client_id: activityLogEntry.client_id,
           reported_suspicious: activityLogEntry.reported_suspicious,
+          timestamp_group_id: await getActivityLogSessionGroupId(
+            activityLogEntry.user_id,
+            activityLogEntry.timestamp
+          ),
         };
         await writeActivityLogEntry(encryptedActivityLog);
       } catch (err) {

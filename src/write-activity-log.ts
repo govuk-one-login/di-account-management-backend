@@ -107,6 +107,7 @@ export const handler = async (event: SQSEvent): Promise<void> => {
         };
         await writeActivityLogEntry(encryptedActivityLog);
       } catch (err) {
+        console.log(err);
         const message: SendMessageRequest = {
           QueueUrl: DLQ_URL,
           MessageBody: record.body,

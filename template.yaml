@@ -381,7 +381,7 @@ Resources:
   #########################
   # User Activity Log store
   #########################
-  UserActivityLogsStore:
+  UserActivityLogStore:
     Type: AWS::DynamoDB::Table
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete

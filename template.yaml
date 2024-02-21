@@ -386,7 +386,7 @@ Resources:
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
     Properties:
-      TableName: "ActivityLogsStoreTableName"
+      TableName: !Ref ActivityLogsStoreTableName
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: user_id

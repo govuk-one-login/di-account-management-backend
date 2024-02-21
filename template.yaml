@@ -371,13 +371,6 @@ Resources:
           AttributeType: S
         - AttributeName: event_id
           AttributeType: S
-      GlobalSecondaryIndexes:
-        - IndexName: SessionIdIndex
-          KeySchema:
-            - AttributeName: session_id
-              KeyType: HASH
-          Projection:
-            ProjectionType: ALL
       KeySchema:
         - AttributeName: user_id
           KeyType: HASH

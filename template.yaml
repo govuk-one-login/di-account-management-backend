@@ -381,25 +381,18 @@ Resources:
   #########################
   # User Activity Log store
   #########################
-  UserActivityLogStore:
+  UserActivityLogsStore:
     Type: AWS::DynamoDB::Table
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
     Properties:
-      TableName: !Ref ActivityLogStoreTableName
-      BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: user_id
           AttributeType: S
-        - AttributeName: event_id
-          AttributeType: S
         - AttributeName: session_id
           AttributeType: S
-      KeySchema:
-        - AttributeName: user_id
-          KeyType: HASH
         - AttributeName: event_id
-          KeyType: RANGE
+          AttributeType: S
       GlobalSecondaryIndexes:
         - IndexName: SessionIdIndex
           KeySchema:
@@ -407,12 +400,13 @@ Resources:
               KeyType: HASH
           Projection:
             ProjectionType: ALL
-      PointInTimeRecoverySpecification:
-        PointInTimeRecoveryEnabled: true
-      SSESpecification:
-        SSEEnabled: true
-        SSEType: KMS
-        KMSMasterKeyId: !GetAtt DatabaseKmsKey.Arn
+      BillingMode: PAY_PER_REQUEST
+      TableName: !Ref ActivityLogsStoreTableName
+      KeySchema:
+        - AttributeName: user_id
+          KeyType: HASH
+        - AttributeName: event_id
+          KeyType: RANGE
       Tags:
         - Key: Product
           Value: GOV.UK Sign In
@@ -424,6 +418,12 @@ Resources:
           Value: !Ref "Environment"
         - Key: Source
           Value: "https://github.com/alphagov/di-account-management-backend/blob/main/infrastructre/template.yaml"
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+        SSEType: KMS
+        KMSMasterKeyId: !GetAtt DatabaseKmsKey.Arn
 
   ######################################
   # TxMA Event Queue (Dummy for now)

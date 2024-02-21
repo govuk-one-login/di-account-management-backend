@@ -401,7 +401,7 @@ Resources:
           Projection:
             ProjectionType: ALL
       BillingMode: PAY_PER_REQUEST
-      TableName: !Ref ActivityLogsStoreTableName
+      TableName: !Ref ActivityLogStoreTableName
       KeySchema:
         - AttributeName: user_id
           KeyType: HASH

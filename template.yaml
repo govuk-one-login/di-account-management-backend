@@ -405,11 +405,21 @@ Resources:
           AttributeType: S
         - AttributeName: event_id
           AttributeType: S
+        - AttributeName: created_at
+          AttributeType: N
       GlobalSecondaryIndexes:
         - IndexName: SessionIdIndex
           KeySchema:
             - AttributeName: session_id
               KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+        - IndexName: !Ref ActivityLogsCreatedAtIndexName
+          KeySchema:
+            - AttributeName: user_id
+              KeyType: HASH
+            - AttributeName: created_at
+              KeyType: RANGE
           Projection:
             ProjectionType: ALL
       BillingMode: PAY_PER_REQUEST

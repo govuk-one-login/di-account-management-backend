@@ -81,13 +81,26 @@ export interface ReportedEvent {
   activities: ReportedActivity;
 }
 
-export interface TxMASuspiciousActivityEvent {
+export interface TxMaUser {
   user_id: string;
-  email_address: string;
   persistent_session_id: string;
   session_id: string;
-  reported: boolean;
-  reported_event: ReportedEvent;
+}
+
+export interface TxMAExtensions {
+  zendesk_ticket_number: string;
+  notify_reference: string;
+  suspicious_activities: TxMASuspiciousActivity[];
+}
+
+export interface TxMAAuditEvent {
+  user: TxMaUser;
+  component_id: string;
+  event_name: string;
+  timestamp: number;
+  event_timestamp_ms: number;
+  event_timestamp_ms_formatted: string;
+  extensions: TxMAExtensions;
 }
 
 export interface ActivityLogEntry {
@@ -98,6 +111,15 @@ export interface ActivityLogEntry {
   timestamp: number;
   client_id: string;
   reported_suspicious: boolean;
+  reported_suspicious_time?: number;
+}
+
+export interface TxMASuspiciousActivity {
+  event_id: string;
+  event_type: string;
+  session_id: string;
+  timestamp: number;
+  client_id: string;
 }
 
 export interface EncryptedActivityLogEntry {
@@ -136,6 +158,7 @@ export interface CreateTicket {
   group_id?: number;
   tags?: ReadonlyArray<string> | null;
   requester?: RequesterAnonymous;
+  ticket_form_id?: number;
 }
 
 interface RequesterAnonymous {
@@ -157,3 +180,38 @@ export type Environment =
   | "local";
 type ClientRegistryEnvronment = Record<string, RPClient>;
 export type ClientRegistry = Record<Environment, ClientRegistryEnvronment>;
+
+export interface MarkActivityAsReportedInput {
+  user_id: string;
+  email: string;
+  event_id: string;
+  persistent_session_id: string;
+  session_id: string;
+  reported_suspicious_time: number;
+}
+
+export interface ReportSuspiciousActivityEvent {
+  event_id: string;
+  email_address: string;
+  zendesk_ticket_id?: string;
+  session_id: string;
+  persistent_session_id: string;
+  notify_message_id?: string;
+  event_type: string;
+  timestamp: number;
+  event_timestamp_ms?: number;
+  timestamp_formatted?: string;
+  event_timestamp_ms_formatted?: string;
+  suspicious_activity: ActivityLogEntry;
+  component_id?: string;
+}
+
+export interface Personalisation {
+  zendeskTicketId: string;
+  clientNameEn: string;
+  clientNameCy: string;
+  dateEn: string;
+  dateCy: string;
+  timeEn: string;
+  timeCy: string;
+}

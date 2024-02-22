@@ -1,6 +1,4 @@
 export const COMPONENT_ID = "https://home.account.gov.uk";
-export const REPORT_SUSPICIOUS_ACTIVITY_EVENT_NAME =
-  "HOME_REPORT_SUSPICIOUS_ACTIVITY";
 
 export enum EventNamesEnum {
   HOME_REPORT_SUSPICIOUS_ACTIVITY = "HOME_REPORT_SUSPICIOUS_ACTIVITY",
@@ -23,3 +21,4 @@ export const allowedTxmaEvents: Array<string> = [
 
 export const REPORT_SUSPICIOUS_ACTIVITY_DEFAULT = false;
 export const CREATE_TICKET_PATH = "/tickets.json";
+export const SUSPICIOUS_ACTIVITY_EVENT_NAME = "HOME_REPORT_SUSPICIOUS_ACTIVITY";

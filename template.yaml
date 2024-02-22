@@ -234,6 +234,7 @@ Mappings:
       zendeskApiTokenSecretArn: arn:aws:secretsmanager:eu-west-2:985326104449:secret:/account-mgmt-backend/zendesk-api-token-urjQGc
       zendeskApiUserSecretArn: arn:aws:secretsmanager:eu-west-2:985326104449:secret:/account-mgmt-backend/zendesk-api-user-key-oPuZZU
       zendeskApiUrlSecretArn: arn:aws:secretsmanager:eu-west-2:985326104449:secret:/account-mgmt-backend/zendesk-api-url-key-nhK90l
+      zendeskTicketFormIdSecretArn: arn:aws:secretsmanager:eu-west-2:985326104449:secret:/account-mgmt-backend/zendesk-ticket-form-id-key-QsdIP7
       notifyApiKeySecretArn: arn:aws:secretsmanager:eu-west-2:985326104449:secret:/account-mgmt-backend/notify-api-key-4P84y7 
     build:
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
@@ -242,6 +243,7 @@ Mappings:
       zendeskApiTokenSecretArn: arn:aws:secretsmanager:eu-west-2:301577035144:secret:/account-mgmt-backend/zendesk-api-token-ayNIV1
       zendeskApiUserSecretArn: arn:aws:secretsmanager:eu-west-2:301577035144:secret:/account-mgmt-backend/zendesk-api-user-key-7jR9fV
       zendeskApiUrlSecretArn: arn:aws:secretsmanager:eu-west-2:301577035144:secret:/account-mgmt-backend/zendesk-api-url-key-UpWdv7
+      zendeskTicketFormIdSecretArn: arn:aws:secretsmanager:eu-west-2:301577035144:secret:/account-mgmt-backend/zendesk-ticket-form-id-key-WNGekL
       notifyApiKeySecretArn: arn:aws:secretsmanager:eu-west-2:301577035144:secret:/account-mgmt-backend/notify-api-key-8vHJMb
     staging:
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
@@ -250,6 +252,7 @@ Mappings:
       zendeskApiTokenSecretArn: arn:aws:secretsmanager:eu-west-2:539729775994:secret:/account-mgmt-backend/zendesk-api-token-5HZvs4
       zendeskApiUserSecretArn: arn:aws:secretsmanager:eu-west-2:539729775994:secret:/account-mgmt-backend/zendesk-api-user-key-0AiaN0
       zendeskApiUrlSecretArn: arn:aws:secretsmanager:eu-west-2:539729775994:secret:/account-mgmt-backend/zendesk-api-url-key-wGN16k
+      zendeskTicketFormIdSecretArn: arn:aws:secretsmanager:eu-west-2:539729775994:secret:/account-mgmt-backend/zendesk-ticket-form-id-key-WNGekL
       notifyApiKeySecretArn: arn:aws:secretsmanager:eu-west-2:539729775994:secret:/account-mgmt-backend/notify-api-key-lSCNeM
     integration:
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
@@ -258,6 +261,7 @@ Mappings:
       zendeskApiTokenSecretArn: arn:aws:secretsmanager:eu-west-2:666500506359:secret:/account-mgmt-backend/zendesk-api-token-fByFIz
       zendeskApiUserSecretArn: arn:aws:secretsmanager:eu-west-2:666500506359:secret:/account-mgmt-backend/zendesk-api-user-key-oVvUI5
       zendeskApiUrlSecretArn: arn:aws:secretsmanager:eu-west-2:666500506359:secret:/account-mgmt-backend/zendesk-api-url-key-b5ToSY
+      zendeskTicketFormIdSecretArn: arn:aws:secretsmanager:eu-west-2:666500506359:secret:/account-mgmt-backend/zendesk-ticket-form-id-key-WNGekL
       notifyApiKeySecretArn: arn:aws:secretsmanager:eu-west-2:666500506359:secret:/account-mgmt-backend/notify-api-key-nvDui4 
     production:
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceProductionVariables
@@ -266,7 +270,8 @@ Mappings:
       zendeskApiTokenSecretArn: arn:aws:secretsmanager:eu-west-2:026991849909:secret:/account-mgmt-backend/zendesk-api-token-aZOj3s
       zendeskApiUserSecretArn: arn:aws:secretsmanager:eu-west-2:026991849909:secret:/account-mgmt-backend/zendesk-api-user-key-cMCENu
       zendeskApiUrlSecretArn: arn:aws:secretsmanager:eu-west-2:026991849909:secret:/account-mgmt-backend/zendesk-api-url-key-WNGekL
-      notifyApiKeySecretArn: arn:aws:secretsmanager:eu-west-2:026991849909:secret:/account-mgmt-backend/notify-api-key-Ve4Yk1 
+      zendeskTicketFormIdSecretArn: arn:aws:secretsmanager:eu-west-2:026991849909:secret:/account-mgmt-backend/zendesk-ticket-form-id-key-WNGekL
+      notifyApiKeySecretArn: arn:aws:secretsmanager:eu-west-2:026991849909:secret:/account-mgmt-backend/notify-api-key-Ve4Yk1
 
 
 Resources:
@@ -2133,8 +2138,13 @@ Resources:
       Role: !GetAtt MarkActivityReportedRole.Arn
       Environment:
         Variables:
-          TABLE_NAME: !Ref ActivityLogsStoreTableName
-          DLQ_URL: !Ref MarkActivityReportedDeadLetterQueue
+          ACTIVITY_LOG_TABLE_NAME: !Ref ActivityLogsStoreTableName
+          GENERATOR_KEY_ARN: !GetAtt GeneratorKey.Arn
+          WRAPPING_KEY_ARN: !GetAtt WrapperKey.Arn
+          BACKUP_WRAPPING_KEY_ARN: !Sub "{{resolve:ssm:/${AWS::StackName}/${Environment}/Backup/KMS/WrappingKey/ARN}}"
+          VERIFY_ACCESS_VALUE: !Sub "{{resolve:secretsmanager:/${AWS::StackName}/Config/Storage/VerificationSecret}}"
+          ACCOUNT_ID: !Sub "${AWS::AccountId}"
+          ENVIRONMENT: !Ref Environment
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -2173,12 +2183,6 @@ Resources:
         Statement:
           - Effect: Allow
             Action:
-              - sqs:SendMessage
-            Resource:
-              - !GetAtt MarkActivityReportedDeadLetterQueue.Arn
-              - !GetAtt AuditOutputQueue.Arn
-          - Effect: Allow
-            Action:
               - kms:Decrypt
               - kms:GenerateDataKey*
               - kms:ReEncrypt*
@@ -2188,6 +2192,8 @@ Resources:
               - !GetAtt LambdaKMSKey.Arn
               - !GetAtt AuditEncryptionKey.Arn
               - !GetAtt DatabaseKmsKey.Arn
+              - !GetAtt WrapperKey.Arn
+              - !Sub "{{resolve:ssm:/${AWS::StackName}/${Environment}/Backup/KMS/WrappingKey/ARN}}"
           - Effect: Allow
             Action:
               - dynamodb:UpdateItem
@@ -2611,7 +2617,8 @@ Resources:
           ZENDESK_API_TOKEN_KEY: /account-mgmt-backend/zendesk-api-token
           ZENDESK_API_USER_KEY: /account-mgmt-backend/zendesk-api-user-key
           ZENDESK_API_URL_KEY: /account-mgmt-backend/zendesk-api-url-key
-          DLQ_URL: !Ref CreateSupportTicketDeadLetterQueue
+          ZENDESK_TICKET_FORM_ID: /account-mgmt-backend/zendesk-ticket-form-id-key
+          ACTIVITY_LOG_TABLE: !Ref ActivityLogsStoreTableName
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -2650,9 +2657,24 @@ Resources:
         Statement:
           - Effect: Allow
             Action:
-              - sqs:SendMessage
+              - kms:Decrypt
+              - kms:GenerateDataKey*
+              - kms:ReEncrypt*
             Resource:
-              - !GetAtt CreateSupportTicketDeadLetterQueue.Arn
+              - !GetAtt QueueKmsKey.Arn
+              - !GetAtt LoggingKmsKey.Arn
+              - !GetAtt LambdaKMSKey.Arn
+              - !GetAtt AuditEncryptionKey.Arn
+              - !GetAtt DatabaseKmsKey.Arn
+          - Effect: Allow
+            Action:
+              - dynamodb:UpdateItem
+              - dynamodb:Query
+            Resource:
+              - !GetAtt UserActivityLogsStore.Arn
+              - !Sub
+                - "${Arn}/*"
+                - Arn: !GetAtt UserActivityLogsStore.Arn
           - Effect: Allow
             Action:
               - "kms:Decrypt"
@@ -2667,6 +2689,7 @@ Resources:
               - !FindInMap [ EnvironmentConfiguration, !Ref Environment, zendeskApiTokenSecretArn ]
               - !FindInMap [ EnvironmentConfiguration, !Ref Environment, zendeskApiUserSecretArn ]
               - !FindInMap [ EnvironmentConfiguration, !Ref Environment, zendeskApiUrlSecretArn ]
+              - !FindInMap [ EnvironmentConfiguration, !Ref Environment, zendeskTicketFormIdSecretArn ]
 
   CreateSupportTicketLambdaInvokePermission:
     Type: AWS::Lambda::Permission
@@ -2691,6 +2714,260 @@ Resources:
       DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
       FilterPattern: ""
       LogGroupName: !Ref CreateSupportTicketFunctionLogGroup
+
+  ######################
+  # Trigger Report Suspicious Activity Step Function
+  ######################
+  TriggerSuspiciousActivityStepSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Endpoint: !GetAtt TriggerSuspiciousActivityStepFunction.Arn
+      Protocol: lambda
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt TriggerSuspiciousActivityStepDeadLetterQueue.Arn
+      TopicArn: !Ref SuspiciousActivityTopic
+
+  TriggerSuspiciousActivityStepDeadLetterQueue:
+    Type: AWS::SQS::Queue
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      MessageRetentionPeriod: 1209600
+      KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
+
+  TriggerSuspiciousActivityStepDeadLetterQueueAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            TriggerSuspiciousActivityStepDeadLetterQueue,
+          ],
+        ]
+      Namespace: "AWS/SQS"
+      MetricName: "ApproximateNumberOfMessagesVisible"
+      Dimensions:
+        - Name: "QueueName"
+          Value: !GetAtt TriggerSuspiciousActivityStepDeadLetterQueue.QueueName
+      Statistic: "Sum"
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: "GreaterThanOrEqualToThreshold"
+      AlarmActions:
+        - !Ref AlarmNotificationTopic
+      ActionsEnabled: true
+
+  TriggerSuspiciousActivityStepFunction:
+    DependsOn:
+      - TriggerSuspiciousActivityStepFunctionLogGroup
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${Environment}-${AWS::StackName}-trigger-step
+      CodeUri: src
+      DeadLetterQueue:
+        Type: SQS
+        TargetArn: !GetAtt TriggerSuspiciousActivityStepDeadLetterQueue.Arn
+      Handler: trigger-rsa-step.handler
+      PackageType: Zip
+      Role: !GetAtt TriggerSuspiciousActivityStepRole.Arn
+      Environment:
+        Variables:
+          STATE_MACHINE_ARN: !Ref ReportSuspiciousActivityStepFunction
+          STEP_FUNCTION_ALIAS: 'latest'
+          DLQ_URL: !Ref TriggerSuspiciousActivityStepDeadLetterQueue
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        Sourcemap: true
+        EntryPoints:
+          - trigger-rsa-step.ts
+
+  TriggerSuspiciousActivityStepRole:
+    Type: AWS::IAM::Role
+    Properties:
+      PermissionsBoundary: !If
+        - UsePermissionsBoundary
+        - !Ref PermissionsBoundary
+        - !Ref AWS::NoValue
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+        - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
+        - !Ref TriggerSuspiciousActivityStepPolicy
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+
+  TriggerSuspiciousActivityStepPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - sqs:SendMessage
+            Resource: !GetAtt TriggerSuspiciousActivityStepDeadLetterQueue.Arn
+          - Effect: Allow
+            Action:
+              - "kms:Decrypt"
+              - "kms:GenerateDataKey"
+            Resource:
+              - !GetAtt SecretsKmsKey.Arn
+          - Effect: Allow
+            Action:
+              - "states:StartExecution"
+            Resource:
+              - !GetAtt ReportSuspiciousActivityStepFunction.Arn
+
+  TriggerSuspiciousActivityStepLambdaInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      Principal: sns.amazonaws.com
+      SourceArn:
+        Ref: SuspiciousActivityTopic
+      FunctionName: !GetAtt TriggerSuspiciousActivityStepFunction.Arn
+
+  TriggerSuspiciousActivityStepFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-trigger-rsa"
+      RetentionInDays: 30
+      KmsKeyId: !GetAtt LoggingKmsKey.Arn
+
+  TriggerSuspiciousActivityStepToTxMACSLSSubscription:
+    Condition: ExportLogsToSplunk
+    Type: AWS::Logs::SubscriptionFilter
+    Properties:
+      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
+      FilterPattern: ""
+      LogGroupName: !Ref TriggerSuspiciousActivityStepFunctionLogGroup
+
+
+  ######################
+  # Report Suspicious Activity Step Function
+  ######################
+  ReportSuspiciousActivityStepFunction:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      Name: !Sub "${AWS::StackName}-ReportSuspiciousActivityStepFunction"
+      DefinitionUri: report-suspicious-activity-asl.json
+      DefinitionSubstitutions:
+        ACTIVITY_LOG_TABLE_NAME: !Ref ActivityLogsStoreTableName
+        MarkActivityReportedFunctionName: !Ref MarkActivityReportedFunction
+        CreateZendeskTicketFunctionName: !Ref CreateSupportTicketFunction
+        SendAcknowledgeFunctionName: !Ref SendConfEmailFunction
+        SendToTxMAFunctionName: !Ref SendSuspiciousActivityFunction
+      Role: !GetAtt ReportSuspiciousActivityStepFunctionRole.Arn
+      Logging:
+        Destinations:
+          - CloudWatchLogsLogGroup:
+              LogGroupArn: !GetAtt ReportSuspiciousActivityStepFunctionLogGroup.Arn
+        Level: "ALL"
+        IncludeExecutionData: false
+      Tracing:
+        Enabled: true
+      Tags:
+        Product: !Ref ProductTagValue
+        System: !Ref SystemTagValue
+        Environment: !Ref Environment
+        Owner: !Ref OwnerTagValue
+        Source: !Ref SourceTagValue
+    DependsOn: ReportSuspiciousActivityStepFunctionPolicy
+
+  ReportSuspiciousActivityStepFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      PermissionsBoundary: !If
+        - UsePermissionsBoundary
+        - !Ref PermissionsBoundary
+        - !Ref AWS::NoValue
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service: !Sub "states.${AWS::Region}.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      Tags:
+        - Key: Product
+          Value: !Ref ProductTagValue
+        - Key: System
+          Value: !Ref SystemTagValue
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Owner
+          Value: !Ref OwnerTagValue
+        - Key: Source
+          Value: !Ref SourceTagValue
+
+  ReportSuspiciousActivityStepFunctionPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Action:
+              - "lambda:InvokeFunction"
+            Resource:
+              - "*"
+          - Effect: "Allow"
+            Action:
+              - "xray:PutTraceSegments"
+              - "xray:PutTelemetryRecords"
+              - "xray:GetSamplingRules"
+              - "xray:GetSamplingTargets"
+            Resource: "*"
+          - Effect: Allow
+            Action:
+              - "logs:CreateLogDelivery"
+              - "logs:GetLogDelivery"
+              - "logs:UpdateLogDelivery"
+              - "logs:DeleteLogDelivery"
+              - "logs:ListLogDeliveries"
+              - "logs:PutLogEvents"
+              - "logs:PutResourcePolicy"
+              - "logs:DescribeResourcePolicies"
+              - "logs:DescribeLogGroups"
+            Resource: "*"
+          - Effect: Allow
+            Action:
+              - "kms:Decrypt"
+              - "kms:GenerateDataKey"
+            Resource:
+              - !GetAtt SecretsKmsKey.Arn
+      Roles:
+        - !Ref ReportSuspiciousActivityStepFunctionRole
+
+  ReportSuspiciousActivityStepFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-rsa-step"
+      RetentionInDays: 30
+      KmsKeyId: !GetAtt LoggingKmsKey.Arn
+
+  ReportSuspiciousActivityStepFunctionCSLSSubscription:
+    Condition: ExportLogsToSplunk
+    Type: AWS::Logs::SubscriptionFilter
+    Properties:
+      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
+      FilterPattern: ""
+      LogGroupName: !Ref ReportSuspiciousActivityStepFunctionLogGroup
 
   #######################
   # Monitoring

@@ -1,0 +1,94 @@
+{
+  "StartAt": "Mark Activities as Reported",
+  "Comment": "Steps function to handles reporting of suspicious activity",
+  "States": {
+    "Mark Activities as Reported": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "Payload.$": "$",
+        "FunctionName": "${MarkActivityReportedFunctionName}"
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "IntervalSeconds": 10,
+          "Comment": "Retry Indefinitely",
+          "BackoffRate": 2,
+          "MaxAttempts": 10000000,
+          "JitterStrategy": "FULL"
+        }
+      ],
+      "Next": "Create Zendesk Ticket"
+    },
+    "Create Zendesk Ticket": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${CreateZendeskTicketFunctionName}",
+        "Payload.$": "$"
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "IntervalSeconds": 10,
+          "Comment": "Retry Indefinitely",
+          "BackoffRate": 2,
+          "MaxAttempts": 10000000,
+          "JitterStrategy": "FULL"
+        }
+      ],
+      "Next": "Send Acknowledge Email",
+      "OutputPath": "$.Payload"
+    },
+    "Send Acknowledge Email": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "Payload.$": "$",
+        "FunctionName": "${SendAcknowledgeFunctionName}"
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "IntervalSeconds": 10,
+          "Comment": "Retry Indefinitely",
+          "BackoffRate": 2,
+          "MaxAttempts": 10000000,
+          "JitterStrategy": "FULL"
+        }
+      ],
+      "Next": "Send Activity Log to TxMA"
+    },
+    "Send Activity Log to TxMA": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "Payload.$": "$",
+        "FunctionName": "${SendToTxMAFunctionName}"
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "IntervalSeconds": 10,
+          "Comment": "Retry Indefinitely",
+          "BackoffRate": 2,
+          "MaxAttempts": 10000000,
+          "JitterStrategy": "FULL"
+        }
+      ],
+      "End": true
+    }
+  }
+}

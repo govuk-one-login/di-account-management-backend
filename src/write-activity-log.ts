@@ -59,7 +59,7 @@ export const getActivityLogSessionGroupId = async (
 
   const result = await dynamoDocClient.send(command);
 
-  return result.Items?.[0]?.timestamp_group_id || randomUUID();
+  return result?.Items?.[0]?.timestamp_group_id || randomUUID();
 };
 
 export const writeActivityLogEntry = async (

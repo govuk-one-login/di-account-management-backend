@@ -99,6 +99,7 @@ export interface ActivityLogEntry {
   client_id: string;
   reported_suspicious: boolean;
   timestamp_group_id?: string;
+  created_at?: number;
 }
 
 export interface EncryptedActivityLogEntry {
@@ -110,6 +111,7 @@ export interface EncryptedActivityLogEntry {
   client_id: string;
   reported_suspicious: boolean;
   timestamp_group_id?: string;
+  created_at?: number;
 }
 
 export interface SuspiciousActivityEvent {

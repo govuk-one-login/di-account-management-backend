@@ -192,6 +192,7 @@ export const TEST_ENCRYPTED_ACTIVITY_LOG_ENTRY: EncryptedActivityLogEntry = {
   session_id: sessionId,
   user_id: userId,
   timestamp,
+  created_at: timestamp,
   client_id: clientId,
   event_id: eventId,
   reported_suspicious: reportedSuspicious,

@@ -51,7 +51,7 @@ export const getActivityLogSessionGroupId = async (
       "user_id = :user_id AND :timestamp > :activity_timestamp",
     ExpressionAttributeValues: {
       ":user_id": user_id,
-      ":timestamp": "timestamp", // we cant directly use timestamp here, as it is a reserved keyword
+      ":timestamp": "timestamp", // we cant directly use timestamp in the expression, as it is a reserved keyword
       ":activity_timestamp": newEventTimestamp - SESSION_LENGTH_SECONDS,
     },
     Limit: 1,
@@ -60,7 +60,7 @@ export const getActivityLogSessionGroupId = async (
 
   const result = await dynamoDocClient.send(command);
 
-  return result.Items?.[0].timestamp_group_id || randomUUID();
+  return result.Items?.[0]?.timestamp_group_id || randomUUID();
 };
 
 export const writeActivityLogEntry = async (

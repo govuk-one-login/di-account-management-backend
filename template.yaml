@@ -14,7 +14,7 @@ Parameters:
     Default: activity_log
   ActivityLogsTimestampIndexName:
     Type: String
-    Default: TimestampIndex
+    Default: CreatedAtIndex
   DummyEventStoreTableName:
     Type: String
     Default: dummy_events

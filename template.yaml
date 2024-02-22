@@ -1643,6 +1643,7 @@ Resources:
             Action:
               - dynamodb:PutItem
               - dynamodb:UpdateItem
+              - dynamodb:Query
             Resource:
               - !GetAtt UserActivityLogsStore.Arn
               - !Sub

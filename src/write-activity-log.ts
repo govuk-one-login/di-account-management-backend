@@ -48,10 +48,9 @@ export const getActivityLogSessionGroupId = async (
     TableName: TABLE_NAME,
     IndexName: INDEX_NAME,
     KeyConditionExpression:
-      "user_id = :user_id AND :timestamp > :activity_timestamp",
+      "user_id = :user_id AND created_at > :activity_timestamp",
     ExpressionAttributeValues: {
       ":user_id": user_id,
-      ":timestamp": "timestamp", // we cant directly use timestamp in the expression, as it is a reserved keyword
       ":activity_timestamp": newEventTimestamp - SESSION_LENGTH_SECONDS,
     },
     Limit: 1,
@@ -73,6 +72,7 @@ export const writeActivityLogEntry = async (
     Item: {
       user_id: activityLogEntry.user_id,
       timestamp: activityLogEntry.timestamp,
+      created_at: activityLogEntry.timestamp,
       session_id: activityLogEntry.session_id,
       event_type: activityLogEntry.event_type,
       event_id: activityLogEntry.event_id,

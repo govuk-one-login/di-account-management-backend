@@ -405,7 +405,7 @@ Resources:
           AttributeType: S
         - AttributeName: event_id
           AttributeType: S
-        - AttributeName: timestamp
+        - AttributeName: created_at
           AttributeType: N
       GlobalSecondaryIndexes:
         - IndexName: SessionIdIndex
@@ -418,7 +418,7 @@ Resources:
           KeySchema:
             - AttributeName: user_id
               KeyType: HASH
-            - AttributeName: timestamp
+            - AttributeName: created_at
               KeyType: RANGE
           Projection:
             ProjectionType: ALL

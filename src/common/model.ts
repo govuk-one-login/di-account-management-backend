@@ -98,7 +98,7 @@ export interface ActivityLogEntry {
   timestamp: number;
   client_id: string;
   reported_suspicious: boolean;
-  timestamp_group_id?: string;
+  activity_history_group?: string;
   created_at?: number;
 }
 
@@ -110,7 +110,7 @@ export interface EncryptedActivityLogEntry {
   timestamp: number;
   client_id: string;
   reported_suspicious: boolean;
-  timestamp_group_id?: string;
+  activity_history_group?: string;
   created_at?: number;
 }
 

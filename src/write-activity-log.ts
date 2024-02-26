@@ -59,7 +59,7 @@ export const getActivityLogSessionGroupId = async (
 
   const result = await dynamoDocClient.send(command);
 
-  return result?.Items?.[0]?.timestamp_group_id || randomUUID();
+  return result?.Items?.[0]?.activity_history_group || randomUUID();
 };
 
 export const writeActivityLogEntry = async (
@@ -78,7 +78,7 @@ export const writeActivityLogEntry = async (
       event_id: activityLogEntry.event_id,
       client_id: activityLogEntry.client_id,
       reported_suspicious: activityLogEntry.reported_suspicious,
-      timestamp_group_id: activityLogEntry.timestamp_group_id,
+      activity_history_group: activityLogEntry.activity_history_group,
     },
   });
   return dynamoDocClient.send(command);
@@ -102,7 +102,7 @@ export const handler = async (event: SQSEvent): Promise<void> => {
           timestamp: activityLogEntry.timestamp,
           client_id: activityLogEntry.client_id,
           reported_suspicious: activityLogEntry.reported_suspicious,
-          timestamp_group_id: await getActivityLogSessionGroupId(
+          activity_history_group: await getActivityLogSessionGroupId(
             activityLogEntry.user_id,
             activityLogEntry.timestamp
           ),

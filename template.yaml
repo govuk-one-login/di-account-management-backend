@@ -3099,6 +3099,14 @@ Resources:
               Service: lambda.amazonaws.com
             Action: secretsmanager:GetSecretValue # pragma: allowlist secret
             Resource: !Ref StorageVerificationSecret
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: secretsmanager:GetSecretValue
+            Resource: !Ref StorageVerificationSecret
+            Condition:
+              ArnLike:
+                aws:SourceArn: !Sub arn:aws:iam::${AWS::AccountId}:role/${AccountManagementFrontendStackName}-TaskRole
 
   BackupWrappingKeyArnSSM:
     Type: AWS::SSM::Parameter
@@ -3133,3 +3141,15 @@ Resources:
       Name: !Sub "/${AWS::StackName}/SNS/SuspiciousActivity/ARN"
       Type: String
       Value: !Ref SuspiciousActivityTopic
+
+Outputs:
+  GeneratorKey:
+    Description: A generator key for generating a plaintext data key
+    Value: !GetAtt GeneratorKey.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-GeneratorKey"
+  WrappingKey:
+    Description: A key used to encrypt the data key for envelope encryption
+    Value: !GetAtt WrapperKey.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-WrappingKey"

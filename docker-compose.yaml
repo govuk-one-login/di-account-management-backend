@@ -1,0 +1,25 @@
+version: "3.8"
+
+services:
+  localstack:
+    container_name: account-mgmt-backend-localstack
+    image: localstack/localstack:1.3.1
+    ports:
+      - "4566:4566"
+      - "4569:4569"
+    environment:
+      - services=sqs,sns,iam,s2,lambda,cloudformation
+      - DEBUG=1
+      - AWS_DEFAULT_REGION=eu-west-2
+      - AWS_ACCESS_KEY_ID=localstack
+      - AWS_SECRET_ACCESS_KEY=localstack
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - DATA_DIR=/tmp/localstack/data
+    volumes:
+      - ${TEPDIR:-/tmp}/localstack:/var/lib/localstack
+      - /var/run/docker.sock:/var/run/docker.sock
+  builder:
+    container_name: account-mgmt-backend-code
+    build: .
+    depends_on:
+      - localstack

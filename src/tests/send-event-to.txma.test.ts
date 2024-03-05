@@ -6,56 +6,10 @@ import {
   handler,
   sendAuditEvent,
   sendSqsMessage,
-  transformToTxMAEvent,
 } from "../send-suspicious-activity";
-import { TxMASuspiciousActivityEvent } from "../common/model";
-import { SNSEvent, SNSEventRecord, SNSMessage } from "aws-lambda";
-
-const TEST_SNS_MESSAGE: SNSMessage = {
-  SignatureVersion: "SignatureVersion",
-  Timestamp: "Timestamp",
-  Signature: "Signature",
-  SigningCertUrl: "SigningCertUrl",
-  MessageId: "MessageId",
-  Message: JSON.stringify({
-    user_id: "1234567",
-    email_address: "test@test.com",
-    persistent_session_id: "111111",
-    session_id: "111112",
-    reported: true,
-    reported_event: {
-      event_type: "HOME_REPORT_SUSPICIOUS_ACTIVITY",
-      session_id: "111111",
-      user_id: "1111111",
-      timestamp: 1609462861,
-      activities: {
-        type: "HOME_REPORT_SUSPICIOUS_ACTIVITY",
-        client_id: "111111",
-        timestamp: 1609462861,
-        event_id: "1111111",
-      },
-    },
-  }),
-  MessageAttributes: {},
-  Type: "Type",
-  UnsubscribeUrl: "unsubscribeUrl",
-  TopicArn: "TopicArn",
-  Subject: "Subject",
-};
-
-const TEST_SNS_EVENT_RECORD: SNSEventRecord = {
-  EventVersion: "1",
-  EventSubscriptionArn: "arn",
-  EventSource: "source",
-  Sns: TEST_SNS_MESSAGE,
-};
-
-export const TEST_SNS_EVENT: SNSEvent = {
-  Records: [TEST_SNS_EVENT_RECORD],
-};
+import { ReportSuspiciousActivityEvent, TxMAAuditEvent } from "../common/model";
 
 const sqsMock = mockClient(SQSClient);
-const EVENT_NAME = "HOME_REPORT_SUSPICIOUS_ACTIVITY";
 const TXMA_QUEUE_URL = "TXMA_QUEUE_URL";
 
 describe("sendAuditEventToTxMA", () => {
@@ -70,21 +24,29 @@ describe("sendAuditEventToTxMA", () => {
 
   test("send audit event successfully", async () => {
     const consoleLog = jest.spyOn(console, "log").mockImplementation();
-    const txMAEvent = {
-      event_id: "event-id",
-      client_id: "client-id",
-      timestamp: 1726268400,
-      event_timestamp_ms: 1726268400,
-      event_timestamp_ms_formatted: "2024-09-13T23:00:00.000Z",
+    const txMAEvent: TxMAAuditEvent = {
+      user: {
+        user_id: "qwerty",
+        persistent_session_id: "persistent_session_id",
+        session_id: "session_id",
+      },
       component_id: "https://home.account.gov.uk",
       event_name: "HOME_REPORT_SUSPICIOUS_ACTIVITY",
+      timestamp: 1708971886,
+      event_timestamp_ms: 1708971886515,
+      event_timestamp_ms_formatted: "2024-02-26T18:24:46.515Z",
       extensions: {
-        reported_session_id: "111111",
-      },
-      user: {
-        persistent_session_id: "111111",
-        session_id: "111112",
-        user_id: "1234567",
+        zendesk_ticket_number: "12345677",
+        notify_reference: "12345678",
+        suspicious_activities: [
+          {
+            event_id: "ab12345a-a12b-3ced-ef12-12a3b4cd5678",
+            event_type: "TXMA_EVENT",
+            session_id: "123456789",
+            timestamp: 123456789,
+            client_id: "gov-uk",
+          },
+        ],
       },
     };
     await sendAuditEvent(txMAEvent, TXMA_QUEUE_URL);
@@ -100,21 +62,29 @@ describe("sendAuditEventToTxMA", () => {
 
   test("send audit event fails and handles error correctly", async () => {
     const consoleError = jest.spyOn(console, "error").mockImplementation();
-    const txMAEvent = {
-      event_id: "event-id",
-      client_id: "client-id",
-      timestamp: 1726268400,
-      event_timestamp_ms: 1726268400,
-      event_timestamp_ms_formatted: "2024-09-13T23:00:00.000Z",
+    const txMAEvent: TxMAAuditEvent = {
+      user: {
+        user_id: "qwerty",
+        persistent_session_id: "persistent_session_id",
+        session_id: "session_id",
+      },
       component_id: "https://home.account.gov.uk",
       event_name: "HOME_REPORT_SUSPICIOUS_ACTIVITY",
+      timestamp: 1708971886,
+      event_timestamp_ms: 1708971886515,
+      event_timestamp_ms_formatted: "2024-02-26T18:24:46.515Z",
       extensions: {
-        reported_session_id: "111111",
-      },
-      user: {
-        persistent_session_id: "111111",
-        session_id: "111112",
-        user_id: "1234567",
+        zendesk_ticket_number: "12345677",
+        notify_reference: "12345678",
+        suspicious_activities: [
+          {
+            event_id: "ab12345a-a12b-3ced-ef12-12a3b4cd5678",
+            event_type: "TXMA_EVENT",
+            session_id: "123456789",
+            timestamp: 123456789,
+            client_id: "gov-uk",
+          },
+        ],
       },
     };
 
@@ -145,16 +115,29 @@ describe("sendSQSMessage", () => {
   });
 
   test("send sqs successfully", async () => {
-    const txMAEvent = {
+    const txMAEvent: TxMAAuditEvent = {
+      user: {
+        user_id: "qwerty",
+        persistent_session_id: "persistent_session_id",
+        session_id: "session_id",
+      },
       component_id: "https://home.account.gov.uk",
       event_name: "HOME_REPORT_SUSPICIOUS_ACTIVITY",
+      timestamp: 1708971886,
+      event_timestamp_ms: 1708971886515,
+      event_timestamp_ms_formatted: "2024-02-26T18:24:46.515Z",
       extensions: {
-        reported_session_id: "111111",
-      },
-      user: {
-        persistent_session_id: "111111",
-        session_id: "111112",
-        user_id: "1234567",
+        zendesk_ticket_number: "12345677",
+        notify_reference: "12345678",
+        suspicious_activities: [
+          {
+            event_id: "ab12345a-a12b-3ced-ef12-12a3b4cd5678",
+            event_type: "TXMA_EVENT",
+            session_id: "123456789",
+            timestamp: 123456789,
+            client_id: "gov-uk",
+          },
+        ],
       },
     };
     await sendSqsMessage(JSON.stringify(txMAEvent), "TXMA_QUEUE_URL");
@@ -163,72 +146,6 @@ describe("sendSQSMessage", () => {
       QueueUrl: "TXMA_QUEUE_URL",
       MessageBody: JSON.stringify(txMAEvent),
     });
-  });
-});
-
-describe("transform", () => {
-  let suspiciousActivityEvent: TxMASuspiciousActivityEvent;
-  beforeEach(() => {
-    process.env.EVENT_NAME = EVENT_NAME;
-    suspiciousActivityEvent = {
-      user_id: "1234567",
-      email_address: "test@test.com",
-      persistent_session_id: "111111",
-      session_id: "111112",
-      reported: true,
-      reported_event: {
-        event_type: "HOME_REPORT_SUSPICIOUS_ACTIVITY",
-        session_id: "111111",
-        user_id: "1111111",
-        timestamp: 1609462861,
-        activities: {
-          type: "HOME_REPORT_SUSPICIOUS_ACTIVITY",
-          client_id: "111111",
-          timestamp: 1609462861,
-          event_id: "1111111",
-        },
-      },
-    };
-    jest.useFakeTimers();
-    jest.setSystemTime(new Date(Date.UTC(2023, 20, 12)));
-  });
-
-  afterEach(() => {
-    jest.useRealTimers();
-    jest.clearAllMocks();
-  });
-
-  test("transforms suspicious activity event to TxMA event successfully", async () => {
-    const txMAEvent = await transformToTxMAEvent(
-      suspiciousActivityEvent,
-      EVENT_NAME
-    );
-    const expected = {
-      timestamp: 1726099200,
-      event_timestamp_ms: 1726099200000,
-      event_timestamp_ms_formatted: "2024-09-12T00:00:00.000Z",
-      component_id: "https://home.account.gov.uk",
-      event_name: "HOME_REPORT_SUSPICIOUS_ACTIVITY",
-      extensions: {
-        reported_session_id: "111111",
-      },
-      user: {
-        persistent_session_id: "111111",
-        session_id: "111112",
-        user_id: "1234567",
-      },
-    };
-    expect(txMAEvent).toEqual(expected);
-  });
-
-  test("transforms when event name is not recognized", () => {
-    expect(() => {
-      transformToTxMAEvent(suspiciousActivityEvent, "ANOTHER_NAME");
-    }).toThrowError(
-      new Error(
-        "Unsupported event - There is no transformation logic for this event"
-      )
-    );
   });
 });
 
@@ -249,23 +166,55 @@ describe("handler", () => {
 
   test("handler successfully sends audit event to txma", async () => {
     const consoleLog = jest.spyOn(console, "log").mockImplementation();
-    await handler(TEST_SNS_EVENT);
+    const input: ReportSuspiciousActivityEvent = {
+      event_id: "522c5ab4-7e66-4b2a-8f5c-4d31dc4e93e6",
+      event_type: "HOME_REPORT_SUSPICIOUS_ACTIVITY",
+      persistent_session_id: "persistent_session_id",
+      session_id: "session_id",
+      email_address: "email",
+      component_id: "https://home.account.gov.uk",
+      timestamp: 1708971886,
+      event_timestamp_ms: 1708971886515,
+      event_timestamp_ms_formatted: "2024-02-26T18:24:46.515Z",
+      suspicious_activity: {
+        event_type: "TXMA_EVENT",
+        session_id: "123456789",
+        user_id: "qwerty",
+        timestamp: 123456789,
+        client_id: "gov-uk",
+        event_id: "ab12345a-a12b-3ced-ef12-12a3b4cd5678",
+        reported_suspicious: true,
+      },
+      zendesk_ticket_id: "12345677",
+      notify_message_id: "12345678",
+    };
+    await handler(input);
     expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(1);
     expect(sqsMock).toHaveReceivedCommandWith(SendMessageCommand, {
       QueueUrl: "TXMA_QUEUE_URL",
       MessageBody: JSON.stringify({
-        timestamp: 1726099200,
-        event_timestamp_ms: 1726099200000,
-        event_timestamp_ms_formatted: "2024-09-12T00:00:00.000Z",
+        user: {
+          user_id: "qwerty",
+          persistent_session_id: "persistent_session_id",
+          session_id: "session_id",
+        },
         component_id: "https://home.account.gov.uk",
         event_name: "HOME_REPORT_SUSPICIOUS_ACTIVITY",
-        user: {
-          user_id: "1234567",
-          persistent_session_id: "111111",
-          session_id: "111112",
-        },
+        timestamp: 1708971886,
+        event_timestamp_ms: 1708971886515,
+        event_timestamp_ms_formatted: "2024-02-26T18:24:46.515Z",
         extensions: {
-          reported_session_id: "111111",
+          zendesk_ticket_number: "12345677",
+          notify_reference: "12345678",
+          suspicious_activities: [
+            {
+              event_id: "ab12345a-a12b-3ced-ef12-12a3b4cd5678",
+              event_type: "TXMA_EVENT",
+              session_id: "123456789",
+              timestamp: 123456789,
+              client_id: "gov-uk",
+            },
+          ],
         },
       }),
     });
@@ -277,7 +226,6 @@ describe("handler", () => {
 
 describe("handler error handling", () => {
   let consoleErrorMock: jest.SpyInstance;
-
   beforeEach(() => {
     sqsMock.reset();
     process.env.EVENT_NAME = "ANOTHER_EVENT_NAME";
@@ -292,16 +240,36 @@ describe("handler error handling", () => {
   });
 
   test("logs the error message", async () => {
-    await handler(TEST_SNS_EVENT);
+    const input: ReportSuspiciousActivityEvent = {
+      event_id: "522c5ab4-7e66-4b2a-8f5c-4d31dc4e93e6",
+      event_type: "HOME_REPORT_SUSPICIOUS_ACTIVITY",
+      persistent_session_id: "persistent_session_id",
+      session_id: "session_id",
+      email_address: "email",
+      component_id: "https://home.account.gov.uk",
+      timestamp: 1708971886,
+      event_timestamp_ms: 1708971886515,
+      event_timestamp_ms_formatted: "2024-02-26T18:24:46.515Z",
+      timestamp_formatted: "2024-02-26T18:24:46.515Z",
+      suspicious_activity: {
+        event_type: "TXMA_EVENT",
+        session_id: "123456789",
+        user_id: "qwerty",
+        timestamp: 123456789,
+        client_id: "gov-uk",
+        event_id: "ab12345a-a12b-3ced-ef12-12a3b4cd5678",
+        reported_suspicious: true,
+      },
+      zendesk_ticket_id: "12345677",
+      notify_message_id: "12345678",
+    };
+    let errorThrown = false;
+    try {
+      await handler(input);
+    } catch (error) {
+      errorThrown = true;
+    }
+    expect(errorThrown).toBeTruthy();
     expect(consoleErrorMock).toHaveBeenCalledTimes(1);
-  });
-
-  test("sends the event to the DLQ", async () => {
-    await handler(TEST_SNS_EVENT);
-    expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(1);
-    expect(sqsMock).toHaveReceivedCommandWith(SendMessageCommand, {
-      QueueUrl: "DLQ_URL",
-      MessageBody: TEST_SNS_EVENT.Records[0].Sns.Message,
-    });
   });
 });

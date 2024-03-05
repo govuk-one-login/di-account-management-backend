@@ -1,10 +1,9 @@
-import { SuspiciousActivityEvent } from "../common/model";
 import { formatActivityObjectForEmail, sendConfMail } from "../send-conf-email";
 import { NotifyClient } from "notifications-node-client";
+import { ReportSuspiciousActivityEvent } from "../common/model";
 
 jest.mock("notifications-node-client");
 jest.mock("@aws-lambda-powertools/parameters/secrets");
-jest.mock("../common/sqs");
 
 describe("formatActivityObjectForEmail", () => {
   afterEach(() => {
@@ -13,20 +12,29 @@ describe("formatActivityObjectForEmail", () => {
 
   test("should return formatted activity object for email", () => {
     process.env.ENVIRONMENT_NAME = "local";
-    const activity: SuspiciousActivityEvent = {
-      event_id: "123",
-      event_name: "Suspicious Activity",
-      timestamp: 23423423423,
-      timestamp_formatted: "2022-01-01 00:00:00",
-      reported_suspicious: true,
-      user: {
-        email: "test@example.com",
+
+    const input: ReportSuspiciousActivityEvent = {
+      event_id: "522c5ab4-7e66-4b2a-8f5c-4d31dc4e93e6",
+      event_type: "HOME_REPORT_SUSPICIOUS_ACTIVITY",
+      persistent_session_id: "persistent_session_id",
+      session_id: "session_id",
+      email_address: "test@example.com",
+      component_id: "https://home.account.gov.uk",
+      timestamp: 1708971886,
+      event_timestamp_ms: 1708971886515,
+      event_timestamp_ms_formatted: "2024-02-26T18:24:46.515Z",
+      suspicious_activity: {
+        event_type: "Suspicious Activity",
+        session_id: "123456789",
         user_id: "abc",
+        timestamp: 23423423423,
+        client_id: "gov-uk",
+        event_id: "123",
+        reported_suspicious: true,
       },
-      client_id: "gov-uk",
     };
 
-    const result = formatActivityObjectForEmail(activity);
+    const result = formatActivityObjectForEmail(input);
 
     expect(result).toEqual({
       email: "test@example.com",
@@ -40,26 +48,6 @@ describe("formatActivityObjectForEmail", () => {
       },
     });
   });
-
-  test("should throw an error if email address is not present in the activity", () => {
-    const activity: SuspiciousActivityEvent = {
-      event_id: "123",
-      event_name: "Suspicious Activity",
-      timestamp: 23423423423,
-      timestamp_formatted: "2022-01-01 00:00:00",
-      reported_suspicious: true,
-      user: {
-        user_id: "abc",
-      },
-      client_id: "gov-uk",
-    };
-
-    process.env.ENVIRONMENT_NAME = "local";
-
-    expect(() => {
-      formatActivityObjectForEmail(activity);
-    }).toThrow("Email address not present in Suspicious Activity Event");
-  });
 });
 
 describe("sendConfMail", () => {
@@ -67,18 +55,6 @@ describe("sendConfMail", () => {
     process.env.ENVIRONMENT_NAME = "local";
     const apiKey = "API_KEY";
     const templateId = "TEMPLATE_ID";
-    const activity: SuspiciousActivityEvent = {
-      event_id: "123",
-      event_name: "Suspicious Activity",
-      timestamp: 23423423423,
-      timestamp_formatted: "2022-01-01 00:00:00",
-      reported_suspicious: true,
-      user: {
-        email: "test@example.com",
-        user_id: "abc",
-      },
-      client_id: "gov-uk",
-    };
 
     const notifyClientMock = {
       sendEmail: jest.fn().mockResolvedValueOnce({}),
@@ -88,7 +64,29 @@ describe("sendConfMail", () => {
       .spyOn(NotifyClient.prototype, "sendEmail")
       .mockImplementationOnce(notifyClientMock.sendEmail);
 
-    await sendConfMail(apiKey, templateId, activity);
+    const input: ReportSuspiciousActivityEvent = {
+      event_id: "522c5ab4-7e66-4b2a-8f5c-4d31dc4e93e6",
+      event_type: "HOME_REPORT_SUSPICIOUS_ACTIVITY",
+      persistent_session_id: "persistent_session_id",
+      session_id: "session_id",
+      email_address: "test@example.com",
+      component_id: "https://home.account.gov.uk",
+      timestamp: 1708971886,
+      event_timestamp_ms: 1708971886515,
+      event_timestamp_ms_formatted: "2024-02-26T18:24:46.515Z",
+      suspicious_activity: {
+        event_type: "Suspicious Activity",
+        session_id: "123456789",
+        user_id: "abc",
+        timestamp: 23423423423,
+        client_id: "gov-uk",
+        event_id: "123",
+        reported_suspicious: true,
+      },
+      zendesk_ticket_id: "123",
+    };
+
+    await sendConfMail(apiKey, templateId, input);
 
     expect(notifyClientMock.sendEmail).toHaveBeenCalledWith(
       templateId,

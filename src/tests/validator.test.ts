@@ -1,30 +1,34 @@
 import validateObject from "../common/validator";
 import validatorRules, { ValidationRules } from "../common/validator-rules";
-import { TxMASuspiciousActivityEvent } from "../common/model";
+import { ReportSuspiciousActivityEvent } from "../common/model";
 
 describe("validate", () => {
-  let suspiciousActivityEvent: TxMASuspiciousActivityEvent;
+  let suspiciousActivityEvent: ReportSuspiciousActivityEvent;
   let suspiciousActivityEventRule: ValidationRules | undefined;
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   beforeEach(() => {
     suspiciousActivityEvent = {
-      user_id: "1234567",
-      email_address: "test@test.com",
-      persistent_session_id: "111111",
-      session_id: "111112",
-      reported: true,
-      reported_event: {
-        event_type: "HOME_REPORT_SUSPICIOUS_ACTIVITY",
-        session_id: "111111",
-        user_id: "1111111",
-        timestamp: 1609462861,
-        activities: {
-          type: "HOME_REPORT_SUSPICIOUS_ACTIVITY",
-          client_id: "111111",
-          timestamp: 1609462861,
-          event_id: "1111111",
-        },
+      event_id: "522c5ab4-7e66-4b2a-8f5c-4d31dc4e93e6",
+      event_type: "HOME_REPORT_SUSPICIOUS_ACTIVITY",
+      session_id: "session_id",
+      persistent_session_id: "persistent_session_id",
+      email_address: "email",
+      component_id: "https://home.account.gov.uk",
+      timestamp: 1708971886,
+      event_timestamp_ms: 1708971886515,
+      event_timestamp_ms_formatted: "2024-02-26T18:24:46.515Z",
+      timestamp_formatted: "2024-02-26T18:24:46.515Z",
+      suspicious_activity: {
+        event_type: "TXMA_EVENT",
+        session_id: "123456789",
+        user_id: "qwerty",
+        timestamp: 123456789,
+        client_id: "gov-uk",
+        event_id: "ab12345a-a12b-3ced-ef12-12a3b4cd5678",
+        reported_suspicious: true,
       },
+      zendesk_ticket_id: "12345677",
+      notify_message_id: "12345678",
     };
     suspiciousActivityEventRule = validatorRules.get(
       "HOME_REPORT_SUSPICIOUS_ACTIVITY"

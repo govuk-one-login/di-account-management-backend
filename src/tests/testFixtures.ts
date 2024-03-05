@@ -1,6 +1,8 @@
 import {
   ActivityLogEntry,
   EncryptedActivityLogEntry,
+  MarkActivityAsReportedInput,
+  ReportSuspiciousActivityEvent,
   TxmaEvent,
   UserData,
   UserServices,
@@ -21,7 +23,7 @@ export const sessionId = "123456789";
 export const userId = "qwerty";
 export const timestamp = 123456789;
 export const clientId = "client-id-value";
-export const reportedSuspicious = true;
+export const reportedSuspicious = false;
 export const txmaEventId = "event_id";
 export const authCodeIssuedEventType = "AUTH_AUTH_CODE_ISSUED";
 export const randomEventType = "AUTH_OTHER_RANDOM_EVENT";
@@ -52,11 +54,9 @@ export const createSnsEvent = (message: unknown): SNSEvent => {
     Sns: TEST_SNS_MESSAGE,
   };
 
-  const TEST_SNS_EVENT: SNSEvent = {
+  return {
     Records: [TEST_SNS_EVENT_RECORD],
   };
-
-  return TEST_SNS_EVENT;
 };
 
 export const user: UserData = {
@@ -108,32 +108,11 @@ export const TEST_SNS_MESSAGE: SNSMessage = {
   Subject: "Subject",
 };
 
-export const TEST_SNS_EVENT_MESSAGE: SNSMessage = {
-  SignatureVersion: "SignatureVersion",
-  Timestamp: "Timestamp",
-  Signature: "Signature",
-  SigningCertUrl: "SigningCertUrl",
-  MessageId: "MessageId",
-  Message: JSON.stringify(TEST_ACTIVITY_LOG_ENTRY),
-  MessageAttributes: {},
-  Type: "Type",
-  UnsubscribeUrl: "unsubscribeUrl",
-  TopicArn: "TopicArn",
-  Subject: "Subject",
-};
-
 export const TEST_SNS_EVENT_RECORD: SNSEventRecord = {
   EventVersion: "1",
   EventSubscriptionArn: "arn",
   EventSource: "source",
   Sns: TEST_SNS_MESSAGE,
-};
-
-export const TEST_SNS_EVENT_RECORD_WITH_EVENT: SNSEventRecord = {
-  EventVersion: "1",
-  EventSubscriptionArn: "arn",
-  EventSource: "source",
-  Sns: TEST_SNS_EVENT_MESSAGE,
 };
 
 export const TEST_SNS_EVENT: SNSEvent = {
@@ -144,14 +123,6 @@ export const TEST_SNS_EVENT_WITH_TWO_RECORDS: SNSEvent = {
   Records: [TEST_SNS_EVENT_RECORD, TEST_SNS_EVENT_RECORD],
 };
 
-export const TEST_SNS_EVENT_WITH_EVENT: SNSEvent = {
-  Records: [TEST_SNS_EVENT_RECORD_WITH_EVENT],
-};
-
-const NO_ACTIVITY_ARRAY = { ...TEST_ACTIVITY_LOG_ENTRY, activities: undefined };
-export const ACTIVITY_LOG_ENTRY_NO_ACTIVITY_ARRAY: ActivityLogEntry =
-  JSON.parse(JSON.stringify(NO_ACTIVITY_ARRAY));
-
 const NO_USER_ID = { ...TEST_ACTIVITY_LOG_ENTRY, user_id: undefined };
 export const ACTIVITY_LOG_ENTRY_NO_USER_ID: ActivityLogEntry = JSON.parse(
   JSON.stringify(NO_USER_ID)
@@ -161,10 +132,6 @@ const NO_TIMESTAMP = { ...TEST_ACTIVITY_LOG_ENTRY, timestamp: undefined };
 export const ACTIVITY_LOG_ENTRY_NO_TIMESTAMP: ActivityLogEntry = JSON.parse(
   JSON.stringify(NO_TIMESTAMP)
 );
-
-export const TEST_ACTIVITY_LOG_WITH_ACTIVITY_TYPE_UNDEFINED = {
-  ...TEST_ACTIVITY_LOG_ENTRY,
-};
 
 export const TEST_SQS_RECORD: SQSRecord = {
   messageId: "19dd0b57-b21e-4ac1-bd88-01bbb068cb78",
@@ -307,16 +274,33 @@ export const TEST_SQS_EVENT_WITH_USER_SERVICES: SQSEvent = {
   ],
 };
 
-export const testSuspiciousActivityEvent = {
-  event_id: "event_id",
-  event_name: "event_name",
-  timestamp: 1609462861,
-  timestamp_formatted: "timestamp_formatted",
-  client_id: "client_id",
-  user: {
-    user_id: "user_id",
-    session_id: "session_id",
-    govuk_signin_journey_id: "govuk_signin_journey_id",
+export const testSuspiciousActivity: MarkActivityAsReportedInput = {
+  user_id: userId,
+  email: "email",
+  event_id: eventId,
+  persistent_session_id: "persistent_session_id",
+  session_id: "session_id",
+  reported_suspicious_time: timestamp,
+};
+
+export const testSuspiciousActivityInput: ReportSuspiciousActivityEvent = {
+  event_id: "522c5ab4-7e66-4b2a-8f5c-4d31dc4e93e6",
+  event_type: "HOME_REPORT_SUSPICIOUS_ACTIVITY",
+  session_id: "session_id",
+  persistent_session_id: "persistent_session_id",
+  email_address: "email",
+  component_id: "https://home.account.gov.uk",
+  timestamp: 1708971886,
+  event_timestamp_ms: 1708971886515,
+  event_timestamp_ms_formatted: "2024-02-26T18:24:46.515Z",
+  timestamp_formatted: "2024-02-26T18:24:46.515Z",
+  suspicious_activity: {
+    event_type: "TXMA_EVENT",
+    session_id: "123456789",
+    user_id: "qwerty",
+    timestamp: 123456789,
+    client_id: "gov-uk",
+    event_id: "ab12345a-a12b-3ced-ef12-12a3b4cd5678",
+    reported_suspicious: true,
   },
-  reported_suspicious: true,
 };

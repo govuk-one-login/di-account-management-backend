@@ -3418,23 +3418,26 @@ Resources:
         - !Ref SuspiciousActivityTopic
       PolicyDocument:
         Statement:
-          - Action: sns:Subscribe
+          - Sid: AllowSubscription
             Effect: Allow
             Principal:
               AWS: "*"
+            Action: sns:Subscribe
             Resource:
               - !Ref SuspiciousActivityTopic
             Condition:
-              AccountIs: !Ref AWS::AccountId
-          - Action: "sns:Publish"
+              StringEquals:
+                aws:SourceAccount: !Ref AWS::AccountId
+          - Sid: AllowPublish
             Effect: Allow
-            Resource: !Ref SuspiciousActivityTopic
             Principal:
               AWS: "*"
+            Action: sns:Publish
+            Resource: !Ref SuspiciousActivityTopic
             Condition:
               ArnEquals:
                 aws:SourceArn:
-                 - !Sub "arn:aws:iam:${AWS::AccountId}:role/account-mgmt-frontend-TaskRole"
+                  - !Sub "arn:aws:iam::${AWS::AccountId}:role/${AccountManagementFrontendStackName}-TaskRole"
 
   SuspiciousActivityArnParameter:
     Type: AWS::SSM::Parameter

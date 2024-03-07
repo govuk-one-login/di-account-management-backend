@@ -3410,6 +3410,31 @@ Resources:
       DisplayName: SuspiciousActivityTopic
       KmsMasterKeyId: !Ref SnsKmsKey
       TopicName: SuspiciousActivity
+      
+  SuspiciousActivityTopicPolicy:
+    Type: AWS::SNS::TopicPolicy
+    Properties:
+      Topics:
+        - !Ref SuspiciousActivityTopic
+      PolicyDocument:
+        Statement:
+          - Action: sns:Subscribe
+            Effect: Allow
+            Principal:
+              AWS: *
+            Resource:
+              - !Ref SuspiciousActivityTopic
+            Condition:
+              AccountIs: !Ref AWS::AccountId
+          - Action: "sns:Publish"
+            Effect: Allow
+            Resource: !Ref SuspiciousActivityTopic
+            Principal:
+              AWS: *
+            Condition:
+              ArnEquals:
+                aws:SourceArn:
+                 - !Sub "arn:aws:iam:${AWS::AccountId}:role/account-mgmt-frontend-TaskRole"
 
   SuspiciousActivityArnParameter:
     Type: AWS::SSM::Parameter

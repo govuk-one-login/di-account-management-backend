@@ -3421,7 +3421,7 @@ Resources:
           - Action: sns:Subscribe
             Effect: Allow
             Principal:
-              AWS: !Ref AWS::AccountId
+              AWS: "*"
             Resource:
               - !Ref SuspiciousActivityTopic
             Condition:
@@ -3430,7 +3430,7 @@ Resources:
             Effect: Allow
             Resource: !Ref SuspiciousActivityTopic
             Principal:
-              AWS: !Ref AWS::AccountId
+              AWS: "*"
             Condition:
               ArnEquals:
                 aws:SourceArn:

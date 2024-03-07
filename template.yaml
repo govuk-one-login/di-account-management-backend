@@ -2224,65 +2224,6 @@ Resources:
   ######################
   # Send Suspicious Activity to TxMA
   ######################
-  SendSuspiciousActivitySubscription:
-    Type: AWS::SNS::Subscription
-    Properties:
-      Endpoint: !GetAtt SendSuspiciousActivityFunction.Arn
-      Protocol: lambda
-      RedrivePolicy:
-        deadLetterTargetArn: !GetAtt SendSuspiciousActivityDeadLetterQueue.Arn
-      TopicArn: !Ref SuspiciousActivityTopic
-
-  SendSuspiciousActivityDeadLetterQueue:
-    Type: AWS::SQS::Queue
-    DeletionPolicy: Delete
-    UpdateReplacePolicy: Delete
-    Properties:
-      MessageRetentionPeriod: 1209600
-      KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
-
-  SendSuspiciousActivityDeadLetterQueuePolicy:
-    Type: AWS::SQS::QueuePolicy
-    Properties:
-      Queues:
-        - !Ref SendSuspiciousActivityDeadLetterQueue
-      PolicyDocument:
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: sns.amazonaws.com
-            Action: "sqs:SendMessage"
-            Resource: !GetAtt SendSuspiciousActivityDeadLetterQueue.Arn
-            Condition:
-              ArnEquals:
-                "aws:SourceArn": !Ref SuspiciousActivityTopic
-
-  SendSuspiciousActivityDeadLetterQueueAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Properties:
-      AlarmName:
-        !Join [
-          "-",
-          [
-            !Ref AWS::StackName,
-            !Ref Environment,
-            SendSuspiciousActivityDeadLetterQueue,
-          ],
-        ]
-      Namespace: "AWS/SQS"
-      MetricName: "ApproximateNumberOfMessagesVisible"
-      Dimensions:
-        - Name: "QueueName"
-          Value: !GetAtt SendSuspiciousActivityDeadLetterQueue.QueueName
-      Statistic: "Sum"
-      Period: 300
-      EvaluationPeriods: 1
-      Threshold: 1
-      ComparisonOperator: "GreaterThanOrEqualToThreshold"
-      AlarmActions:
-        - !Ref AlarmNotificationTopic
-      ActionsEnabled: true
-
   SendSuspiciousActivityFunction:
     DependsOn:
       - SendSuspiciousActivityFunctionLogGroup
@@ -2290,16 +2231,12 @@ Resources:
     Properties:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-send-suspicious-activity
       CodeUri: src
-      DeadLetterQueue:
-        Type: SQS
-        TargetArn: !GetAtt SendSuspiciousActivityDeadLetterQueue.Arn
       Handler: send-suspicious-activity.handler
       PackageType: Zip
       Role: !GetAtt SendSuspiciousActivityRole.Arn
       Environment:
         Variables:
           EVENT_NAME: HOME_REPORT_SUSPICIOUS_ACTIVITY
-          DLQ_URL: !Ref SendSuspiciousActivityDeadLetterQueue
           TXMA_QUEUE_URL: !Ref AuditOutputQueue
     Metadata:
       BuildMethod: esbuild

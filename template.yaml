@@ -2381,65 +2381,6 @@ Resources:
   ######################
   # Send confirmation for suspicious activity
   ######################
-  SendConfEmailSubscription:
-    Type: AWS::SNS::Subscription
-    Properties:
-      Endpoint: !GetAtt SendConfEmailFunction.Arn
-      Protocol: lambda
-      RedrivePolicy:
-        deadLetterTargetArn: !GetAtt SendConfEmailDeadLetterQueue.Arn
-      TopicArn: !Ref SuspiciousActivityTopic
-
-  SendConfEmailDeadLetterQueue:
-    Type: AWS::SQS::Queue
-    DeletionPolicy: Delete
-    UpdateReplacePolicy: Delete
-    Properties:
-      MessageRetentionPeriod: 1209600
-      KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
-
-  SendConfEmailDeadLetterQueuePolicy:
-    Type: AWS::SQS::QueuePolicy
-    Properties:
-      Queues:
-        - !Ref SendConfEmailDeadLetterQueue
-      PolicyDocument:
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: sns.amazonaws.com
-            Action: "sqs:SendMessage"
-            Resource: !GetAtt SendConfEmailDeadLetterQueue.Arn
-            Condition:
-              ArnEquals:
-                "aws:SourceArn": !Ref SuspiciousActivityTopic
-
-  SendConfEmailDeadLetterQueueAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Properties:
-      AlarmName:
-        !Join [
-          "-",
-          [
-            !Ref AWS::StackName,
-            !Ref Environment,
-            SendConfEmailDeadLetterQueue,
-          ],
-        ]
-      Namespace: "AWS/SQS"
-      MetricName: "ApproximateNumberOfMessagesVisible"
-      Dimensions:
-        - Name: "QueueName"
-          Value: !GetAtt SendConfEmailDeadLetterQueue.QueueName
-      Statistic: "Sum"
-      Period: 300
-      EvaluationPeriods: 1
-      Threshold: 1
-      ComparisonOperator: "GreaterThanOrEqualToThreshold"
-      AlarmActions:
-        - !Ref AlarmNotificationTopic
-      ActionsEnabled: true
-
   SendConfEmailFunction:
     DependsOn:
       - SendConfEmailFunctionLogGroup
@@ -2447,15 +2388,11 @@ Resources:
     Properties:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-send-conf-email
       CodeUri: src
-      DeadLetterQueue:
-        Type: SQS
-        TargetArn: !GetAtt SendConfEmailDeadLetterQueue.Arn
       Handler: send-conf-email.handler
       PackageType: Zip
       Role: !GetAtt SendConfEmailRole.Arn
       Environment:
         Variables:
-          DLQ_URL: !Ref SendConfEmailDeadLetterQueue
           NOTIFY_API_KEY: /account-mgmt-backend/notify-api-key
           TEMPLATE_ID: !Ref SusActivityEmailTemplateId
           ENVIRONMENT_NAME: !Ref Environment

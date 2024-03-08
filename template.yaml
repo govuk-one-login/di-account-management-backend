@@ -12,6 +12,10 @@ Parameters:
   ActivityLogsStoreTableName:
     Type: String
     Default: activity_log
+  AlertingStackName:
+    Description: The name of the stack that defines the Alerting resources
+    Type: String
+    Default: platform-alerting
   DummyEventStoreTableName:
     Type: String
     Default: dummy_events
@@ -666,14 +670,15 @@ Resources:
       FilterPattern: ""
       LogGroupName: !Ref SaveRawEventsFunctionLogGroup
 
-  SaveDeadLetterQueueAlarm:
+  SaveRawEventsDLQAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
       AlarmName:
         !Join [
           "-",
-          [!Ref AWS::StackName, !Ref Environment, SaveDeadLetterQueueAlarm],
+          [!Ref AWS::StackName, !Ref Environment, SaveRawEventsDLQAlarm],
         ]
+      AlarmDescription: More than 1 raw event failed to be saved in the last 5 minutes.
       Namespace: "AWS/SQS"
       MetricName: "ApproximateNumberOfMessagesVisible"
       Dimensions:
@@ -685,7 +690,7 @@ Resources:
       Threshold: 1
       ComparisonOperator: "GreaterThanOrEqualToThreshold"
       AlarmActions:
-        - !Ref AlarmNotificationTopic
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
       ActionsEnabled: true
 
   ########################
@@ -832,14 +837,15 @@ Resources:
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
 
-  QueryDeadLetterQueueAlarm:
+  QueryUserServicesDLQAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
       AlarmName:
         !Join [
           "-",
-          [!Ref AWS::StackName, !Ref Environment, QueryDeadLetterQueueAlarm],
+          [!Ref AWS::StackName, !Ref Environment, QueryUserServiceDLQAlarm],
         ]
+      AlarmDescription: More than 1 query for user services has failed in the last 5 minutes.
       Namespace: "AWS/SQS"
       MetricName: "ApproximateNumberOfMessagesVisible"
       Dimensions:
@@ -851,7 +857,7 @@ Resources:
       Threshold: 1
       ComparisonOperator: "GreaterThanOrEqualToThreshold"
       AlarmActions:
-        - !Ref AlarmNotificationTopic
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
       ActionsEnabled: true
 
   #################################
@@ -974,6 +980,7 @@ Resources:
           "-",
           [!Ref AWS::StackName, !Ref Environment, FormatDeadLetterQueueAlarm],
         ]
+      AlarmDescription: More than 1 un-formatted user service record failed to be formatted in the last 5 minutes.
       Namespace: "AWS/SQS"
       MetricName: "ApproximateNumberOfMessagesVisible"
       Dimensions:
@@ -985,7 +992,7 @@ Resources:
       Threshold: 1
       ComparisonOperator: "GreaterThanOrEqualToThreshold"
       AlarmActions:
-        - !Ref AlarmNotificationTopic
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
       ActionsEnabled: true
 
   #########################
@@ -1112,6 +1119,7 @@ Resources:
             WriteUserServicesDeadLetterQueueAlarm,
           ],
         ]
+      AlarmDescription: More than 1 user service record failed to be saved in the last 5 minutes.
       Namespace: "AWS/SQS"
       MetricName: "ApproximateNumberOfMessagesVisible"
       Dimensions:
@@ -1123,7 +1131,7 @@ Resources:
       Threshold: 1
       ComparisonOperator: "GreaterThanOrEqualToThreshold"
       AlarmActions:
-        - !Ref AlarmNotificationTopic
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
       ActionsEnabled: true
 
   ##################################
@@ -1354,6 +1362,7 @@ Resources:
             UserAccountDeletionTopicDeadLetterQueueAlarm,
           ],
         ]
+      AlarmDescription: More than 1 user account deletion request failed in the last 5 minutes.
       Namespace: "AWS/SQS"
       MetricName: "ApproximateNumberOfMessagesVisible"
       Dimensions:
@@ -1365,7 +1374,7 @@ Resources:
       Threshold: 1
       ComparisonOperator: "GreaterThanOrEqualToThreshold"
       AlarmActions:
-        - !Ref AlarmNotificationTopic
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
       ActionsEnabled: true
 
   DeleteDeadLetterQueueAlarm:
@@ -1376,6 +1385,7 @@ Resources:
           "-",
           [!Ref AWS::StackName, !Ref Environment, DeleteDeadLetterQueueAlarm],
         ]
+      AlarmDescription: More than 1 request to delete a users services has failed in the last 5 minutes.
       Namespace: "AWS/SQS"
       MetricName: "ApproximateNumberOfMessagesVisible"
       Dimensions:
@@ -1387,7 +1397,7 @@ Resources:
       Threshold: 1
       ComparisonOperator: "GreaterThanOrEqualToThreshold"
       AlarmActions:
-        - !Ref AlarmNotificationTopic
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
       ActionsEnabled: true
 
   ############################
@@ -1686,6 +1696,7 @@ Resources:
             WriteActivityLogDeadLetterQueueAlarm,
           ],
         ]
+      AlarmDescription: More than 1 activity log write failed in the last 5 minutes.
       Namespace: "AWS/SQS"
       MetricName: "ApproximateNumberOfMessagesVisible"
       Dimensions:
@@ -1697,7 +1708,7 @@ Resources:
       Threshold: 1
       ComparisonOperator: "GreaterThanOrEqualToThreshold"
       AlarmActions:
-        - !Ref AlarmNotificationTopic
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
       ActionsEnabled: true
 
   #######################
@@ -1857,6 +1868,7 @@ Resources:
             FormatActivityLogDeadLetterQueueAlarm,
           ],
         ]
+      AlarmDescription: More than 1 activity log failed to be formatted in the last 5 minutes.
       Namespace: "AWS/SQS"
       MetricName: "ApproximateNumberOfMessagesVisible"
       Dimensions:
@@ -1868,7 +1880,7 @@ Resources:
       Threshold: 1
       ComparisonOperator: "GreaterThanOrEqualToThreshold"
       AlarmActions:
-        - !Ref AlarmNotificationTopic
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
       ActionsEnabled: true
 
   ################################
@@ -1919,6 +1931,7 @@ Resources:
             DeleteActivityLogSubscriptionDeadLetterQueue,
           ],
         ]
+      AlarmDescription: More than 1 deletion of activity log failed in the last 5 minutes.
       Namespace: "AWS/SQS"
       MetricName: "ApproximateNumberOfMessagesVisible"
       Dimensions:
@@ -1930,7 +1943,7 @@ Resources:
       Threshold: 1
       ComparisonOperator: "GreaterThanOrEqualToThreshold"
       AlarmActions:
-        - !Ref AlarmNotificationTopic
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
       ActionsEnabled: true
 
   DeleteActivityLogFunction:
@@ -2072,6 +2085,7 @@ Resources:
             DeleteActivityLogDeadLetterQueueAlarm,
           ],
         ]
+      AlarmDescription: More than 1 activity log failed to be deleted in the last 5 minutes.
       Namespace: "AWS/SQS"
       MetricName: "ApproximateNumberOfMessagesVisible"
       Dimensions:
@@ -2083,11 +2097,11 @@ Resources:
       Threshold: 1
       ComparisonOperator: "GreaterThanOrEqualToThreshold"
       AlarmActions:
-        - !Ref AlarmNotificationTopic
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
       ActionsEnabled: true
 
 ######################
-# Mark Suspicious Activity as Reported
+# Mark Suspicious Activity as Reported
 ######################
   MarkActivityReportedFunction:
     DependsOn:
@@ -2516,6 +2530,7 @@ Resources:
             TriggerSuspiciousActivityStepDeadLetterQueue,
           ],
         ]
+      AlarmDescription: More than 10 suspicious activity report StepFunctions have failed to be triggered in the last 5 minutes.
       Namespace: "AWS/SQS"
       MetricName: "ApproximateNumberOfMessagesVisible"
       Dimensions:
@@ -2524,11 +2539,29 @@ Resources:
       Statistic: "Sum"
       Period: 300
       EvaluationPeriods: 1
-      Threshold: 1
+      Threshold: 10
       ComparisonOperator: "GreaterThanOrEqualToThreshold"
       AlarmActions:
-        - !Ref AlarmNotificationTopic
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/HighAlertNotificationTopic/ARN}}"
       ActionsEnabled: true
+
+  TriggerSuspiciousActivityStepFunctionLambdaExecutionRetryAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: TriggerSuspiciousActivityStepFunctionLambdaExecutionRetry
+      AlarmDescription: More than 10 retries of the lambda that starts the report suspicious activity StepFunction have been attempted in the last 5 minutes.
+      Namespace: AWS/States
+      MetricName: RetryAttempts
+      Dimensions:
+        - Name: StateMachineArn
+          Value: !Ref ReportSuspiciousActivityStepFunction
+      ComparisonOperator: GreaterThanThreshold
+      Statistic: Sum
+      Period: 300
+      Threshold: 10
+      EvaluationPeriods: 1
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/HighAlertNotificationTopic/ARN}}"
 
   TriggerSuspiciousActivityStepFunction:
     DependsOn:
@@ -2738,33 +2771,42 @@ Resources:
       FilterPattern: ""
       LogGroupName: !Ref ReportSuspiciousActivityStepFunctionLogGroup
 
-  #######################
-  # Monitoring
-  #######################
-  AlarmNotificationTopic:
-    Type: AWS::SNS::Topic
+  ReportSuspiciousActivityStepFunctionExecutionFailureAlarm:
+    Type: AWS::CloudWatch::Alarm
     Properties:
-      KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
+      AlarmName: ReportSuspiciousActivityStepFunctionExecutionFailure
+      AlarmDescription: More than 1 report suspicious activity StepFunction workflows have failed in the last 5 minutes.
+      Namespace: AWS/States
+      Statistic: Sum
+      MetricName: ExecutionFailed
+      Dimensions:
+        - Name: StateMachineArn
+          Value: !Ref ReportSuspiciousActivityStepFunction
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 1
+      EvaluationPeriods: 1
+      Period: 300
+      TreatMissingData: missing
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/HighAlertNotificationTopic/ARN}}"
 
-  AlarmNotificationTopicPolicy:
-    Type: AWS::SNS::TopicPolicy
+  ReportSuspiciousActivityStepFunctionExecutionRetryAlarm:
+    Type: AWS::CloudWatch::Alarm
     Properties:
-      Topics:
-        - !Ref AlarmNotificationTopic
-      PolicyDocument:
-        Statement:
-          - Action: "sns:Publish"
-            Effect: Allow
-            Resource: !Ref AlarmNotificationTopic
-            Principal:
-              Service: cloudwatch.amazonaws.com
-
-  DeadLetterEmailSubscriptions:
-    Type: AWS::SNS::Subscription
-    Properties:
-      Endpoint: govuk-accounts-developers@digital.cabinet-office.gov.uk
-      Protocol: email
-      TopicArn: !Ref AlarmNotificationTopic
+      AlarmName: ReportSuspiciousActivityStepFunctionExecutionRetry
+      AlarmDescription: More than 10 attempts to retry failed report suspicious activity StepFunctions in the last 5 minutes.
+      Namespace: AWS/States
+      MetricName: RetryAttempts
+      Dimensions:
+        - Name: StateMachineArn
+          Value: !Ref ReportSuspiciousActivityStepFunction
+      ComparisonOperator: GreaterThanThreshold
+      Statistic: Sum
+      Period: 300
+      Threshold: 10
+      EvaluationPeriods: 1
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/HighAlertNotificationTopic/ARN}}"
 
   #######################
   # Encryption
@@ -3179,7 +3221,7 @@ Resources:
       DisplayName: SuspiciousActivityTopic
       KmsMasterKeyId: !Ref SnsKmsKey
       TopicName: SuspiciousActivity
-      
+
   SuspiciousActivityTopicPolicy:
     Type: AWS::SNS::TopicPolicy
     Properties:

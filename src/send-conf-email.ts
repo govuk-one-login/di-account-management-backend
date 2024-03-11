@@ -108,9 +108,8 @@ export const sendConfMail = async (
 export const handler = async (
   event: ReportSuspiciousActivityEvent
 ): Promise<ReportSuspiciousActivityEvent> => {
-  const { DLQ_URL, NOTIFY_API_KEY, TEMPLATE_ID } = process.env;
+  const { NOTIFY_API_KEY, TEMPLATE_ID } = process.env;
   try {
-    assert(DLQ_URL, "DLQ_URL env variable not set");
     assert(NOTIFY_API_KEY, "NOTIFY_API_KEY env variable not set");
     assert(TEMPLATE_ID, "TEMPLATE_ID env variable not set");
 

@@ -2089,40 +2089,6 @@ Resources:
 ######################
 # Mark Suspicious Activity as Reported
 ######################
-  MarkActivityReportedSubscription:
-    Type: AWS::SNS::Subscription
-    Properties:
-      Endpoint: !GetAtt MarkActivityReportedFunction.Arn
-      Protocol: lambda
-      RedrivePolicy:
-        deadLetterTargetArn: !GetAtt MarkActivityReportedDeadLetterQueue.Arn
-      TopicArn: !Ref SuspiciousActivityTopic
-
-
-  MarkActivityReportedDeadLetterQueue:
-    Type: AWS::SQS::Queue
-    DeletionPolicy: Delete
-    UpdateReplacePolicy: Delete
-    Properties:
-      MessageRetentionPeriod: 1209600
-      KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
-
-  MarkActivityReportedDeadLetterQueuePolicy:
-    Type: AWS::SQS::QueuePolicy
-    Properties:
-      Queues:
-        - !Ref MarkActivityReportedDeadLetterQueue
-      PolicyDocument:
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: sns.amazonaws.com
-            Action: "sqs:SendMessage"
-            Resource: !GetAtt MarkActivityReportedDeadLetterQueue.Arn
-            Condition:
-              ArnEquals:
-                "aws:SourceArn": !Ref SuspiciousActivityTopic
-
   MarkActivityReportedFunction:
     DependsOn:
       - MarkActivityReportedLogGroup
@@ -2130,9 +2096,6 @@ Resources:
     Properties:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-mark-activity-reported
       CodeUri: src
-      DeadLetterQueue:
-        Type: SQS
-        TargetArn: !GetAtt MarkActivityReportedDeadLetterQueue.Arn
       Handler: mark-activity-reported.handler
       PackageType: Zip
       Role: !GetAtt MarkActivityReportedRole.Arn
@@ -2224,65 +2187,6 @@ Resources:
   ######################
   # Send Suspicious Activity to TxMA
   ######################
-  SendSuspiciousActivitySubscription:
-    Type: AWS::SNS::Subscription
-    Properties:
-      Endpoint: !GetAtt SendSuspiciousActivityFunction.Arn
-      Protocol: lambda
-      RedrivePolicy:
-        deadLetterTargetArn: !GetAtt SendSuspiciousActivityDeadLetterQueue.Arn
-      TopicArn: !Ref SuspiciousActivityTopic
-
-  SendSuspiciousActivityDeadLetterQueue:
-    Type: AWS::SQS::Queue
-    DeletionPolicy: Delete
-    UpdateReplacePolicy: Delete
-    Properties:
-      MessageRetentionPeriod: 1209600
-      KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
-
-  SendSuspiciousActivityDeadLetterQueuePolicy:
-    Type: AWS::SQS::QueuePolicy
-    Properties:
-      Queues:
-        - !Ref SendSuspiciousActivityDeadLetterQueue
-      PolicyDocument:
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: sns.amazonaws.com
-            Action: "sqs:SendMessage"
-            Resource: !GetAtt SendSuspiciousActivityDeadLetterQueue.Arn
-            Condition:
-              ArnEquals:
-                "aws:SourceArn": !Ref SuspiciousActivityTopic
-
-  SendSuspiciousActivityDeadLetterQueueAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Properties:
-      AlarmName:
-        !Join [
-          "-",
-          [
-            !Ref AWS::StackName,
-            !Ref Environment,
-            SendSuspiciousActivityDeadLetterQueue,
-          ],
-        ]
-      Namespace: "AWS/SQS"
-      MetricName: "ApproximateNumberOfMessagesVisible"
-      Dimensions:
-        - Name: "QueueName"
-          Value: !GetAtt SendSuspiciousActivityDeadLetterQueue.QueueName
-      Statistic: "Sum"
-      Period: 300
-      EvaluationPeriods: 1
-      Threshold: 1
-      ComparisonOperator: "GreaterThanOrEqualToThreshold"
-      AlarmActions:
-        - !Ref AlarmNotificationTopic
-      ActionsEnabled: true
-
   SendSuspiciousActivityFunction:
     DependsOn:
       - SendSuspiciousActivityFunctionLogGroup
@@ -2290,16 +2194,12 @@ Resources:
     Properties:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-send-suspicious-activity
       CodeUri: src
-      DeadLetterQueue:
-        Type: SQS
-        TargetArn: !GetAtt SendSuspiciousActivityDeadLetterQueue.Arn
       Handler: send-suspicious-activity.handler
       PackageType: Zip
       Role: !GetAtt SendSuspiciousActivityRole.Arn
       Environment:
         Variables:
           EVENT_NAME: HOME_REPORT_SUSPICIOUS_ACTIVITY
-          DLQ_URL: !Ref SendSuspiciousActivityDeadLetterQueue
           TXMA_QUEUE_URL: !Ref AuditOutputQueue
     Metadata:
       BuildMethod: esbuild
@@ -2341,7 +2241,6 @@ Resources:
             Action:
               - sqs:SendMessage
             Resource:
-              - !GetAtt SendSuspiciousActivityDeadLetterQueue.Arn
               - !GetAtt AuditOutputQueue.Arn
           - Effect: Allow
             Action:
@@ -2381,65 +2280,6 @@ Resources:
   ######################
   # Send confirmation for suspicious activity
   ######################
-  SendConfEmailSubscription:
-    Type: AWS::SNS::Subscription
-    Properties:
-      Endpoint: !GetAtt SendConfEmailFunction.Arn
-      Protocol: lambda
-      RedrivePolicy:
-        deadLetterTargetArn: !GetAtt SendConfEmailDeadLetterQueue.Arn
-      TopicArn: !Ref SuspiciousActivityTopic
-
-  SendConfEmailDeadLetterQueue:
-    Type: AWS::SQS::Queue
-    DeletionPolicy: Delete
-    UpdateReplacePolicy: Delete
-    Properties:
-      MessageRetentionPeriod: 1209600
-      KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
-
-  SendConfEmailDeadLetterQueuePolicy:
-    Type: AWS::SQS::QueuePolicy
-    Properties:
-      Queues:
-        - !Ref SendConfEmailDeadLetterQueue
-      PolicyDocument:
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: sns.amazonaws.com
-            Action: "sqs:SendMessage"
-            Resource: !GetAtt SendConfEmailDeadLetterQueue.Arn
-            Condition:
-              ArnEquals:
-                "aws:SourceArn": !Ref SuspiciousActivityTopic
-
-  SendConfEmailDeadLetterQueueAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Properties:
-      AlarmName:
-        !Join [
-          "-",
-          [
-            !Ref AWS::StackName,
-            !Ref Environment,
-            SendConfEmailDeadLetterQueue,
-          ],
-        ]
-      Namespace: "AWS/SQS"
-      MetricName: "ApproximateNumberOfMessagesVisible"
-      Dimensions:
-        - Name: "QueueName"
-          Value: !GetAtt SendConfEmailDeadLetterQueue.QueueName
-      Statistic: "Sum"
-      Period: 300
-      EvaluationPeriods: 1
-      Threshold: 1
-      ComparisonOperator: "GreaterThanOrEqualToThreshold"
-      AlarmActions:
-        - !Ref AlarmNotificationTopic
-      ActionsEnabled: true
-
   SendConfEmailFunction:
     DependsOn:
       - SendConfEmailFunctionLogGroup
@@ -2447,15 +2287,11 @@ Resources:
     Properties:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-send-conf-email
       CodeUri: src
-      DeadLetterQueue:
-        Type: SQS
-        TargetArn: !GetAtt SendConfEmailDeadLetterQueue.Arn
       Handler: send-conf-email.handler
       PackageType: Zip
       Role: !GetAtt SendConfEmailRole.Arn
       Environment:
         Variables:
-          DLQ_URL: !Ref SendConfEmailDeadLetterQueue
           NOTIFY_API_KEY: /account-mgmt-backend/notify-api-key
           TEMPLATE_ID: !Ref SusActivityEmailTemplateId
           ENVIRONMENT_NAME: !Ref Environment
@@ -2497,11 +2333,6 @@ Resources:
         Statement:
           - Effect: Allow
             Action:
-              - sqs:SendMessage
-            Resource:
-              - !GetAtt SendConfEmailDeadLetterQueue.Arn
-          - Effect: Allow
-            Action:
               - "kms:Decrypt"
               - "kms:GenerateDataKey"
             Resource:
@@ -2538,65 +2369,6 @@ Resources:
   ######################
   # Create ticket for suspicious activity
   ######################
-  CreateSupportTicketSubscription:
-    Type: AWS::SNS::Subscription
-    Properties:
-      Endpoint: !GetAtt CreateSupportTicketFunction.Arn
-      Protocol: lambda
-      RedrivePolicy:
-        deadLetterTargetArn: !GetAtt CreateSupportTicketDeadLetterQueue.Arn
-      TopicArn: !Ref SuspiciousActivityTopic
-
-  CreateSupportTicketDeadLetterQueue:
-    Type: AWS::SQS::Queue
-    DeletionPolicy: Delete
-    UpdateReplacePolicy: Delete
-    Properties:
-      MessageRetentionPeriod: 1209600
-      KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
-
-  CreateSupportTicketDeadLetterQueuePolicy:
-    Type: AWS::SQS::QueuePolicy
-    Properties:
-      Queues:
-        - !Ref CreateSupportTicketDeadLetterQueue
-      PolicyDocument:
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: sns.amazonaws.com
-            Action: "sqs:SendMessage"
-            Resource: !GetAtt CreateSupportTicketDeadLetterQueue.Arn
-            Condition:
-              ArnEquals:
-                "aws:SourceArn": !Ref SuspiciousActivityTopic
-
-  CreateSupportTicketDeadLetterQueueAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Properties:
-      AlarmName:
-        !Join [
-          "-",
-          [
-            !Ref AWS::StackName,
-            !Ref Environment,
-            CreateSupportTicketDeadLetterQueue,
-          ],
-        ]
-      Namespace: "AWS/SQS"
-      MetricName: "ApproximateNumberOfMessagesVisible"
-      Dimensions:
-        - Name: "QueueName"
-          Value: !GetAtt CreateSupportTicketDeadLetterQueue.QueueName
-      Statistic: "Sum"
-      Period: 300
-      EvaluationPeriods: 1
-      Threshold: 1
-      ComparisonOperator: "GreaterThanOrEqualToThreshold"
-      AlarmActions:
-        - !Ref AlarmNotificationTopic
-      ActionsEnabled: true
-
   CreateSupportTicketFunction:
     DependsOn:
       - CreateSupportTicketFunctionLogGroup
@@ -2604,9 +2376,6 @@ Resources:
     Properties:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-create-support-ticket
       CodeUri: src
-      DeadLetterQueue:
-        Type: SQS
-        TargetArn: !GetAtt CreateSupportTicketDeadLetterQueue.Arn
       Handler: create-support-ticket.handler
       PackageType: Zip
       Role: !GetAtt CreateSupportTicketRole.Arn

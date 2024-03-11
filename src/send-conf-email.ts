@@ -31,7 +31,7 @@ export const getClientInfo = (
 };
 
 const formatTimestamp = (timestamp: number, language: string) => {
-  const date = new Date(timestamp);
+  const date = new Date(timestamp * 1000);
   return {
     date: Intl.DateTimeFormat(language, {
       dateStyle: "long",
@@ -66,16 +66,15 @@ export const formatActivityObjectForEmail = (
     event.suspicious_activity.client_id
   );
 
-  assert(
-    event.suspicious_activity.timestamp,
-    "Timestamp not present in Suspicious Activity Event"
-  );
+  assert(event.timestamp, "Timestamp not present in Suspicious Activity Event");
 
-  const datetimeEn = formatTimestamp(
-    event.suspicious_activity.timestamp,
-    "en-GB"
+  const datetimeEn = formatTimestamp(event.timestamp, "en-GB");
+  const datetimeCy = formatTimestamp(event.timestamp, "cy");
+
+  assert(
+    event.zendesk_ticket_id,
+    "Zendesk ticket ID not present in Suspicious Activity Events"
   );
-  const datetimeCy = formatTimestamp(event.suspicious_activity.timestamp, "cy");
 
   return {
     email: event.email_address,
@@ -86,6 +85,7 @@ export const formatActivityObjectForEmail = (
       dateCy: datetimeCy.date,
       timeEn: datetimeEn.time,
       timeCy: datetimeCy.time,
+      ticketId: event.zendesk_ticket_id,
     },
   };
 };

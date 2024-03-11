@@ -39,7 +39,7 @@ export const formatCommentBody = (
   if (event.suspicious_activity.timestamp) {
     htmlBody.push(
       `<p><strong>Reported Date and Time</strong>: ${new Date(
-        event.suspicious_activity.timestamp
+        event.suspicious_activity.timestamp * 1000
       ).toUTCString()}</p>`
     );
   }

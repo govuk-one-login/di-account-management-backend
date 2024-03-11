@@ -2097,7 +2097,6 @@ Resources:
           ACTIVITY_LOG_TABLE_NAME: !Ref ActivityLogsStoreTableName
           GENERATOR_KEY_ARN: !GetAtt GeneratorKey.Arn
           WRAPPING_KEY_ARN: !GetAtt WrapperKey.Arn
-          BACKUP_WRAPPING_KEY_ARN: !Sub "{{resolve:ssm:/${AWS::StackName}/${Environment}/Backup/KMS/WrappingKey/ARN}}"
           VERIFY_ACCESS_VALUE: !Sub "{{resolve:secretsmanager:/${AWS::StackName}/Config/Storage/VerificationSecret}}"
           ACCOUNT_ID: !Sub "${AWS::AccountId}"
           ENVIRONMENT: !Ref Environment
@@ -2141,15 +2140,10 @@ Resources:
             Action:
               - kms:Decrypt
               - kms:GenerateDataKey*
-              - kms:ReEncrypt*
             Resource:
-              - !GetAtt QueueKmsKey.Arn
-              - !GetAtt LoggingKmsKey.Arn
-              - !GetAtt LambdaKMSKey.Arn
-              - !GetAtt AuditEncryptionKey.Arn
               - !GetAtt DatabaseKmsKey.Arn
               - !GetAtt WrapperKey.Arn
-              - !Sub "{{resolve:ssm:/${AWS::StackName}/${Environment}/Backup/KMS/WrappingKey/ARN}}"
+              - !GetAtt GeneratorKey.Arn
           - Effect: Allow
             Action:
               - dynamodb:UpdateItem

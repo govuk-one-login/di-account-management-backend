@@ -42,64 +42,80 @@ describe("generateExpectedContext", () => {
     delete process.env.VERIFY_ACCESS_VALUE;
   });
 
-  test("throws an error when AWS_REGION is not defined", () => {
+  test("throws an error when AWS_REGION is not defined", async () => {
     delete process.env.AWS_REGION;
-    expect(() => {
-      generateExpectedContext(userId);
-    }).toThrowError("Missing AWS_REGION environment variable");
+    try {
+      await generateExpectedContext(userId);
+    } catch (error) {
+      expect((error as Error).message).toEqual(
+        "Missing AWS_REGION environment variable"
+      );
+    }
   });
 
-  test("throws an error when ACCOUNT_ID is not defined", () => {
+  test("throws an error when ACCOUNT_ID is not defined", async () => {
     delete process.env.ACCOUNT_ID;
-    expect(() => {
-      generateExpectedContext(userId);
-    }).toThrowError("Missing ACCOUNT_ID environment variable");
+    try {
+      await generateExpectedContext(userId);
+    } catch (error) {
+      expect((error as Error).message).toEqual(
+        "Missing ACCOUNT_ID environment variable"
+      );
+    }
   });
 
-  test("throws an error when ENVIRONMENT is not defined", () => {
+  test("throws an error when ENVIRONMENT is not defined", async () => {
     delete process.env.ENVIRONMENT;
-    expect(() => {
-      generateExpectedContext(userId);
-    }).toThrowError("Missing ENVIRONMENT environment variable");
+    try {
+      await generateExpectedContext(userId);
+    } catch (error) {
+      expect((error as Error).message).toEqual(
+        "Missing ENVIRONMENT environment variable"
+      );
+    }
   });
 
-  test("throws an error when VERIFY_ACCESS_VALUE is not defined", () => {
+  test("throws an error when VERIFY_ACCESS_VALUE is not defined", async () => {
     delete process.env.VERIFY_ACCESS_VALUE;
-    expect(() => {
-      generateExpectedContext(userId);
-    }).toThrowError("Missing VERIFY_ACCESS_VALUE environment variable");
+    try {
+      await generateExpectedContext(userId);
+    } catch (error) {
+      expect((error as Error).message).toEqual(
+        "Missing VERIFY_ACCESS_VALUE environment variable"
+      );
+    }
   });
 
-  test("returns the encryption context", () => {
-    const result = generateExpectedContext(userId);
+  test("returns the encryption context", async () => {
+    const result = await generateExpectedContext(userId);
     const expected = {
       origin: awsRegion,
       accountId,
       stage: environment,
       userId,
-      accessCheckValue,
+      accessCheckValue:
+        "a6ece7f2c1c292f31e1cdba0bdeeb4653c25d03e3482394cdfe4e73ae0e42b66",
     };
     expect(result).toEqual(expected);
   });
 });
 
 describe("validateEncryptionContext", () => {
-  let expected: EncryptionContext;
   beforeEach(() => {
     process.env.AWS_REGION = awsRegion;
     process.env.ACCOUNT_ID = accountId;
     process.env.ENVIRONMENT = environment;
     process.env.VERIFY_ACCESS_VALUE = accessCheckValue;
-    expected = generateExpectedContext(userId);
   });
 
-  test("throws an error when the context is empty", () => {
+  test("throws an error when the context is empty", async () => {
+    const expected: EncryptionContext = await generateExpectedContext(userId);
     expect(() => {
       validateEncryptionContext({}, expected);
     }).toThrowError("Encryption context is empty or undefined");
   });
 
-  test("throws an error when there is a mismatch", () => {
+  test("throws an error when there is a mismatch", async () => {
     const wrongContext = {
       origin: awsRegion,
       accountId,
@@ -107,12 +123,14 @@ describe("validateEncryptionContext", () => {
       userId: "wrong-user-id",
       accessCheckValue,
     };
+    const expected: EncryptionContext = await generateExpectedContext(userId);
     expect(() => {
       validateEncryptionContext(wrongContext, expected);
     }).toThrowError("Encryption context mismatch: userId");
   });
 
-  test("doesn't throw an error when context matches", () => {
+  test("doesn't throw an error when context matches", async () => {
+    const expected: EncryptionContext = await generateExpectedContext(userId);
     validateEncryptionContext(expected, expected);
   });
 });
@@ -123,8 +141,6 @@ describe("decryptActivities", () => {
     "arn:aws:kms:eu-west-2:111122223333:key/bc436485-5092-42b8-92a3-0aa8b93536dc";
   const wrappingKey =
     "arn:aws:kms:eu-west-2:111122223333:key/49c5492b-b1bc-42a8-9a5c-b2015e810c1c";
-  const backupWrappingKey =
-    "arn:aws:kms:eu-west-2:111122223333:key/49c5492b-b1bc-42a8-9a5c-b2015e810c1d";
 
   beforeEach(() => {
     encryptedActivities = "an-encrypted-string";
@@ -139,7 +155,8 @@ describe("decryptActivities", () => {
           accountId,
           stage: environment,
           userId,
-          accessCheckValue,
+          accessCheckValue:
+            "a6ece7f2c1c292f31e1cdba0bdeeb4653c25d03e3482394cdfe4e73ae0e42b66",
         } as EncryptionContext,
       } as MessageHeader,
     });
@@ -149,13 +166,7 @@ describe("decryptActivities", () => {
     process.env.ENVIRONMENT = environment;
     process.env.VERIFY_ACCESS_VALUE = accessCheckValue;
 
-    await decryptData(
-      encryptedActivities,
-      userId,
-      generatorKey,
-      wrappingKey,
-      backupWrappingKey
-    );
+    await decryptData(encryptedActivities, userId, generatorKey, wrappingKey);
     expect(buildDecrypt).toHaveBeenCalled();
     expect(buildDecrypt().decrypt).toHaveBeenCalledWith(
       {
@@ -169,13 +180,7 @@ describe("decryptActivities", () => {
   it("should throw an error if something goes wrong when decrypting", () => {
     when(buildDecrypt().decrypt).mockRejectedValue(new Error("A KMS error"));
     expect(async () => {
-      await decryptData(
-        encryptedActivities,
-        userId,
-        generatorKey,
-        wrappingKey,
-        backupWrappingKey
-      );
+      await decryptData(encryptedActivities, userId, generatorKey, wrappingKey);
     }).rejects.toThrowError("A KMS error");
   });
 });

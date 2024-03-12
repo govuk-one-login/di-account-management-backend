@@ -67,7 +67,7 @@ Parameters:
   SusActivityEmailTemplateId:
     Description: The GOV.UK Notify template ID for the suspicious activity report confirmation email
     Type: String
-    Default: 4e07abfb-18cf-49d9-a697-c1e53dc2da6f
+    Default: 0674c6e3-219c-4e3a-b04c-3786bac7f228
 
 Conditions:
   UseCodeSigning:
@@ -233,7 +233,7 @@ Mappings:
       zendeskApiUserSecretArn: arn:aws:secretsmanager:eu-west-2:985326104449:secret:/account-mgmt-backend/zendesk-api-user-key-oPuZZU
       zendeskApiUrlSecretArn: arn:aws:secretsmanager:eu-west-2:985326104449:secret:/account-mgmt-backend/zendesk-api-url-key-nhK90l
       zendeskTicketFormIdSecretArn: arn:aws:secretsmanager:eu-west-2:985326104449:secret:/account-mgmt-backend/zendesk-ticket-form-id-key-QsdIP7
-      notifyApiKeySecretArn: arn:aws:secretsmanager:eu-west-2:985326104449:secret:/account-mgmt-backend/notify-api-key-4P84y7 
+      notifyApiKeySecretArn: arn:aws:secretsmanager:eu-west-2:985326104449:secret:/account-mgmt-backend/notify-api-key-4P84y7
     build:
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
       zendeskGroupIdSecretArn: arn:aws:secretsmanager:eu-west-2:301577035144:secret:/account-mgmt-backend/zendesk-group-id-token-Ve5ojs
@@ -260,7 +260,7 @@ Mappings:
       zendeskApiUserSecretArn: arn:aws:secretsmanager:eu-west-2:666500506359:secret:/account-mgmt-backend/zendesk-api-user-key-oVvUI5
       zendeskApiUrlSecretArn: arn:aws:secretsmanager:eu-west-2:666500506359:secret:/account-mgmt-backend/zendesk-api-url-key-b5ToSY
       zendeskTicketFormIdSecretArn: arn:aws:secretsmanager:eu-west-2:666500506359:secret:/account-mgmt-backend/zendesk-ticket-form-id-key-WNGekL
-      notifyApiKeySecretArn: arn:aws:secretsmanager:eu-west-2:666500506359:secret:/account-mgmt-backend/notify-api-key-nvDui4 
+      notifyApiKeySecretArn: arn:aws:secretsmanager:eu-west-2:666500506359:secret:/account-mgmt-backend/notify-api-key-nvDui4
     production:
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceProductionVariables
       zendeskGroupIdSecretArn: arn:aws:secretsmanager:eu-west-2:026991849909:secret:/account-mgmt-backend/zendesk-group-id-token-mE55Wr

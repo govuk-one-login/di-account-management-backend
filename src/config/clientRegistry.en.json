@@ -102,6 +102,11 @@
       "description": "Training on child development, including advice on supporting child development in your early years setting.",
       "link_text": "Go to your early years child development training account",
       "link_href": "https://child-development-training.education.gov.uk/my-modules"
+    },
+    "KcKmx2g1GH6ersWFvzMi1bhehq4": {
+      "header": "Your GOV.UK One Login",
+      "link_text": "",
+      "link_href": "https://home.account.gov.uk"
     }
   },
   "integration": {
@@ -201,6 +206,11 @@
       "description": "Training on child development, including advice on supporting child development in your early years setting.",
       "link_text": "Go to your early years child development training account",
       "link_href": "https://child-development-training.education.gov.uk/my-modules"
+    },
+    "Y8xi2wDAaRvWYlEkoExOUZbAPaYyBEhB": {
+      "header": "Your GOV.UK One Login",
+      "link_text": "",
+      "link_href": "https://home.integration.account.gov.uk"
     }
   },
   "staging": {
@@ -300,6 +310,11 @@
       "description": "Training on child development, including advice on supporting child development in your early years setting.",
       "link_text": "Go to your early years child development training account",
       "link_href": "https://child-development-training.education.gov.uk/my-modules"
+    },
+    "EMGmY82k-92QSakDl_9keKDFmZY": {
+      "header": "Your GOV.UK One Login",
+      "link_text": "",
+      "link_href": "https://home.staging.account.gov.uk"
     }
   },
   "build": {
@@ -399,6 +414,11 @@
       "description": "Training on child development, including advice on supporting child development in your early years setting.",
       "link_text": "Go to your early years child development training account",
       "link_href": "https://child-development-training.education.gov.uk/my-modules"
+    },
+    "oneLoginHome": {
+      "header": "Your GOV.UK One Login",
+      "link_text": "",
+      "link_href": "https://home.build.account.gov.uk"
     }
   },
   "dev": {
@@ -498,6 +518,11 @@
       "description": "Training on child development, including advice on supporting child development in your early years setting.",
       "link_text": "Go to your early years child development training account",
       "link_href": "https://child-development-training.education.gov.uk/my-modules"
+    },
+    "oneLoginHome": {
+      "header": "Your GOV.UK One Login",
+      "link_text": "",
+      "link_href": "https://home.dev.account.gov.uk"
     }
   },
   "local": {
@@ -597,6 +622,11 @@
       "description": "Training on child development, including advice on supporting child development in your early years setting.",
       "link_text": "Go to your early years child development training account",
       "link_href": "https://child-development-training.education.gov.uk/my-modules"
+    },
+    "oneLoginHome": {
+      "header": "Your GOV.UK One Login",
+      "link_text": "",
+      "link_href": "https://home.dev.account.gov.uk"
     }
   }
 }

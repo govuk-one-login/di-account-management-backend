@@ -96,6 +96,11 @@
       "description": "Hyfforddiant ar ddatblygiad plant, gan gynnwys cyngor ar gefnogi datblygiad plant yn eich lleoliad blynyddoedd cynnar.",
       "link_text": "Ewch i'ch cyfrif hyfforddiant datblygiad plant blynyddoedd cynnar",
       "link_href": "https://child-development-training.education.gov.uk/my-modules"
+    },
+    "KcKmx2g1GH6ersWFvzMi1bhehq4": {
+      "header": "Eich GOV.UK One Login",
+      "link_text": "",
+      "link_href": "https://home.account.gov.uk"
     }
   },
   "integration": {
@@ -195,6 +200,11 @@
       "description": "Hyfforddiant ar ddatblygiad plant, gan gynnwys cyngor ar gefnogi datblygiad plant yn eich lleoliad blynyddoedd cynnar.",
       "link_text": "Ewch i'ch cyfrif hyfforddiant datblygiad plant blynyddoedd cynnar",
       "link_href": "https://child-development-training.education.gov.uk/my-modules"
+    },
+    "Y8xi2wDAaRvWYlEkoExOUZbAPaYyBEhB": {
+      "header": "Eich GOV.UK One Login",
+      "link_text": "",
+      "link_href": "https://home.integration.account.gov.uk"
     }
   },
   "staging": {
@@ -294,6 +304,11 @@
       "description": "Hyfforddiant ar ddatblygiad plant, gan gynnwys cyngor ar gefnogi datblygiad plant yn eich lleoliad blynyddoedd cynnar.",
       "link_text": "Ewch i'ch cyfrif hyfforddiant datblygiad plant blynyddoedd cynnar",
       "link_href": "https://child-development-training.education.gov.uk/my-modules"
+    },
+    "EMGmY82k-92QSakDl_9keKDFmZY": {
+      "header": "Eich GOV.UK One Login",
+      "link_text": "",
+      "link_href": "https://home.staging.account.gov.uk"
     }
   },
   "build": {
@@ -393,8 +408,12 @@
       "description": "Hyfforddiant ar ddatblygiad plant, gan gynnwys cyngor ar gefnogi datblygiad plant yn eich lleoliad blynyddoedd cynnar.",
       "link_text": "Ewch i'ch cyfrif hyfforddiant datblygiad plant blynyddoedd cynnar",
       "link_href": "https://child-development-training.education.gov.uk/my-modules"
+    },
+    "oneLoginHome": {
+      "header": "Eich GOV.UK One Login",
+      "link_text": "",
+      "link_href": "https://home.build.account.gov.uk"
     }
-
   },
   "dev": {
     "gov-uk": {
@@ -493,6 +512,11 @@
       "description": "Hyfforddiant ar ddatblygiad plant, gan gynnwys cyngor ar gefnogi datblygiad plant yn eich lleoliad blynyddoedd cynnar.",
       "link_text": "Ewch i'ch cyfrif hyfforddiant datblygiad plant blynyddoedd cynnar",
       "link_href": "https://child-development-training.education.gov.uk/my-modules"
+    },
+    "oneLoginHome": {
+      "header": "Eich GOV.UK One Login",
+      "link_text": "",
+      "link_href": "https://home.dev.account.gov.uk"
     }
   },
   "local": {
@@ -592,6 +616,11 @@
       "description": "Hyfforddiant ar ddatblygiad plant, gan gynnwys cyngor ar gefnogi datblygiad plant yn eich lleoliad blynyddoedd cynnar.",
       "link_text": "Ewch i'ch cyfrif hyfforddiant datblygiad plant blynyddoedd cynnar",
       "link_href": "https://child-development-training.education.gov.uk/my-modules"
+    },
+    "oneLoginHome": {
+      "header": "Eich GOV.UK One Login",
+      "link_text": "",
+      "link_href": "https://home.dev.account.gov.uk"
     }
   }
 }

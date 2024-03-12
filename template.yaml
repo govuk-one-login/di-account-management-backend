@@ -94,12 +94,6 @@ Conditions:
       - !Equals [!Ref Environment, integration]
       - !Equals [!Ref Environment, production]
 
-  IsNotProduction:
-    Fn::Not: 
-      - Fn::Equals:
-        - !Ref Environment
-        - "production"
-
 Globals:
   Function:
     Environment:
@@ -1705,7 +1699,6 @@ Resources:
   #######################
   FormatActivityLogFunction:
     Type: AWS::Serverless::Function
-    Condition: IsNotProduction
     DependsOn:
       - FormatActivityLogFunctionLogGroup
     Properties:

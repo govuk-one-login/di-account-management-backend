@@ -157,7 +157,7 @@ Mappings:
       KeyArn: "arn:aws:kms:eu-west-2:178023842775:key/6dbe7362-a125-466b-a135-22c98c436f17"
     integration:
       QueueArn: "arn:aws:sqs:eu-west-2:729485541398:self-integration-EC-SQS-Output-Queue-accounts"
-      KeyArn: "arn:aws:kms:eu-west-2:729485541398:key/107fc428-3843-4bd3-9e53-41d2d794e62e"
+      KeyArn: "arn:aws:kms:eu-west-2:729485541398:key/6a4b784e-2f75-4f39-8b27-0fdf2134ca28"
     production:
       QueueArn: "arn:aws:sqs:eu-west-2:451773080033:self-production-EC-SQS-Output-Queue-accounts"
       KeyArn: "arn:aws:kms:eu-west-2:451773080033:key/e95d47b6-613d-4bea-93c9-d400cdfb31ee"

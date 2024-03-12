@@ -15,12 +15,12 @@ import {
   MarkActivityAsReportedInput,
   ReportSuspiciousActivityEvent,
 } from "./common/model";
-import redact from "./common/redact";
 import assert from "node:assert";
 import crypto from "crypto";
 import { COMPONENT_ID, EventNamesEnum } from "./common/constants";
 import { getCurrentTimestamp } from "./common/utils";
 import { decryptData } from "./decrypt-data";
+import redact from "./common/redact";
 
 const dynamoClient = new DynamoDBClient({});
 const dynamoDocClient = DynamoDBDocumentClient.from(dynamoClient);
@@ -65,8 +65,7 @@ export const decryptEventType = async (
   userId: string,
   encrypted: ActivityLogEntry,
   generatorKeyArn: string,
-  wrappingKeyArn: string,
-  backupWrappingKeyArn: string
+  wrappingKeyArn: string
 ): Promise<string> => {
   if (!encrypted) {
     return "";
@@ -75,8 +74,7 @@ export const decryptEventType = async (
     encrypted.event_type,
     userId,
     generatorKeyArn,
-    wrappingKeyArn,
-    backupWrappingKeyArn
+    wrappingKeyArn
   );
 };
 
@@ -114,7 +112,6 @@ export const handler = async (
   const { ACTIVITY_LOG_TABLE_NAME } = process.env;
   const { GENERATOR_KEY_ARN } = process.env;
   const { WRAPPING_KEY_ARN } = process.env;
-  const { BACKUP_WRAPPING_KEY_ARN } = process.env;
   const event_id = `${crypto.randomUUID()}`;
   const timestamps = getCurrentTimestamp();
 
@@ -125,7 +122,6 @@ export const handler = async (
       assert(ACTIVITY_LOG_TABLE_NAME);
       assert(GENERATOR_KEY_ARN);
       assert(WRAPPING_KEY_ARN);
-      assert(BACKUP_WRAPPING_KEY_ARN);
       await markEventAsReported(
         ACTIVITY_LOG_TABLE_NAME,
         activityLog.user_id,
@@ -133,14 +129,21 @@ export const handler = async (
         input.reported_suspicious_time
       );
       activityLog.reported_suspicious = true;
+      activityLog.event_type = await decryptEventType(
+        input.user_id,
+        activityLog,
+        GENERATOR_KEY_ARN,
+        WRAPPING_KEY_ARN
+      );
     } catch (err) {
       console.error(
-        "Error marking event as reported",
+        `Error marking event as reported, error message is: ${
+          (err as Error).message
+        }`,
         redact(JSON.stringify(activityLog), ["user_id"])
       );
       throw new Error(
-        "Error occurred in marking event as reported: " +
-          JSON.stringify(activityLog)
+        "Error occurred in marking event as reported: " + (err as Error).message
       );
     }
   } else {

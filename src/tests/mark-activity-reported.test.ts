@@ -1,5 +1,9 @@
 import "aws-sdk-client-mock-jest";
-import { handler, markEventAsReported } from "../mark-activity-reported";
+import {
+  decryptEventType,
+  handler,
+  markEventAsReported,
+} from "../mark-activity-reported";
 import { mockClient } from "aws-sdk-client-mock";
 import {
   DynamoDBDocumentClient,
@@ -9,7 +13,6 @@ import {
 import {
   queueUrl,
   eventId,
-  indexName,
   tableName,
   userId,
   testSuspiciousActivity,
@@ -61,13 +64,9 @@ describe("handler", () => {
     process.env = { ...OLD_ENV };
     process.env.ACTIVITY_LOG_TABLE_NAME = tableName;
     process.env.DLQ_URL = queueUrl;
-    process.env.INDEX_NAME = indexName;
     process.env.GENERATOR_KEY_ARN = "generator-key";
     process.env.WRAPPING_KEY_ARN = "wrapping-key";
     process.env.BACKUP_WRAPPING_KEY_ARN = "backup-erapping-key";
-    process.env.VERIFY_ACCESS_VALUE = "verify-access-value";
-    process.env.ACCOUNT_ID = "accountId";
-    process.env.ENVIRONMENT = "environment";
 
     dynamoMock.reset();
     dynamoMock.on(QueryCommand).resolves({
@@ -145,5 +144,36 @@ describe("handler", () => {
       "Error marking event as reported"
     );
     expect(errorThrown).toBeTruthy();
+  });
+});
+
+describe("decrypt event type", () => {
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  const generatorKey =
+    "arn:aws:kms:eu-west-2:111122223333:key/bc436485-5092-42b8-92a3-0aa8b93536dc";
+  const wrappingKey =
+    "arn:aws:kms:eu-west-2:111122223333:key/49c5492b-b1bc-42a8-9a5c-b2015e810c1c";
+  (decryptData as jest.Mock).mockImplementation(() => {
+    return "TXMA_EVENT";
+  });
+
+  test("decrypts event type correctly", async () => {
+    const result = await decryptEventType(
+      userId,
+      TEST_ENCRYPTED_ACTIVITY_LOG_ENTRY,
+      generatorKey,
+      wrappingKey
+    );
+    expect(decryptData as jest.Mock).toHaveBeenCalledTimes(1);
+    expect(decryptData as jest.Mock).toHaveBeenCalledWith(
+      TEST_ENCRYPTED_ACTIVITY_LOG_ENTRY.event_type,
+      userId,
+      generatorKey,
+      wrappingKey
+    );
+    expect(result).toEqual("TXMA_EVENT");
   });
 });

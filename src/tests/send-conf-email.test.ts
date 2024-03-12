@@ -32,6 +32,7 @@ describe("formatActivityObjectForEmail", () => {
         event_id: "123",
         reported_suspicious: true,
       },
+      zendesk_ticket_id: "123",
     };
 
     const result = formatActivityObjectForEmail(input);
@@ -41,10 +42,11 @@ describe("formatActivityObjectForEmail", () => {
       personalisation: {
         clientNameEn: "GOV.UK email subscriptions",
         clientNameCy: "Tanysgrifiadau e-byst GOV.UK",
-        dateCy: "29 Medi 1970",
-        dateEn: "29 September 1970",
-        timeCy: "03:30",
-        timeEn: "03:30",
+        dateCy: "26 Chwefror 2024",
+        dateEn: "26 February 2024",
+        ticketId: "123",
+        timeCy: "18:24",
+        timeEn: "18:24",
       },
     });
   });
@@ -95,10 +97,11 @@ describe("sendConfMail", () => {
         personalisation: {
           clientNameEn: "GOV.UK email subscriptions",
           clientNameCy: "Tanysgrifiadau e-byst GOV.UK",
-          dateCy: "29 Medi 1970",
-          dateEn: "29 September 1970",
-          timeCy: "03:30",
-          timeEn: "03:30",
+          dateCy: "26 Chwefror 2024",
+          dateEn: "26 February 2024",
+          ticketId: "123",
+          timeCy: "18:24",
+          timeEn: "18:24",
         },
         reference: "123",
       }

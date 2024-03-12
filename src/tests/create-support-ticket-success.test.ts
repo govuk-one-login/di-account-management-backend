@@ -22,7 +22,7 @@ const dynamoMock = mockClient(DynamoDBDocumentClient);
 describe("Generate zendesk ticket Body", () => {
   test("should generate ticket body successfully using the suspicious activity event", async () => {
     const expected =
-      "<p><strong>Event Name</strong>: TXMA_EVENT</p><p><strong>Event ID</strong>: ab12345a-a12b-3ced-ef12-12a3b4cd5678</p><p><strong>Reported Date and Time</strong>: Fri, 02 Jan 1970 10:17:36 GMT</p><p><strong>Client ID</strong>: gov-uk</p><p><strong>User ID</strong>: qwerty</p><p><strong>Session ID</strong>: 123456789</p>";
+      "<p><strong>Event Name</strong>: TXMA_EVENT</p><p><strong>Event ID</strong>: ab12345a-a12b-3ced-ef12-12a3b4cd5678</p><p><strong>Reported Date and Time</strong>: Thu, 29 Nov 1973 21:33:09 GMT</p><p><strong>Client ID</strong>: gov-uk</p><p><strong>User ID</strong>: qwerty</p><p><strong>Session ID</strong>: 123456789</p>";
     const result = formatCommentBody(testSuspiciousActivityInput);
     expect(result).toEqual(expected);
   });

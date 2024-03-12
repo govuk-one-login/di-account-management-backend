@@ -42,11 +42,9 @@ describe("formatActivityObjectForEmail", () => {
       personalisation: {
         clientNameEn: "GOV.UK email subscriptions",
         clientNameCy: "Tanysgrifiadau e-byst GOV.UK",
-        dateCy: "26 Chwefror 2024",
-        dateEn: "26 February 2024",
+        dateCy: "26 Chwefror 2024 am 18:24",
+        dateEn: "26 February 2024 at 18:24",
         ticketId: "123",
-        timeCy: "18:24",
-        timeEn: "18:24",
       },
     });
   });
@@ -97,11 +95,9 @@ describe("sendConfMail", () => {
         personalisation: {
           clientNameEn: "GOV.UK email subscriptions",
           clientNameCy: "Tanysgrifiadau e-byst GOV.UK",
-          dateCy: "26 Chwefror 2024",
-          dateEn: "26 February 2024",
+          dateCy: "26 Chwefror 2024 am 18:24",
+          dateEn: "26 February 2024 at 18:24",
           ticketId: "123",
-          timeCy: "18:24",
-          timeEn: "18:24",
         },
         reference: "123",
       }

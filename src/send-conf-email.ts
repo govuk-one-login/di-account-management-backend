@@ -32,16 +32,11 @@ export const getClientInfo = (
 
 const formatTimestamp = (timestamp: number, language: string) => {
   const date = new Date(timestamp * 1000);
-  return {
-    date: Intl.DateTimeFormat(language, {
-      dateStyle: "long",
-      timeZone: "Europe/London",
-    }).format(date),
-    time: Intl.DateTimeFormat(language, {
-      timeStyle: "short",
-      timeZone: "Europe/London",
-    }).format(date),
-  };
+  return Intl.DateTimeFormat(language, {
+    timeStyle: "short",
+    dateStyle: "long",
+    timeZone: "Europe/London",
+  }).format(date);
 };
 
 export const formatActivityObjectForEmail = (
@@ -81,10 +76,8 @@ export const formatActivityObjectForEmail = (
     personalisation: {
       clientNameEn: clientEn.header,
       clientNameCy: clientCy.header,
-      dateEn: datetimeEn.date,
-      dateCy: datetimeCy.date,
-      timeEn: datetimeEn.time,
-      timeCy: datetimeCy.time,
+      dateEn: datetimeEn,
+      dateCy: datetimeCy,
       ticketId: event.zendesk_ticket_id,
     },
   };

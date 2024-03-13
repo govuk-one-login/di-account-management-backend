@@ -21,7 +21,10 @@ COPY ./template.yaml ./
 COPY ./src ./src
 COPY report-suspicious-activity-asl.json ./
 
+COPY ./create-resources.sh ./
+RUN chmod +x create-resources.sh
+
 RUN sam build --manifest package.json
 
 ENV AWS_ENDPOINT_URL=http://localstack:4566
-CMD wait-on http://localstack:4566 && samlocal deploy --stack-name account-mgmt-backend --region eu-west-2 --resolve-s3 --parameter-overrides "Environment=local"
+CMD wait-on http://localstack:4566 && ./create-resources.sh

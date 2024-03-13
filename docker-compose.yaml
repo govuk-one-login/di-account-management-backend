@@ -7,8 +7,9 @@ services:
     ports:
       - "4566:4566"
       - "4569:4569"
+      - "6645:6645"
     environment:
-      - services=sqs,sns,iam,s2,lambda,cloudformation
+      - services=sqs,sns,iam,s3,lambda,cloudformation,secretsmanager
       - DEBUG=1
       - AWS_DEFAULT_REGION=eu-west-2
       - AWS_ACCESS_KEY_ID=localstack
@@ -16,10 +17,12 @@ services:
       - DOCKER_HOST=unix:///var/run/docker.sock
       - DATA_DIR=/tmp/localstack/data
     volumes:
-      - ${TEPDIR:-/tmp}/localstack:/var/lib/localstack
+      - ${TEMPDIR:-/tmp}/localstack:/var/lib/localstack
       - /var/run/docker.sock:/var/run/docker.sock
   builder:
     container_name: account-mgmt-backend-code
     build: .
     depends_on:
       - localstack
+    volumes:
+      - ./template.yaml:/app/template.yaml

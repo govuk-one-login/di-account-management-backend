@@ -83,15 +83,19 @@ Conditions:
           - !Ref PermissionsBoundary
           - "none"
 
-  IsNotDevelopment:
+  IsNotLocal:
     Fn::Not:
-      - Fn::Equals:
-          - !Ref Environment
-          - "dev"
+    - !Equals [!Ref Environment, local]
+    
+  IsNotDevelopment: !Or
+    Fn::Not: !Or
+    - !Equals [!Ref Environment, dev]
+    - !Equals [!Ref Environment, local]
 
   UseInternalEvents: !Or
     - !Equals [!Ref Environment, dev]
     - !Equals [!Ref Environment, build]
+    - !Equals [!Ref Environment, local]
 
   ExportLogsToSplunk:
     Fn::Or:
@@ -147,6 +151,9 @@ Globals:
 
 Mappings:
   InputQueue:
+    local:
+      QueueArn: ""
+      KeyArn: ""
     dev:
       QueueArn: ""
       KeyArn: ""
@@ -164,6 +171,8 @@ Mappings:
       KeyArn: "arn:aws:kms:eu-west-2:451773080033:key/e95d47b6-613d-4bea-93c9-d400cdfb31ee"
 
   IPVCoreAccounts:
+    local:
+      AccountNumber: ""
     dev:
       AccountNumber: ""
     build:
@@ -178,6 +187,8 @@ Mappings:
   EnvironmentVariables:
     ### These environment variables are referenced further down the file.
     ### Please ensure that any variables defined for an environment are defined for _all_ environments.
+    local:
+      GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.integration.publishing.service.gov.uk"
     dev:
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.integration.publishing.service.gov.uk"
     build:
@@ -232,6 +243,15 @@ Mappings:
       AccountNumber: "451773080033"
 
   EnvironmentConfiguration:
+    local:
+      dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:000000000000:secret:dynatrace
+      zendeskGroupIdSecretArn: arn:aws:secretsmanager:eu-west-2:000000000000:secret:zendesk-group-id
+      zendeskTagsSecretArn: arn:aws:secretsmanager:eu-west-2:000000000000:secret:zendesk-tags
+      zendeskApiTokenSecretArn: arn:aws:secretsmanager:eu-west-2:000000000000:secret:zendesk-api-token
+      zendeskApiUserSecretArn: arn:aws:secretsmanager:eu-west-2:000000000000:secret:zendesk-api-user-key
+      zendeskApiUrlSecretArn: arn:aws:secretsmanager:eu-west-2:000000000000:secret:zendesk-api-url-key
+      zendeskTicketFormIdSecretArn: arn:aws:secretsmanager:eu-west-2:000000000000:secret:zendesk-ticket-form-id-key
+      notifyApiKeySecretArn: arn:aws:secretsmanager:eu-west-2:000000000000:secret:notify-api-key
     dev:
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
       zendeskGroupIdSecretArn: arn:aws:secretsmanager:eu-west-2:985326104449:secret:/account-mgmt-backend/zendesk-group-id-token-1O5AvL
@@ -3140,6 +3160,7 @@ Resources:
       TargetKeyId: !GetAtt SecretsKmsKey.Arn
 
   StorageVerificationSecret:
+    Condition: IsNotLocal
     Type: AWS::SecretsManager::Secret
     DependsOn: SecretsKmsKeyAlias
     Properties:
@@ -3169,6 +3190,7 @@ Resources:
           Value: !Sub "${AWS::StackName}-GeneratorKey"
 
   StorageSecretResourcePolicy:
+    Condition: IsNotLocal
     Type: AWS::SecretsManager::ResourcePolicy
     Properties:
       BlockPublicPolicy: false

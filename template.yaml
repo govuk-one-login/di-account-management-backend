@@ -23,6 +23,7 @@ Parameters:
     Description: "The environment type"
     Type: "String"
     AllowedValues:
+      - "local"
       - "dev"
       - "build"
       - "staging"
@@ -189,6 +190,8 @@ Mappings:
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.publishing.service.gov.uk"
 
   CredentialStoreAccounts:
+    local:
+      AccountNumber: "000000000000"
     dev:
       AccountNumber: "013758878511"
     build:
@@ -201,6 +204,8 @@ Mappings:
       AccountNumber: "499563136613"
 
   AccountInterventionsService:
+    local:
+      AccountNumber: "000000000000"
     dev:
       AccountNumber: "013758878511"
     build:
@@ -213,6 +218,8 @@ Mappings:
       AccountNumber: "324281879537"
 
   TxmaAccounts:
+    local:
+      AccountNumber: "000000000000"
     dev:
       AccountNumber: "248098332657"
     build:

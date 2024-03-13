@@ -64,10 +64,6 @@ Parameters:
     Description: Value for the System Tag
     Type: String
     Default: Accounts
-  SusActivityEmailTemplateId:
-    Description: The GOV.UK Notify template ID for the suspicious activity report confirmation email
-    Type: String
-    Default: 0674c6e3-219c-4e3a-b04c-3786bac7f228
 
 Conditions:
   UseCodeSigning:
@@ -179,14 +175,19 @@ Mappings:
     ### Please ensure that any variables defined for an environment are defined for _all_ environments.
     dev:
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.integration.publishing.service.gov.uk"
+      REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "2b3170b5-159e-457f-a282-f30f6006dc32"
     build:
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.staging.publishing.service.gov.uk"
+      REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "2b3170b5-159e-457f-a282-f30f6006dc32"
     staging:
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.staging.publishing.service.gov.uk"
+      REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "2b3170b5-159e-457f-a282-f30f6006dc32"
     integration:
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.integration.publishing.service.gov.uk"
+      REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "0674c6e3-219c-4e3a-b04c-3786bac7f228"
     production:
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.publishing.service.gov.uk"
+      REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "0674c6e3-219c-4e3a-b04c-3786bac7f228"
 
   CredentialStoreAccounts:
     dev:
@@ -2294,7 +2295,7 @@ Resources:
       Environment:
         Variables:
           NOTIFY_API_KEY: /account-mgmt-backend/notify-api-key
-          TEMPLATE_ID: !Ref SusActivityEmailTemplateId
+          TEMPLATE_ID: !FindInMap [ EnvironmentVariables, !Ref Environment, REPORTSUSPISCIOUSACTIVITYTEMPLATEID ]
           ENVIRONMENT_NAME: !Ref Environment
     Metadata:
       BuildMethod: esbuild

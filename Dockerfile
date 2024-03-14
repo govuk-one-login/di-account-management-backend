@@ -21,10 +21,10 @@ COPY ./template.yaml ./
 COPY ./src ./src
 COPY report-suspicious-activity-asl.json ./
 
+RUN sam build --manifest package.json
+
 COPY ./create-resources.sh ./
 RUN chmod +x create-resources.sh
-
-RUN sam build --manifest package.json
 
 ENV AWS_ENDPOINT_URL=http://localstack:4566
 CMD wait-on http://localstack:4566 && ./create-resources.sh

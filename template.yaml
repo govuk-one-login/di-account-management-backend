@@ -88,7 +88,7 @@ Conditions:
     - !Equals [!Ref Environment, local]
     
   IsNotDevelopment: !Or
-    Fn::Not: !Or
+    Fn::Not: !And
     - !Equals [!Ref Environment, dev]
     - !Equals [!Ref Environment, local]
 

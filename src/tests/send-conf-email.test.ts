@@ -1,6 +1,7 @@
 import { formatActivityObjectForEmail, sendConfMail } from "../send-conf-email";
 import { NotifyClient } from "notifications-node-client";
 import { ReportSuspiciousActivityEvent } from "../common/model";
+import { HOME_CLIENT_ID_TEST } from "../common/constants";
 
 jest.mock("notifications-node-client");
 jest.mock("@aws-lambda-powertools/parameters/secrets");
@@ -10,10 +11,8 @@ describe("formatActivityObjectForEmail", () => {
     process.env.ENVIRONMENT_NAME = undefined;
   });
 
-  test("should return formatted activity object for email", () => {
-    process.env.ENVIRONMENT_NAME = "local";
-
-    const input: ReportSuspiciousActivityEvent = {
+  const getInput = () => {
+    return {
       event_id: "522c5ab4-7e66-4b2a-8f5c-4d31dc4e93e6",
       event_type: "HOME_REPORT_SUSPICIOUS_ACTIVITY",
       persistent_session_id: "persistent_session_id",
@@ -34,8 +33,12 @@ describe("formatActivityObjectForEmail", () => {
       },
       zendesk_ticket_id: "123",
     };
+  };
 
-    const result = formatActivityObjectForEmail(input);
+  test("should return formatted activity object for email", () => {
+    process.env.ENVIRONMENT_NAME = "local";
+
+    const result = formatActivityObjectForEmail(getInput());
 
     expect(result).toEqual({
       email: "test@example.com",
@@ -45,6 +48,28 @@ describe("formatActivityObjectForEmail", () => {
         dateCy: "15 Mawrth 2024 am 11:08 yb",
         dateEn: "15 March 2024 at 11:08 am",
         ticketId: "123",
+        showHomeHintText: false,
+      },
+    });
+  });
+
+  test("should include description for One Login Home events", () => {
+    process.env.ENVIRONMENT_NAME = "local";
+
+    const input = getInput();
+    input.suspicious_activity.client_id = HOME_CLIENT_ID_TEST;
+
+    const result = formatActivityObjectForEmail(input);
+
+    expect(result).toEqual({
+      email: "test@example.com",
+      personalisation: {
+        clientNameEn: "Your GOV.UK One Login",
+        clientNameCy: "Eich GOV.UK One Login",
+        dateCy: "15 Mawrth 2024 am 11:08 yb",
+        dateEn: "15 March 2024 at 11:08 am",
+        ticketId: "123",
+        showHomeHintText: true,
       },
     });
   });
@@ -98,6 +123,7 @@ describe("sendConfMail", () => {
           dateCy: "15 Mawrth 2024 am 11:08 yb",
           dateEn: "15 March 2024 at 11:08 am",
           ticketId: "123",
+          showHomeHintText: false,
         },
         reference: "123",
       }

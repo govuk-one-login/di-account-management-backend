@@ -163,7 +163,7 @@ export const handler = async (
     email_address: input.email,
     component_id: COMPONENT_ID,
     timestamp: activityLog.timestamp,
-    event_timestamp_ms: activityLog.timestamp,
+    event_timestamp_ms: activityLog.timestamp * 1000,
     event_timestamp_ms_formatted: new Date(activityLog.timestamp).toISOString(),
     suspicious_activity: activityLog,
   };

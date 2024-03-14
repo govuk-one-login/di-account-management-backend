@@ -18,6 +18,7 @@ import {
   testSuspiciousActivity,
   TEST_ENCRYPTED_ACTIVITY_LOG_ENTRY,
   timestamp,
+  activity_timestamp,
 } from "./testFixtures";
 import { COMPONENT_ID, EventNamesEnum } from "../common/constants";
 import { decryptData } from "../decrypt-data";
@@ -119,6 +120,7 @@ describe("handler", () => {
     expect(response.email_address).toEqual(testSuspiciousActivity.email);
     expect(response.suspicious_activity.reported_suspicious).toBe(true);
     expect(response.timestamp).not.toBeNull();
+    expect(response.timestamp).toEqual(activity_timestamp);
     expect(response.timestamp_formatted).not.toBeNull();
     expect(response.event_timestamp_ms_formatted).not.toBeNull();
     expect(response.event_timestamp_ms).not.toBeNull();

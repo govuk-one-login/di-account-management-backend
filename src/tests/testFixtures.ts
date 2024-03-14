@@ -21,6 +21,8 @@ export const eventId = "ab12345a-a12b-3ced-ef12-12a3b4cd5678";
 export const eventType = "TXMA_EVENT";
 export const sessionId = "123456789";
 export const userId = "qwerty";
+export const Mon_Mar_11_11_06_16_GMT_2024 = 1710155176;
+export const activity_timestamp = Mon_Mar_11_11_06_16_GMT_2024;
 export const timestamp = 123456789;
 export const clientId = "client-id-value";
 export const reportedSuspicious = false;
@@ -158,7 +160,7 @@ export const TEST_ENCRYPTED_ACTIVITY_LOG_ENTRY: EncryptedActivityLogEntry = {
   event_type: eventType,
   session_id: sessionId,
   user_id: userId,
-  timestamp,
+  timestamp: activity_timestamp,
   client_id: clientId,
   event_id: eventId,
   reported_suspicious: reportedSuspicious,
@@ -166,7 +168,7 @@ export const TEST_ENCRYPTED_ACTIVITY_LOG_ENTRY: EncryptedActivityLogEntry = {
 
 export const MUTABLE_TXMA_EVENT: TxmaEvent = {
   event_id: txmaEventId,
-  timestamp,
+  timestamp: activity_timestamp,
   timestamp_formatted: "x",
   event_name: authCodeIssuedEventType,
   client_id: clientId,
@@ -179,7 +181,7 @@ export const MUTABLE_ACTIVITY_LOG_ENTRY: ActivityLogEntry = {
   session_id: sessionId,
   user_id: userId,
   client_id: clientId,
-  timestamp,
+  timestamp: activity_timestamp,
   reported_suspicious: false,
 };
 
@@ -209,7 +211,7 @@ export const generateDynamoSteamRecord = (
           },
           client_id: { S: clientId },
           txma: { M: { configVersion: { S: "2.2.1" } } },
-          timestamp: { N: `${timestamp}` },
+          timestamp: { N: `${activity_timestamp}` },
         },
       },
     },

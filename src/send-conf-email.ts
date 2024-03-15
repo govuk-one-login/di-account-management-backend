@@ -61,10 +61,16 @@ export const formatActivityObjectForEmail = (
     event.suspicious_activity.client_id
   );
 
-  assert(event.timestamp, "Timestamp not present in Suspicious Activity Event");
+  assert(
+    event.suspicious_activity.timestamp,
+    "Timestamp not present in Suspicious Activity Event"
+  );
 
-  const datetimeEn = formatTimestamp(event.timestamp, "en-GB");
-  const datetimeCy = formatTimestamp(event.timestamp, "cy");
+  const suspicious_activity_timestamp: number =
+    event.suspicious_activity.timestamp;
+
+  const datetimeEn = formatTimestamp(suspicious_activity_timestamp, "en-GB");
+  const datetimeCy = formatTimestamp(suspicious_activity_timestamp, "cy");
 
   assert(
     event.zendesk_ticket_id,
@@ -99,7 +105,7 @@ export const sendConfMail = async (
 };
 
 export const handler = async (
-  event: ReportSuspiciousActivityEvent
+  input: ReportSuspiciousActivityEvent
 ): Promise<ReportSuspiciousActivityEvent> => {
   const { NOTIFY_API_KEY, TEMPLATE_ID } = process.env;
   try {
@@ -114,12 +120,12 @@ export const handler = async (
     const response = await sendConfMail(
       notifyApiKey as string,
       TEMPLATE_ID,
-      event
+      input
     );
     if (response?.data?.id) {
-      event.notify_message_id = response.data.id;
+      input.notify_message_id = response.data.id;
     }
-    return event;
+    return input;
   } catch (err) {
     console.error(`Error sending email for event`, err);
     throw new Error(`Error sending email for event: ${JSON.stringify(err)}`);

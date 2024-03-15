@@ -18,6 +18,7 @@ import {
 import assert from "node:assert";
 import crypto from "crypto";
 import { COMPONENT_ID, EventNamesEnum } from "./common/constants";
+import { getCurrentTimestamp } from "./common/utils";
 import { decryptData } from "./decrypt-data";
 import redact from "./common/redact";
 
@@ -112,6 +113,7 @@ export const handler = async (
   const { GENERATOR_KEY_ARN } = process.env;
   const { WRAPPING_KEY_ARN } = process.env;
   const event_id = `${crypto.randomUUID()}`;
+  const timestamps = getCurrentTimestamp();
 
   const activityLog = await queryActivityLog(input.user_id, input.event_id);
 
@@ -162,9 +164,9 @@ export const handler = async (
     event_type: EventNamesEnum.HOME_REPORT_SUSPICIOUS_ACTIVITY,
     email_address: input.email,
     component_id: COMPONENT_ID,
-    timestamp: activityLog.timestamp,
-    event_timestamp_ms: activityLog.timestamp * 1000,
-    event_timestamp_ms_formatted: new Date(activityLog.timestamp).toISOString(),
+    timestamp: timestamps.seconds,
+    event_timestamp_ms: timestamps.milliseconds,
+    event_timestamp_ms_formatted: timestamps.isoString,
     suspicious_activity: activityLog,
   };
 };

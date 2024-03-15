@@ -98,7 +98,7 @@ export async function sendAuditEvent(
 }
 
 export const handler = async (
-  event: ReportSuspiciousActivityEvent
+  input: ReportSuspiciousActivityEvent
 ): Promise<void> => {
   const { EVENT_NAME, TXMA_QUEUE_URL } = process.env;
   try {
@@ -108,14 +108,14 @@ export const handler = async (
       );
     }
 
-    if (!validateObject(event, VALIDATOR_RULES_MAP.get(EVENT_NAME))) {
+    if (!validateObject(input, VALIDATOR_RULES_MAP.get(EVENT_NAME))) {
       throw new Error(
-        `Received Event: ${JSON.stringify(event)} failed validation.`
+        `Received Event: ${JSON.stringify(input)} failed validation.`
       );
     }
-    event.component_id = COMPONENT_ID;
+    input.component_id = COMPONENT_ID;
     const txMAEvent = transformToTxMAEvent(
-      event,
+      input,
       EventNamesEnum.HOME_REPORT_SUSPICIOUS_ACTIVITY
     );
 
@@ -126,7 +126,7 @@ export const handler = async (
       )
     ) {
       throw new Error(
-        `TXMA Event: ${JSON.stringify(event)} failed validation.`
+        `TXMA Event: ${JSON.stringify(input)} failed validation.`
       );
     }
     await sendAuditEvent(txMAEvent, TXMA_QUEUE_URL);

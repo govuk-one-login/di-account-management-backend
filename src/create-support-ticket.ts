@@ -26,6 +26,10 @@ export const formatCommentBody = (
 ): string => {
   const htmlBody = [];
 
+  if (event.email_address) {
+    htmlBody.push(`<p><strong>Requester</strong>: ${event.email_address}</p>`);
+  }
+
   htmlBody.push(
     `<p><strong>Event Name</strong>: ${event.suspicious_activity.event_type}</p>`
   );
@@ -184,7 +188,6 @@ export const handler = async (
           html_body: formatCommentBody(input),
         },
         group_id: Number(zendeskGroupId),
-        requester: { email: input.email_address, name: input.email_address },
         tags,
         ticket_form_id: Number(zendeskTicketFormId),
       },

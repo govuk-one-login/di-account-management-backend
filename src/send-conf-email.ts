@@ -135,7 +135,40 @@ export const handler = async (
     }
     return input;
   } catch (err) {
-    console.error(`Error sending email for event`, err);
-    throw new Error(`Error sending email for event: ${JSON.stringify(err)}`);
+    notifyErrorHandler(err as IError, "sending email for event");
+    // redundant but TS keeps complaining about notifyErrorHandler return
+    throw err;
   }
+};
+
+interface IErrorDetails {
+  error: string;
+  message: string;
+}
+
+interface IErrorResponse {
+  status_code: 400 | 403 | 429 | 500;
+  errors: IErrorDetails[];
+}
+
+export interface IError {
+  response: { data: IErrorResponse };
+}
+
+const notifyErrorHandler = (err: IError, context: string): never => {
+  if (err.response && err.response.data) {
+    const validStatusCodes: IErrorResponse["status_code"][] = [
+      400, 403, 429, 500,
+    ];
+    if (validStatusCodes.includes(err.response.data.status_code)) {
+      throw new Error(
+        `Error ${context}: ${JSON.stringify(err.response.data.errors)}`
+      );
+    } else {
+      const sanitisedError = { ...err, response: { ...err.response } };
+      delete (sanitisedError.response as Partial<typeof err.response>).data;
+      throw new Error(`Error ${context}: ${JSON.stringify(sanitisedError)}`);
+    }
+  }
+  throw new Error(`Error ${context}`);
 };

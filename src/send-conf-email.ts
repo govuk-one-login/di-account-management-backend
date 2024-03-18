@@ -4,6 +4,7 @@ import {
   ReportSuspiciousActivityEvent,
   RPClient,
 } from "./common/model";
+import { homeClientIds } from "./common/constants";
 import assert from "node:assert/strict";
 import { NotifyClient } from "notifications-node-client";
 import { getSecret } from "@aws-lambda-powertools/parameters/secrets";
@@ -89,6 +90,9 @@ export const formatActivityObjectForEmail = (
       dateEn: datetimeEn,
       dateCy: datetimeCy,
       ticketId: event.zendesk_ticket_id,
+      showHomeHintText: homeClientIds.includes(
+        event.suspicious_activity.client_id
+      ),
     },
   };
 };

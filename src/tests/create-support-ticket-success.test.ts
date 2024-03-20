@@ -67,6 +67,10 @@ describe("handler", () => {
     mockAxios.onAny().reply(201, expectedBody);
     const response = await handler(testSuspiciousActivityInput);
     expect(mockAxios.history.post.length).toBe(1);
+    const authHeader =
+      mockAxios?.history?.post[0]?.headers?.Authorization.split("Basic")[1];
+    const bufferedString = Buffer.from(authHeader, "base64").toString("utf-8");
+    expect(bufferedString).toEqual("1111111/token:1111111");
     expect(dynamoMock.commandCalls(UpdateCommand).length).toEqual(1);
     expect(dynamoMock).toHaveReceivedCommandWith(UpdateCommand, {
       TableName: tableName,

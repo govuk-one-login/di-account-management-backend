@@ -87,7 +87,7 @@ export async function createTicket(
   apiUsername: string,
   apiToken: string
 ): Promise<AxiosResponse> {
-  const token = `${apiUsername}:${apiToken}`;
+  const token = `${apiUsername}/token:${apiToken}`;
   const instance = axios.create({
     baseURL: apiUrl,
     headers: {

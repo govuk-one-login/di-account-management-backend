@@ -102,7 +102,7 @@ export async function createTicket(
     throw new Error(
       `${(error as HttpError).response.status} ${
         (error as HttpError).response.statusText
-      } - creating ticket: ${JSON.stringify(ticket)}`
+      }}`
     );
   }
 }

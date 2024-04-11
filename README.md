@@ -20,6 +20,16 @@ We transpile and package the Lambda functions using `sam build`. This needs `esb
 npm install -g esbuild
 ```
 
+### Pre-commit
+
+This repository uses [pre-commit](https://pre-commit.com/) to run linting on all staged files before they're committed.
+Install & setup pre-commit by running:
+
+```bash
+pip install pre-commit
+pre-commit install
+```
+
 ## Testing
 
 Each Lambda function is a separate NPM application and has its own unit tests.
@@ -58,9 +68,11 @@ gds aws di-account-dev -- aws sqs send-message \
 ## Sending support ticket for reported suspicious activity
 
 ### Summary
+
 - When a suspicious activity is added to the SNS topic, this create-support-ticket lambda is triggered, it creates a Zendesk Ticket using the key value pair of the event body.
 
 ### What the Lambda does
+
 - Ensure all environment variables required to successfully connect to, create ticket and send to Zendesk are provided
 - Validates the fields in the received event
 - Retrieves the values for the environment variable keys in AWS Secrets

@@ -204,6 +204,7 @@ export interface ReportSuspiciousActivityEvent {
   event_timestamp_ms_formatted?: string;
   suspicious_activity: ActivityLogEntry;
   component_id?: string;
+  device_information?: string;
 }
 
 export interface Personalisation {

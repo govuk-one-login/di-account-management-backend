@@ -1,5 +1,5 @@
 import { SNSEvent } from "aws-lambda";
-import { MarkActivityAsReportedInput } from "./common/model";
+import { ReportSuspiciousActivityStepInput } from "./common/model";
 import { callAsyncStepFunction } from "./common/call-async-step-function";
 import {
   SendMessageCommand,
@@ -17,7 +17,7 @@ export const handler = async (event: SNSEvent): Promise<void> => {
             "Error Occurred - Required environment variables to trigger report suspicious activity steps are not provided"
           );
         }
-        const receivedEvent: MarkActivityAsReportedInput = JSON.parse(
+        const receivedEvent: ReportSuspiciousActivityStepInput = JSON.parse(
           record.Sns.Message
         );
         if (

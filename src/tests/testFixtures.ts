@@ -1,7 +1,7 @@
 import {
   ActivityLogEntry,
   EncryptedActivityLogEntry,
-  MarkActivityAsReportedInput,
+  ReportSuspiciousActivityStepInput,
   ReportSuspiciousActivityEvent,
   TxmaEvent,
   UserData,
@@ -274,7 +274,7 @@ export const TEST_SQS_EVENT_WITH_USER_SERVICES: SQSEvent = {
   ],
 };
 
-export const testSuspiciousActivity: MarkActivityAsReportedInput = {
+export const testSuspiciousActivity: ReportSuspiciousActivityStepInput = {
   user_id: userId,
   email: "email",
   event_id: eventId,

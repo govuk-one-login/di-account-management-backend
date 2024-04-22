@@ -181,13 +181,14 @@ export type Environment =
 type ClientRegistryEnvronment = Record<string, RPClient>;
 export type ClientRegistry = Record<Environment, ClientRegistryEnvronment>;
 
-export interface MarkActivityAsReportedInput {
+export interface ReportSuspiciousActivityStepInput {
   user_id: string;
   email: string;
   event_id: string;
   persistent_session_id: string;
   session_id: string;
   reported_suspicious_time: number;
+  device_information?: string;
 }
 
 export interface ReportSuspiciousActivityEvent {

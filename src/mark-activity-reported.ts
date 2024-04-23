@@ -12,7 +12,7 @@ import {
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import {
   ActivityLogEntry,
-  MarkActivityAsReportedInput,
+  ReportSuspiciousActivityStepInput,
   ReportSuspiciousActivityEvent,
 } from "./common/model";
 import assert from "node:assert";
@@ -107,7 +107,7 @@ export const queryActivityLog = async (
 };
 
 export const handler = async (
-  input: MarkActivityAsReportedInput
+  input: ReportSuspiciousActivityStepInput
 ): Promise<ReportSuspiciousActivityEvent> => {
   const { ACTIVITY_LOG_TABLE_NAME } = process.env;
   const { GENERATOR_KEY_ARN } = process.env;
@@ -157,7 +157,7 @@ export const handler = async (
     );
   }
 
-  return {
+  const reportedEvent: ReportSuspiciousActivityEvent = {
     persistent_session_id: input.persistent_session_id,
     session_id: input.session_id,
     event_id,
@@ -169,4 +169,8 @@ export const handler = async (
     event_timestamp_ms_formatted: timestamps.isoString,
     suspicious_activity: activityLog,
   };
+  if (input.device_information) {
+    reportedEvent.device_information = input.device_information;
+  }
+  return reportedEvent;
 };

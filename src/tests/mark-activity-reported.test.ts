@@ -125,9 +125,32 @@ describe("handler", () => {
     expect(response.notify_message_id).toBeUndefined();
     expect(response.zendesk_ticket_id).toBeUndefined();
     expect(response.component_id).toEqual(COMPONENT_ID);
+    expect(response.device_information).toBeUndefined();
     expect(response.event_type).toEqual(
       EventNamesEnum.HOME_REPORT_SUSPICIOUS_ACTIVITY
     );
+  });
+
+  test("the handler creates correct output for next step function includes device_info", async () => {
+    const encodedDeviceInfo = "dsadddasa";
+    testSuspiciousActivity.device_information = encodedDeviceInfo;
+    const response = await handler(testSuspiciousActivity);
+    expect(dynamoMock.commandCalls(UpdateCommand).length).toEqual(1);
+    expect(response.event_id).not.toBeNull();
+    expect(response.email_address).toEqual(testSuspiciousActivity.email);
+    expect(response.suspicious_activity.reported_suspicious).toBe(true);
+    expect(response.timestamp).not.toBeNull();
+    expect(response.timestamp_formatted).not.toBeNull();
+    expect(response.event_timestamp_ms_formatted).not.toBeNull();
+    expect(response.event_timestamp_ms).not.toBeNull();
+    expect(response.notify_message_id).toBeUndefined();
+    expect(response.zendesk_ticket_id).toBeUndefined();
+    expect(response.component_id).toEqual(COMPONENT_ID);
+    expect(response.event_type).toEqual(
+      EventNamesEnum.HOME_REPORT_SUSPICIOUS_ACTIVITY
+    );
+    expect(response.device_information).toEqual(encodedDeviceInfo);
+    testSuspiciousActivity.device_information = undefined;
   });
 
   test("the handler log and throw an error", async () => {

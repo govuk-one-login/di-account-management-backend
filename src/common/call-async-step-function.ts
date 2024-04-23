@@ -1,4 +1,4 @@
-import type { MarkActivityAsReportedInput } from "./model";
+import type { ReportSuspiciousActivityStepInput } from "./model";
 import {
   SFNClient,
   StartExecutionCommand,
@@ -8,7 +8,7 @@ import {
 
 export async function callAsyncStepFunction(
   stateMachineArn: string,
-  input: MarkActivityAsReportedInput
+  input: ReportSuspiciousActivityStepInput
 ): Promise<string> {
   let response: StartExecutionOutput;
   try {

@@ -102,6 +102,12 @@
       "description": "Mae hyn yn cynnwys 'Diogelwch' a 'Eich gwasanaethau'",
       "link_text": "",
       "link_href": "https://home.account.gov.uk"
+    },
+    "9uEx86ZHEp8ycgdHNqC8VK87E1A": {
+      "header": "Dod o hyd a defnyddio API gan yr Adran Addysg",
+      "description": "Darganfyddwch a defnyddiwch API yr Adran Addysg a'i defnyddio i gysylltu â'u gwasanaethau digidol.",
+      "link_text": "Ewch i'ch cyfrif DfE dod o hyd i a defnyddio API",
+      "link_href": "https://beta-find-and-use-an-api.education.gov.uk/identity/signin"
     }
   },
   "integration": {
@@ -207,6 +213,12 @@
       "description": "Mae hyn yn cynnwys 'Diogelwch' a 'Eich gwasanaethau'",
       "link_text": "",
       "link_href": "https://home.integration.account.gov.uk"
+    },
+    "9uEx86ZHEp8ycgdHNqC8VK87E1A": {
+      "header": "Dod o hyd a defnyddio API gan yr Adran Addysg",
+      "description": "Darganfyddwch a defnyddiwch API yr Adran Addysg a'i defnyddio i gysylltu â'u gwasanaethau digidol.",
+      "link_text": "Ewch i'ch cyfrif DfE dod o hyd i a defnyddio API",
+      "link_href": "https://beta-find-and-use-an-api.education.gov.uk/identity/signin"
     }
   },
   "staging": {
@@ -312,6 +324,12 @@
       "description": "Mae hyn yn cynnwys 'Diogelwch' a 'Eich gwasanaethau'",
       "link_text": "",
       "link_href": "https://home.staging.account.gov.uk"
+    },
+    "dfeFindAndUseAnApi": {
+      "header": "Dod o hyd a defnyddio API gan yr Adran Addysg",
+      "description": "Darganfyddwch a defnyddiwch API yr Adran Addysg a'i defnyddio i gysylltu â'u gwasanaethau digidol.",
+      "link_text": "Ewch i'ch cyfrif DfE dod o hyd i a defnyddio API",
+      "link_href": "https://beta-find-and-use-an-api.education.gov.uk/identity/signin"
     }
   },
   "build": {
@@ -417,6 +435,12 @@
       "description": "Mae hyn yn cynnwys 'Diogelwch' a 'Eich gwasanaethau'",
       "link_text": "",
       "link_href": "https://home.build.account.gov.uk"
+    },
+    "dfeFindAndUseAnApi": {
+      "header": "Dod o hyd a defnyddio API gan yr Adran Addysg",
+      "description": "Darganfyddwch a defnyddiwch API yr Adran Addysg a'i defnyddio i gysylltu â'u gwasanaethau digidol.",
+      "link_text": "Ewch i'ch cyfrif DfE dod o hyd i a defnyddio API",
+      "link_href": "https://beta-find-and-use-an-api.education.gov.uk/identity/signin"
     }
   },
   "dev": {
@@ -522,6 +546,12 @@
       "description": "Mae hyn yn cynnwys 'Diogelwch' a 'Eich gwasanaethau'",
       "link_text": "",
       "link_href": "https://home.dev.account.gov.uk"
+    },
+    "dfeFindAndUseAnApi": {
+      "header": "Dod o hyd a defnyddio API gan yr Adran Addysg",
+      "description": "Darganfyddwch a defnyddiwch API yr Adran Addysg a'i defnyddio i gysylltu â'u gwasanaethau digidol.",
+      "link_text": "Ewch i'ch cyfrif DfE dod o hyd i a defnyddio API",
+      "link_href": "https://beta-find-and-use-an-api.education.gov.uk/identity/signin"
     }
   },
   "local": {
@@ -627,6 +657,12 @@
       "description": "Mae hyn yn cynnwys 'Diogelwch' a 'Eich gwasanaethau'",
       "link_text": "",
       "link_href": "https://home.dev.account.gov.uk"
+    },
+    "dfeFindAndUseAnApi": {
+      "header": "Dod o hyd a defnyddio API gan yr Adran Addysg",
+      "description": "Darganfyddwch a defnyddiwch API yr Adran Addysg a'i defnyddio i gysylltu â'u gwasanaethau digidol.",
+      "link_text": "Ewch i'ch cyfrif DfE dod o hyd i a defnyddio API",
+      "link_href": "https://beta-find-and-use-an-api.education.gov.uk/identity/signin"
     }
   }
 }

@@ -119,7 +119,7 @@
       "header": "Plan your future",
       "description": "Access your appointments and information about your probation requirements.",
       "link_text": "Go to your Plan your future account",
-      "link_href": "https://plan-your-future.gov.uk/dashboard"
+      "link_href": "https://plan-your-future.service.justice.gov.uk/otp"
     }
   },
   "integration": {
@@ -236,7 +236,7 @@
       "header": "Plan your future",
       "description": "Access your appointments and information about your probation requirements.",
       "link_text": "Go to your Plan your future account",
-      "link_href": "https://plan-your-future.gov.uk/dashboard"
+      "link_href": "https://plan-your-future.service.justice.gov.uk/otp"
     }
   },
   "staging": {
@@ -353,7 +353,7 @@
       "header": "Plan your future",
       "description": "Access your appointments and information about your probation requirements.",
       "link_text": "Go to your Plan your future account",
-      "link_href": "https://plan-your-future.gov.uk/dashboard"
+      "link_href": "https://plan-your-future.service.justice.gov.uk/otp"
     }
   },
   "build": {
@@ -470,7 +470,7 @@
       "header": "Plan your future",
       "description": "Access your appointments and information about your probation requirements.",
       "link_text": "Go to your Plan your future account",
-      "link_href": "https://plan-your-future.gov.uk/dashboard"
+      "link_href": "https://plan-your-future.service.justice.gov.uk/otp"
     }
   },
   "dev": {
@@ -587,7 +587,7 @@
       "header": "Plan your future",
       "description": "Access your appointments and information about your probation requirements.",
       "link_text": "Go to your Plan your future account",
-      "link_href": "https://plan-your-future.gov.uk/dashboard"
+      "link_href": "https://plan-your-future.service.justice.gov.uk/otp"
     }
   },
   "local": {
@@ -704,7 +704,7 @@
       "header": "Plan your future",
       "description": "Access your appointments and information about your probation requirements.",
       "link_text": "Go to your Plan your future account",
-      "link_href": "https://plan-your-future.gov.uk/dashboard"
+      "link_href": "https://plan-your-future.service.justice.gov.uk/otp"
     }
   }
 }

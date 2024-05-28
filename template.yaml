@@ -100,20 +100,45 @@ Globals:
       Variables:
         AWS_LAMBDA_EXEC_WRAPPER: /opt/dynatrace
         DT_CONNECTION_AUTH_TOKEN: !Sub
-          - '{{resolve:secretsmanager:${SecretArn}:SecretString:DT_CONNECTION_AUTH_TOKEN}}'
-          - SecretArn: !FindInMap [ EnvironmentConfiguration, !Ref Environment, dynatraceSecretArn ]
+          - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_CONNECTION_AUTH_TOKEN}}"
+          - SecretArn:
+              !FindInMap [
+                EnvironmentConfiguration,
+                !Ref Environment,
+                dynatraceSecretArn,
+              ]
         DT_CONNECTION_BASE_URL: !Sub
-          - '{{resolve:secretsmanager:${SecretArn}:SecretString:DT_CONNECTION_BASE_URL}}'
-          - SecretArn: !FindInMap [ EnvironmentConfiguration, !Ref Environment, dynatraceSecretArn ]
+          - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_CONNECTION_BASE_URL}}"
+          - SecretArn:
+              !FindInMap [
+                EnvironmentConfiguration,
+                !Ref Environment,
+                dynatraceSecretArn,
+              ]
         DT_CLUSTER_ID: !Sub
-          - '{{resolve:secretsmanager:${SecretArn}:SecretString:DT_CLUSTER_ID}}'
-          - SecretArn: !FindInMap [ EnvironmentConfiguration, !Ref Environment, dynatraceSecretArn ]
+          - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_CLUSTER_ID}}"
+          - SecretArn:
+              !FindInMap [
+                EnvironmentConfiguration,
+                !Ref Environment,
+                dynatraceSecretArn,
+              ]
         DT_LOG_COLLECTION_AUTH_TOKEN: !Sub
-          - '{{resolve:secretsmanager:${SecretArn}:SecretString:DT_LOG_COLLECTION_AUTH_TOKEN}}'
-          - SecretArn: !FindInMap [ EnvironmentConfiguration, !Ref Environment, dynatraceSecretArn ]
+          - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_LOG_COLLECTION_AUTH_TOKEN}}"
+          - SecretArn:
+              !FindInMap [
+                EnvironmentConfiguration,
+                !Ref Environment,
+                dynatraceSecretArn,
+              ]
         DT_TENANT: !Sub
-          - '{{resolve:secretsmanager:${SecretArn}:SecretString:DT_TENANT}}'
-          - SecretArn: !FindInMap [ EnvironmentConfiguration, !Ref Environment, dynatraceSecretArn ]
+          - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_TENANT}}"
+          - SecretArn:
+              !FindInMap [
+                EnvironmentConfiguration,
+                !Ref Environment,
+                dynatraceSecretArn,
+              ]
         DT_OPEN_TELEMETRY_ENABLE_INTEGRATION: "true"
     Architectures: ["arm64"]
     MemorySize: 128
@@ -123,8 +148,8 @@ Globals:
     Timeout: 5
     VpcConfig:
       SubnetIds:
-          - Fn::ImportValue: !Sub "${VpcStackName}-ProtectedSubnetIdA"
-          - Fn::ImportValue: !Sub "${VpcStackName}-ProtectedSubnetIdB"
+        - Fn::ImportValue: !Sub "${VpcStackName}-ProtectedSubnetIdA"
+        - Fn::ImportValue: !Sub "${VpcStackName}-ProtectedSubnetIdB"
       SecurityGroupIds:
         - Fn::ImportValue: !Sub ${VpcStackName}-AWSServicesEndpointSecurityGroupId
     CodeSigningConfigArn: !If
@@ -137,8 +162,13 @@ Globals:
       - !Ref AWS::NoValue
     Layers:
       - !Sub
-        - '{{resolve:secretsmanager:${SecretArn}:SecretString:NODEJS_LAYER}}'
-        - SecretArn: !FindInMap [ EnvironmentConfiguration, !Ref Environment, dynatraceSecretArn ]
+        - "{{resolve:secretsmanager:${SecretArn}:SecretString:NODEJS_LAYER}}"
+        - SecretArn:
+            !FindInMap [
+              EnvironmentConfiguration,
+              !Ref Environment,
+              dynatraceSecretArn,
+            ]
 
 Mappings:
   InputQueue:
@@ -271,7 +301,6 @@ Mappings:
       zendeskApiUrlSecretArn: arn:aws:secretsmanager:eu-west-2:026991849909:secret:/account-mgmt-backend/zendesk-api-url-key-WNGekL
       zendeskTicketFormIdSecretArn: arn:aws:secretsmanager:eu-west-2:026991849909:secret:/account-mgmt-backend/zendesk-ticket-form-id-key-cAmu3i
       notifyApiKeySecretArn: arn:aws:secretsmanager:eu-west-2:026991849909:secret:/account-mgmt-backend/notify-api-key-Ve4Yk1
-
 
 Resources:
   ######################################
@@ -687,6 +716,30 @@ Resources:
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
       ActionsEnabled: true
+
+  SaveRawEventsDeploymentErrorAlarmTest:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        Fn::Join:
+          - "-"
+          - - !Ref AWS::StackName
+            - !Ref Environment
+            - !Sub "${SaveRawEventsDeadLetterQueue.FunctionName}CanaryDeploymentErrorAlarm"
+      AlarmDescription: "Alarm triggered for Lambda errors during canary deployment"
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+        - Name: FunctionName
+          Value: !GetAtt SaveRawEventsDeadLetterQueue.FunctionName
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      TreatMissingData: notBreaching
 
   ########################
   # Querying User Services
@@ -1184,10 +1237,10 @@ Resources:
                 - ""
                 - - "arn:aws:iam::"
                   - !FindInMap [
-                    AccountInterventionsService,
-                    !Ref Environment,
-                    "AccountNumber",
-                  ]
+                      AccountInterventionsService,
+                      !Ref Environment,
+                      "AccountNumber",
+                    ]
                   - ":root"
             Action: sns:Subscribe
             Resource:
@@ -2094,9 +2147,9 @@ Resources:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
       ActionsEnabled: true
 
-######################
-# Mark Suspicious Activity as Reported
-######################
+  ######################
+  # Mark Suspicious Activity as Reported
+  ######################
   MarkActivityReportedFunction:
     DependsOn:
       - MarkActivityReportedLogGroup
@@ -2184,7 +2237,6 @@ Resources:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-mark-activity-reported"
       RetentionInDays: 30
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
-
 
   ######################
   # Send Suspicious Activity to TxMA
@@ -2295,7 +2347,12 @@ Resources:
       Environment:
         Variables:
           NOTIFY_API_KEY: /account-mgmt-backend/notify-api-key
-          TEMPLATE_ID: !FindInMap [ EnvironmentVariables, !Ref Environment, REPORTSUSPISCIOUSACTIVITYTEMPLATEID ]
+          TEMPLATE_ID:
+            !FindInMap [
+              EnvironmentVariables,
+              !Ref Environment,
+              REPORTSUSPISCIOUSACTIVITYTEMPLATEID,
+            ]
           ENVIRONMENT_NAME: !Ref Environment
     Metadata:
       BuildMethod: esbuild
@@ -2342,7 +2399,11 @@ Resources:
           - Effect: Allow
             Action: secretsmanager:GetSecretValue # pragma: allowlist secret
             Resource:
-              - !FindInMap [ EnvironmentConfiguration, !Ref Environment, notifyApiKeySecretArn ]
+              - !FindInMap [
+                  EnvironmentConfiguration,
+                  !Ref Environment,
+                  notifyApiKeySecretArn,
+                ]
 
   SendConfEmailLambdaInvokePermission:
     Type: AWS::Lambda::Permission
@@ -2455,12 +2516,36 @@ Resources:
           - Effect: Allow
             Action: secretsmanager:GetSecretValue # pragma: allowlist secret
             Resource:
-              - !FindInMap [ EnvironmentConfiguration, !Ref Environment, zendeskGroupIdSecretArn ]
-              - !FindInMap [ EnvironmentConfiguration, !Ref Environment, zendeskTagsSecretArn ]
-              - !FindInMap [ EnvironmentConfiguration, !Ref Environment, zendeskApiTokenSecretArn ]
-              - !FindInMap [ EnvironmentConfiguration, !Ref Environment, zendeskApiUserSecretArn ]
-              - !FindInMap [ EnvironmentConfiguration, !Ref Environment, zendeskApiUrlSecretArn ]
-              - !FindInMap [ EnvironmentConfiguration, !Ref Environment, zendeskTicketFormIdSecretArn ]
+              - !FindInMap [
+                  EnvironmentConfiguration,
+                  !Ref Environment,
+                  zendeskGroupIdSecretArn,
+                ]
+              - !FindInMap [
+                  EnvironmentConfiguration,
+                  !Ref Environment,
+                  zendeskTagsSecretArn,
+                ]
+              - !FindInMap [
+                  EnvironmentConfiguration,
+                  !Ref Environment,
+                  zendeskApiTokenSecretArn,
+                ]
+              - !FindInMap [
+                  EnvironmentConfiguration,
+                  !Ref Environment,
+                  zendeskApiUserSecretArn,
+                ]
+              - !FindInMap [
+                  EnvironmentConfiguration,
+                  !Ref Environment,
+                  zendeskApiUrlSecretArn,
+                ]
+              - !FindInMap [
+                  EnvironmentConfiguration,
+                  !Ref Environment,
+                  zendeskTicketFormIdSecretArn,
+                ]
 
   CreateSupportTicketLambdaInvokePermission:
     Type: AWS::Lambda::Permission
@@ -2567,7 +2652,7 @@ Resources:
       Environment:
         Variables:
           STATE_MACHINE_ARN: !Ref ReportSuspiciousActivityStepFunction
-          STEP_FUNCTION_ALIAS: 'latest'
+          STEP_FUNCTION_ALIAS: "latest"
           DLQ_URL: !Ref TriggerSuspiciousActivityStepDeadLetterQueue
     Metadata:
       BuildMethod: esbuild
@@ -2645,7 +2730,6 @@ Resources:
       DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
       FilterPattern: ""
       LogGroupName: !Ref TriggerSuspiciousActivityStepFunctionLogGroup
-
 
   ######################
   # Report Suspicious Activity Step Function
@@ -2963,10 +3047,10 @@ Resources:
                   - ""
                   - - "arn:aws:iam::"
                     - !FindInMap [
-                      AccountInterventionsService,
-                      !Ref Environment,
-                      "AccountNumber",
-                    ]
+                        AccountInterventionsService,
+                        !Ref Environment,
+                        "AccountNumber",
+                      ]
                     - ":root"
               Action: kms:Decrypt
               Resource:
@@ -3204,7 +3288,6 @@ Resources:
       LogGroupName:
         Fn::ImportValue:
           Fn::Sub: "${VpcStackName}-FlowLogLogGroup"
-
 
   SuspiciousActivityTopic:
     Type: AWS::SNS::Topic

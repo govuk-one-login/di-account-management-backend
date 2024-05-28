@@ -721,17 +721,16 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Properties:
       AlarmName:
-        Fn::Join:
-          - "-"
-          - - !Ref AWS::StackName
-            - !Ref Environment
-            - !Sub "${SaveRawEventsDeadLetterQueue.FunctionName}CanaryDeploymentErrorAlarm"
+        !Join [
+          "-",
+          [!Ref AWS::StackName, !Ref Environment, SaveRawEventsErrorAlarm],
+        ]
       AlarmDescription: "Alarm triggered for Lambda errors during canary deployment"
       Namespace: AWS/Lambda
       MetricName: Errors
       Dimensions:
         - Name: FunctionName
-          Value: !GetAtt SaveRawEventsDeadLetterQueue.FunctionName
+          Value: !Ref SaveRawEventsDeadLetterQueue
       Statistic: Sum
       Period: 300
       EvaluationPeriods: 1

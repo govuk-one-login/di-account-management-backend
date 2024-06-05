@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
-Description: "A template to create the GOV.UK One login Account backend infrastructure."
+Description: "A template to create the GOV.UK One login Account backend infrastructure"
 
 Parameters:
   UserServicesStoreTableName:
@@ -84,6 +84,11 @@ Conditions:
           - !Ref Environment
           - "dev"
 
+  IsDevelopment:
+    Fn::Equals:
+      - !Ref Environment
+      - "dev"
+
   UseInternalEvents: !Or
     - !Equals [!Ref Environment, dev]
     - !Equals [!Ref Environment, build]
@@ -100,20 +105,45 @@ Globals:
       Variables:
         AWS_LAMBDA_EXEC_WRAPPER: /opt/dynatrace
         DT_CONNECTION_AUTH_TOKEN: !Sub
-          - '{{resolve:secretsmanager:${SecretArn}:SecretString:DT_CONNECTION_AUTH_TOKEN}}'
-          - SecretArn: !FindInMap [ EnvironmentConfiguration, !Ref Environment, dynatraceSecretArn ]
+          - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_CONNECTION_AUTH_TOKEN}}"
+          - SecretArn:
+              !FindInMap [
+                EnvironmentConfiguration,
+                !Ref Environment,
+                dynatraceSecretArn,
+              ]
         DT_CONNECTION_BASE_URL: !Sub
-          - '{{resolve:secretsmanager:${SecretArn}:SecretString:DT_CONNECTION_BASE_URL}}'
-          - SecretArn: !FindInMap [ EnvironmentConfiguration, !Ref Environment, dynatraceSecretArn ]
+          - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_CONNECTION_BASE_URL}}"
+          - SecretArn:
+              !FindInMap [
+                EnvironmentConfiguration,
+                !Ref Environment,
+                dynatraceSecretArn,
+              ]
         DT_CLUSTER_ID: !Sub
-          - '{{resolve:secretsmanager:${SecretArn}:SecretString:DT_CLUSTER_ID}}'
-          - SecretArn: !FindInMap [ EnvironmentConfiguration, !Ref Environment, dynatraceSecretArn ]
+          - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_CLUSTER_ID}}"
+          - SecretArn:
+              !FindInMap [
+                EnvironmentConfiguration,
+                !Ref Environment,
+                dynatraceSecretArn,
+              ]
         DT_LOG_COLLECTION_AUTH_TOKEN: !Sub
-          - '{{resolve:secretsmanager:${SecretArn}:SecretString:DT_LOG_COLLECTION_AUTH_TOKEN}}'
-          - SecretArn: !FindInMap [ EnvironmentConfiguration, !Ref Environment, dynatraceSecretArn ]
+          - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_LOG_COLLECTION_AUTH_TOKEN}}"
+          - SecretArn:
+              !FindInMap [
+                EnvironmentConfiguration,
+                !Ref Environment,
+                dynatraceSecretArn,
+              ]
         DT_TENANT: !Sub
-          - '{{resolve:secretsmanager:${SecretArn}:SecretString:DT_TENANT}}'
-          - SecretArn: !FindInMap [ EnvironmentConfiguration, !Ref Environment, dynatraceSecretArn ]
+          - "{{resolve:secretsmanager:${SecretArn}:SecretString:DT_TENANT}}"
+          - SecretArn:
+              !FindInMap [
+                EnvironmentConfiguration,
+                !Ref Environment,
+                dynatraceSecretArn,
+              ]
         DT_OPEN_TELEMETRY_ENABLE_INTEGRATION: "true"
     Architectures: ["arm64"]
     MemorySize: 128
@@ -123,8 +153,8 @@ Globals:
     Timeout: 5
     VpcConfig:
       SubnetIds:
-          - Fn::ImportValue: !Sub "${VpcStackName}-ProtectedSubnetIdA"
-          - Fn::ImportValue: !Sub "${VpcStackName}-ProtectedSubnetIdB"
+        - Fn::ImportValue: !Sub "${VpcStackName}-ProtectedSubnetIdA"
+        - Fn::ImportValue: !Sub "${VpcStackName}-ProtectedSubnetIdB"
       SecurityGroupIds:
         - Fn::ImportValue: !Sub ${VpcStackName}-AWSServicesEndpointSecurityGroupId
     CodeSigningConfigArn: !If
@@ -137,8 +167,22 @@ Globals:
       - !Ref AWS::NoValue
     Layers:
       - !Sub
-        - '{{resolve:secretsmanager:${SecretArn}:SecretString:NODEJS_LAYER}}'
-        - SecretArn: !FindInMap [ EnvironmentConfiguration, !Ref Environment, dynatraceSecretArn ]
+        - "{{resolve:secretsmanager:${SecretArn}:SecretString:NODEJS_LAYER}}"
+        - SecretArn:
+            !FindInMap [
+              EnvironmentConfiguration,
+              !Ref Environment,
+              dynatraceSecretArn,
+            ]
+    AutoPublishAlias: live
+    DeploymentPreference:
+      Enabled: true
+      Type:
+        Fn::If:
+          - IsDevelopment
+          - Canary10Percent5Minutes
+          - !Ref LambdaCanary10Percent5Minutes
+      Role: !GetAtt CodeDeployServiceRole.Arn
 
 Mappings:
   InputQueue:
@@ -271,7 +315,6 @@ Mappings:
       zendeskApiUrlSecretArn: arn:aws:secretsmanager:eu-west-2:026991849909:secret:/account-mgmt-backend/zendesk-api-url-key-WNGekL
       zendeskTicketFormIdSecretArn: arn:aws:secretsmanager:eu-west-2:026991849909:secret:/account-mgmt-backend/zendesk-ticket-form-id-key-cAmu3i
       notifyApiKeySecretArn: arn:aws:secretsmanager:eu-west-2:026991849909:secret:/account-mgmt-backend/notify-api-key-Ve4Yk1
-
 
 Resources:
   ######################################
@@ -571,6 +614,9 @@ Resources:
         Variables:
           TABLE_NAME: !Ref RawEventsStoreTableName
           DLQ_URL: !Ref SaveRawEventsDeadLetterQueue
+      DeploymentPreference:
+        Alarms:
+          - !Ref SaveRawEventsFunctionDeploymentAlarm
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -693,6 +739,7 @@ Resources:
   ########################
   QueryUserServicesFunction:
     Type: AWS::Serverless::Function
+
     DependsOn:
       - QueryUserServicesFunctionLogGroup
     Properties:
@@ -723,6 +770,9 @@ Resources:
           TABLE_NAME: !Ref UserServicesStoreTableName
           DLQ_URL: !Ref QueryUserServicesDeadLetterQueue
           OUTPUT_QUEUE_URL: !Ref UserServicesToFormatQueue
+      DeploymentPreference:
+        Alarms:
+          - !Ref QueryUserServicesFunctionDeploymentAlarm
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -880,6 +930,9 @@ Resources:
         Variables:
           DLQ_URL: !Ref FormatUserServicesDeadLetterQueue
           OUTPUT_QUEUE_URL: !Ref UserServicesToWriteQueue
+      DeploymentPreference:
+        Alarms:
+          - !Ref FormatUserServicesFunctionDeploymentAlarm
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -1015,6 +1068,9 @@ Resources:
         Variables:
           TABLE_NAME: !Ref UserServicesStoreTableName
           DLQ_URL: !Ref WriteUserServicesDeadLetterQueue
+      DeploymentPreference:
+        Alarms:
+          - !Ref WriteUserServicesFunctionDeploymentAlarm
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -1184,10 +1240,10 @@ Resources:
                 - ""
                 - - "arn:aws:iam::"
                   - !FindInMap [
-                    AccountInterventionsService,
-                    !Ref Environment,
-                    "AccountNumber",
-                  ]
+                      AccountInterventionsService,
+                      !Ref Environment,
+                      "AccountNumber",
+                    ]
                   - ":root"
             Action: sns:Subscribe
             Resource:
@@ -1239,6 +1295,9 @@ Resources:
         Variables:
           TABLE_NAME: !Ref UserServicesStoreTableName
           DLQ_URL: !Ref DeleteUserServicesDeadLetterQueue
+      DeploymentPreference:
+        Alarms:
+          - !Ref DeleteUserServicesFunctionDeploymentAlarm
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -1468,6 +1527,9 @@ Resources:
               !Ref Environment,
               GOVACCOUNTSPUBLISHINGAPIURL,
             ]
+      DeploymentPreference:
+        Alarms:
+          - !Ref DeleteEmailSubscriptionsFunctionDeploymentAlarm
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -1581,6 +1643,9 @@ Resources:
           VERIFY_ACCESS_VALUE: !Sub "{{resolve:secretsmanager:/${AWS::StackName}/Config/Storage/VerificationSecret}}"
           ACCOUNT_ID: !Sub "${AWS::AccountId}"
           ENVIRONMENT: !Ref Environment
+      DeploymentPreference:
+        Alarms:
+          - !Ref WriteActivityLogFunctionDeploymentAlarm
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -1744,6 +1809,9 @@ Resources:
           ACCOUNT_ID: !Sub "${AWS::AccountId}"
           GENERATOR_KEY_ARN: !GetAtt GeneratorKey.Arn
           WRAPPING_KEY_ARN: !GetAtt WrapperKey.Arn
+      DeploymentPreference:
+        Alarms:
+          - !Ref FormatActivityLogFunctionDeploymentAlarm
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -1957,6 +2025,9 @@ Resources:
         Variables:
           TABLE_NAME: !Ref ActivityLogsStoreTableName
           DLQ_URL: !Ref DeleteActivityLogDeadLetterQueue
+      DeploymentPreference:
+        Alarms:
+          - !Ref DeleteActivityLogFunctionDeploymentAlarm
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -2094,9 +2165,9 @@ Resources:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
       ActionsEnabled: true
 
-######################
-# Mark Suspicious Activity as Reported
-######################
+  ######################
+  # Mark Suspicious Activity as Reported
+  ######################
   MarkActivityReportedFunction:
     DependsOn:
       - MarkActivityReportedLogGroup
@@ -2115,6 +2186,9 @@ Resources:
           VERIFY_ACCESS_VALUE: !Sub "{{resolve:secretsmanager:/${AWS::StackName}/Config/Storage/VerificationSecret}}"
           ACCOUNT_ID: !Sub "${AWS::AccountId}"
           ENVIRONMENT: !Ref Environment
+      DeploymentPreference:
+        Alarms:
+          - !Ref MarkActivityReportedFunctionDeploymentAlarm
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -2185,7 +2259,6 @@ Resources:
       RetentionInDays: 30
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
-
   ######################
   # Send Suspicious Activity to TxMA
   ######################
@@ -2203,6 +2276,9 @@ Resources:
         Variables:
           EVENT_NAME: HOME_REPORT_SUSPICIOUS_ACTIVITY
           TXMA_QUEUE_URL: !Ref AuditOutputQueue
+      DeploymentPreference:
+        Alarms:
+          - !Ref SendSuspiciousActivityFunctionDeploymentAlarm
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -2295,8 +2371,16 @@ Resources:
       Environment:
         Variables:
           NOTIFY_API_KEY: /account-mgmt-backend/notify-api-key
-          TEMPLATE_ID: !FindInMap [ EnvironmentVariables, !Ref Environment, REPORTSUSPISCIOUSACTIVITYTEMPLATEID ]
+          TEMPLATE_ID:
+            !FindInMap [
+              EnvironmentVariables,
+              !Ref Environment,
+              REPORTSUSPISCIOUSACTIVITYTEMPLATEID,
+            ]
           ENVIRONMENT_NAME: !Ref Environment
+      DeploymentPreference:
+        Alarms:
+          - !Ref SendConfEmailFunctionDeploymentAlarm
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -2342,7 +2426,11 @@ Resources:
           - Effect: Allow
             Action: secretsmanager:GetSecretValue # pragma: allowlist secret
             Resource:
-              - !FindInMap [ EnvironmentConfiguration, !Ref Environment, notifyApiKeySecretArn ]
+              - !FindInMap [
+                  EnvironmentConfiguration,
+                  !Ref Environment,
+                  notifyApiKeySecretArn,
+                ]
 
   SendConfEmailLambdaInvokePermission:
     Type: AWS::Lambda::Permission
@@ -2390,6 +2478,9 @@ Resources:
           ZENDESK_API_URL_KEY: /account-mgmt-backend/zendesk-api-url-key
           ZENDESK_TICKET_FORM_ID: /account-mgmt-backend/zendesk-ticket-form-id-key
           ACTIVITY_LOG_TABLE: !Ref ActivityLogsStoreTableName
+      DeploymentPreference:
+        Alarms:
+          - !Ref CreateSupportTicketsDeploymentAlarm
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -2455,12 +2546,36 @@ Resources:
           - Effect: Allow
             Action: secretsmanager:GetSecretValue # pragma: allowlist secret
             Resource:
-              - !FindInMap [ EnvironmentConfiguration, !Ref Environment, zendeskGroupIdSecretArn ]
-              - !FindInMap [ EnvironmentConfiguration, !Ref Environment, zendeskTagsSecretArn ]
-              - !FindInMap [ EnvironmentConfiguration, !Ref Environment, zendeskApiTokenSecretArn ]
-              - !FindInMap [ EnvironmentConfiguration, !Ref Environment, zendeskApiUserSecretArn ]
-              - !FindInMap [ EnvironmentConfiguration, !Ref Environment, zendeskApiUrlSecretArn ]
-              - !FindInMap [ EnvironmentConfiguration, !Ref Environment, zendeskTicketFormIdSecretArn ]
+              - !FindInMap [
+                  EnvironmentConfiguration,
+                  !Ref Environment,
+                  zendeskGroupIdSecretArn,
+                ]
+              - !FindInMap [
+                  EnvironmentConfiguration,
+                  !Ref Environment,
+                  zendeskTagsSecretArn,
+                ]
+              - !FindInMap [
+                  EnvironmentConfiguration,
+                  !Ref Environment,
+                  zendeskApiTokenSecretArn,
+                ]
+              - !FindInMap [
+                  EnvironmentConfiguration,
+                  !Ref Environment,
+                  zendeskApiUserSecretArn,
+                ]
+              - !FindInMap [
+                  EnvironmentConfiguration,
+                  !Ref Environment,
+                  zendeskApiUrlSecretArn,
+                ]
+              - !FindInMap [
+                  EnvironmentConfiguration,
+                  !Ref Environment,
+                  zendeskTicketFormIdSecretArn,
+                ]
 
   CreateSupportTicketLambdaInvokePermission:
     Type: AWS::Lambda::Permission
@@ -2567,8 +2682,11 @@ Resources:
       Environment:
         Variables:
           STATE_MACHINE_ARN: !Ref ReportSuspiciousActivityStepFunction
-          STEP_FUNCTION_ALIAS: 'latest'
+          STEP_FUNCTION_ALIAS: "latest"
           DLQ_URL: !Ref TriggerSuspiciousActivityStepDeadLetterQueue
+      DeploymentPreference:
+        Alarms:
+          - !Ref TriggerSuspiciousActivityStepFunctionDeploymentAlarm
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -2645,7 +2763,6 @@ Resources:
       DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
       FilterPattern: ""
       LogGroupName: !Ref TriggerSuspiciousActivityStepFunctionLogGroup
-
 
   ######################
   # Report Suspicious Activity Step Function
@@ -2798,6 +2915,486 @@ Resources:
       EvaluationPeriods: 1
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/HighAlertNotificationTopic/ARN}}"
+
+  #######################
+  # Canary Deployment
+  #######################
+
+  CodeDeployServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Action:
+              - sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service:
+                - codedeploy.amazonaws.com
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSCodeDeployRoleForLambda
+      PermissionsBoundary:
+        !If [
+          UsePermissionsBoundary,
+          !Ref PermissionsBoundary,
+          !Ref AWS::NoValue,
+        ]
+
+  LambdaCanary10Percent5Minutes:
+    Type: AWS::CodeDeploy::DeploymentConfig
+    Properties:
+      ComputePlatform: Lambda
+      DeploymentConfigName: LambdaCanary10Percent5Minutes
+      TrafficRoutingConfig:
+        TimeBasedCanary:
+          CanaryPercentage: 10
+          CanaryInterval: 5
+        Type: TimeBasedCanary
+
+  CreateSupportTicketsDeploymentAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            "CreateSupportTicketsDeploymentAlarm",
+          ],
+        ]
+      AlarmDescription: "Alarm for Lambda function errors during canary deployment"
+      Namespace: "AWS/Lambda"
+      MetricName: "Errors"
+      Dimensions:
+        - Name: Resource
+          Value: !Sub "${CreateSupportTicketFunction}:live"
+        - Name: "FunctionName"
+          Value: !Ref CreateSupportTicketFunction
+        - Name: ExecutedVersion
+          Value: !GetAtt CreateSupportTicketFunction.Version.Version
+      Statistic: "Sum"
+      Period: 60
+      EvaluationPeriods: 2
+      Threshold: 0
+      ComparisonOperator: "GreaterThanThreshold"
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      ActionsEnabled: true
+      TreatMissingData: notBreaching
+
+  DeleteActivityLogFunctionDeploymentAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            "DeleteActivityLogFunctionDeploymentAlarm",
+          ],
+        ]
+      AlarmDescription: "Alarm for Lambda function errors during canary deployment"
+      Namespace: "AWS/Lambda"
+      MetricName: "Errors"
+      Dimensions:
+        - Name: Resource
+          Value: !Sub "${DeleteActivityLogFunction}:live"
+        - Name: "FunctionName"
+          Value: !Ref DeleteActivityLogFunction
+        - Name: ExecutedVersion
+          Value: !GetAtt DeleteActivityLogFunction.Version.Version
+      Statistic: "Sum"
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 0
+      ComparisonOperator: "GreaterThanThreshold"
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      ActionsEnabled: true
+      TreatMissingData: notBreaching
+
+  SendConfEmailFunctionDeploymentAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            "SendConfEmailFunctionDeploymentAlarm",
+          ],
+        ]
+      AlarmDescription: "Alarm for Lambda function errors during canary deployment"
+      Namespace: "AWS/Lambda"
+      MetricName: "Errors"
+      Dimensions:
+        - Name: Resource
+          Value: !Sub "${SendConfEmailFunction}:live"
+        - Name: "FunctionName"
+          Value: !Ref SendConfEmailFunction
+        - Name: ExecutedVersion
+          Value: !GetAtt SendConfEmailFunction.Version.Version
+      Statistic: "Sum"
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 0
+      ComparisonOperator: "GreaterThanThreshold"
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      ActionsEnabled: true
+      TreatMissingData: notBreaching
+
+  FormatActivityLogFunctionDeploymentAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            "FormatActivityLogFunctionDeploymentAlarm",
+          ],
+        ]
+      AlarmDescription: "Alarm for Lambda function errors during canary deployment"
+      Namespace: "AWS/Lambda"
+      MetricName: "Errors"
+      Dimensions:
+        - Name: Resource
+          Value: !Sub "${FormatActivityLogFunction}:live"
+        - Name: "FunctionName"
+          Value: !Ref FormatActivityLogFunction
+        - Name: ExecutedVersion
+          Value: !GetAtt FormatActivityLogFunction.Version.Version
+      Statistic: "Sum"
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 0
+      ComparisonOperator: "GreaterThanThreshold"
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      ActionsEnabled: true
+      TreatMissingData: notBreaching
+
+  QueryUserServicesFunctionDeploymentAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            "QueryUserServicesFunctionDeploymentAlarm",
+          ],
+        ]
+      AlarmDescription: "Alarm for Lambda function errors during canary deployment"
+      Namespace: "AWS/Lambda"
+      MetricName: "Errors"
+      Dimensions:
+        - Name: Resource
+          Value: !Sub "${QueryUserServicesFunction}:live"
+        - Name: "FunctionName"
+          Value: !Ref QueryUserServicesFunction
+        - Name: ExecutedVersion
+          Value: !GetAtt QueryUserServicesFunction.Version.Version
+      Statistic: "Sum"
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 0
+      ComparisonOperator: "GreaterThanThreshold"
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      ActionsEnabled: true
+      TreatMissingData: notBreaching
+
+  WriteActivityLogFunctionDeploymentAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            "WriteActivityLogFunctionDeploymentAlarm",
+          ],
+        ]
+      AlarmDescription: "Alarm for Lambda function errors during canary deployment"
+      Namespace: "AWS/Lambda"
+      MetricName: "Errors"
+      Dimensions:
+        - Name: Resource
+          Value: !Sub "${WriteActivityLogFunction}:live"
+        - Name: "FunctionName"
+          Value: !Ref WriteActivityLogFunction
+        - Name: ExecutedVersion
+          Value: !GetAtt WriteActivityLogFunction.Version.Version
+      Statistic: "Sum"
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 0
+      ComparisonOperator: "GreaterThanThreshold"
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      ActionsEnabled: true
+      TreatMissingData: notBreaching
+
+  DeleteUserServicesFunctionDeploymentAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            "DeleteUserServicesFunctionDeploymentAlarm",
+          ],
+        ]
+      AlarmDescription: "Alarm for Lambda function errors during canary deployment"
+      Namespace: "AWS/Lambda"
+      MetricName: "Errors"
+      Dimensions:
+        - Name: Resource
+          Value: !Sub "${DeleteUserServicesFunction}:live"
+        - Name: "FunctionName"
+          Value: !Ref DeleteUserServicesFunction
+        - Name: ExecutedVersion
+          Value: !GetAtt DeleteUserServicesFunction.Version.Version
+      Statistic: "Sum"
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 0
+      ComparisonOperator: "GreaterThanThreshold"
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      ActionsEnabled: true
+      TreatMissingData: notBreaching
+
+  MarkActivityReportedFunctionDeploymentAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            "MarkActivityReportedFunctionDeploymentAlarm",
+          ],
+        ]
+      AlarmDescription: "Alarm for Lambda function errors during canary deployment"
+      Namespace: "AWS/Lambda"
+      MetricName: "Errors"
+      Dimensions:
+        - Name: Resource
+          Value: !Sub "${MarkActivityReportedFunction}:live"
+        - Name: "FunctionName"
+          Value: !Ref MarkActivityReportedFunction
+        - Name: ExecutedVersion
+          Value: !GetAtt MarkActivityReportedFunction.Version.Version
+      Statistic: "Sum"
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 0
+      ComparisonOperator: "GreaterThanThreshold"
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      ActionsEnabled: true
+      TreatMissingData: notBreaching
+
+  DeleteEmailSubscriptionsFunctionDeploymentAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            "DeleteEmailSubscriptionsFunctionDeploymentAlarm",
+          ],
+        ]
+      AlarmDescription: "Alarm for Lambda function errors during canary deployment"
+      Namespace: "AWS/Lambda"
+      MetricName: "Errors"
+      Dimensions:
+        - Name: Resource
+          Value: !Sub "${DeleteEmailSubscriptionsFunction}:live"
+        - Name: "FunctionName"
+          Value: !Ref DeleteEmailSubscriptionsFunction
+        - Name: ExecutedVersion
+          Value: !GetAtt DeleteEmailSubscriptionsFunction.Version.Version
+      Statistic: "Sum"
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 0
+      ComparisonOperator: "GreaterThanThreshold"
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      ActionsEnabled: true
+      TreatMissingData: notBreaching
+
+  SaveRawEventsFunctionDeploymentAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            "SaveRawEventsFunctionDeploymentAlarm",
+          ],
+        ]
+      AlarmDescription: "Alarm for Lambda function errors during canary deployment"
+      Namespace: "AWS/Lambda"
+      MetricName: "Errors"
+      Dimensions:
+        - Name: Resource
+          Value: !Sub "${SaveRawEventsFunction}:live"
+        - Name: "FunctionName"
+          Value: !Ref SaveRawEventsFunction
+        - Name: ExecutedVersion
+          Value: !GetAtt SaveRawEventsFunction.Version.Version
+      Statistic: "Sum"
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 0
+      ComparisonOperator: "GreaterThanThreshold"
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      ActionsEnabled: true
+      TreatMissingData: notBreaching
+
+  WriteUserServicesFunctionDeploymentAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            "WriteUserServicesFunctionDeploymentAlarm",
+          ],
+        ]
+      AlarmDescription: "Alarm for Lambda function errors during canary deployment"
+      Namespace: "AWS/Lambda"
+      MetricName: "Errors"
+      Dimensions:
+        - Name: Resource
+          Value: !Sub "${WriteUserServicesFunction}:live"
+        - Name: "FunctionName"
+          Value: !Ref WriteUserServicesFunction
+        - Name: ExecutedVersion
+          Value: !GetAtt WriteUserServicesFunction.Version.Version
+      Statistic: "Sum"
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 0
+      ComparisonOperator: "GreaterThanThreshold"
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      ActionsEnabled: true
+      TreatMissingData: notBreaching
+
+  SendSuspiciousActivityFunctionDeploymentAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            "SendSuspiciousActivityFunctionDeploymentAlarm",
+          ],
+        ]
+      AlarmDescription: "Alarm for Lambda function errors during canary deployment"
+      Namespace: "AWS/Lambda"
+      MetricName: "Errors"
+      Dimensions:
+        - Name: "FunctionName"
+          Value: !Ref SendSuspiciousActivityFunction
+        - Name: ExecutedVersion
+          Value: !GetAtt SendSuspiciousActivityFunction.Version.Version
+      Statistic: "Sum"
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 0
+      ComparisonOperator: "GreaterThanThreshold"
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      ActionsEnabled: true
+      TreatMissingData: notBreaching
+
+  TriggerSuspiciousActivityStepFunctionDeploymentAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            "TriggerSuspiciousActivityStepFunctionDeploymentAlarm",
+          ],
+        ]
+      AlarmDescription: "Alarm for Lambda function errors during canary deployment"
+      Namespace: "AWS/Lambda"
+      MetricName: "Errors"
+      Dimensions:
+        - Name: "FunctionName"
+          Value: !Ref TriggerSuspiciousActivityStepFunction
+        - Name: ExecutedVersion
+          Value: !GetAtt TriggerSuspiciousActivityStepFunction.Version.Version
+      Statistic: "Sum"
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 0
+      ComparisonOperator: "GreaterThanThreshold"
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      ActionsEnabled: true
+      TreatMissingData: notBreaching
+
+  FormatUserServicesFunctionDeploymentAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            "FormatUserServicesFunctionDeploymentAlarm",
+          ],
+        ]
+      AlarmDescription: "Alarm for Lambda function errors during canary deployment"
+      Namespace: "AWS/Lambda"
+      MetricName: "Errors"
+      Dimensions:
+        - Name: Resource
+          Value: !Sub "${FormatUserServicesFunction}:live"
+        - Name: "FunctionName"
+          Value: !Ref FormatUserServicesFunction
+        - Name: ExecutedVersion
+          Value: !GetAtt FormatUserServicesFunction.Version.Version
+      Statistic: "Sum"
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 0
+      ComparisonOperator: "GreaterThanThreshold"
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      ActionsEnabled: true
+      TreatMissingData: notBreaching
 
   #######################
   # Encryption
@@ -2963,10 +3560,10 @@ Resources:
                   - ""
                   - - "arn:aws:iam::"
                     - !FindInMap [
-                      AccountInterventionsService,
-                      !Ref Environment,
-                      "AccountNumber",
-                    ]
+                        AccountInterventionsService,
+                        !Ref Environment,
+                        "AccountNumber",
+                      ]
                     - ":root"
               Action: kms:Decrypt
               Resource:
@@ -3204,7 +3801,6 @@ Resources:
       LogGroupName:
         Fn::ImportValue:
           Fn::Sub: "${VpcStackName}-FlowLogLogGroup"
-
 
   SuspiciousActivityTopic:
     Type: AWS::SNS::Topic

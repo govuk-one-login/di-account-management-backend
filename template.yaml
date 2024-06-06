@@ -181,7 +181,7 @@ Globals:
         Fn::If:
           - IsDevelopment
           - Canary10Percent5Minutes
-          - !Ref LambdaCanary10Percent5Minutes
+          - AllAtOnce
       Role: !GetAtt CodeDeployServiceRole.Arn
 
 Mappings:
@@ -2941,17 +2941,6 @@ Resources:
           !Ref AWS::NoValue,
         ]
 
-  LambdaCanary10Percent5Minutes:
-    Type: AWS::CodeDeploy::DeploymentConfig
-    Properties:
-      ComputePlatform: Lambda
-      DeploymentConfigName: LambdaCanary10Percent5Minutes
-      TrafficRoutingConfig:
-        TimeBasedCanary:
-          CanaryPercentage: 10
-          CanaryInterval: 5
-        Type: TimeBasedCanary
-
   CreateSupportTicketsDeploymentAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
@@ -2969,11 +2958,16 @@ Resources:
       MetricName: "Errors"
       Dimensions:
         - Name: Resource
-          Value: !Sub "${CreateSupportTicketFunction}:live"
+          Value:
+            !Join [
+              ":",
+              [
+                !Ref CreateSupportTicketFunction,
+                !GetAtt CreateSupportTicketFunction.Version.Version,
+              ],
+            ]
         - Name: "FunctionName"
           Value: !Ref CreateSupportTicketFunction
-        - Name: ExecutedVersion
-          Value: !GetAtt CreateSupportTicketFunction.Version.Version
       Statistic: "Sum"
       Period: 60
       EvaluationPeriods: 2
@@ -3001,11 +2995,16 @@ Resources:
       MetricName: "Errors"
       Dimensions:
         - Name: Resource
-          Value: !Sub "${DeleteActivityLogFunction}:live"
+          Value:
+            !Join [
+              ":",
+              [
+                !Ref DeleteActivityLogFunction,
+                !GetAtt DeleteActivityLogFunction.Version.Version,
+              ],
+            ]
         - Name: "FunctionName"
           Value: !Ref DeleteActivityLogFunction
-        - Name: ExecutedVersion
-          Value: !GetAtt DeleteActivityLogFunction.Version.Version
       Statistic: "Sum"
       Period: 60
       EvaluationPeriods: 1
@@ -3033,11 +3032,16 @@ Resources:
       MetricName: "Errors"
       Dimensions:
         - Name: Resource
-          Value: !Sub "${SendConfEmailFunction}:live"
+          Value:
+            !Join [
+              ":",
+              [
+                !Ref SendConfEmailFunction,
+                !GetAtt SendConfEmailFunction.Version.Version,
+              ],
+            ]
         - Name: "FunctionName"
           Value: !Ref SendConfEmailFunction
-        - Name: ExecutedVersion
-          Value: !GetAtt SendConfEmailFunction.Version.Version
       Statistic: "Sum"
       Period: 60
       EvaluationPeriods: 1
@@ -3065,11 +3069,16 @@ Resources:
       MetricName: "Errors"
       Dimensions:
         - Name: Resource
-          Value: !Sub "${FormatActivityLogFunction}:live"
+          Value:
+            !Join [
+              ":",
+              [
+                !Ref FormatActivityLogFunction,
+                !GetAtt FormatActivityLogFunction.Version.Version,
+              ],
+            ]
         - Name: "FunctionName"
           Value: !Ref FormatActivityLogFunction
-        - Name: ExecutedVersion
-          Value: !GetAtt FormatActivityLogFunction.Version.Version
       Statistic: "Sum"
       Period: 60
       EvaluationPeriods: 1
@@ -3097,11 +3106,16 @@ Resources:
       MetricName: "Errors"
       Dimensions:
         - Name: Resource
-          Value: !Sub "${QueryUserServicesFunction}:live"
+          Value:
+            !Join [
+              ":",
+              [
+                !Ref QueryUserServicesFunction,
+                !GetAtt QueryUserServicesFunction.Version.Version,
+              ],
+            ]
         - Name: "FunctionName"
           Value: !Ref QueryUserServicesFunction
-        - Name: ExecutedVersion
-          Value: !GetAtt QueryUserServicesFunction.Version.Version
       Statistic: "Sum"
       Period: 60
       EvaluationPeriods: 1
@@ -3129,11 +3143,16 @@ Resources:
       MetricName: "Errors"
       Dimensions:
         - Name: Resource
-          Value: !Sub "${WriteActivityLogFunction}:live"
+          Value:
+            !Join [
+              ":",
+              [
+                !Ref WriteActivityLogFunction,
+                !GetAtt WriteActivityLogFunction.Version.Version,
+              ],
+            ]
         - Name: "FunctionName"
           Value: !Ref WriteActivityLogFunction
-        - Name: ExecutedVersion
-          Value: !GetAtt WriteActivityLogFunction.Version.Version
       Statistic: "Sum"
       Period: 60
       EvaluationPeriods: 1
@@ -3161,11 +3180,16 @@ Resources:
       MetricName: "Errors"
       Dimensions:
         - Name: Resource
-          Value: !Sub "${DeleteUserServicesFunction}:live"
+          Value:
+            !Join [
+              ":",
+              [
+                !Ref DeleteUserServicesFunction,
+                !GetAtt DeleteUserServicesFunction.Version.Version,
+              ],
+            ]
         - Name: "FunctionName"
           Value: !Ref DeleteUserServicesFunction
-        - Name: ExecutedVersion
-          Value: !GetAtt DeleteUserServicesFunction.Version.Version
       Statistic: "Sum"
       Period: 60
       EvaluationPeriods: 1
@@ -3193,11 +3217,16 @@ Resources:
       MetricName: "Errors"
       Dimensions:
         - Name: Resource
-          Value: !Sub "${MarkActivityReportedFunction}:live"
+          Value:
+            !Join [
+              ":",
+              [
+                !Ref MarkActivityReportedFunction,
+                !GetAtt MarkActivityReportedFunction.Version.Version,
+              ],
+            ]
         - Name: "FunctionName"
           Value: !Ref MarkActivityReportedFunction
-        - Name: ExecutedVersion
-          Value: !GetAtt MarkActivityReportedFunction.Version.Version
       Statistic: "Sum"
       Period: 60
       EvaluationPeriods: 1
@@ -3225,11 +3254,16 @@ Resources:
       MetricName: "Errors"
       Dimensions:
         - Name: Resource
-          Value: !Sub "${DeleteEmailSubscriptionsFunction}:live"
+          Value:
+            !Join [
+              ":",
+              [
+                !Ref DeleteEmailSubscriptionsFunction,
+                !GetAtt DeleteEmailSubscriptionsFunction.Version.Version,
+              ],
+            ]
         - Name: "FunctionName"
           Value: !Ref DeleteEmailSubscriptionsFunction
-        - Name: ExecutedVersion
-          Value: !GetAtt DeleteEmailSubscriptionsFunction.Version.Version
       Statistic: "Sum"
       Period: 60
       EvaluationPeriods: 1
@@ -3257,11 +3291,16 @@ Resources:
       MetricName: "Errors"
       Dimensions:
         - Name: Resource
-          Value: !Sub "${SaveRawEventsFunction}:live"
+          Value:
+            !Join [
+              ":",
+              [
+                !Ref SaveRawEventsFunction,
+                !GetAtt SaveRawEventsFunction.Version.Version,
+              ],
+            ]
         - Name: "FunctionName"
           Value: !Ref SaveRawEventsFunction
-        - Name: ExecutedVersion
-          Value: !GetAtt SaveRawEventsFunction.Version.Version
       Statistic: "Sum"
       Period: 60
       EvaluationPeriods: 1
@@ -3289,11 +3328,16 @@ Resources:
       MetricName: "Errors"
       Dimensions:
         - Name: Resource
-          Value: !Sub "${WriteUserServicesFunction}:live"
+          Value:
+            !Join [
+              ":",
+              [
+                !Ref WriteUserServicesFunction,
+                !GetAtt WriteUserServicesFunction.Version.Version,
+              ],
+            ]
         - Name: "FunctionName"
           Value: !Ref WriteUserServicesFunction
-        - Name: ExecutedVersion
-          Value: !GetAtt WriteUserServicesFunction.Version.Version
       Statistic: "Sum"
       Period: 60
       EvaluationPeriods: 1
@@ -3321,11 +3365,16 @@ Resources:
       MetricName: "Errors"
       Dimensions:
         - Name: Resource
-          Value: !Sub "${SendSuspiciousActivityFunction}:live"
+          Value:
+            !Join [
+              ":",
+              [
+                !Ref SendSuspiciousActivityFunction,
+                !GetAtt SendSuspiciousActivityFunction.Version.Version,
+              ],
+            ]
         - Name: "FunctionName"
           Value: !Ref SendSuspiciousActivityFunction
-        - Name: ExecutedVersion
-          Value: !GetAtt SendSuspiciousActivityFunction.Version.Version
       Statistic: "Sum"
       Period: 60
       EvaluationPeriods: 1
@@ -3390,11 +3439,16 @@ Resources:
       MetricName: "Errors"
       Dimensions:
         - Name: Resource
-          Value: !Sub "${FormatUserServicesFunction}:live"
+          Value:
+            !Join [
+              ":",
+              [
+                !Ref FormatUserServicesFunction,
+                !GetAtt FormatUserServicesFunction.Version.Version,
+              ],
+            ]
         - Name: "FunctionName"
           Value: !Ref FormatUserServicesFunction
-        - Name: ExecutedVersion
-          Value: !GetAtt FormatUserServicesFunction.Version.Version
       Statistic: "Sum"
       Period: 60
       EvaluationPeriods: 1

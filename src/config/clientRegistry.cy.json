@@ -120,6 +120,12 @@
       "description": "Gwneud cais am drwydded bysgota a chyflwyno eich datganiadau dalfeydd yng Nghymru.",
       "link_text": "Ewch i’ch cyfrif trwyddedau pysgota a datganiadau dalfeydd",
       "link_href": "https://fishingpermitsandcatches.service.gov.wales"
+    },
+    "Gk-D7WMvytB44Nze7oEC5KcThQZ4yl7sAA": {
+      "header": "Awdurdod Cyngor ar Fewnfudo (IAA)",
+      "description": "Awdurdodi a chofrestru ymgynghorydd neu sefydliad mewnfudo.",
+      "link_text": "Ewch i'ch cyfrif Awdurdod Cyngor ar Fewnfudo (IAA)",
+      "link_href": "https://portal.oisc.gov.uk/"
     }
   },
   "integration": {
@@ -243,6 +249,12 @@
       "description": "Gwneud cais am drwydded bysgota a chyflwyno eich datganiadau dalfeydd yng Nghymru.",
       "link_text": "Ewch i’ch cyfrif trwyddedau pysgota a datganiadau dalfeydd",
       "link_href": "https://fishingpermitsandcatches.service.gov.wales"
+    },
+    "Gk-D7WMvytB44Nze7oEC5KcThQZ4yl7sAA": {
+      "header": "Awdurdod Cyngor ar Fewnfudo (IAA)",
+      "description": "Awdurdodi a chofrestru ymgynghorydd neu sefydliad mewnfudo.",
+      "link_text": "Ewch i'ch cyfrif Awdurdod Cyngor ar Fewnfudo (IAA)",
+      "link_href": "https://portal.oisc.gov.uk/"
     }
   },
   "staging": {
@@ -366,6 +378,12 @@
       "description": "Gwneud cais am drwydded bysgota a chyflwyno eich datganiadau dalfeydd yng Nghymru.",
       "link_text": "Ewch i’ch cyfrif trwyddedau pysgota a datganiadau dalfeydd",
       "link_href": "https://fishingpermitsandcatches.service.gov.wales"
+    },
+    "iaa": {
+      "header": "Awdurdod Cyngor ar Fewnfudo (IAA)",
+      "description": "Awdurdodi a chofrestru ymgynghorydd neu sefydliad mewnfudo.",
+      "link_text": "Ewch i'ch cyfrif Awdurdod Cyngor ar Fewnfudo (IAA)",
+      "link_href": "https://portal.oisc.gov.uk/"
     }
   },
   "build": {
@@ -489,6 +507,12 @@
       "description": "Gwneud cais am drwydded bysgota a chyflwyno eich datganiadau dalfeydd yng Nghymru.",
       "link_text": "Ewch i’ch cyfrif trwyddedau pysgota a datganiadau dalfeydd",
       "link_href": "https://fishingpermitsandcatches.service.gov.wales"
+    },
+    "iaa": {
+      "header": "Awdurdod Cyngor ar Fewnfudo (IAA)",
+      "description": "Awdurdodi a chofrestru ymgynghorydd neu sefydliad mewnfudo.",
+      "link_text": "Ewch i'ch cyfrif Awdurdod Cyngor ar Fewnfudo (IAA)",
+      "link_href": "https://portal.oisc.gov.uk/"
     }
   },
   "dev": {
@@ -612,6 +636,12 @@
       "description": "Gwneud cais am drwydded bysgota a chyflwyno eich datganiadau dalfeydd yng Nghymru.",
       "link_text": "Ewch i’ch cyfrif trwyddedau pysgota a datganiadau dalfeydd",
       "link_href": "https://fishingpermitsandcatches.service.gov.wales"
+    },
+    "iaa": {
+      "header": "Awdurdod Cyngor ar Fewnfudo (IAA)",
+      "description": "Awdurdodi a chofrestru ymgynghorydd neu sefydliad mewnfudo.",
+      "link_text": "Ewch i'ch cyfrif Awdurdod Cyngor ar Fewnfudo (IAA)",
+      "link_href": "https://portal.oisc.gov.uk/"
     }
   },
   "local": {
@@ -735,6 +765,12 @@
       "description": "Gwneud cais am drwydded bysgota a chyflwyno eich datganiadau dalfeydd yng Nghymru.",
       "link_text": "Ewch i’ch cyfrif trwyddedau pysgota a datganiadau dalfeydd",
       "link_href": "https://fishingpermitsandcatches.service.gov.wales"
+    },
+    "iaa": {
+      "header": "Awdurdod Cyngor ar Fewnfudo (IAA)",
+      "description": "Awdurdodi a chofrestru ymgynghorydd neu sefydliad mewnfudo.",
+      "link_text": "Ewch i'ch cyfrif Awdurdod Cyngor ar Fewnfudo (IAA)",
+      "link_href": "https://portal.oisc.gov.uk/"
     }
   }
 }

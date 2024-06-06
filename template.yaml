@@ -3353,11 +3353,16 @@ Resources:
       MetricName: "Errors"
       Dimensions:
         - Name: Resource
-          Value: !Sub "${TriggerSuspiciousActivityStepFunction}:live"
+          Value:
+            !Join [
+              ":",
+              [
+                !Ref TriggerSuspiciousActivityStepFunction,
+                !GetAtt TriggerSuspiciousActivityStepFunction.Version.Version,
+              ],
+            ]
         - Name: "FunctionName"
           Value: !Ref TriggerSuspiciousActivityStepFunction
-        - Name: ExecutedVersion
-          Value: !GetAtt TriggerSuspiciousActivityStepFunction.Version.Version
       Statistic: "Sum"
       Period: 60
       EvaluationPeriods: 1

@@ -3320,6 +3320,8 @@ Resources:
       Namespace: "AWS/Lambda"
       MetricName: "Errors"
       Dimensions:
+        - Name: Resource
+          Value: !Sub "${SendSuspiciousActivityFunction}:live"
         - Name: "FunctionName"
           Value: !Ref SendSuspiciousActivityFunction
         - Name: ExecutedVersion

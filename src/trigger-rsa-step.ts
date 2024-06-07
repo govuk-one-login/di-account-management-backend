@@ -14,7 +14,7 @@ export const handler = async (event: SNSEvent): Promise<void> => {
       try {
         if (!STATE_MACHINE_ARN || !DLQ_URL) {
           throw new Error(
-            "Error Occurred - Required environment variables to trigger report suspicious activity steps are not provided"
+            "Error Occurred - Required environment variables to trigger report suspicious activity steps are not provided."
           );
         }
         const receivedEvent: ReportSuspiciousActivityStepInput = JSON.parse(

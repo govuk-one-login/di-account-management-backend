@@ -156,13 +156,13 @@ export interface IError {
 }
 
 const notifyErrorHandler = (err: IError, context: string): never => {
-  if (err.response && err.response.data) {
+  if (err.response?.data) {
     const validStatusCodes: IErrorResponse["status_code"][] = [
       400, 403, 429, 500,
     ];
-    if (validStatusCodes.includes(err.response.data.status_code)) {
+    if (validStatusCodes.includes(err.response?.data?.status_code)) {
       throw new Error(
-        `Error ${context}: ${JSON.stringify(err.response.data.errors)}`
+        `Error ${context}: ${JSON.stringify(err.response?.data?.errors)}`
       );
     } else {
       const sanitisedError = { ...err, response: { ...err.response } };

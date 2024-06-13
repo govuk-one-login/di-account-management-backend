@@ -98,7 +98,7 @@ describe("validateUser", () => {
       JSON.stringify({
         ...user,
         user_id: undefined,
-      })
+      }),
     );
     expect(() => {
       validateUser(inValidUser);
@@ -110,7 +110,7 @@ describe("validateUser", () => {
       JSON.stringify({
         ...user,
         session_id: undefined,
-      })
+      }),
     );
     expect(() => {
       validateUser(inValidUser);
@@ -122,7 +122,7 @@ describe("validateUser", () => {
       JSON.stringify({
         ...user,
         session_id: null,
-      })
+      }),
     );
     expect(() => {
       validateUser(inValidUser);

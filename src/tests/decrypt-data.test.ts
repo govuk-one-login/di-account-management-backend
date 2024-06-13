@@ -48,7 +48,7 @@ describe("generateExpectedContext", () => {
       await generateExpectedContext(userId);
     } catch (error) {
       expect((error as Error).message).toEqual(
-        "Missing AWS_REGION environment variable"
+        "Missing AWS_REGION environment variable",
       );
     }
   });
@@ -59,7 +59,7 @@ describe("generateExpectedContext", () => {
       await generateExpectedContext(userId);
     } catch (error) {
       expect((error as Error).message).toEqual(
-        "Missing ACCOUNT_ID environment variable"
+        "Missing ACCOUNT_ID environment variable",
       );
     }
   });
@@ -70,7 +70,7 @@ describe("generateExpectedContext", () => {
       await generateExpectedContext(userId);
     } catch (error) {
       expect((error as Error).message).toEqual(
-        "Missing ENVIRONMENT environment variable"
+        "Missing ENVIRONMENT environment variable",
       );
     }
   });
@@ -81,7 +81,7 @@ describe("generateExpectedContext", () => {
       await generateExpectedContext(userId);
     } catch (error) {
       expect((error as Error).message).toEqual(
-        "Missing VERIFY_ACCESS_VALUE environment variable"
+        "Missing VERIFY_ACCESS_VALUE environment variable",
       );
     }
   });
@@ -173,7 +173,7 @@ describe("decryptActivities", () => {
         generatorKeyId:
           "arn:aws:kms:eu-west-2:111122223333:key/bc436485-5092-42b8-92a3-0aa8b93536dc",
       },
-      Buffer.from(encryptedActivities, "base64")
+      Buffer.from(encryptedActivities, "base64"),
     );
   });
 

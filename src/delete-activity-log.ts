@@ -21,7 +21,7 @@ const translateConfig = { marshallOptions };
 const dynamoClient = new DynamoDBClient({});
 const dynamoDocClient = DynamoDBDocumentClient.from(
   dynamoClient,
-  translateConfig
+  translateConfig,
 );
 
 const sqsClient = new SQSClient({});
@@ -35,7 +35,7 @@ export const validateUserData = (userData: UserData): UserData => {
 
 export const getAllActivityLogEntriesForUser = async (
   tableName: string,
-  userData: UserData
+  userData: UserData,
 ): Promise<ActivityLogEntry[] | undefined> => {
   const queryResult: ActivityLogEntry[] = [];
   let lastEvaluatedKey: Record<string, unknown> | undefined;
@@ -65,7 +65,7 @@ export const getAllActivityLogEntriesForUser = async (
 };
 
 const splitArrayIntoBatchesOf25 = (
-  arrayToSplit: WriteRequest[]
+  arrayToSplit: WriteRequest[],
 ): WriteRequest[][] => {
   const newArrayOfArrays: WriteRequest[][] = [];
   let itemsLeftToSplit: WriteRequest[] = arrayToSplit;
@@ -86,16 +86,16 @@ const newDeleteRequest = (activityLogEntry: ActivityLogEntry) => ({
 });
 
 export const buildBatchDeletionRequestArray = (
-  activityLogEntries: ActivityLogEntry[]
+  activityLogEntries: ActivityLogEntry[],
 ): WriteRequest[][] => {
   return splitArrayIntoBatchesOf25(
-    activityLogEntries.map((entry) => newDeleteRequest(entry))
+    activityLogEntries.map((entry) => newDeleteRequest(entry)),
   );
 };
 
 export const batchDeleteActivityLog = async (
   tableName: string,
-  activityLogEntries: ActivityLogEntry[]
+  activityLogEntries: ActivityLogEntry[],
 ) => {
   const batchArray = buildBatchDeletionRequestArray(activityLogEntries);
   Promise.all(
@@ -111,7 +111,7 @@ export const batchDeleteActivityLog = async (
         console.error("Error occurred during batch delete:", error);
         throw error;
       }
-    })
+    }),
   );
 };
 
@@ -140,9 +140,9 @@ export const handler = async (event: SNSEvent): Promise<void> => {
         const result = await sqsClient.send(new SendMessageCommand(message));
         console.error(
           `[Message sent to DLQ] with message id = ${result.MessageId}`,
-          err
+          err,
         );
       }
-    })
+    }),
   );
 };

@@ -99,7 +99,7 @@ describe("validateUserServices", () => {
               count_successful_logins: 1,
             },
           ],
-        })
+        }),
       );
       expect(() => {
         validateUserServices(userServices);
@@ -110,7 +110,7 @@ describe("validateUserServices", () => {
       const userServices: UserServices = JSON.parse(
         JSON.stringify({
           user_id: userId,
-        })
+        }),
       );
       expect(() => {
         validateUserServices(userServices);
@@ -127,7 +127,7 @@ describe("validateUserServices", () => {
               count_successful_logins: 1,
             },
           ],
-        })
+        }),
       );
       expect(() => {
         validateUserServices(userServices);
@@ -152,7 +152,7 @@ describe("validateServices", () => {
           }).format(date),
           count_successful_logins: 1,
         },
-      ])
+      ]),
     );
     expect(validateServices(services)).toBe(undefined);
   });
@@ -168,7 +168,7 @@ describe("validateServices", () => {
             }).format(date),
             count_successful_logins: 1,
           },
-        ])
+        ]),
       );
       expect(() => {
         validateServices(services);
@@ -185,7 +185,7 @@ describe("validateServices", () => {
               dateStyle: "long",
             }).format(date),
           },
-        ])
+        ]),
       );
       expect(() => {
         validateServices(services);
@@ -200,7 +200,7 @@ describe("validateServices", () => {
             client_id: clientId,
             count_successful_logins: 1,
           },
-        ])
+        ]),
       );
       expect(() => {
         validateServices(services);
@@ -214,7 +214,7 @@ describe("validateServices", () => {
             client_id: clientId,
             last_accessed: new Date().valueOf(),
           },
-        ])
+        ]),
       );
       expect(() => {
         validateServices(services);
@@ -229,7 +229,7 @@ describe("validateServices", () => {
             last_accessed: new Date().valueOf(),
             count_successful_logins: -1,
           },
-        ])
+        ]),
       );
       expect(() => {
         validateServices(services);

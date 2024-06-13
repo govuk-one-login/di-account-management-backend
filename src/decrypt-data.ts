@@ -16,7 +16,7 @@ const decryptClient = buildDecrypt(decryptClientConfig);
 let keyring: KmsKeyringNode;
 
 export async function generateExpectedContext(
-  userId: string
+  userId: string,
 ): Promise<EncryptionContext> {
   const { AWS_REGION, ACCOUNT_ID, ENVIRONMENT, VERIFY_ACCESS_VALUE } =
     process.env;
@@ -55,7 +55,7 @@ export async function generateExpectedContext(
 
 export function validateEncryptionContext(
   context: EncryptionContext,
-  expected: EncryptionContext
+  expected: EncryptionContext,
 ): void {
   if (context === undefined || Object.keys(context).length === 0) {
     throw new Error("Encryption context is empty or undefined");
@@ -72,18 +72,18 @@ export async function decryptData(
   data: string,
   userId: string,
   generatorKeyArn: string,
-  wrappingKeyArn: string
+  wrappingKeyArn: string,
 ): Promise<string> {
   try {
     keyring ??= await buildKmsKeyring(generatorKeyArn, wrappingKeyArn);
     const result = await decryptClient.decrypt(
       keyring,
-      Buffer.from(data, ENCODING)
+      Buffer.from(data, ENCODING),
     );
     const expectedEncryptionContext = await generateExpectedContext(userId);
     validateEncryptionContext(
       result.messageHeader.encryptionContext,
-      expectedEncryptionContext
+      expectedEncryptionContext,
     );
     return result.plaintext.toString(DECODING);
   } catch (error) {

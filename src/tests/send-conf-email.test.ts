@@ -132,7 +132,7 @@ describe("sendConfMail", () => {
           showHomeHintText: false,
         },
         reference: "123",
-      }
+      },
     );
   });
 });
@@ -194,7 +194,7 @@ describe("handler", () => {
       .mockImplementationOnce(notifyClientMock.sendEmail);
 
     await expect(handler(input)).rejects.toThrow(
-      'Error sending email for event: [{"error":"BadRequestError","message":"Can\'t send to this recipient using a team-only API key"}]'
+      'Error sending email for event: [{"error":"BadRequestError","message":"Can\'t send to this recipient using a team-only API key"}]',
     );
   });
 
@@ -221,7 +221,7 @@ describe("handler", () => {
       .mockImplementationOnce(notifyClientMock.sendEmail);
 
     await expect(handler(input)).rejects.toThrow(
-      'Error sending email for event: {"response":{}}'
+      'Error sending email for event: {"response":{}}',
     );
   });
 
@@ -248,7 +248,7 @@ describe("handler", () => {
       .mockImplementationOnce(notifyClientMock.sendEmail);
 
     await expect(handler(input)).rejects.toThrow(
-      'Error sending email for event: {"response":{}}'
+      'Error sending email for event: {"response":{}}',
     );
   });
 
@@ -273,7 +273,7 @@ describe("handler", () => {
       .mockRejectedValueOnce(errorResponse);
 
     await expect(handler(input)).rejects.toThrow(
-      'Error sending email for event: {"response":{"non-important-data":"hello dev"}}'
+      'Error sending email for event: {"response":{"non-important-data":"hello dev"}}',
     );
   });
 
@@ -290,7 +290,7 @@ describe("handler", () => {
       .mockRejectedValueOnce(errorResponse);
 
     await expect(handler(input)).rejects.toThrow(
-      "Error sending email for event"
+      "Error sending email for event",
     );
   });
 });

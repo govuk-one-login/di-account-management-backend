@@ -18,7 +18,7 @@ const dynamoDocClient = DynamoDBDocumentClient.from(dynamoClient);
 const sqsClient = new SQSClient({});
 
 export const validateActivityLogEntry = (
-  activityLogEntry: ActivityLogEntry
+  activityLogEntry: ActivityLogEntry,
 ): void => {
   if (
     !(
@@ -36,7 +36,7 @@ export const validateActivityLogEntry = (
 };
 
 export const writeActivityLogEntry = async (
-  activityLogEntry: EncryptedActivityLogEntry
+  activityLogEntry: EncryptedActivityLogEntry,
 ): Promise<PutCommandOutput> => {
   const { TABLE_NAME } = process.env;
   const command = new PutCommand({
@@ -65,7 +65,7 @@ export const handler = async (event: SQSEvent): Promise<void> => {
           event_id: activityLogEntry.event_id,
           event_type: await encryptData(
             activityLogEntry.event_type,
-            activityLogEntry.user_id
+            activityLogEntry.user_id,
           ),
           session_id: activityLogEntry.session_id,
           user_id: activityLogEntry.user_id,
@@ -82,9 +82,9 @@ export const handler = async (event: SQSEvent): Promise<void> => {
         const result = await sqsClient.send(new SendMessageCommand(message));
         console.error(
           `[Message sent to DLQ] with message id = ${result.MessageId}`,
-          err
+          err,
         );
       }
-    })
+    }),
   );
 };

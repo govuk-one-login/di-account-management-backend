@@ -7,7 +7,7 @@ import {
 
 export const sendSqsMessage = async (
   messageBody: string,
-  queueUrl: string | undefined
+  queueUrl: string | undefined,
 ): Promise<SendMessageCommandOutput> => {
   const { AWS_REGION } = process.env;
   const client = new SQSClient({ region: AWS_REGION });

@@ -56,7 +56,7 @@ describe("sendAuditEventToTxMA", () => {
       MessageBody: JSON.stringify(txMAEvent),
     });
     expect(consoleLog).toHaveBeenCalledWith(
-      "[Message sent to QUEUE] with message id = MessageId"
+      "[Message sent to QUEUE] with message id = MessageId",
     );
   });
 
@@ -90,7 +90,7 @@ describe("sendAuditEventToTxMA", () => {
 
     sqsMock.on(SendMessageCommand).rejects("SomeSQSError");
     await expect(
-      sendAuditEvent(txMAEvent, TXMA_QUEUE_URL)
+      sendAuditEvent(txMAEvent, TXMA_QUEUE_URL),
     ).rejects.toMatchObject({
       message: "SomeSQSError",
     });
@@ -99,7 +99,7 @@ describe("sendAuditEventToTxMA", () => {
       MessageBody: JSON.stringify(txMAEvent),
     });
     expect(consoleError).toHaveBeenCalledWith(
-      "Error occurred trying to send the audit event to the TxMA queue: SomeSQSError"
+      "Error occurred trying to send the audit event to the TxMA queue: SomeSQSError",
     );
   });
 });
@@ -227,7 +227,7 @@ describe("handler", () => {
       }),
     });
     expect(consoleLog).toHaveBeenCalledWith(
-      "[Message sent to QUEUE] with message id = MessageId"
+      "[Message sent to QUEUE] with message id = MessageId",
     );
   });
 
@@ -286,7 +286,7 @@ describe("handler", () => {
       }),
     });
     expect(consoleLog).toHaveBeenCalledWith(
-      "[Message sent to QUEUE] with message id = MessageId"
+      "[Message sent to QUEUE] with message id = MessageId",
     );
   });
 });

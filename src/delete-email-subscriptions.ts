@@ -38,7 +38,7 @@ const getPath = (userData: UserData) => {
 
 const getDeleteUrl = (
   publishingUrl: string | undefined,
-  userData: UserData
+  userData: UserData,
 ) => {
   return publishingUrl + getPath(userData);
 };
@@ -76,9 +76,9 @@ export const handler = async (event: SNSEvent): Promise<void> => {
         const result = await sqsClient.send(new SendMessageCommand(message));
         console.error(
           `[Message sent to DLQ] with message id = ${result.MessageId}`,
-          err
+          err,
         );
       }
-    })
+    }),
   );
 };

@@ -26,7 +26,7 @@ const user: UserData = {
 };
 
 const generateTestTxmaEvent = (
-  txmaEventName = "AUTH_AUTH_CODE_ISSUED"
+  txmaEventName = "AUTH_AUTH_CODE_ISSUED",
 ): TxmaEvent => ({
   event_id: "event_id",
   event_name: `${txmaEventName}`,
@@ -36,7 +36,7 @@ const generateTestTxmaEvent = (
 });
 
 const generateDynamoSteamRecord = (
-  txmaEventName = "AUTH_AUTH_CODE_ISSUED"
+  txmaEventName = "AUTH_AUTH_CODE_ISSUED",
 ): DynamoDBRecord => ({
   eventID: "1234567",
   eventName: "INSERT",
@@ -164,7 +164,7 @@ describe("validateTxmaEventBody", () => {
             },
           },
         ],
-      })
+      }),
     );
     expect(() => {
       validateTxmaEventBody(txmaEvent);
@@ -182,7 +182,7 @@ describe("validateTxmaEventBody", () => {
             },
           },
         ],
-      })
+      }),
     );
     expect(() => {
       validateTxmaEventBody(txmaEvent);
@@ -200,7 +200,7 @@ describe("validateTxmaEventBody", () => {
             },
           },
         ],
-      })
+      }),
     );
     expect(() => {
       validateTxmaEventBody(txmaEvent);
@@ -216,7 +216,7 @@ describe("validateTxmaEventBody", () => {
             event_name: "AUTH_AUTH_CODE_ISSUED",
           },
         ],
-      })
+      }),
     );
     expect(() => {
       validateTxmaEventBody(txmaEvent);
@@ -233,7 +233,7 @@ describe("validateTxmaEventBody", () => {
             user: {},
           },
         ],
-      })
+      }),
     );
     expect(() => {
       validateTxmaEventBody(txmaEvent);
@@ -262,13 +262,13 @@ describe("sendSqsMessage", () => {
     sqsMock.on(SendMessageCommand).resolves({ MessageId: messageId });
 
     expect(
-      await sendSqsMessage(JSON.stringify(userRecordEvents), queueUrl)
+      await sendSqsMessage(JSON.stringify(userRecordEvents), queueUrl),
     ).toEqual(messageId);
     expect(
       sqsMock.commandCalls(SendMessageCommand, {
         QueueUrl: queueUrl,
         MessageBody: JSON.stringify(Object),
-      })
+      }),
     );
   });
 });

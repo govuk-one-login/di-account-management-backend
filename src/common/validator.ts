@@ -4,7 +4,7 @@ function validateObject(
   // TODO: Remove lint exclusion
   /* eslint-disable @typescript-eslint/no-explicit-any */
   event?: Record<string, any>,
-  validationRules?: ValidationRules | undefined
+  validationRules?: ValidationRules | undefined,
 ): boolean {
   if (event && validationRules) {
     for (const key in validationRules) {

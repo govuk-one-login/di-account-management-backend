@@ -132,6 +132,12 @@
       "description": "Authorise and register an immigration adviser or organisation.",
       "link_text": "Go to your Register of immigration advisors account",
       "link_href": "https://portal.oisc.gov.uk/"
+    },
+    "XbPzF-ccO0utCxlifxSyA4Ng0API2XTCQQ": {
+      "header": "Visit someone in prison",
+      "description": "Make a booking to visit someone in prison.",
+      "link_text": "Go to your visit someone in prison account",
+      "link_href": "https://prison-visits.service.justice.gov.uk/"
     }
   },
   "integration": {
@@ -261,6 +267,12 @@
       "description": "Authorise and register an immigration adviser or organisation.",
       "link_text": "Go to your Register of immigration advisors account",
       "link_href": "https://portal.oisc.gov.uk/"
+    },
+    "XbPzF-ccO0utCxlifxSyA4Ng0API2XTCQQ": {
+      "header": "Visit someone in prison",
+      "description": "Make a booking to visit someone in prison.",
+      "link_text": "Go to your visit someone in prison account",
+      "link_href": "https://prison-visits.service.justice.gov.uk/"
     }
   },
   "staging": {
@@ -390,6 +402,12 @@
       "description": "Authorise and register an immigration adviser or organisation.",
       "link_text": "Go to your Register of immigration advisors account",
       "link_href": "https://portal.oisc.gov.uk/"
+    },
+    "prisonVisits": {
+      "header": "Visit someone in prison",
+      "description": "Make a booking to visit someone in prison.",
+      "link_text": "Go to your visit someone in prison account",
+      "link_href": "https://prison-visits.service.justice.gov.uk/"
     }
   },
   "build": {
@@ -519,6 +537,12 @@
       "description": "Authorise and register an immigration adviser or organisation.",
       "link_text": "Go to your Register of immigration advisors account",
       "link_href": "https://portal.oisc.gov.uk/"
+    },
+    "prisonVisits": {
+      "header": "Visit someone in prison",
+      "description": "Make a booking to visit someone in prison.",
+      "link_text": "Go to your visit someone in prison account",
+      "link_href": "https://prison-visits.service.justice.gov.uk/"
     }
   },
   "dev": {
@@ -648,6 +672,12 @@
       "description": "Authorise and register an immigration adviser or organisation.",
       "link_text": "Go to your Register of immigration advisors account",
       "link_href": "https://portal.oisc.gov.uk/"
+    },
+    "prisonVisits": {
+      "header": "Visit someone in prison",
+      "description": "Make a booking to visit someone in prison.",
+      "link_text": "Go to your visit someone in prison account",
+      "link_href": "https://prison-visits.service.justice.gov.uk/"
     }
   },
   "local": {
@@ -777,6 +807,12 @@
       "description": "Authorise and register an immigration adviser or organisation.",
       "link_text": "Go to your Register of immigration advisors account",
       "link_href": "https://portal.oisc.gov.uk/"
+    },
+    "prisonVisits": {
+      "header": "Visit someone in prison",
+      "description": "Make a booking to visit someone in prison.",
+      "link_text": "Go to your visit someone in prison account",
+      "link_href": "https://prison-visits.service.justice.gov.uk/"
     }
   }
 }

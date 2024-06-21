@@ -23,7 +23,7 @@ jobs:
           python-version: "3.x"
 
       - name: Install cfn-lint
-        run: python -m pip install cfn-lint
+        run: python -m pip install cfn-lint -r "eu-west-2"
 
       - name: Run linter
         run: cfn-lint template.yaml

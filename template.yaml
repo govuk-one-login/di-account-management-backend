@@ -186,6 +186,9 @@ Globals:
 
 Mappings:
   InputQueue:
+    demo:
+      QueueArn: ""
+      KeyArn: ""
     dev:
       QueueArn: ""
       KeyArn: ""

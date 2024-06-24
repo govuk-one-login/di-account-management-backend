@@ -1590,8 +1590,6 @@ Resources:
 
   DeleteEmailSubscriptionsFunctionLogGroup:
     Type: AWS::Logs::LogGroup
-    DependsOn:
-      - DeleteEmailSubscriptionsFunction
     Properties:
       LogGroupName: !Sub "/aws/lambda/${DeleteEmailSubscriptionsFunction}"
       RetentionInDays: 30
@@ -3765,7 +3763,7 @@ Resources:
             Resource: "*"
           - Effect: Allow
             Principal:
-              Service: !Sub "secretsmanager.amazonaws.com"
+              Service: "secretsmanager.amazonaws.com"
             Action:
               - "kms:Encrypt*"
               - "kms:Decrypt*"

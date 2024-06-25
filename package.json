@@ -25,7 +25,7 @@
     "@types/aws-lambda": "^8.10.140",
     "@types/jest": "^29.2.4",
     "@types/jest-when": "^3.5.2",
-    "@types/mocha": "^10.0.1",
+    "@types/mocha": "^10.0.7",
     "@typescript-eslint/eslint-plugin": "^7.13.1",
     "@typescript-eslint/parser": "^7.13.1",
     "aws-sdk-client-mock": "^4.0.1",
@@ -41,7 +41,7 @@
     "prettier": "^3.3.2",
     "ts-jest": "^29.1.5",
     "ts-node": "^10.9.1",
-    "typescript": "^5.4.5"
+    "typescript": "^5.5.2"
   },
   "dependencies": {
     "@aws-crypto/client-node": "^4.0.0",

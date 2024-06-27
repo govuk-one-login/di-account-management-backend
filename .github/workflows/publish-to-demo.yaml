@@ -22,7 +22,6 @@ permissions:
   contents: read
 
 jobs:
-  environment: Demo-test
   lint_infrastructure:
     name: Lint Infrastructure
     uses: ./.github/workflows/lint-cloudformation.yaml
@@ -38,6 +37,7 @@ jobs:
       gitRef: ${{ inputs.gitRef }}
 
   deploy_to_demo:
+    environment: Demo-test
     permissions:
       contents: read
       id-token: write

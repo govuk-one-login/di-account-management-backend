@@ -1,0 +1,155 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: >
+  Github action role for testing CloudFormation stack status.
+
+Parameters:
+
+  OneLoginRepositoryName:
+    Description: >
+      The name of Repo which is allowed to push here.
+    Type: "String"
+    AllowedPattern: "^[a-zA-Z0-9-]+$"
+    ConstraintDescription: >
+      must be a valid GitHub repo name, made of uppercase or lowercase letters,
+      numbers and hyphens
+
+Outputs:
+  GitHubActionRoleArn:
+    Description: "The resource used by GitHub Actions for testing cloudformation stack."
+    Value: !Ref CloudFormationStackTestingGitHubActionsRole
+    Export:
+      Name: !Sub "${AWS::StackName}-CloudFormationStackTestingGitHubActionsRole"
+
+Resources:
+
+  #
+  # Deny resources creation outside UK region
+  #
+
+  LockToRegionPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName:
+        Fn::Join:
+          - "-"
+          - - !Ref AWS::StackName
+            - "LockToRegionPolicy"
+            - Fn::Select:
+                - 4
+                - Fn::Split:
+                    - "-"
+                    - Fn::Select:
+                        - 2
+                        - Fn::Split:
+                            - "/"
+                            - Ref: AWS::StackId
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Deny"
+            Resource:
+              - "*"
+            NotAction:
+              - "a4b:*"
+              - "acm:*"
+              - "aws-marketplace-management:*"
+              - "aws-marketplace:*"
+              - "budgets:*"
+              - "ce:*"
+              - "chime:*"
+              - "cloudfront:*"
+              - "cognito-idp:*"
+              - "config:*"
+              - "cur:*"
+              - "directconnect:*"
+              - "ec2:Describe*"
+              - "fms:*"
+              - "globalaccelerator:*"
+              - "health:*"
+              - "iam:*"
+              - "importexport:*"
+              - "kms:*"
+              - "mobileanalytics:*"
+              - "networkmanager:*"
+              - "organizations:*"
+              - "pricing:*"
+              - "pipes:*"
+              - "route53:*"
+              - "route53domains:*"
+              - "s3:GetAccountPublic*"
+              - "s3:ListAllMyBuckets"
+              - "s3:PutAccountPublic*"
+              - "ses:*"
+              - "shield:*"
+              - "sts:*"
+              - "support:*"
+              - "synthetics:*"
+              - "trustedadvisor:*"
+              - "waf-regional:*"
+              - "waf:*"
+              - "wafv2:*"
+              - "wellarchitected:*"
+            Condition:
+              StringNotEquals:
+                "aws:RequestedRegion": [
+                  "eu-west-2"
+                ]
+
+  CloudFormationStackTestingGitHubActionsPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName:
+        Fn::Join:
+          - "-"
+          - - !Ref AWS::StackName
+            - "GitHubActionsPolicy"
+            - Fn::Select:
+                - 4
+                - Fn::Split:
+                    - "-"
+                    - Fn::Select:
+                        - 2
+                        - Fn::Split:
+                            - "/"
+                            - Ref: AWS::StackId
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: "TestStackAPI"
+            Effect: "Allow"
+            Action:
+              - "cloudformation:DescribeStackEvents"
+            Resource:
+              - !Sub "arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/${AWS::StackName}/*"
+
+  CloudFormationStackTestingGitHubActionsRole:
+    Type: AWS::IAM::Role
+    # checkov:skip=GDS_AWS_1:Don't run GDS_AWS_1
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+              Effect: "Allow"
+              Action: "sts:AssumeRoleWithWebIdentity"
+              Principal:
+                Federated: !ImportValue GitHubIdentityProviderArn
+              Condition:
+                StringLike:
+                  "token.actions.githubusercontent.com:sub":
+                    - !Sub "repo:govuk-one-login/${OneLoginRepositoryName}*ref:refs/heads/*"
+                    - !Sub "repo:govuk-one-login/${OneLoginRepositoryName}:environment:*"
+                    - !Sub "repo:govuk-one-login/${OneLoginRepositoryName}:pull_request"
+      ManagedPolicyArns:
+        - !Ref CloudFormationStackTestingGitHubActionsPolicy
+        - !Ref LockToRegionPolicy
+      Tags:
+        - Key: "Name"
+          Value: !Join
+            - "-"
+            - - !Ref AWS::StackName
+              - "CloudFormationStackTestingGitHubActionsRole"
+        - Key: "Service"
+          Value: "ci/cd"
+        - Key: "Source"
+          Value: "govuk-one-login/devplatform-deploy/pre-merge-integration-tests/template.yaml"

@@ -132,6 +132,12 @@
       "description": "Trefnu i ymweld â rhywun yn y carchar.",
       "link_text": "Ewch i'ch cyfrif ymweld â rhywun yn y carchar",
       "link_href": "https://prison-visits.service.justice.gov.uk/"
+    },
+    "S1hl5G31dSsMYqPaOuiRVOLhBX0": {
+      "header": "Diweddaru eich cynlluniau cyfalaf Active Travel England",
+      "description": "Adolygu a diweddaru eich cynlluniau cyfalaf teithio.",
+      "link_text": "Ewch i'ch cyfrif cynlluniau cyfalaf teithio",
+      "link_href": "https://update-your-capital-schemes.activetravelengland.gov.uk/"
     }
   },
   "integration": {
@@ -267,6 +273,12 @@
       "description": "Trefnu i ymweld â rhywun yn y carchar.",
       "link_text": "Ewch i'ch cyfrif ymweld â rhywun yn y carchar",
       "link_href": "https://prison-visits.service.justice.gov.uk/"
+    },
+    "S1hl5G31dSsMYqPaOuiRVOLhBX0": {
+      "header": "Diweddaru eich cynlluniau cyfalaf Active Travel England",
+      "description": "Adolygu a diweddaru eich cynlluniau cyfalaf teithio.",
+      "link_text": "Ewch i'ch cyfrif cynlluniau cyfalaf teithio",
+      "link_href": "https://update-your-capital-schemes.activetravelengland.gov.uk/"
     }
   },
   "staging": {
@@ -402,6 +414,12 @@
       "description": "Trefnu i ymweld â rhywun yn y carchar.",
       "link_text": "Ewch i'ch cyfrif ymweld â rhywun yn y carchar",
       "link_href": "https://prison-visits.service.justice.gov.uk/"
+    },
+    "ate": {
+      "header": "Diweddaru eich cynlluniau cyfalaf Active Travel England",
+      "description": "Adolygu a diweddaru eich cynlluniau cyfalaf teithio.",
+      "link_text": "Ewch i'ch cyfrif cynlluniau cyfalaf teithio",
+      "link_href": "https://update-your-capital-schemes.activetravelengland.gov.uk/"
     }
   },
   "build": {
@@ -537,6 +555,12 @@
       "description": "Trefnu i ymweld â rhywun yn y carchar.",
       "link_text": "Ewch i'ch cyfrif ymweld â rhywun yn y carchar",
       "link_href": "https://prison-visits.service.justice.gov.uk/"
+    },
+    "ate": {
+      "header": "Diweddaru eich cynlluniau cyfalaf Active Travel England",
+      "description": "Adolygu a diweddaru eich cynlluniau cyfalaf teithio.",
+      "link_text": "Ewch i'ch cyfrif cynlluniau cyfalaf teithio",
+      "link_href": "https://update-your-capital-schemes.activetravelengland.gov.uk/"
     }
   },
   "dev": {
@@ -672,6 +696,12 @@
       "description": "Trefnu i ymweld â rhywun yn y carchar.",
       "link_text": "Ewch i'ch cyfrif ymweld â rhywun yn y carchar",
       "link_href": "https://prison-visits.service.justice.gov.uk/"
+    },
+    "ate": {
+      "header": "Diweddaru eich cynlluniau cyfalaf Active Travel England",
+      "description": "Adolygu a diweddaru eich cynlluniau cyfalaf teithio.",
+      "link_text": "Ewch i'ch cyfrif cynlluniau cyfalaf teithio",
+      "link_href": "https://update-your-capital-schemes.activetravelengland.gov.uk/"
     }
   },
   "local": {
@@ -807,6 +837,12 @@
       "description": "Trefnu i ymweld â rhywun yn y carchar.",
       "link_text": "Ewch i'ch cyfrif ymweld â rhywun yn y carchar",
       "link_href": "https://prison-visits.service.justice.gov.uk/"
+    },
+    "ate": {
+      "header": "Diweddaru eich cynlluniau cyfalaf Active Travel England",
+      "description": "Adolygu a diweddaru eich cynlluniau cyfalaf teithio.",
+      "link_text": "Ewch i'ch cyfrif cynlluniau cyfalaf teithio",
+      "link_href": "https://update-your-capital-schemes.activetravelengland.gov.uk/"
     }
   }
 }

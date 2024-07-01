@@ -79,7 +79,7 @@ Conditions:
           - !Ref PermissionsBoundary
           - "none"
 
-  IsNotDevelopment:
+  IsNotDevelopmentOrDemo:
     Fn::Not:
       - Fn::Or: 
         - Fn::equals:

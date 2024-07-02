@@ -23,6 +23,7 @@ Parameters:
     Description: "The environment type"
     Type: "String"
     AllowedValues:
+      - "demo"
       - "dev"
       - "build"
       - "staging"
@@ -78,18 +79,26 @@ Conditions:
           - !Ref PermissionsBoundary
           - "none"
 
-  IsNotDevelopment:
+  IsNotDevelopmentOrDemo:
     Fn::Not:
-      - Fn::Equals:
-          - !Ref Environment
-          - "dev"
+      - Fn::Or: 
+        - Fn::equals:
+            - !Ref Environment
+            - "dev"
+        - Fn::equals:
+            - !Ref Environment
+            - "demo"
 
-  IsDevelopment:
+  IsDevelopmentOrDemo: !Or
     Fn::Equals:
       - !Ref Environment
       - "dev"
+    Fn::Equals:
+      - !Ref Environment
+      - "demo"
 
   UseInternalEvents: !Or
+    - !Equals [!Ref Environment, demo]
     - !Equals [!Ref Environment, dev]
     - !Equals [!Ref Environment, build]
 
@@ -179,7 +188,7 @@ Globals:
       Enabled: true
       Type:
         Fn::If:
-          - IsDevelopment
+          - IsDevelopmentOrDemo
           - Canary10Percent5Minutes
           - AllAtOnce
       Role: !GetAtt CodeDeployServiceRole.Arn
@@ -1199,7 +1208,7 @@ Resources:
       TopicName: UserAccountDeletion
 
   UserAccountDeletionTopicPolicy:
-    Condition: IsNotDevelopment
+    Condition: IsNotDevelopmentOrDemo
     Type: AWS::SNS::TopicPolicy
     Properties:
       Topics:
@@ -3600,7 +3609,7 @@ Resources:
             Resource:
               - "*"
           - !If
-            - "IsNotDevelopment"
+            - "IsNotDevelopmentOrDemo"
             - Effect: Allow
               Principal:
                 AWS: !Join
@@ -3617,7 +3626,7 @@ Resources:
                 - "*"
             - !Ref AWS::NoValue
           - !If
-            - "IsNotDevelopment"
+            - "IsNotDevelopmentOrDemo"
             - Effect: Allow
               Principal:
                 AWS: !Join
@@ -3634,7 +3643,7 @@ Resources:
                 - "*"
             - !Ref AWS::NoValue
           - !If
-            - "IsNotDevelopment"
+            - "IsNotDevelopmentOrDemo"
             - Effect: Allow
               Principal:
                 AWS: !Join

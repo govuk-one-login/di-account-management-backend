@@ -216,6 +216,8 @@ Mappings:
       KeyArn: "arn:aws:kms:eu-west-2:451773080033:key/e95d47b6-613d-4bea-93c9-d400cdfb31ee"
 
   IPVCoreAccounts:
+    demo:
+      AccountNumber: ""
     dev:
       AccountNumber: ""
     build:
@@ -247,6 +249,8 @@ Mappings:
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "0674c6e3-219c-4e3a-b04c-3786bac7f228"
 
   CredentialStoreAccounts:
+    demo:
+      AccountNumber: "013758878511"
     dev:
       AccountNumber: "013758878511"
     build:
@@ -259,6 +263,8 @@ Mappings:
       AccountNumber: "499563136613"
 
   AccountInterventionsService:
+    demo:
+      AccountNumber: "013758878511"
     dev:
       AccountNumber: "013758878511"
     build:
@@ -271,6 +277,8 @@ Mappings:
       AccountNumber: "324281879537"
 
   TxmaAccounts:
+    demo:
+      AccountNumber: "248098332657"
     dev:
       AccountNumber: "248098332657"
     build:

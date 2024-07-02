@@ -81,21 +81,22 @@ Conditions:
 
   IsNotDevelopmentOrDemo:
     Fn::Not:
-      - Fn::Or: 
-        - Fn::equals:
-            - !Ref Environment
-            - "dev"
-        - Fn::equals:
-            - !Ref Environment
-            - "demo"
+      - Fn::Or:
+          - Fn::Equals:
+              - !Ref Environment
+              - "dev"
+          - Fn::Equals:
+              - !Ref Environment
+              - "demo"
 
-  IsDevelopmentOrDemo: !Or
-    Fn::Equals:
-      - !Ref Environment
-      - "dev"
-    Fn::Equals:
-      - !Ref Environment
-      - "demo"
+  IsDevelopmentOrDemo:
+    Fn::Or:
+      - Fn::Equals:
+          - !Ref Environment
+          - "dev"
+      - Fn::Equals:
+          - !Ref Environment
+          - "demo"
 
   UseInternalEvents: !Or
     - !Equals [!Ref Environment, demo]

@@ -3,7 +3,7 @@ name: CloudFormation Linter
 on:
   pull_request:
     paths-ignore:
-      - "deploy.yaml"
+      - "template.yaml"
 
 jobs:
   lint_cloudformation:

@@ -9,7 +9,7 @@ on:
         default: ${{ github.ref }}
   pull_request:
     paths:
-      - "deploy.yaml"
+      - "template.yaml"
 
 jobs:
   lint_cloudformation:

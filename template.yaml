@@ -227,6 +227,20 @@ Mappings:
     production:
       AccountNumber: "075701497069"
 
+  OrchestrationAccounts:
+    demo:
+      AccountNumber: ""
+    dev:
+      AccountNumber: ""
+    build:
+      AccountNumber: ""
+    staging:
+      AccountNumber: "758531536632"
+    integration:
+      AccountNumber: "761723964695"
+    production:
+      AccountNumber: "172348255554"
+
   EnvironmentVariables:
     ### These environment variables are referenced further down the file.
     ### Please ensure that any variables defined for an environment are defined for _all_ environments.
@@ -1259,6 +1273,21 @@ Resources:
                     ]
                   - ":root"
             Action: sns:Subscribe
+            Resource:
+              - !Ref UserAccountDeletionTopic
+          - Sid: "Allow Orchestration to publish"
+            Effect: Allow
+            Principal:
+              AWS: !Join
+                - ""
+                - - "arn:aws:iam::"
+                  - !FindInMap [
+                      OrchestrationAccounts,
+                      !Ref Environment,
+                      "AccountNumber",
+                    ]
+                  - ":root"
+            Action: sns:Publish
             Resource:
               - !Ref UserAccountDeletionTopic
 
@@ -3657,6 +3686,27 @@ Resources:
                       ]
                     - ":root"
               Action: kms:Decrypt
+              Resource:
+                - "*"
+            - !Ref AWS::NoValue
+          - !If
+            - "IsNotDevelopmentOrDemo"
+            - Effect: Allow
+              Principal:
+                AWS: !Join
+                  - ""
+                  - - "arn:aws:iam::"
+                    - !FindInMap [
+                        OrchestrationAccounts,
+                        !Ref Environment,
+                        "AccountNumber",
+                      ]
+                    - ":root"
+              Action:
+                - kms:Decrypt
+                - kms:Encrypt
+                - kms:ReEncrypt*
+                - kms:GenerateDataKey*
               Resource:
                 - "*"
             - !Ref AWS::NoValue

@@ -1,9 +1,9 @@
 name: CloudFormation Linter
 
-on: 
-  pull_request: 
+on:
+  pull_request:
     paths-ignore:
-      - 'infrastructure/**'
+      - "deploy.yaml"
 
 jobs:
   lint_cloudformation:

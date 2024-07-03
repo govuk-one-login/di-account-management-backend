@@ -1642,6 +1642,7 @@ Resources:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-write-activity-log
       CodeUri: src
       PackageType: Zip
+      Timeout: 30
       Events:
         ActivityLogToWriteQueue:
           Type: SQS

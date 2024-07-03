@@ -69,6 +69,16 @@ Parameters:
     Description: Value for the System Tag
     Type: String
     Default: Accounts
+  LambdaDeploymentPreference:
+    Description: "Specifies the configuration to enable gradual Lambda deployments"
+    Type: String
+    Default: "Canary10Percent5Minutes"
+    AllowedValues:
+      - AllAtOnce
+      - Canary10Percent5Minutes
+      - Canary10Percent10Minutes
+      - Canary10Percent15Minutes
+      - Canary10Percent30Minutes
 
 Conditions:
   UseCodeSigning:
@@ -205,7 +215,7 @@ Globals:
       Type:
         Fn::If:
           - IsDevelopmentOrDemo
-          - Canary10Percent5Minutes
+          - !Ref LambdaDeploymentPreference
           - AllAtOnce
       Role: !GetAtt CodeDeployServiceRole.Arn
 

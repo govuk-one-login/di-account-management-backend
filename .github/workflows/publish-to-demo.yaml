@@ -59,7 +59,7 @@ jobs:
           node-version-file: ".nvmrc"
 
       - name: Install ESbuild
-        run: npm install -g esbuild@0.23.0
+        run: npm install -g esbuild@0.21.5
 
       - name: Set up Python 3.9
         uses: actions/setup-python@d27e3f3d7c64b4bbf8e4abfb9b63b83e846e0435 # pin@v4

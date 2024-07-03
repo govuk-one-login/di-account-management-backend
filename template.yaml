@@ -69,6 +69,7 @@ Parameters:
     Description: Value for the System Tag
     Type: String
     Default: Accounts
+
   LambdaDeploymentPreference:
     Description: "Specifies the configuration to enable gradual Lambda deployments"
     Type: String

@@ -672,6 +672,8 @@ Resources:
       BuildProperties:
         Minify: true
         Format: "esm"
+        OutExtension:
+          - .js=.mjs
         Target: "es2020"
         Sourcemap: true
         EntryPoints:
@@ -829,6 +831,8 @@ Resources:
       BuildProperties:
         Minify: true
         Format: "esm"
+        OutExtension:
+          - .js=.mjs
         Target: "es2020"
         Sourcemap: true
         EntryPoints:
@@ -990,6 +994,8 @@ Resources:
       BuildProperties:
         Minify: true
         Format: "esm"
+        OutExtension:
+          - .js=.mjs
         Target: "es2020"
         Sourcemap: true
         EntryPoints:
@@ -1129,6 +1135,8 @@ Resources:
       BuildProperties:
         Minify: true
         Format: "esm"
+        OutExtension:
+          - .js=.mjs
         Target: "es2020"
         Sourcemap: true
         EntryPoints:
@@ -1375,6 +1383,8 @@ Resources:
       BuildProperties:
         Minify: true
         Format: "esm"
+        OutExtension:
+          - .js=.mjs
         Target: "es2020"
         Sourcemap: true
         EntryPoints:
@@ -1608,6 +1618,8 @@ Resources:
       BuildProperties:
         Minify: true
         Format: "esm"
+        OutExtension:
+          - .js=.mjs
         Target: "es2020"
         Sourcemap: true
         EntryPoints:
@@ -1724,6 +1736,8 @@ Resources:
       BuildProperties:
         Minify: true
         Format: "esm"
+        OutExtension:
+          - .js=.mjs
         Target: "es2020"
         Sourcemap: true
         EntryPoints:
@@ -1889,9 +1903,10 @@ Resources:
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
-        Bundle: true
         Minify: true
         Format: "esm"
+        OutExtension:
+          - .js=.mjs
         Target: "es2020"
         Sourcemap: true
         EntryPoints:
@@ -2109,6 +2124,8 @@ Resources:
       BuildProperties:
         Minify: true
         Format: "esm"
+        OutExtension:
+          - .js=.mjs
         Target: "es2020"
         Sourcemap: true
         EntryPoints:
@@ -2271,6 +2288,8 @@ Resources:
       BuildProperties:
         Minify: true
         Format: "esm"
+        OutExtension:
+          - .js=.mjs
         Target: "es2020"
         Sourcemap: true
         EntryPoints:
@@ -2362,6 +2381,8 @@ Resources:
       BuildProperties:
         Minify: true
         Format: "esm"
+        OutExtension:
+          - .js=.mjs
         Target: "es2020"
         Sourcemap: true
         EntryPoints:
@@ -2465,6 +2486,8 @@ Resources:
       BuildProperties:
         Minify: true
         Format: "esm"
+        OutExtension:
+          - .js=.mjs
         Target: "es2020"
         Sourcemap: true
         EntryPoints:
@@ -2566,6 +2589,8 @@ Resources:
       BuildProperties:
         Minify: true
         Format: "esm"
+        OutExtension:
+          - .js=.mjs
         Target: "es2020"
         Sourcemap: true
         EntryPoints:
@@ -2773,6 +2798,8 @@ Resources:
       BuildProperties:
         Minify: true
         Format: "esm"
+        OutExtension:
+          - .js=.mjs
         Target: "es2020"
         Sourcemap: true
         EntryPoints:

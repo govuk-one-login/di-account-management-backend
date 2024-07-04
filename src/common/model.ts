@@ -177,6 +177,7 @@ export type Environment =
   | "staging"
   | "build"
   | "dev"
+  | "test"
   | "local";
 type ClientRegistryEnvronment = Record<string, RPClient>;
 export type ClientRegistry = Record<Environment, ClientRegistryEnvronment>;

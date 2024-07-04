@@ -20,7 +20,7 @@ const translateConfig = { marshallOptions };
 const dynamoClient = new DynamoDBClient({});
 const dynamoDocClient = DynamoDBDocumentClient.from(
   dynamoClient,
-  translateConfig,
+  translateConfig
 );
 
 const sqsClient = new SQSClient({});
@@ -30,12 +30,12 @@ export const validateUserData = (userData: UserData): UserData => {
     return userData;
   }
   throw new Error(
-    `userData did not have a user_id: ${JSON.stringify(userData)}`,
+    `userData did not have a user_id: ${JSON.stringify(userData)}`
   );
 };
 
 export const deleteUserData = async (
-  userData: UserData,
+  userData: UserData
 ): Promise<DeleteCommandOutput> => {
   const { TABLE_NAME } = process.env;
 
@@ -63,9 +63,9 @@ export const handler = async (event: SNSEvent): Promise<void> => {
         const result = await sqsClient.send(new SendMessageCommand(message));
         console.error(
           `[Message sent to DLQ] with message id = ${result.MessageId}`,
-          err,
+          err
         );
       }
-    }),
+    })
   );
 };

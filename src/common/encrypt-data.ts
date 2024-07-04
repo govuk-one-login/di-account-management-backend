@@ -11,7 +11,7 @@ let encryptClient = buildEncrypt(encryptClientConfig);
 
 const encryptData = async (
   toEncrypt: string,
-  userId: string,
+  userId: string
 ): Promise<string> => {
   const { GENERATOR_KEY_ARN } = process.env;
   const { WRAPPING_KEY_ARN } = process.env;
@@ -24,7 +24,7 @@ const encryptData = async (
   kmsKeyring ??= await buildKmsKeyring(
     GENERATOR_KEY_ARN,
     WRAPPING_KEY_ARN,
-    BACKUP_WRAPPING_KEY_ARN,
+    BACKUP_WRAPPING_KEY_ARN
   );
   encryptClient ??= buildEncrypt(encryptClientConfig);
   const { encrypt } = encryptClient;

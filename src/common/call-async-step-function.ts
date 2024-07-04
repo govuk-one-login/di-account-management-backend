@@ -8,7 +8,7 @@ import {
 
 export async function callAsyncStepFunction(
   stateMachineArn: string,
-  input: ReportSuspiciousActivityStepInput,
+  input: ReportSuspiciousActivityStepInput
 ): Promise<string> {
   let response: StartExecutionOutput;
   try {
@@ -33,7 +33,7 @@ export const stepFunctionsClient = new SFNClient({
 
 async function startASyncStepFunction(
   stepFunctionARN: string,
-  input: object,
+  input: object
 ): Promise<StartExecutionOutput> {
   const parameters: StartExecutionInput = {
     stateMachineArn: stepFunctionARN,

@@ -28,7 +28,7 @@ VALIDATOR_RULES_MAP.set(
     event_timestamp_ms_formatted: [
       (value) => typeof value === "string" && value.length > 0,
     ],
-  },
+  }
 );
 
 VALIDATOR_RULES_MAP.set(ValidationRulesKeyEnum.TXMA_EVENT, {

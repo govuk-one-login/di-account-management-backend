@@ -14,11 +14,11 @@ export const handler = async (event: SNSEvent): Promise<void> => {
       try {
         if (!STATE_MACHINE_ARN || !DLQ_URL) {
           throw new Error(
-            "Error Occurred - Required environment variables to trigger report suspicious activity steps are not provided.",
+            "Error Occurred - Required environment variables to trigger report suspicious activity steps are not provided."
           );
         }
         const receivedEvent: ReportSuspiciousActivityStepInput = JSON.parse(
-          record.Sns.Message,
+          record.Sns.Message
         );
         if (
           receivedEvent.event_id === undefined ||
@@ -27,7 +27,7 @@ export const handler = async (event: SNSEvent): Promise<void> => {
           receivedEvent.user_id === undefined
         ) {
           throw new Error(
-            "Validation Failed - Required input to trigger report suspicious activity steps are not provided",
+            "Validation Failed - Required input to trigger report suspicious activity steps are not provided"
           );
         }
         await callAsyncStepFunction(STATE_MACHINE_ARN, receivedEvent);
@@ -35,7 +35,7 @@ export const handler = async (event: SNSEvent): Promise<void> => {
         console.error(
           `[Error occurred], trigger report suspicious activity step function:, ${
             (error as Error).message
-          }`,
+          }`
         );
         const { AWS_REGION } = process.env;
         const client = new SQSClient({ region: AWS_REGION });
@@ -46,9 +46,9 @@ export const handler = async (event: SNSEvent): Promise<void> => {
         const result = await client.send(new SendMessageCommand(message));
         console.error(
           `[Message sent to DLQ] with message id = ${result.MessageId}`,
-          error,
+          error
         );
       }
-    }),
+    })
   );
 };

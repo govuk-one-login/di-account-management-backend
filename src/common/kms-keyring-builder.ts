@@ -9,11 +9,11 @@ let kmsKeyRingConfig: KMSKeyRingConfig;
 
 async function formWrappingKeysArray(
   wrappingKeyArn?: string,
-  backupWrappingKeyArn?: string,
+  backupWrappingKeyArn?: string
 ): Promise<string[]> {
   if (!wrappingKeyArn) {
     throw new TypeError(
-      "Invalid configuration - ARN for main envelope encryption wrapping key is undefined.",
+      "Invalid configuration - ARN for main envelope encryption wrapping key is undefined."
     );
   }
   if (backupWrappingKeyArn) {
@@ -26,14 +26,14 @@ async function formWrappingKeysArray(
 const buildKmsKeyring = async (
   generatorKeyArn?: string,
   wrappingKeyArn?: string,
-  backupWrappingKeyArn?: string,
+  backupWrappingKeyArn?: string
 ): Promise<KmsKeyringNode> => {
   if (!kmsKeyRingConfig || Object.keys(kmsKeyRingConfig).length === 0) {
     if (backupWrappingKeyArn) {
       kmsKeyRingConfig = {
         keyIds: await formWrappingKeysArray(
           wrappingKeyArn,
-          backupWrappingKeyArn,
+          backupWrappingKeyArn
         ),
       };
     } else {
@@ -47,7 +47,7 @@ const buildKmsKeyring = async (
     return new KmsKeyringNode(kmsKeyRingConfig);
   }
   throw new TypeError(
-    "Invalid configuration - ARN for envelope encryption Generator key is undefined",
+    "Invalid configuration - ARN for envelope encryption Generator key is undefined"
   );
 };
 

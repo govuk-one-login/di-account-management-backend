@@ -127,7 +127,7 @@ describe("handler", () => {
     expect(response.component_id).toEqual(COMPONENT_ID);
     expect(response.device_information).toBeUndefined();
     expect(response.event_type).toEqual(
-      EventNamesEnum.HOME_REPORT_SUSPICIOUS_ACTIVITY,
+      EventNamesEnum.HOME_REPORT_SUSPICIOUS_ACTIVITY
     );
   });
 
@@ -147,7 +147,7 @@ describe("handler", () => {
     expect(response.zendesk_ticket_id).toBeUndefined();
     expect(response.component_id).toEqual(COMPONENT_ID);
     expect(response.event_type).toEqual(
-      EventNamesEnum.HOME_REPORT_SUSPICIOUS_ACTIVITY,
+      EventNamesEnum.HOME_REPORT_SUSPICIOUS_ACTIVITY
     );
     expect(response.device_information).toEqual(encodedDeviceInfo);
     testSuspiciousActivity.device_information = undefined;
@@ -164,7 +164,7 @@ describe("handler", () => {
 
     expect(consoleErrorMock).toHaveBeenCalledTimes(1);
     expect(consoleErrorMock.mock.calls[0][0]).toContain(
-      "Error marking event as reported",
+      "Error marking event as reported"
     );
     expect(errorThrown).toBeTruthy();
   });
@@ -188,14 +188,14 @@ describe("decrypt event type", () => {
       userId,
       TEST_ENCRYPTED_ACTIVITY_LOG_ENTRY,
       generatorKey,
-      wrappingKey,
+      wrappingKey
     );
     expect(decryptData as jest.Mock).toHaveBeenCalledTimes(1);
     expect(decryptData as jest.Mock).toHaveBeenCalledWith(
       TEST_ENCRYPTED_ACTIVITY_LOG_ENTRY.event_type,
       userId,
       generatorKey,
-      wrappingKey,
+      wrappingKey
     );
     expect(result).toEqual("TXMA_EVENT");
   });

@@ -671,7 +671,8 @@ Resources:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
-        Target: "node18"
+        Format: "esm"
+        Target: "es2020"
         Sourcemap: true
         EntryPoints:
           - save-raw-events.ts
@@ -827,7 +828,8 @@ Resources:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
-        Target: "node18"
+        Format: "esm"
+        Target: "es2020"
         Sourcemap: true
         EntryPoints:
           - query-user-services.ts
@@ -987,7 +989,8 @@ Resources:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
-        Target: "node18"
+        Format: "esm"
+        Target: "es2020"
         Sourcemap: true
         EntryPoints:
           - format-user-services.ts
@@ -1125,7 +1128,8 @@ Resources:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
-        Target: "node18"
+        Format: "esm"
+        Target: "es2020"
         Sourcemap: true
         EntryPoints:
           - write-user-services.ts
@@ -1370,7 +1374,8 @@ Resources:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
-        Target: "node18"
+        Format: "esm"
+        Target: "es2020"
         Sourcemap: true
         EntryPoints:
           - delete-user-services.ts
@@ -1602,7 +1607,8 @@ Resources:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
-        Target: "node18"
+        Format: "esm"
+        Target: "es2020"
         Sourcemap: true
         EntryPoints:
           - delete-email-subscriptions.ts
@@ -1717,7 +1723,8 @@ Resources:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
-        Target: "node18"
+        Format: "esm"
+        Target: "es2020"
         Sourcemap: true
         EntryPoints:
           - write-activity-log.ts
@@ -1882,8 +1889,10 @@ Resources:
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
+        Bundle: true
         Minify: true
-        Target: "node18"
+        Format: "esm"
+        Target: "es2020"
         Sourcemap: true
         EntryPoints:
           - format-activity-log.ts
@@ -2099,7 +2108,8 @@ Resources:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
-        Target: "node18"
+        Format: "esm"
+        Target: "es2020"
         Sourcemap: true
         EntryPoints:
           - delete-activity-log.ts
@@ -2260,7 +2270,8 @@ Resources:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
-        Target: "node18"
+        Format: "esm"
+        Target: "es2020"
         Sourcemap: true
         EntryPoints:
           - mark-activity-reported.ts
@@ -2350,7 +2361,8 @@ Resources:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
-        Target: "node18"
+        Format: "esm"
+        Target: "es2020"
         Sourcemap: true
         EntryPoints:
           - send-suspicious-activity.ts
@@ -2452,7 +2464,8 @@ Resources:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
-        Target: "node18"
+        Format: "esm"
+        Target: "es2020"
         Sourcemap: true
         EntryPoints:
           - send-conf-email.ts
@@ -2552,7 +2565,8 @@ Resources:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
-        Target: "node18"
+        Format: "esm"
+        Target: "es2020"
         Sourcemap: true
         EntryPoints:
           - create-support-ticket.ts
@@ -2758,7 +2772,8 @@ Resources:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
-        Target: "node18"
+        Format: "esm"
+        Target: "es2020"
         Sourcemap: true
         EntryPoints:
           - trigger-rsa-step.ts

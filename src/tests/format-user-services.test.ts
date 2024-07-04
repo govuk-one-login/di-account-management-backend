@@ -40,7 +40,7 @@ describe("existingServicePresenter", () => {
   const existingServiceRecord = makeServiceRecord(
     "clientID1234",
     4,
-    1670850655485
+    1670850655485,
   );
   const lastAccessed = 1670850655485;
   const formattedDate = new Intl.DateTimeFormat("en-GB", {
@@ -49,7 +49,7 @@ describe("existingServicePresenter", () => {
 
   test("modifies existing Service record", () => {
     expect(
-      existingServicePresenter(existingServiceRecord, lastAccessed)
+      existingServicePresenter(existingServiceRecord, lastAccessed),
     ).toEqual({
       client_id: existingServiceRecord.client_id,
       count_successful_logins:
@@ -76,14 +76,14 @@ describe("validateAndParseSQSRecord", () => {
       JSON.stringify({
         TxmaEvent: {},
         ServiceList: [makeServiceRecord("clientID1234", 1)],
-      })
+      }),
     );
     const invalidSQSFixture: SQSRecord = makeSQSInputFixture([
       invalidUserRecord,
     ])[0];
 
     expect(() => validateAndParseSQSRecord(invalidSQSFixture)).toThrowError(
-      `Could not validate txmaEvent`
+      `Could not validate txmaEvent`,
     );
   });
 
@@ -96,14 +96,14 @@ describe("validateAndParseSQSRecord", () => {
       JSON.stringify({
         TxmaEvent: invalidTxmaEvent,
         ServiceList: [makeServiceRecord("clientID1234", 1)],
-      })
+      }),
     );
     const invalidSQSFixture: SQSRecord = makeSQSInputFixture([
       invalidUserRecord,
     ])[0];
 
     expect(() => validateAndParseSQSRecord(invalidSQSFixture)).toThrowError(
-      `Could not validate User`
+      `Could not validate User`,
     );
   });
 
@@ -120,7 +120,7 @@ describe("validateAndParseSQSRecord", () => {
     ])[0];
 
     expect(() => validateAndParseSQSRecord(invalidSQSFixture)).toThrowError(
-      `Duplicate service client_ids found: ["clientID1234"]`
+      `Duplicate service client_ids found: ["clientID1234"]`,
     );
   });
 
@@ -133,7 +133,7 @@ describe("validateAndParseSQSRecord", () => {
       JSON.stringify({
         TxmaEvent: makeTxmaEvent("clientID1234", "userID1234"),
         ServiceList: [invalidServiceRecord],
-      })
+      }),
     );
     const invalidSQSFixture: SQSRecord = makeSQSInputFixture([
       invalidUserRecord,
@@ -141,8 +141,8 @@ describe("validateAndParseSQSRecord", () => {
 
     expect(() => validateAndParseSQSRecord(invalidSQSFixture)).toThrowError(
       `Could not validate Service ${JSON.stringify(
-        invalidUserRecord.ServiceList[0]
-      )}`
+        invalidUserRecord.ServiceList[0],
+      )}`,
     );
   });
 });
@@ -153,13 +153,13 @@ describe("conditionallyUpsertServiceList", () => {
 
   test("it updates existing records when there are matches", () => {
     expect(conditionallyUpsertServiceList(matchedService, TxmaEvent)).toEqual(
-      existingServicePresenter(matchedService, TxmaEvent.timestamp)
+      existingServicePresenter(matchedService, TxmaEvent.timestamp),
     );
   });
 
   it("it creates a new record from TxMA body when there are not matches", () => {
     expect(conditionallyUpsertServiceList(undefined, TxmaEvent)).toEqual(
-      newServicePresenter(TxmaEvent)
+      newServicePresenter(TxmaEvent),
     );
   });
 });
@@ -297,7 +297,7 @@ describe("handler", () => {
     const anotherService = makeServiceRecord(
       "anotherClientId",
       10,
-      1670850655485
+      1670850655485,
     );
 
     const inputSQSEvent = makeSQSInputFixture([
@@ -352,7 +352,7 @@ describe("handler error handling ", () => {
             },
           },
         ],
-      })
+      }),
     );
     const inputSQSEvent = makeSQSInputFixture([
       {

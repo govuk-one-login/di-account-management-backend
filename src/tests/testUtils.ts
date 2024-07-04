@@ -10,7 +10,7 @@ import { clientId, sessionId, userId } from "./testFixtures";
 export const makeServiceRecord = (
   clientId: string,
   count: number,
-  date?: number
+  date?: number,
 ): Service => {
   const fallbackDate = new Date(2022, 0, 1).valueOf();
   const formattedDate = new Intl.DateTimeFormat("en-GB", {
@@ -25,7 +25,7 @@ export const makeServiceRecord = (
 };
 
 export const makeSQSEventFixture = (
-  payloadBody: UserRecordEvent | UserServices
+  payloadBody: UserRecordEvent | UserServices,
 ): SQSRecord => ({
   messageId: "19dd0b57-b21e-4ac1-bd88-01bbb068cb78",
   receiptHandle: "MessageReceiptHandle",
@@ -47,7 +47,7 @@ export const makeTxmaEvent = (
   localclientId?: string,
   localuserId?: string,
   eventName?: string,
-  date?: number
+  date?: number,
 ): TxmaEvent => ({
   event_name: eventName ?? "event_1",
   event_id: "event_id",
@@ -64,10 +64,10 @@ export const makeTxmaEvent = (
 });
 
 export const makeSQSFixture = (
-  payloadBodies: [UserRecordEvent | UserServices]
+  payloadBodies: [UserRecordEvent | UserServices],
 ): SQSRecord[] =>
   payloadBodies.map((payloadBody) => makeSQSEventFixture(payloadBody));
 
 export const makeSQSInputFixture = (
-  payloadBodies: [UserRecordEvent]
+  payloadBodies: [UserRecordEvent],
 ): SQSRecord[] => makeSQSFixture(payloadBodies);

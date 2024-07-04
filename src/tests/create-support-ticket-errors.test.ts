@@ -49,7 +49,7 @@ describe("handler error handling", () => {
     }
     expect(consoleErrorMock).toHaveBeenCalledTimes(1);
     expect(consoleErrorMock.mock.calls[0][0]).toContain(
-      "[Error occurred], unable to send suspicious activity event with ID: 522c5ab4-7e66-4b2a-8f5c-4d31dc4e93e6 to Zendesk, Not all environment variables required to successfully send to Zendesk are provided."
+      "[Error occurred], unable to send suspicious activity event with ID: 522c5ab4-7e66-4b2a-8f5c-4d31dc4e93e6 to Zendesk, Not all environment variables required to successfully send to Zendesk are provided.",
     );
     expect(errorThrown).toBeTruthy();
   });
@@ -64,7 +64,7 @@ describe("handler error handling", () => {
     }
     expect(consoleErrorMock).toHaveBeenCalledTimes(1);
     expect(consoleErrorMock.mock.calls[0][0]).toContain(
-      "Error occurred], unable to send suspicious activity event with ID: 522c5ab4-7e66-4b2a-8f5c-4d31dc4e93e6 to Zendesk, Could not validate Suspicious Event Body"
+      "Error occurred], unable to send suspicious activity event with ID: 522c5ab4-7e66-4b2a-8f5c-4d31dc4e93e6 to Zendesk, Could not validate Suspicious Event Body",
     );
     expect(errorThrown).toBeTruthy();
     testSuspiciousActivityInput.event_type =
@@ -83,7 +83,7 @@ describe("handler error handling", () => {
     }
     expect(consoleErrorMock).toHaveBeenCalledTimes(1);
     expect(consoleErrorMock.mock.calls[0][0]).toContain(
-      "[Error occurred], unable to send suspicious activity event with ID: 522c5ab4-7e66-4b2a-8f5c-4d31dc4e93e6 to Zendesk, SomeSecretsManagerError"
+      "[Error occurred], unable to send suspicious activity event with ID: 522c5ab4-7e66-4b2a-8f5c-4d31dc4e93e6 to Zendesk, SomeSecretsManagerError",
     );
     expect(errorThrown).toBeTruthy();
   });
@@ -100,7 +100,7 @@ describe("handler error handling", () => {
     }
     expect(consoleErrorMock).toHaveBeenCalledTimes(1);
     expect(consoleErrorMock.mock.calls[0][0]).toContain(
-      "[Error occurred], unable to send suspicious activity event with ID: 522c5ab4-7e66-4b2a-8f5c-4d31dc4e93e6 to Zendesk, Required zendesk secrets not configured"
+      "[Error occurred], unable to send suspicious activity event with ID: 522c5ab4-7e66-4b2a-8f5c-4d31dc4e93e6 to Zendesk, Required zendesk secrets not configured",
     );
     expect(errorThrown).toBeTruthy();
   });
@@ -117,7 +117,7 @@ describe("handler error handling", () => {
     }
     expect(consoleErrorMock).toHaveBeenCalledTimes(1);
     expect(consoleErrorMock.mock.calls[0][0]).toContain(
-      "[Error occurred], unable to send suspicious activity event with ID: 522c5ab4-7e66-4b2a-8f5c-4d31dc4e93e6 to Zendesk, 404 undefined"
+      "[Error occurred], unable to send suspicious activity event with ID: 522c5ab4-7e66-4b2a-8f5c-4d31dc4e93e6 to Zendesk, 404 undefined",
     );
     expect(errorThrown).toBeTruthy();
   });

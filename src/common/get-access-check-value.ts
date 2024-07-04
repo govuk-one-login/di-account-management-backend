@@ -4,7 +4,7 @@ const SecretValueAlgorithm = "sha256";
 const SecretValueEncoding = "hex";
 
 const getHashedAccessCheckValue = async (
-  accessCheckValue: string
+  accessCheckValue: string,
 ): Promise<string> => {
   return crypto
     .createHash(SecretValueAlgorithm)

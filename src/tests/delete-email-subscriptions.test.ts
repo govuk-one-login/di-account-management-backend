@@ -57,7 +57,7 @@ describe("validateUserData", () => {
         persistent_session_id: "persistent_session_id",
         session_id: "session_id",
         legacy_subject_id: "legacy_subject_id",
-      })
+      }),
     );
     expect(() => {
       validateUserData(userData);
@@ -74,7 +74,7 @@ describe("validateUserData", () => {
         persistent_session_id: "persistent_session_id",
         session_id: "session_id",
         public_subject_id: "public_subject_id",
-      })
+      }),
     );
     expect(validateUserData(userData)).toBe(userData);
   });

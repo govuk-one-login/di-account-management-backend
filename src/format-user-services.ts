@@ -33,10 +33,10 @@ const validateUserServices = (services: Service[]): void => {
   if (serviceClientIds.length !== new Set(serviceClientIds).size) {
     const filteredServices = Array.from(new Set(serviceClientIds));
     const duplicateServices = filteredServices.filter((service) =>
-      filteredServices.includes(service)
+      filteredServices.includes(service),
     );
     throw new Error(
-      `Duplicate service client_ids found: ${JSON.stringify(duplicateServices)}`
+      `Duplicate service client_ids found: ${JSON.stringify(duplicateServices)}`,
     );
   }
 };
@@ -62,12 +62,12 @@ const validateTxmaEvent = (txmaEvent: TxmaEvent): void => {
 
 export const prettifyDate = (dateEpoch: number): string => {
   return new Intl.DateTimeFormat("en-GB", { dateStyle: "long" }).format(
-    new Date(dateEpoch)
+    new Date(dateEpoch),
   );
 };
 
 export const validateAndParseSQSRecord = (
-  record: SQSRecord
+  record: SQSRecord,
 ): UserRecordEvent => {
   const parsedRecord = JSON.parse(record.body);
   const { TxmaEvent, ServiceList } = parsedRecord;
@@ -86,7 +86,7 @@ export const newServicePresenter = (TxmaEvent: TxmaEvent): Service =>
 
 export const existingServicePresenter = (
   service: Service,
-  lastAccessed: number
+  lastAccessed: number,
 ): Service => ({
   client_id: service.client_id,
   count_successful_logins: service.count_successful_logins + 1,
@@ -96,7 +96,7 @@ export const existingServicePresenter = (
 
 export const conditionallyUpsertServiceList = (
   matchingService: Service | undefined,
-  TxmaEvent: TxmaEvent
+  TxmaEvent: TxmaEvent,
 ): Service => ({
   ...(!matchingService
     ? newServicePresenter(TxmaEvent)
@@ -106,10 +106,10 @@ export const conditionallyUpsertServiceList = (
 export const formatRecord = (record: UserRecordEvent) => {
   const { TxmaEvent, ServiceList } = record;
   const matchingRecord = ServiceList.find(
-    (service) => TxmaEvent.client_id === service.client_id
+    (service) => TxmaEvent.client_id === service.client_id,
   );
   const nonMatchingRecords = ServiceList.filter(
-    (service) => TxmaEvent.client_id !== service.client_id
+    (service) => TxmaEvent.client_id !== service.client_id,
   );
 
   return {
@@ -123,7 +123,7 @@ export const formatRecord = (record: UserRecordEvent) => {
 
 export const sendSqsMessage = async (
   messageBody: string,
-  queueUrl: string | undefined
+  queueUrl: string | undefined,
 ): Promise<string | undefined> => {
   const { AWS_REGION } = process.env;
   const client = new SQSClient({ region: AWS_REGION });
@@ -145,16 +145,16 @@ export const handler = async (event: SQSEvent): Promise<void> => {
         const formattedRecord = formatRecord(validateAndParseSQSRecord(record));
         const messageId = await sendSqsMessage(
           JSON.stringify(formattedRecord),
-          OUTPUT_QUEUE_URL
+          OUTPUT_QUEUE_URL,
         );
         console.log(`[Message sent to QUEUE] with message id = ${messageId}`);
       } catch (err) {
         const messageId = await sendSqsMessage(record.body, DLQ_URL);
         console.error(
           `[Message sent to DLQ] with message id = ${messageId}`,
-          err
+          err,
         );
       }
-    })
+    }),
   );
 };

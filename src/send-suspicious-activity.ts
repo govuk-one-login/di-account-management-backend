@@ -15,7 +15,7 @@ import validateObject from "./common/validator";
 
 export const sendSqsMessage = async (
   messageBody: string,
-  queueUrl: string | undefined
+  queueUrl: string | undefined,
 ): Promise<SendMessageCommandOutput> => {
   const { AWS_REGION } = process.env;
   const client = new SQSClient({ region: AWS_REGION });
@@ -28,7 +28,7 @@ export const sendSqsMessage = async (
 
 export const transformToTxMAEvent = (
   event: ReportSuspiciousActivityEvent,
-  eventName: string
+  eventName: string,
 ): TxMAAuditEvent => {
   if (
     !event.event_timestamp_ms ||
@@ -39,7 +39,7 @@ export const transformToTxMAEvent = (
     !event.suspicious_activity
   ) {
     throw Error(
-      "Error generating TxMA event, required fields are not provided"
+      "Error generating TxMA event, required fields are not provided",
     );
   }
   let txmaEvent = null;
@@ -78,7 +78,7 @@ export const transformToTxMAEvent = (
     };
   } else {
     throw new Error(
-      "Unsupported event - There is no transformation logic for this event"
+      "Unsupported event - There is no transformation logic for this event",
     );
   }
   return txmaEvent;
@@ -86,63 +86,63 @@ export const transformToTxMAEvent = (
 
 export async function sendAuditEvent(
   event: TxMAAuditEvent,
-  queueUrl: string | undefined
+  queueUrl: string | undefined,
 ): Promise<SendMessageCommandOutput> {
   try {
     const result = await sendSqsMessage(JSON.stringify(event), queueUrl);
     console.log(
-      `[Message sent to QUEUE] with message id = ${result.MessageId}`
+      `[Message sent to QUEUE] with message id = ${result.MessageId}`,
     );
     return result;
   } catch (error: unknown) {
     console.error(
       `Error occurred trying to send the audit event to the TxMA queue: ${
         (error as Error).message
-      }`
+      }`,
     );
     throw error;
   }
 }
 
 export const handler = async (
-  input: ReportSuspiciousActivityEvent
+  input: ReportSuspiciousActivityEvent,
 ): Promise<void> => {
   const { EVENT_NAME, TXMA_QUEUE_URL } = process.env;
   try {
     if (!EVENT_NAME) {
       throw new Error(
-        "Cannot handle event as event name has not been provided in the environment"
+        "Cannot handle event as event name has not been provided in the environment",
       );
     }
 
     if (!validateObject(input, VALIDATOR_RULES_MAP.get(EVENT_NAME))) {
       throw new Error(
-        `Received Event: ${JSON.stringify(input)} failed validation.`
+        `Received Event: ${JSON.stringify(input)} failed validation.`,
       );
     }
     input.component_id = COMPONENT_ID;
     const txMAEvent = transformToTxMAEvent(
       input,
-      EventNamesEnum.HOME_REPORT_SUSPICIOUS_ACTIVITY
+      EventNamesEnum.HOME_REPORT_SUSPICIOUS_ACTIVITY,
     );
 
     if (
       !validateObject(
         txMAEvent,
-        VALIDATOR_RULES_MAP.get(ValidationRulesKeyEnum.TXMA_EVENT)
+        VALIDATOR_RULES_MAP.get(ValidationRulesKeyEnum.TXMA_EVENT),
       )
     ) {
       throw new Error(
-        `TXMA Event: ${JSON.stringify(input)} failed validation.`
+        `TXMA Event: ${JSON.stringify(input)} failed validation.`,
       );
     }
     await sendAuditEvent(txMAEvent, TXMA_QUEUE_URL);
   } catch (err: unknown) {
     console.error(
-      `Error occurred sending event to TxMA: ${(err as Error).message}`
+      `Error occurred sending event to TxMA: ${(err as Error).message}`,
     );
     throw new Error(
-      `Error occurred sending event to TxMA: ${(err as Error).message}`
+      `Error occurred sending event to TxMA: ${(err as Error).message}`,
     );
   }
 };

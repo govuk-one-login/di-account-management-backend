@@ -664,6 +664,7 @@ Resources:
         Variables:
           TABLE_NAME: !Ref RawEventsStoreTableName
           DLQ_URL: !Ref SaveRawEventsDeadLetterQueue
+          NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
         Alarms:
           - !Ref SaveRawEventsFunctionDeploymentAlarm
@@ -823,6 +824,7 @@ Resources:
           TABLE_NAME: !Ref UserServicesStoreTableName
           DLQ_URL: !Ref QueryUserServicesDeadLetterQueue
           OUTPUT_QUEUE_URL: !Ref UserServicesToFormatQueue
+          NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
         Alarms:
           - !Ref QueryUserServicesFunctionDeploymentAlarm
@@ -986,6 +988,7 @@ Resources:
         Variables:
           DLQ_URL: !Ref FormatUserServicesDeadLetterQueue
           OUTPUT_QUEUE_URL: !Ref UserServicesToWriteQueue
+          NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
         Alarms:
           - !Ref FormatUserServicesFunctionDeploymentAlarm
@@ -1127,6 +1130,7 @@ Resources:
         Variables:
           TABLE_NAME: !Ref UserServicesStoreTableName
           DLQ_URL: !Ref WriteUserServicesDeadLetterQueue
+          NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
         Alarms:
           - !Ref WriteUserServicesFunctionDeploymentAlarm
@@ -1375,6 +1379,7 @@ Resources:
         Variables:
           TABLE_NAME: !Ref UserServicesStoreTableName
           DLQ_URL: !Ref DeleteUserServicesDeadLetterQueue
+          NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
         Alarms:
           - !Ref DeleteUserServicesFunctionDeploymentAlarm
@@ -1610,6 +1615,7 @@ Resources:
               !Ref Environment,
               GOVACCOUNTSPUBLISHINGAPIURL,
             ]
+          NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
         Alarms:
           - !Ref DeleteEmailSubscriptionsFunctionDeploymentAlarm
@@ -1728,6 +1734,7 @@ Resources:
           VERIFY_ACCESS_VALUE: !Sub "{{resolve:secretsmanager:/${AWS::StackName}/Config/Storage/VerificationSecret}}"
           ACCOUNT_ID: !Sub "${AWS::AccountId}"
           ENVIRONMENT: !Ref Environment
+          NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
         Alarms:
           - !Ref WriteActivityLogFunctionDeploymentAlarm
@@ -1897,6 +1904,7 @@ Resources:
           ACCOUNT_ID: !Sub "${AWS::AccountId}"
           GENERATOR_KEY_ARN: !GetAtt GeneratorKey.Arn
           WRAPPING_KEY_ARN: !GetAtt WrapperKey.Arn
+          NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
         Alarms:
           - !Ref FormatActivityLogFunctionDeploymentAlarm
@@ -2116,6 +2124,7 @@ Resources:
         Variables:
           TABLE_NAME: !Ref ActivityLogsStoreTableName
           DLQ_URL: !Ref DeleteActivityLogDeadLetterQueue
+          NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
         Alarms:
           - !Ref DeleteActivityLogFunctionDeploymentAlarm
@@ -2280,6 +2289,7 @@ Resources:
           VERIFY_ACCESS_VALUE: !Sub "{{resolve:secretsmanager:/${AWS::StackName}/Config/Storage/VerificationSecret}}"
           ACCOUNT_ID: !Sub "${AWS::AccountId}"
           ENVIRONMENT: !Ref Environment
+          NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
         Alarms:
           - !Ref MarkActivityReportedFunctionDeploymentAlarm
@@ -2373,6 +2383,7 @@ Resources:
         Variables:
           EVENT_NAME: HOME_REPORT_SUSPICIOUS_ACTIVITY
           TXMA_QUEUE_URL: !Ref AuditOutputQueue
+          NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
         Alarms:
           - !Ref SendSuspiciousActivityFunctionDeploymentAlarm
@@ -2478,6 +2489,7 @@ Resources:
               REPORTSUSPISCIOUSACTIVITYTEMPLATEID,
             ]
           ENVIRONMENT_NAME: !Ref Environment
+          NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
         Alarms:
           - !Ref SendConfEmailFunctionDeploymentAlarm
@@ -2581,6 +2593,7 @@ Resources:
           ZENDESK_API_URL_KEY: /account-mgmt-backend/zendesk-api-url-key
           ZENDESK_TICKET_FORM_ID: /account-mgmt-backend/zendesk-ticket-form-id-key
           ACTIVITY_LOG_TABLE: !Ref ActivityLogsStoreTableName
+          NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
         Alarms:
           - !Ref CreateSupportTicketsDeploymentAlarm
@@ -2790,6 +2803,7 @@ Resources:
           STATE_MACHINE_ARN: !Ref ReportSuspiciousActivityStepFunction
           STEP_FUNCTION_ALIAS: "latest"
           DLQ_URL: !Ref TriggerSuspiciousActivityStepDeadLetterQueue
+          NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
         Alarms:
           - !Ref TriggerSuspiciousActivityStepFunctionDeploymentAlarm

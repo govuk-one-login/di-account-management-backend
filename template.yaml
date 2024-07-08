@@ -12,10 +12,6 @@ Parameters:
   ActivityLogsStoreTableName:
     Type: String
     Default: activity_log
-  AlertingStackName:
-    Description: The name of the stack that defines the Alerting resources
-    Type: String
-    Default: build-notifications
   DummyEventStoreTableName:
     Type: String
     Default: dummy_events
@@ -752,8 +748,7 @@ Resources:
       Threshold: 1
       ComparisonOperator: "GreaterThanOrEqualToThreshold"
       AlarmActions:
-        - !ImportValue
-          "Fn::Sub": "${AlertingStackName}-BuildNotificationTopicArn"
+        - !ImportValue build-notifications-BuildNotificationTopicArn"
       ActionsEnabled: true
 
   ########################
@@ -924,8 +919,7 @@ Resources:
       Threshold: 1
       ComparisonOperator: "GreaterThanOrEqualToThreshold"
       AlarmActions:
-        - !ImportValue
-          "Fn::Sub": "${AlertingStackName}-BuildNotificationTopicArn"
+        - !ImportValue build-notifications-BuildNotificationTopicArn"
       ActionsEnabled: true
 
   #################################
@@ -1063,8 +1057,7 @@ Resources:
       Threshold: 1
       ComparisonOperator: "GreaterThanOrEqualToThreshold"
       AlarmActions:
-        - !ImportValue
-          Fn::Sub: "${AlertingStackName}-BuildNotificationTopicArn"
+        - !ImportValue build-notifications-BuildNotificationTopicArn"
       ActionsEnabled: true
 
   #########################
@@ -1206,8 +1199,7 @@ Resources:
       Threshold: 1
       ComparisonOperator: "GreaterThanOrEqualToThreshold"
       AlarmActions:
-        - !ImportValue
-          Fn::Sub: "${AlertingStackName}-BuildNotificationTopicArn"
+        - !ImportValue build-notifications-BuildNotificationTopicArn"
       ActionsEnabled: true
 
   ##################################
@@ -1453,8 +1445,7 @@ Resources:
       Threshold: 1
       ComparisonOperator: "GreaterThanOrEqualToThreshold"
       AlarmActions:
-        - !ImportValue
-          Fn::Sub: "${AlertingStackName}-BuildNotificationTopicArn"
+        - !ImportValue build-notifications-BuildNotificationTopicArn"
       ActionsEnabled: true
 
   DeleteDeadLetterQueueAlarm:
@@ -1477,8 +1468,7 @@ Resources:
       Threshold: 1
       ComparisonOperator: "GreaterThanOrEqualToThreshold"
       AlarmActions:
-        - !ImportValue
-          Fn::Sub: "${AlertingStackName}-BuildNotificationTopicArn"
+        - !ImportValue build-notifications-BuildNotificationTopicArn"
       ActionsEnabled: true
 
   ############################
@@ -1794,8 +1784,7 @@ Resources:
       Threshold: 1
       ComparisonOperator: "GreaterThanOrEqualToThreshold"
       AlarmActions:
-        - !ImportValue
-          Fn::Sub: "${AlertingStackName}-BuildNotificationTopicArn"
+        - !ImportValue build-notifications-BuildNotificationTopicArn"
       ActionsEnabled: true
 
   #######################
@@ -1969,8 +1958,7 @@ Resources:
       Threshold: 1
       ComparisonOperator: "GreaterThanOrEqualToThreshold"
       AlarmActions:
-        - !ImportValue
-          Fn::Sub: "${AlertingStackName}-BuildNotificationTopicArn"
+        - !ImportValue build-notifications-BuildNotificationTopicArn"
       ActionsEnabled: true
 
   ################################
@@ -2033,8 +2021,7 @@ Resources:
       Threshold: 1
       ComparisonOperator: "GreaterThanOrEqualToThreshold"
       AlarmActions:
-        - !ImportValue
-          Fn::Sub: "${AlertingStackName}-BuildNotificationTopicArn"
+        - !ImportValue build-notifications-BuildNotificationTopicArn"
       ActionsEnabled: true
 
   DeleteActivityLogFunction:
@@ -2191,8 +2178,7 @@ Resources:
       Threshold: 1
       ComparisonOperator: "GreaterThanOrEqualToThreshold"
       AlarmActions:
-        - !ImportValue
-          Fn::Sub: "${AlertingStackName}-BuildNotificationTopicArn"
+        - !ImportValue build-notifications-BuildNotificationTopicArn"
       ActionsEnabled: true
 
   ######################
@@ -2694,8 +2680,7 @@ Resources:
       Threshold: 10
       EvaluationPeriods: 1
       AlarmActions:
-        - !ImportValue
-          Fn::Sub: "${AlertingStackName}-BuildNotificationTopicArn"
+        - !ImportValue build-notifications-BuildNotificationTopicArn"
 
   TriggerSuspiciousActivityStepFunction:
     DependsOn:
@@ -2927,8 +2912,7 @@ Resources:
       Period: 300
       TreatMissingData: missing
       AlarmActions:
-        - !ImportValue
-          Fn::Sub: "${AlertingStackName}-BuildNotificationTopicArn"
+        - !ImportValue build-notifications-BuildNotificationTopicArn"
 
   ReportSuspiciousActivityStepFunctionExecutionRetryAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -2946,8 +2930,7 @@ Resources:
       Threshold: 10
       EvaluationPeriods: 1
       AlarmActions:
-        - !ImportValue
-          Fn::Sub: "${AlertingStackName}-BuildNotificationTopicArn"
+        - !ImportValue build-notifications-BuildNotificationTopicArn"
 
   #######################
   # Canary Deployment
@@ -3007,8 +2990,7 @@ Resources:
       Threshold: 0
       ComparisonOperator: "GreaterThanThreshold"
       AlarmActions:
-        - !ImportValue
-          Fn::Sub: "${AlertingStackName}-BuildNotificationTopicArn"
+        - !ImportValue build-notifications-BuildNotificationTopicArn"
       ActionsEnabled: true
       TreatMissingData: notBreaching
 
@@ -3045,8 +3027,7 @@ Resources:
       Threshold: 0
       ComparisonOperator: "GreaterThanThreshold"
       AlarmActions:
-        - !ImportValue
-          Fn::Sub: "${AlertingStackName}-BuildNotificationTopicArn"
+        - !ImportValue build-notifications-BuildNotificationTopicArn"
       ActionsEnabled: true
       TreatMissingData: notBreaching
 
@@ -3083,8 +3064,7 @@ Resources:
       Threshold: 0
       ComparisonOperator: "GreaterThanThreshold"
       AlarmActions:
-        - !ImportValue
-          Fn::Sub: "${AlertingStackName}-BuildNotificationTopicArn"
+        - !ImportValue build-notifications-BuildNotificationTopicArn"
       ActionsEnabled: true
       TreatMissingData: notBreaching
 
@@ -3121,8 +3101,7 @@ Resources:
       Threshold: 0
       ComparisonOperator: "GreaterThanThreshold"
       AlarmActions:
-        - !ImportValue
-          Fn::Sub: "${AlertingStackName}-BuildNotificationTopicArn"
+        - !ImportValue build-notifications-BuildNotificationTopicArn"
       ActionsEnabled: true
       TreatMissingData: notBreaching
 
@@ -3159,8 +3138,7 @@ Resources:
       Threshold: 0
       ComparisonOperator: "GreaterThanThreshold"
       AlarmActions:
-        - !ImportValue
-          Fn::Sub: "${AlertingStackName}-BuildNotificationTopicArn"
+        - !ImportValue build-notifications-BuildNotificationTopicArn"
       ActionsEnabled: true
       TreatMissingData: notBreaching
 
@@ -3197,8 +3175,7 @@ Resources:
       Threshold: 0
       ComparisonOperator: "GreaterThanThreshold"
       AlarmActions:
-        - !ImportValue
-          Fn::Sub: "${AlertingStackName}-BuildNotificationTopicArn"
+        - !ImportValue build-notifications-BuildNotificationTopicArn"
       ActionsEnabled: true
       TreatMissingData: notBreaching
 
@@ -3235,8 +3212,7 @@ Resources:
       Threshold: 0
       ComparisonOperator: "GreaterThanThreshold"
       AlarmActions:
-        - !ImportValue
-          Fn::Sub: "${AlertingStackName}-BuildNotificationTopicArn"
+        - !ImportValue build-notifications-BuildNotificationTopicArn"
       ActionsEnabled: true
       TreatMissingData: notBreaching
 
@@ -3273,8 +3249,7 @@ Resources:
       Threshold: 0
       ComparisonOperator: "GreaterThanThreshold"
       AlarmActions:
-        - !ImportValue
-          Fn::Sub: "${AlertingStackName}-BuildNotificationTopicArn"
+        - !ImportValue build-notifications-BuildNotificationTopicArn"
       ActionsEnabled: true
       TreatMissingData: notBreaching
 
@@ -3311,8 +3286,7 @@ Resources:
       Threshold: 0
       ComparisonOperator: "GreaterThanThreshold"
       AlarmActions:
-        - !ImportValue
-          Fn::Sub: "${AlertingStackName}-BuildNotificationTopicArn"
+        - !ImportValue build-notifications-BuildNotificationTopicArn"
       ActionsEnabled: true
       TreatMissingData: notBreaching
 
@@ -3349,8 +3323,7 @@ Resources:
       Threshold: 0
       ComparisonOperator: "GreaterThanThreshold"
       AlarmActions:
-        - !ImportValue
-          Fn::Sub: "${AlertingStackName}-BuildNotificationTopicArn"
+        - !ImportValue build-notifications-BuildNotificationTopicArn"
       ActionsEnabled: true
       TreatMissingData: notBreaching
 
@@ -3387,8 +3360,7 @@ Resources:
       Threshold: 0
       ComparisonOperator: "GreaterThanThreshold"
       AlarmActions:
-        - !ImportValue
-          Fn::Sub: "${AlertingStackName}-BuildNotificationTopicArn"
+        - !ImportValue build-notifications-BuildNotificationTopicArn"
       ActionsEnabled: true
       TreatMissingData: notBreaching
 
@@ -3425,8 +3397,7 @@ Resources:
       Threshold: 0
       ComparisonOperator: "GreaterThanThreshold"
       AlarmActions:
-        - !ImportValue
-          Fn::Sub: "${AlertingStackName}-BuildNotificationTopicArn"
+        - !ImportValue build-notifications-BuildNotificationTopicArn"
       ActionsEnabled: true
       TreatMissingData: notBreaching
 
@@ -3463,8 +3434,7 @@ Resources:
       Threshold: 0
       ComparisonOperator: "GreaterThanThreshold"
       AlarmActions:
-        - !ImportValue
-          Fn::Sub: "${AlertingStackName}-BuildNotificationTopicArn"
+        - !ImportValue build-notifications-BuildNotificationTopicArn"
       ActionsEnabled: true
       TreatMissingData: notBreaching
 
@@ -3501,8 +3471,7 @@ Resources:
       Threshold: 0
       ComparisonOperator: "GreaterThanThreshold"
       AlarmActions:
-        - !ImportValue
-          Fn::Sub: "${AlertingStackName}-BuildNotificationTopicArn"
+        - !ImportValue build-notifications-BuildNotificationTopicArn"
       ActionsEnabled: true
       TreatMissingData: notBreaching
 

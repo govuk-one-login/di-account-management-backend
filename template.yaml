@@ -2661,7 +2661,7 @@ Resources:
       Threshold: 10
       ComparisonOperator: "GreaterThanOrEqualToThreshold"
       AlarmActions:
-        - BuildNoti
+        - !ImportValue build-notifications-BuildNotificationTopicArn
       ActionsEnabled: true
 
   TriggerSuspiciousActivityStepFunctionLambdaExecutionRetryAlarm:

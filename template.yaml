@@ -748,7 +748,7 @@ Resources:
       Threshold: 1
       ComparisonOperator: "GreaterThanOrEqualToThreshold"
       AlarmActions:
-        - !ImportValue build-notifications-BuildNotificationTopicArn"
+        - !ImportValue build-notifications-BuildNotificationTopicArn
       ActionsEnabled: true
 
   ########################
@@ -919,7 +919,7 @@ Resources:
       Threshold: 1
       ComparisonOperator: "GreaterThanOrEqualToThreshold"
       AlarmActions:
-        - !ImportValue build-notifications-BuildNotificationTopicArn"
+        - !ImportValue build-notifications-BuildNotificationTopicArn
       ActionsEnabled: true
 
   #################################
@@ -1057,7 +1057,7 @@ Resources:
       Threshold: 1
       ComparisonOperator: "GreaterThanOrEqualToThreshold"
       AlarmActions:
-        - !ImportValue build-notifications-BuildNotificationTopicArn"
+        - !ImportValue build-notifications-BuildNotificationTopicArn
       ActionsEnabled: true
 
   #########################
@@ -1199,7 +1199,7 @@ Resources:
       Threshold: 1
       ComparisonOperator: "GreaterThanOrEqualToThreshold"
       AlarmActions:
-        - !ImportValue build-notifications-BuildNotificationTopicArn"
+        - !ImportValue build-notifications-BuildNotificationTopicArn
       ActionsEnabled: true
 
   ##################################
@@ -1445,7 +1445,7 @@ Resources:
       Threshold: 1
       ComparisonOperator: "GreaterThanOrEqualToThreshold"
       AlarmActions:
-        - !ImportValue build-notifications-BuildNotificationTopicArn"
+        - !ImportValue build-notifications-BuildNotificationTopicArn
       ActionsEnabled: true
 
   DeleteDeadLetterQueueAlarm:
@@ -1468,7 +1468,7 @@ Resources:
       Threshold: 1
       ComparisonOperator: "GreaterThanOrEqualToThreshold"
       AlarmActions:
-        - !ImportValue build-notifications-BuildNotificationTopicArn"
+        - !ImportValue build-notifications-BuildNotificationTopicArn
       ActionsEnabled: true
 
   ############################
@@ -1784,7 +1784,7 @@ Resources:
       Threshold: 1
       ComparisonOperator: "GreaterThanOrEqualToThreshold"
       AlarmActions:
-        - !ImportValue build-notifications-BuildNotificationTopicArn"
+        - !ImportValue build-notifications-BuildNotificationTopicArn
       ActionsEnabled: true
 
   #######################
@@ -1958,7 +1958,7 @@ Resources:
       Threshold: 1
       ComparisonOperator: "GreaterThanOrEqualToThreshold"
       AlarmActions:
-        - !ImportValue build-notifications-BuildNotificationTopicArn"
+        - !ImportValue build-notifications-BuildNotificationTopicArn
       ActionsEnabled: true
 
   ################################
@@ -2021,7 +2021,7 @@ Resources:
       Threshold: 1
       ComparisonOperator: "GreaterThanOrEqualToThreshold"
       AlarmActions:
-        - !ImportValue build-notifications-BuildNotificationTopicArn"
+        - !ImportValue build-notifications-BuildNotificationTopicArn
       ActionsEnabled: true
 
   DeleteActivityLogFunction:
@@ -2178,7 +2178,7 @@ Resources:
       Threshold: 1
       ComparisonOperator: "GreaterThanOrEqualToThreshold"
       AlarmActions:
-        - !ImportValue build-notifications-BuildNotificationTopicArn"
+        - !ImportValue build-notifications-BuildNotificationTopicArn
       ActionsEnabled: true
 
   ######################
@@ -2680,7 +2680,7 @@ Resources:
       Threshold: 10
       EvaluationPeriods: 1
       AlarmActions:
-        - !ImportValue build-notifications-BuildNotificationTopicArn"
+        - !ImportValue build-notifications-BuildNotificationTopicArn
 
   TriggerSuspiciousActivityStepFunction:
     DependsOn:
@@ -2912,7 +2912,7 @@ Resources:
       Period: 300
       TreatMissingData: missing
       AlarmActions:
-        - !ImportValue build-notifications-BuildNotificationTopicArn"
+        - !ImportValue build-notifications-BuildNotificationTopicArn
 
   ReportSuspiciousActivityStepFunctionExecutionRetryAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -2930,7 +2930,7 @@ Resources:
       Threshold: 10
       EvaluationPeriods: 1
       AlarmActions:
-        - !ImportValue build-notifications-BuildNotificationTopicArn"
+        - !ImportValue build-notifications-BuildNotificationTopicArn
 
   #######################
   # Canary Deployment
@@ -2990,7 +2990,7 @@ Resources:
       Threshold: 0
       ComparisonOperator: "GreaterThanThreshold"
       AlarmActions:
-        - !ImportValue build-notifications-BuildNotificationTopicArn"
+        - !ImportValue build-notifications-BuildNotificationTopicArn
       ActionsEnabled: true
       TreatMissingData: notBreaching
 
@@ -3027,7 +3027,7 @@ Resources:
       Threshold: 0
       ComparisonOperator: "GreaterThanThreshold"
       AlarmActions:
-        - !ImportValue build-notifications-BuildNotificationTopicArn"
+        - !ImportValue build-notifications-BuildNotificationTopicArn
       ActionsEnabled: true
       TreatMissingData: notBreaching
 
@@ -3064,7 +3064,7 @@ Resources:
       Threshold: 0
       ComparisonOperator: "GreaterThanThreshold"
       AlarmActions:
-        - !ImportValue build-notifications-BuildNotificationTopicArn"
+        - !ImportValue build-notifications-BuildNotificationTopicArn
       ActionsEnabled: true
       TreatMissingData: notBreaching
 
@@ -3101,7 +3101,7 @@ Resources:
       Threshold: 0
       ComparisonOperator: "GreaterThanThreshold"
       AlarmActions:
-        - !ImportValue build-notifications-BuildNotificationTopicArn"
+        - !ImportValue build-notifications-BuildNotificationTopicArn
       ActionsEnabled: true
       TreatMissingData: notBreaching
 
@@ -3138,7 +3138,7 @@ Resources:
       Threshold: 0
       ComparisonOperator: "GreaterThanThreshold"
       AlarmActions:
-        - !ImportValue build-notifications-BuildNotificationTopicArn"
+        - !ImportValue build-notifications-BuildNotificationTopicArn
       ActionsEnabled: true
       TreatMissingData: notBreaching
 
@@ -3175,7 +3175,7 @@ Resources:
       Threshold: 0
       ComparisonOperator: "GreaterThanThreshold"
       AlarmActions:
-        - !ImportValue build-notifications-BuildNotificationTopicArn"
+        - !ImportValue build-notifications-BuildNotificationTopicArn
       ActionsEnabled: true
       TreatMissingData: notBreaching
 
@@ -3212,7 +3212,7 @@ Resources:
       Threshold: 0
       ComparisonOperator: "GreaterThanThreshold"
       AlarmActions:
-        - !ImportValue build-notifications-BuildNotificationTopicArn"
+        - !ImportValue build-notifications-BuildNotificationTopicArn
       ActionsEnabled: true
       TreatMissingData: notBreaching
 
@@ -3249,7 +3249,7 @@ Resources:
       Threshold: 0
       ComparisonOperator: "GreaterThanThreshold"
       AlarmActions:
-        - !ImportValue build-notifications-BuildNotificationTopicArn"
+        - !ImportValue build-notifications-BuildNotificationTopicArn
       ActionsEnabled: true
       TreatMissingData: notBreaching
 
@@ -3286,7 +3286,7 @@ Resources:
       Threshold: 0
       ComparisonOperator: "GreaterThanThreshold"
       AlarmActions:
-        - !ImportValue build-notifications-BuildNotificationTopicArn"
+        - !ImportValue build-notifications-BuildNotificationTopicArn
       ActionsEnabled: true
       TreatMissingData: notBreaching
 
@@ -3323,7 +3323,7 @@ Resources:
       Threshold: 0
       ComparisonOperator: "GreaterThanThreshold"
       AlarmActions:
-        - !ImportValue build-notifications-BuildNotificationTopicArn"
+        - !ImportValue build-notifications-BuildNotificationTopicArn
       ActionsEnabled: true
       TreatMissingData: notBreaching
 
@@ -3360,7 +3360,7 @@ Resources:
       Threshold: 0
       ComparisonOperator: "GreaterThanThreshold"
       AlarmActions:
-        - !ImportValue build-notifications-BuildNotificationTopicArn"
+        - !ImportValue build-notifications-BuildNotificationTopicArn
       ActionsEnabled: true
       TreatMissingData: notBreaching
 
@@ -3397,7 +3397,7 @@ Resources:
       Threshold: 0
       ComparisonOperator: "GreaterThanThreshold"
       AlarmActions:
-        - !ImportValue build-notifications-BuildNotificationTopicArn"
+        - !ImportValue build-notifications-BuildNotificationTopicArn
       ActionsEnabled: true
       TreatMissingData: notBreaching
 
@@ -3434,7 +3434,7 @@ Resources:
       Threshold: 0
       ComparisonOperator: "GreaterThanThreshold"
       AlarmActions:
-        - !ImportValue build-notifications-BuildNotificationTopicArn"
+        - !ImportValue build-notifications-BuildNotificationTopicArn
       ActionsEnabled: true
       TreatMissingData: notBreaching
 
@@ -3471,7 +3471,7 @@ Resources:
       Threshold: 0
       ComparisonOperator: "GreaterThanThreshold"
       AlarmActions:
-        - !ImportValue build-notifications-BuildNotificationTopicArn"
+        - !ImportValue build-notifications-BuildNotificationTopicArn
       ActionsEnabled: true
       TreatMissingData: notBreaching
 

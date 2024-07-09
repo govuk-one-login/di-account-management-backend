@@ -3535,7 +3535,7 @@ Resources:
     Type: AWS::IAM::ManagedPolicy
     Properties:
       Roles:
-        - !Ref TestRoleArn
+        - !Select [1, !Split ["/", !Ref TestRoleArn]]
       PolicyDocument:
         Version: "2012-10-17"
         Statement:

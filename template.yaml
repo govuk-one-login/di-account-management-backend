@@ -103,6 +103,11 @@ Conditions:
     - !Equals [!Ref Environment, dev]
     - !Equals [!Ref Environment, build]
 
+  UseExternalEvents: !Or
+    - !Equals [!Ref Environment, staging]
+    - !Equals [!Ref Environment, integration]
+    - !Equals [!Ref Environment, production]
+
   ExportLogsToSplunk:
     Fn::Or:
       - !Equals [!Ref Environment, staging]
@@ -1283,21 +1288,24 @@ Resources:
             Action: sns:Subscribe
             Resource:
               - !Ref UserAccountDeletionTopic
-          - Sid: "Allow Orchestration to publish"
-            Effect: Allow
-            Principal:
-              AWS: !Join
-                - ""
-                - - "arn:aws:iam::"
-                  - !FindInMap [
-                      OrchestrationAccounts,
-                      !Ref Environment,
-                      "AccountNumber",
-                    ]
-                  - ":root"
-            Action: sns:Publish
-            Resource:
-              - !Ref UserAccountDeletionTopic
+          - !If
+            - "UseExternalEvents"
+            - Sid: "Allow Orchestration to publish"
+              Effect: Allow
+              Principal:
+                AWS: !Join
+                  - ""
+                  - - "arn:aws:iam::"
+                    - !FindInMap [
+                        OrchestrationAccounts,
+                        !Ref Environment,
+                        "AccountNumber",
+                      ]
+                    - ":root"
+              Action: sns:Publish
+              Resource:
+                - !Ref UserAccountDeletionTopic
+            - !Ref AWS::NoValue
 
   DeleteTopicArnParameter:
     Type: AWS::SSM::Parameter
@@ -3699,7 +3707,7 @@ Resources:
                 - "*"
             - !Ref AWS::NoValue
           - !If
-            - "IsNotDevelopmentOrDemo"
+            - "UseExternalEvents"
             - Effect: Allow
               Principal:
                 AWS: !Join

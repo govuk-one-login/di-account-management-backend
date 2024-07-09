@@ -13,8 +13,8 @@
       "messageAttributes": {},
       "md5OfBody": "e359050680237e70f4b71093185eca98",
       "eventSource": "aws:sqs",
-      "eventSourceARN": "arn:aws:sqs:us-east-1:123456789012:MyQueue",
-      "awsRegion": "us-east-1"
+      "eventSourceARN": "arn:aws:sqs:eu-west-2:123456789012:MyQueue",
+      "awsRegion": "eu-west-2"
     }
   ]
 }

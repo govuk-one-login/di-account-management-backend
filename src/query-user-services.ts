@@ -24,7 +24,7 @@ const translateConfig = { marshallOptions };
 const dynamoClient = new DynamoDBClient({});
 const dynamoDocClient = DynamoDBDocumentClient.from(
   dynamoClient,
-  translateConfig,
+  translateConfig
 );
 
 export const queryUserServices = async (userId: string): Promise<Service[]> => {
@@ -62,7 +62,7 @@ export const validateTxmaEventBody = (txmaEvent: TxmaEvent): void => {
 
 const createUserRecordEvent = (
   txmaEvent: TxmaEvent,
-  results: Service[],
+  results: Service[]
 ): UserRecordEvent => {
   const userRecordEvent: UserRecordEvent = {
     TxmaEvent: txmaEvent,
@@ -73,7 +73,7 @@ const createUserRecordEvent = (
 
 export const sendSqsMessage = async (
   messageBody: string,
-  queueUrl: string | undefined,
+  queueUrl: string | undefined
 ): Promise<string | undefined> => {
   const { AWS_REGION } = process.env;
   const client = new SQSClient({ region: AWS_REGION });
@@ -94,28 +94,28 @@ export const handler = async (event: DynamoDBStreamEvent): Promise<void> => {
         const txmaEvent = unmarshall(
           record.dynamodb?.NewImage?.event.M as {
             [key: string]: AttributeValue;
-          },
+          }
         ) as TxmaEvent;
         if (txmaEvent.event_name === "AUTH_AUTH_CODE_ISSUED") {
           validateTxmaEventBody(txmaEvent);
           const results = await queryUserServices(txmaEvent.user.user_id);
           const messageId = await sendSqsMessage(
             JSON.stringify(createUserRecordEvent(txmaEvent, results)),
-            OUTPUT_QUEUE_URL,
+            OUTPUT_QUEUE_URL
           );
           console.log(`[Message sent to QUEUE] with message id = ${messageId}`);
         } else {
           console.log(
-            `DB stream sent a ${txmaEvent.event_name} event. Irrelevant for service card so ignoring`,
+            `DB stream sent a ${txmaEvent.event_name} event. Irrelevant for service card so ignoring`
           );
         }
       } catch (err) {
         const messageId = await sendSqsMessage(JSON.stringify(record), DLQ_URL);
         console.error(
           `[Message sent to DLQ] with message id = ${messageId}`,
-          err,
+          err
         );
       }
-    }),
+    })
   );
 };

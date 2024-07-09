@@ -22,7 +22,7 @@ const dynamoClient = new DynamoDBClient({});
 const dynamoDocClient = DynamoDBDocumentClient.from(dynamoClient);
 
 export const formatCommentBody = (
-  event: ReportSuspiciousActivityEvent,
+  event: ReportSuspiciousActivityEvent
 ): string => {
   const htmlBody = [];
 
@@ -31,38 +31,38 @@ export const formatCommentBody = (
   }
 
   htmlBody.push(
-    `<p><strong>Event Name</strong>: ${event.suspicious_activity.event_type}</p>`,
+    `<p><strong>Event Name</strong>: ${event.suspicious_activity.event_type}</p>`
   );
 
   if (event.suspicious_activity.event_id) {
     htmlBody.push(
-      `<p><strong>Event ID</strong>: ${event.suspicious_activity.event_id}</p>`,
+      `<p><strong>Event ID</strong>: ${event.suspicious_activity.event_id}</p>`
     );
   }
 
   if (event.suspicious_activity.timestamp) {
     htmlBody.push(
       `<p><strong>Reported Date and Time</strong>: ${new Date(
-        event.suspicious_activity.timestamp * 1000,
-      ).toUTCString()}</p>`,
+        event.suspicious_activity.timestamp * 1000
+      ).toUTCString()}</p>`
     );
   }
 
   if (event.suspicious_activity.client_id) {
     htmlBody.push(
-      `<p><strong>Client ID</strong>: ${event.suspicious_activity.client_id}</p>`,
+      `<p><strong>Client ID</strong>: ${event.suspicious_activity.client_id}</p>`
     );
   }
 
   if (event.suspicious_activity.user_id) {
     htmlBody.push(
-      `<p><strong>User ID</strong>: ${event.suspicious_activity.user_id}</p>`,
+      `<p><strong>User ID</strong>: ${event.suspicious_activity.user_id}</p>`
     );
   }
 
   if (event.suspicious_activity.session_id) {
     htmlBody.push(
-      `<p><strong>Session ID</strong>: ${event.suspicious_activity.session_id}</p>`,
+      `<p><strong>Session ID</strong>: ${event.suspicious_activity.session_id}</p>`
     );
   }
 
@@ -70,7 +70,7 @@ export const formatCommentBody = (
 };
 
 export const validateSuspiciousActivity = (
-  suspiciousActivityEvent: ReportSuspiciousActivityEvent,
+  suspiciousActivityEvent: ReportSuspiciousActivityEvent
 ): void => {
   if (
     suspiciousActivityEvent.event_id === undefined ||
@@ -85,7 +85,7 @@ export async function createTicket(
   ticket: CreateTicketPayload,
   apiUrl: string,
   apiUsername: string,
-  apiToken: string,
+  apiToken: string
 ): Promise<AxiosResponse> {
   const token = `${apiUsername}/token:${apiToken}`;
   const instance = axios.create({
@@ -102,14 +102,14 @@ export async function createTicket(
     throw new Error(
       `${(error as HttpError).response.status} ${
         (error as HttpError).response.statusText
-      }}`,
+      }}`
     );
   }
 }
 
 export const sendSqsMessage = async (
   messageBody: string,
-  queueUrl: string | undefined,
+  queueUrl: string | undefined
 ): Promise<SendMessageCommandOutput> => {
   const { AWS_REGION } = process.env;
   const client = new SQSClient({ region: AWS_REGION });
@@ -121,7 +121,7 @@ export const sendSqsMessage = async (
 };
 
 export const handler = async (
-  input: ReportSuspiciousActivityEvent,
+  input: ReportSuspiciousActivityEvent
 ): Promise<ReportSuspiciousActivityEvent> => {
   const {
     ZENDESK_GROUP_ID_KEY,
@@ -144,7 +144,7 @@ export const handler = async (
       !ACTIVITY_LOG_TABLE
     ) {
       throw new Error(
-        "Not all environment variables required to successfully send to Zendesk are provided.",
+        "Not all environment variables required to successfully send to Zendesk are provided."
       );
     }
 
@@ -197,7 +197,7 @@ export const handler = async (
       ticket,
       zendeskURL as string,
       zendeskUserName as string,
-      zendeskUserPassword as string,
+      zendeskUserPassword as string
     );
     if (axiosResponse.data?.ticket?.id) {
       input.zendesk_ticket_id = axiosResponse.data?.ticket?.id + "";
@@ -206,7 +206,7 @@ export const handler = async (
           ACTIVITY_LOG_TABLE,
           input.suspicious_activity.user_id,
           input.suspicious_activity.event_id,
-          input.zendesk_ticket_id,
+          input.zendesk_ticket_id
         );
       }
     }
@@ -216,12 +216,12 @@ export const handler = async (
     console.error(
       `[Error occurred], unable to send suspicious activity event with ID: ${eventIdentifier} to Zendesk, ${
         (error as Error).message
-      }`,
+      }`
     );
     throw new Error(
       `[Error occurred], unable to send suspicious activity event with ID: ${eventIdentifier} to Zendesk, ${
         (error as Error).message
-      }`,
+      }`
     );
   }
 };
@@ -230,7 +230,7 @@ export const updateActivity = async (
   tableName: string,
   user_id: string,
   event_id: string,
-  zendesk_ticket_id: string,
+  zendesk_ticket_id: string
 ) => {
   const command = new UpdateCommand({
     TableName: tableName,

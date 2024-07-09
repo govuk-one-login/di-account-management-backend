@@ -14,18 +14,18 @@ import clientRegistryCy from "./config/clientRegistry.cy.json";
 export const getClientInfo = (
   clientRegistry: ClientRegistry,
   environment: Environment,
-  id: string,
+  id: string
 ): RPClient => {
   assert(
     clientRegistry[environment],
-    `${environment} does not exist in client registry`,
+    `${environment} does not exist in client registry`
   );
 
   const registry = clientRegistry[environment];
 
   assert(
     registry[id],
-    `${id} does not exist in ${environment} client registry]`,
+    `${id} does not exist in ${environment} client registry]`
   );
 
   return registry[id];
@@ -45,30 +45,30 @@ const formatTimestamp = (timestamp: number, language: string) => {
 };
 
 export const formatActivityObjectForEmail = (
-  event: ReportSuspiciousActivityEvent,
+  event: ReportSuspiciousActivityEvent
 ) => {
   const envName = process.env.ENVIRONMENT_NAME as Environment;
   assert(envName, "ENVIRONMENT_NAME env variable not set");
 
   assert(
     event.email_address,
-    "Email address not present in Suspicious Activity Event",
+    "Email address not present in Suspicious Activity Event"
   );
 
   const clientEn = getClientInfo(
     clientRegistryEn,
     envName,
-    event.suspicious_activity.client_id,
+    event.suspicious_activity.client_id
   );
   const clientCy = getClientInfo(
     clientRegistryCy,
     envName,
-    event.suspicious_activity.client_id,
+    event.suspicious_activity.client_id
   );
 
   assert(
     event.suspicious_activity.timestamp,
-    "Timestamp not present in Suspicious Activity Event",
+    "Timestamp not present in Suspicious Activity Event"
   );
 
   const suspicious_activity_timestamp: number =
@@ -79,7 +79,7 @@ export const formatActivityObjectForEmail = (
 
   assert(
     event.zendesk_ticket_id,
-    "Zendesk ticket ID not present in Suspicious Activity Events",
+    "Zendesk ticket ID not present in Suspicious Activity Events"
   );
 
   return {
@@ -91,7 +91,7 @@ export const formatActivityObjectForEmail = (
       dateCy: datetimeCy,
       ticketId: event.zendesk_ticket_id,
       showHomeHintText: homeClientIds.includes(
-        event.suspicious_activity.client_id,
+        event.suspicious_activity.client_id
       ),
     },
   };
@@ -100,7 +100,7 @@ export const formatActivityObjectForEmail = (
 export const sendConfMail = async (
   apiKey: string,
   templateId: string,
-  event: ReportSuspiciousActivityEvent,
+  event: ReportSuspiciousActivityEvent
 ) => {
   assert(event.zendesk_ticket_id);
   const notifyClient = new NotifyClient(apiKey);
@@ -113,7 +113,7 @@ export const sendConfMail = async (
 };
 
 export const handler = async (
-  input: ReportSuspiciousActivityEvent,
+  input: ReportSuspiciousActivityEvent
 ): Promise<ReportSuspiciousActivityEvent> => {
   const { NOTIFY_API_KEY, TEMPLATE_ID } = process.env;
   try {
@@ -128,7 +128,7 @@ export const handler = async (
     const response = await sendConfMail(
       notifyApiKey as string,
       TEMPLATE_ID,
-      input,
+      input
     );
     if (response?.data?.id) {
       input.notify_message_id = response.data.id;
@@ -162,7 +162,7 @@ const notifyErrorHandler = (err: IError, context: string): never => {
     ];
     if (validStatusCodes.includes(err.response?.data?.status_code)) {
       throw new Error(
-        `Error ${context}: ${JSON.stringify(err.response?.data?.errors)}`,
+        `Error ${context}: ${JSON.stringify(err.response?.data?.errors)}`
       );
     } else {
       const sanitisedError = { ...err, response: { ...err.response } };

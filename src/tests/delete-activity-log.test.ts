@@ -203,7 +203,7 @@ describe("validateUserData", () => {
       const userData = JSON.parse(
         JSON.stringify({
           foo: "bar",
-        }),
+        })
       );
       expect(() => {
         validateUserData(userData);

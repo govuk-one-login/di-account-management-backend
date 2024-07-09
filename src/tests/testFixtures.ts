@@ -125,12 +125,12 @@ export const TEST_SNS_EVENT_WITH_TWO_RECORDS: SNSEvent = {
 
 const NO_USER_ID = { ...TEST_ACTIVITY_LOG_ENTRY, user_id: undefined };
 export const ACTIVITY_LOG_ENTRY_NO_USER_ID: ActivityLogEntry = JSON.parse(
-  JSON.stringify(NO_USER_ID),
+  JSON.stringify(NO_USER_ID)
 );
 
 const NO_TIMESTAMP = { ...TEST_ACTIVITY_LOG_ENTRY, timestamp: undefined };
 export const ACTIVITY_LOG_ENTRY_NO_TIMESTAMP: ActivityLogEntry = JSON.parse(
-  JSON.stringify(NO_TIMESTAMP),
+  JSON.stringify(NO_TIMESTAMP)
 );
 
 export const TEST_SQS_RECORD: SQSRecord = {
@@ -185,7 +185,7 @@ export const MUTABLE_ACTIVITY_LOG_ENTRY: ActivityLogEntry = {
 
 // TODO: This would be better placed in testUtils but fails to be imported as a function when moved there.
 export const generateDynamoSteamRecord = (
-  txmaEventName = "AUTH_AUTH_CODE_ISSUED",
+  txmaEventName = "AUTH_AUTH_CODE_ISSUED"
 ): DynamoDBRecord => ({
   eventID: "1234567",
   eventName: "INSERT",

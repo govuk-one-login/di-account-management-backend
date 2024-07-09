@@ -20,7 +20,7 @@ const translateConfig = { marshallOptions };
 const dynamoClient = new DynamoDBClient({});
 const dynamoDocClient = DynamoDBDocumentClient.from(
   dynamoClient,
-  translateConfig,
+  translateConfig
 );
 
 const sqsClient = new SQSClient({});
@@ -54,7 +54,7 @@ export const validateUserServices = (userServices: UserServices): void => {
 };
 
 export const writeUserServices = async (
-  userServices: UserServices,
+  userServices: UserServices
 ): Promise<PutCommandOutput> => {
   const { TABLE_NAME } = process.env;
   const command = new PutCommand({
@@ -83,9 +83,9 @@ export const handler = async (event: SQSEvent): Promise<void> => {
         const result = await sqsClient.send(new SendMessageCommand(message));
         console.error(
           `[Message sent to DLQ] with message id = ${result.MessageId}`,
-          err,
+          err
         );
       }
-    }),
+    })
   );
 };

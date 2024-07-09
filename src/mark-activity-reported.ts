@@ -27,7 +27,7 @@ const dynamoDocClient = DynamoDBDocumentClient.from(dynamoClient);
 
 export const sendSqsMessage = async (
   messageBody: string,
-  queueUrl: string | undefined,
+  queueUrl: string | undefined
 ): Promise<SendMessageCommandOutput> => {
   const { AWS_REGION } = process.env;
   const client = new SQSClient({ region: AWS_REGION });
@@ -42,7 +42,7 @@ export const markEventAsReported = async (
   tableName: string,
   user_id: string,
   event_id: string,
-  reported_suspicious_time: number,
+  reported_suspicious_time: number
 ) => {
   const command = new UpdateCommand({
     TableName: tableName,
@@ -65,7 +65,7 @@ export const decryptEventType = async (
   userId: string,
   encrypted: ActivityLogEntry,
   generatorKeyArn: string,
-  wrappingKeyArn: string,
+  wrappingKeyArn: string
 ): Promise<string> => {
   if (!encrypted) {
     return "";
@@ -74,13 +74,13 @@ export const decryptEventType = async (
     encrypted.event_type,
     userId,
     generatorKeyArn,
-    wrappingKeyArn,
+    wrappingKeyArn
   );
 };
 
 export const queryActivityLog = async (
   userId: string,
-  eventId: string,
+  eventId: string
 ): Promise<ActivityLogEntry | undefined> => {
   try {
     const { ACTIVITY_LOG_TABLE_NAME } = process.env;
@@ -97,17 +97,17 @@ export const queryActivityLog = async (
   } catch (error: unknown) {
     console.error(
       `Error querying activity log with user_id: ${userId} and event_id: ${eventId} Error message is: `,
-      (error as Error).message,
+      (error as Error).message
     );
     throw Error(
       `Error querying activity log with user_id: ${userId} 
-      and timestamp_group_id: ${eventId} Error is: ${(error as Error).message}`,
+      and timestamp_group_id: ${eventId} Error is: ${(error as Error).message}`
     );
   }
 };
 
 export const handler = async (
-  input: ReportSuspiciousActivityStepInput,
+  input: ReportSuspiciousActivityStepInput
 ): Promise<ReportSuspiciousActivityEvent> => {
   const { ACTIVITY_LOG_TABLE_NAME } = process.env;
   const { GENERATOR_KEY_ARN } = process.env;
@@ -126,35 +126,34 @@ export const handler = async (
         ACTIVITY_LOG_TABLE_NAME,
         activityLog.user_id,
         activityLog.event_id,
-        input.reported_suspicious_time,
+        input.reported_suspicious_time
       );
       activityLog.reported_suspicious = true;
       activityLog.event_type = await decryptEventType(
         input.user_id,
         activityLog,
         GENERATOR_KEY_ARN,
-        WRAPPING_KEY_ARN,
+        WRAPPING_KEY_ARN
       );
     } catch (err) {
       console.error(
         `Error marking event as reported, error message is: ${
           (err as Error).message
         }`,
-        redact(JSON.stringify(activityLog), ["user_id"]),
+        redact(JSON.stringify(activityLog), ["user_id"])
       );
       throw new Error(
-        "Error occurred in marking event as reported: " +
-          (err as Error).message,
+        "Error occurred in marking event as reported: " + (err as Error).message
       );
     }
   } else {
     console.error(
       `No activity log exist in DB for with user_id : ${input.user_id} " +
-        and event id: ${input.event_id}`,
+        and event id: ${input.event_id}`
     );
     throw new Error(
       `No activity log exist in DB for with user_id : ${input.user_id} " +
-        and event id: ${input.event_id}`,
+        and event id: ${input.event_id}`
     );
   }
 

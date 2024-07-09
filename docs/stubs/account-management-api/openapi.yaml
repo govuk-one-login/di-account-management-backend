@@ -4,7 +4,7 @@ info:
   description: |-
     API specification for a stub of the Account Management API which always 
     returns a 204 response code on appropriate routes.
-    
+
   version: 1.0.11
 paths:
   /delete-account:
@@ -16,12 +16,12 @@ paths:
         content:
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/DeleteAccount'
+              $ref: "#/components/schemas/DeleteAccount"
         required: true
       responses:
-        '204':
+        "204":
           description: Successful operation
-          
+
   /send-otp-notification:
     post:
       description: Send an OTP notification
@@ -31,12 +31,12 @@ paths:
         content:
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/SendOtpNotification'
+              $ref: "#/components/schemas/SendOtpNotification"
         required: true
       responses:
-        '204':
+        "204":
           description: Successful operation
-          
+
   /update-password:
     post:
       description: Update a user's password
@@ -46,12 +46,12 @@ paths:
         content:
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/UpdatePassword'
+              $ref: "#/components/schemas/UpdatePassword"
         required: true
       responses:
-        '204':
+        "204":
           description: Successful operation
-          
+
   /update-email:
     post:
       description: Update a user's email
@@ -61,12 +61,12 @@ paths:
         content:
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/UpdateEmail'
+              $ref: "#/components/schemas/UpdateEmail"
         required: true
       responses:
-        '204':
+        "204":
           description: Successful operation
-          
+
   /update-phone-number:
     post:
       description: Update a user's phone number
@@ -76,12 +76,12 @@ paths:
         content:
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/UpdatePhoneNumber'
+              $ref: "#/components/schemas/UpdatePhoneNumber"
         required: true
       responses:
-        '204':
+        "204":
           description: Successful operation
-          
+
 components:
   schemas:
     DeleteAccount:
@@ -98,7 +98,7 @@ components:
           example: john@email.com
         notificationType:
           type: string
-          example: 'EMAIL'
+          example: "EMAIL"
     UpdatePassword:
       type: object
       properties:
@@ -107,7 +107,7 @@ components:
           example: john@email.com
         newPassword:
           type: string
-          example: '12345'
+          example: "12345"
     UpdateEmail:
       type: object
       properties:
@@ -119,7 +119,7 @@ components:
           example: john@email.com
         otp:
           type: string
-          example: '123456'
+          example: "123456"
     UpdatePhoneNumber:
       type: object
       properties:
@@ -128,7 +128,7 @@ components:
           example: john@email.com
         newPhoneNumber:
           type: string
-          example: '12345'
+          example: "12345"
         otp:
           type: string
-          example: '123456'
+          example: "123456"

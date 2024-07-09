@@ -56,35 +56,63 @@ export const writeActivityLogEntry = async (
 
 export const handler = async (event: SQSEvent): Promise<void> => {
   const { DLQ_URL } = process.env;
-  await Promise.all(
-    event.Records.map(async (record) => {
+
+  for await (const record of event.Records) {
+    try {
+      const activityLogEntry: ActivityLogEntry = JSON.parse(record.body);
+
       try {
-        const activityLogEntry: ActivityLogEntry = JSON.parse(record.body);
         validateActivityLogEntry(activityLogEntry);
-        const encryptedActivityLog: EncryptedActivityLogEntry = {
-          event_id: activityLogEntry.event_id,
-          event_type: await encryptData(
-            activityLogEntry.event_type,
-            activityLogEntry.user_id,
-          ),
-          session_id: activityLogEntry.session_id,
-          user_id: activityLogEntry.user_id,
-          timestamp: activityLogEntry.timestamp,
-          client_id: activityLogEntry.client_id,
-          reported_suspicious: activityLogEntry.reported_suspicious,
-        };
-        await writeActivityLogEntry(encryptedActivityLog);
-      } catch (err) {
-        const message: SendMessageRequest = {
-          QueueUrl: DLQ_URL,
-          MessageBody: record.body,
-        };
-        const result = await sqsClient.send(new SendMessageCommand(message));
-        console.error(
-          `[Message sent to DLQ] with message id = ${result.MessageId}`,
-          err,
-        );
+      } catch (e) {
+        console.error(`[Activity Log Entry Validation Error]`, e);
+        throw e;
       }
-    }),
-  );
+
+      let encryptedEventType;
+      try {
+        encryptedEventType = await encryptData(
+          activityLogEntry.event_type,
+          activityLogEntry.user_id,
+        );
+      } catch (e) {
+        console.error(`[Event-type Encryption Error]`, e);
+        throw e;
+      }
+
+      const encryptedActivityLog: EncryptedActivityLogEntry = {
+        event_id: activityLogEntry.event_id,
+        event_type: encryptedEventType,
+        session_id: activityLogEntry.session_id,
+        user_id: activityLogEntry.user_id,
+        timestamp: activityLogEntry.timestamp,
+        client_id: activityLogEntry.client_id,
+        reported_suspicious: activityLogEntry.reported_suspicious,
+      };
+
+      try {
+        await writeActivityLogEntry(encryptedActivityLog);
+      } catch (e) {
+        console.error(`[Error Writing Activity Log Entry]`, e);
+        throw e;
+      }
+    } catch (err) {
+      const message: SendMessageRequest = {
+        QueueUrl: DLQ_URL,
+        MessageBody: record.body,
+      };
+
+      let result;
+      try {
+        result = await sqsClient.send(new SendMessageCommand(message));
+      } catch (e) {
+        console.error(`[Error Sending Message to DLQ]`, e);
+        return;
+      }
+
+      console.error(
+        `[Message sent to DLQ] with message id = ${result.MessageId}`,
+        err,
+      );
+    }
+  }
 };

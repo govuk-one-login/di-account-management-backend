@@ -678,6 +678,8 @@ Resources:
         Sourcemap: true
         EntryPoints:
           - save-raw-events.ts
+        Banner:
+          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
 
   SaveRawEventsDeadLetterQueue:
     Type: AWS::SQS::Queue
@@ -838,6 +840,8 @@ Resources:
         Sourcemap: true
         EntryPoints:
           - query-user-services.ts
+        Banner:
+          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
 
   QueryUserServicesDeadLetterQueue:
     Type: AWS::SQS::Queue
@@ -1002,6 +1006,8 @@ Resources:
         Sourcemap: true
         EntryPoints:
           - format-user-services.ts
+        Banner:
+          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
 
   FormatUserServicesDeadLetterQueue:
     Type: AWS::SQS::Queue
@@ -1144,6 +1150,8 @@ Resources:
         Sourcemap: true
         EntryPoints:
           - write-user-services.ts
+        Banner:
+          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
 
   WriteUserServicesDeadLetterQueue:
     Type: AWS::SQS::Queue
@@ -1393,6 +1401,8 @@ Resources:
         Sourcemap: true
         EntryPoints:
           - delete-user-services.ts
+        Banner:
+          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
 
   DeleteUserServicesRole:
     Type: AWS::IAM::Role
@@ -1629,6 +1639,8 @@ Resources:
         Sourcemap: true
         EntryPoints:
           - delete-email-subscriptions.ts
+        Banner:
+          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
 
   DeleteEmailSubscriptionsDeadLetterQueue:
     Type: AWS::SQS::Queue
@@ -1748,6 +1760,8 @@ Resources:
         Sourcemap: true
         EntryPoints:
           - write-activity-log.ts
+        Banner:
+          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
 
   WriteActivityLogDeadLetterQueue:
     Type: AWS::SQS::Queue
@@ -1918,6 +1932,8 @@ Resources:
         Sourcemap: true
         EntryPoints:
           - format-activity-log.ts
+        Banner:
+          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
 
   FormatActivityLogDeadLetterQueue:
     Type: AWS::SQS::Queue
@@ -2138,6 +2154,8 @@ Resources:
         Sourcemap: true
         EntryPoints:
           - delete-activity-log.ts
+        Banner:
+          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
 
   DeleteActivityLogRole:
     Type: AWS::IAM::Role
@@ -2303,6 +2321,8 @@ Resources:
         Sourcemap: true
         EntryPoints:
           - mark-activity-reported.ts
+        Banner:
+          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
 
   MarkActivityReportedRole:
     Type: AWS::IAM::Role
@@ -2397,6 +2417,8 @@ Resources:
         Sourcemap: true
         EntryPoints:
           - send-suspicious-activity.ts
+        Banner:
+          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
 
   SendSuspiciousActivityRole:
     Type: AWS::IAM::Role
@@ -2503,6 +2525,8 @@ Resources:
         Sourcemap: true
         EntryPoints:
           - send-conf-email.ts
+        Banner:
+          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
 
   SendConfEmailRole:
     Type: AWS::IAM::Role
@@ -2607,6 +2631,8 @@ Resources:
         Sourcemap: true
         EntryPoints:
           - create-support-ticket.ts
+        Banner:
+          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
 
   CreateSupportTicketRole:
     Type: AWS::IAM::Role
@@ -2817,6 +2843,8 @@ Resources:
         Sourcemap: true
         EntryPoints:
           - trigger-rsa-step.ts
+        Banner:
+          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
 
   TriggerSuspiciousActivityStepRole:
     Type: AWS::IAM::Role

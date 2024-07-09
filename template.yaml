@@ -49,6 +49,10 @@ Parameters:
   AccountManagementFrontendStackName:
     Type: String
     Default: account-mgmt-frontend
+  TestRoleArn:
+    Type: String
+    Description: The ARN of the role the post-deploy tests are run from
+    Default: "none"
   ProductTagValue:
     Description: Value for the Product Tag
     Type: String
@@ -113,6 +117,12 @@ Conditions:
       - !Equals [!Ref Environment, staging]
       - !Equals [!Ref Environment, integration]
       - !Equals [!Ref Environment, production]
+
+  GrantTestPermissions:
+    Fn::Not:
+      - Fn::Equals:
+          - !Ref TestRoleArn
+          - "none"
 
 Globals:
   Function:
@@ -3515,6 +3525,26 @@ Resources:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
       ActionsEnabled: true
       TreatMissingData: notBreaching
+
+  #######################
+  # Test permissons
+  #######################
+
+  PostDeployTestPolicy:
+    Condition: GrantTestPermissions
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Roles:
+        - !Ref TestRoleArn
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - lambda:InvokeFunction
+            Resource:
+              - !GetAtt WriteActivityLogFunction.Arn
+              - !GetAtt DeleteActivityLogFunction.Arn
 
   #######################
   # Encryption

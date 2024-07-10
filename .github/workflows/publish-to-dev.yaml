@@ -16,9 +16,6 @@ on:
         required: true
         type: string
         default: main
-  push:
-    branches:
-      - olh-1940-skippable-canary-builds
 
 permissions:
   id-token: write

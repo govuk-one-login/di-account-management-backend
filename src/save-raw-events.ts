@@ -88,7 +88,7 @@ export const handler = async (event: SQSEvent): Promise<void> => {
         };
         const result = await sqsClient.send(new SendMessageCommand(message));
         console.error(
-          `[Message sent to DLQ] aaa with message id = ${result.MessageId}`,
+          `[Message sent to DLQ] with message id = ${result.MessageId}`,
           err,
         );
       }

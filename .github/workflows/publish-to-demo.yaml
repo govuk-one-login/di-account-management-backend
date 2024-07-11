@@ -89,3 +89,4 @@ jobs:
         with:
           artifact-bucket-name: ${{ secrets.DEMO_ARTIFACT_BUCKET_NAME }}
           signing-profile-name: ${{ secrets.DEMO_SIGNING_PROFILE_NAME }}
+          template-file: .aws-sam/build/template.yaml

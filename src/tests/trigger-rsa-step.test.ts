@@ -43,7 +43,7 @@ describe("handler", () => {
     await handler(createSnsEvent({}));
     expect(consoleErrorMock).toHaveBeenCalledTimes(2);
     expect(consoleErrorMock.mock.calls[0][0]).toContain(
-      "[Error occurred], trigger report suspicious activity step function:, Validation Failed - Required input to trigger report suspicious activity steps are not provided",
+      "[Error occurred], trigger report suspicious activity step function:, Validation Failed - Required input to trigger report suspicious activity steps are not provided"
     );
     expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(1);
     expect(sqsMock).toHaveReceivedNthCommandWith(1, SendMessageCommand, {

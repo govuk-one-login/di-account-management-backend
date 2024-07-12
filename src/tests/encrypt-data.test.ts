@@ -9,7 +9,7 @@ import encryptData from "../common/encrypt-data";
 import { TEST_ACTIVITY_LOG_ENTRY } from "./testFixtures";
 
 const mockedSecretsManager = mockClient(SecretsManagerClient).on(
-  GetSecretValueCommand,
+  GetSecretValueCommand
 );
 
 jest.mock("@aws-crypto/client-node", () => ({
@@ -59,7 +59,7 @@ describe("encryptData", () => {
     });
     const result = await encryptData(
       JSON.stringify(encryptDataInput.activityLogData),
-      encryptDataInput.userId,
+      encryptDataInput.userId
     );
     expect(result).toEqual("dGVzdEVuY3J5cHRlZERhdGFTdHJpbmc=");
     expect(buildEncrypt).toHaveBeenCalled();
@@ -78,7 +78,7 @@ describe("encryptData", () => {
           stage: process.env.ENVIRONMENT,
           userId: "test_user_123",
         },
-      },
+      }
     );
   });
 

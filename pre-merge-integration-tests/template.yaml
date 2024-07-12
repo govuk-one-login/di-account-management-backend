@@ -4,7 +4,6 @@ Description: >
   Github action role for testing CloudFormation stack status.
 
 Parameters:
-
   OneLoginRepositoryName:
     Description: >
       The name of Repo which is allowed to push here.
@@ -22,7 +21,6 @@ Outputs:
       Name: !Sub "${AWS::StackName}-CloudFormationStackTestingGitHubActionsRole"
 
 Resources:
-
   #
   # Deny resources creation outside UK region
   #
@@ -92,9 +90,7 @@ Resources:
               - "wellarchitected:*"
             Condition:
               StringNotEquals:
-                "aws:RequestedRegion": [
-                  "eu-west-2"
-                ]
+                "aws:RequestedRegion": ["eu-west-2"]
 
   CloudFormationStackTestingGitHubActionsPolicy:
     Type: AWS::IAM::ManagedPolicy
@@ -130,16 +126,16 @@ Resources:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
-              Effect: "Allow"
-              Action: "sts:AssumeRoleWithWebIdentity"
-              Principal:
-                Federated: !ImportValue GitHubIdentityProviderArn
-              Condition:
-                StringLike:
-                  "token.actions.githubusercontent.com:sub":
-                    - !Sub "repo:govuk-one-login/${OneLoginRepositoryName}*ref:refs/heads/*"
-                    - !Sub "repo:govuk-one-login/${OneLoginRepositoryName}:environment:*"
-                    - !Sub "repo:govuk-one-login/${OneLoginRepositoryName}:pull_request"
+          Effect: "Allow"
+          Action: "sts:AssumeRoleWithWebIdentity"
+          Principal:
+            Federated: !ImportValue GitHubIdentityProviderArn
+          Condition:
+            StringLike:
+              "token.actions.githubusercontent.com:sub":
+                - !Sub "repo:govuk-one-login/${OneLoginRepositoryName}*ref:refs/heads/*"
+                - !Sub "repo:govuk-one-login/${OneLoginRepositoryName}:environment:*"
+                - !Sub "repo:govuk-one-login/${OneLoginRepositoryName}:pull_request"
       ManagedPolicyArns:
         - !Ref CloudFormationStackTestingGitHubActionsPolicy
         - !Ref LockToRegionPolicy

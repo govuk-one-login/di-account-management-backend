@@ -12,9 +12,7 @@
       },
       "Retry": [
         {
-          "ErrorEquals": [
-            "States.ALL"
-          ],
+          "ErrorEquals": ["States.ALL"],
           "IntervalSeconds": 10,
           "Comment": "Retry Indefinitely",
           "BackoffRate": 2,
@@ -33,9 +31,7 @@
       },
       "Retry": [
         {
-          "ErrorEquals": [
-            "States.ALL"
-          ],
+          "ErrorEquals": ["States.ALL"],
           "IntervalSeconds": 10,
           "Comment": "Retry Indefinitely",
           "BackoffRate": 2,
@@ -56,9 +52,7 @@
       },
       "Retry": [
         {
-          "ErrorEquals": [
-            "States.ALL"
-          ],
+          "ErrorEquals": ["States.ALL"],
           "IntervalSeconds": 10,
           "Comment": "Retry Indefinitely",
           "BackoffRate": 2,
@@ -78,9 +72,7 @@
       },
       "Retry": [
         {
-          "ErrorEquals": [
-            "States.ALL"
-          ],
+          "ErrorEquals": ["States.ALL"],
           "IntervalSeconds": 10,
           "Comment": "Retry Indefinitely",
           "BackoffRate": 2,

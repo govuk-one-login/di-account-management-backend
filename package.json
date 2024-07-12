@@ -10,7 +10,8 @@
     "test": "jest",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "test:cov": "jest --coverage"
+    "test:cov": "jest --coverage",
+    "prepare": "husky || true"
   },
   "author": "GDS",
   "license": "OGL",
@@ -37,7 +38,9 @@
     "eslint-import-resolver-typescript": "^3.5.1",
     "eslint-plugin-import": "^2.26.0",
     "eslint-plugin-prettier": "^5.1.3",
+    "husky": "^9.0.11",
     "jest": "^29.3.1",
+    "lint-staged": "^15.2.7",
     "prettier": "^3.3.2",
     "ts-jest": "^29.2.2",
     "ts-node": "^10.9.1",
@@ -57,5 +60,11 @@
     "esbuild": "=0.21.5",
     "jest-when": "^3.6.0",
     "notifications-node-client": "^8.2.0"
+  },
+  "lint-staged": {
+    "**/*.{js,jsx,ts,tsx,json,css,scss,md,yaml}": [
+      "npx prettier --write",
+      "npx eslint --fix"
+    ]
   }
 }

@@ -38,7 +38,7 @@ describe("handler", () => {
     await handler(MUCKY_DYNAMODB_STREAM_EVENT);
     expect(consoleLogMock).toHaveBeenCalledTimes(1);
     expect(consoleLogMock).toHaveBeenCalledWith(
-      `DB stream sent a ${randomEventType} event. Irrelevant for activity log so ignoring`,
+      `DB stream sent a ${randomEventType} event. Irrelevant for activity log so ignoring`
     );
   });
 
@@ -89,7 +89,7 @@ describe("handler", () => {
 describe("formatIntoActivityLogEntry", () => {
   test("valid txma event generates correct ActivityLogEntry", () => {
     expect(formatIntoActivityLogEntry(MUTABLE_TXMA_EVENT)).toEqual(
-      MUTABLE_ACTIVITY_LOG_ENTRY,
+      MUTABLE_ACTIVITY_LOG_ENTRY
     );
   });
 });
@@ -179,13 +179,13 @@ describe("sendSqsMessage", () => {
   test("Send the SQS event on the queue", async () => {
     sqsMock.on(SendMessageCommand).resolves({ MessageId: messageId });
     expect(
-      await sendSqsMessage(JSON.stringify(MUTABLE_TXMA_EVENT), queueUrl),
+      await sendSqsMessage(JSON.stringify(MUTABLE_TXMA_EVENT), queueUrl)
     ).toEqual(messageId);
     expect(
       sqsMock.commandCalls(SendMessageCommand, {
         QueueUrl: queueUrl,
         MessageBody: JSON.stringify(Object),
-      }),
+      })
     );
   });
 });

@@ -31,7 +31,7 @@ describe("validate", () => {
       notify_message_id: "12345678",
     };
     suspiciousActivityEventRule = validatorRules.get(
-      "HOME_REPORT_SUSPICIOUS_ACTIVITY",
+      "HOME_REPORT_SUSPICIOUS_ACTIVITY"
     );
   });
   afterEach(() => {
@@ -41,7 +41,7 @@ describe("validate", () => {
   test("successful validate report suspicious event", async () => {
     const result = validateObject(
       suspiciousActivityEvent,
-      suspiciousActivityEventRule,
+      suspiciousActivityEventRule
     );
     expect(result).toBe(true);
   });
@@ -58,7 +58,7 @@ describe("validate", () => {
     };
     const result = validateObject(
       invalidSuspiciousActivityEvent,
-      suspiciousActivityEventRule,
+      suspiciousActivityEventRule
     );
     expect(result).toBe(false);
   });

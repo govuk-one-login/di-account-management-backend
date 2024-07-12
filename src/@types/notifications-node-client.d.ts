@@ -9,39 +9,39 @@ declare module "notifications-node-client" {
         personalisation: any;
         reference: string;
         emailReplyToId?: string;
-      },
+      }
     ): Promise<any>;
     sendSms(
       templateId: string,
       phoneNumber: string,
-      options?: NotificationSendOptions,
+      options?: NotificationSendOptions
     ): Promise<any>;
     sendLetter(
       templateId: string,
-      options?: NotificationSendOptions,
+      options?: NotificationSendOptions
     ): Promise<any>;
     sendPrecompiledLetter(
       reference: string,
       pdfFile: string | Buffer,
-      postage?: string,
+      postage?: string
     ): Promise<any>;
     getNotificationById(notificationId: string): Promise<any>;
     getNotifications(
       templateType?: string,
       status?: string,
       reference?: string,
-      olderThanId?: string,
+      olderThanId?: string
     ): Promise<any>;
     getPdfForLetterNotification(notificationId: string): Promise<Buffer>;
     getTemplateById(templateId: string): Promise<any>;
     getTemplateByIdAndVersion(
       templateId: string,
-      version: number,
+      version: number
     ): Promise<any>;
     getAllTemplates(templateType?: string): Promise<any>;
     previewTemplateById(
       templateId: string,
-      personalisation?: any,
+      personalisation?: any
     ): Promise<any>;
     getReceivedTexts(olderThan?: string): Promise<any>;
     setProxy(proxyConfig: any): void;

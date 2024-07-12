@@ -37,7 +37,7 @@ describe("start report suspicious activities step function", () => {
         stateMachineArn:
           "arn:aws:states:eu-west-2:111122223333:stateMachine:0_StateMachine-a-b-c.Report-suspicious",
         input: JSON.stringify(testSuspiciousActivity),
-      },
+      }
     );
   });
 
@@ -46,11 +46,11 @@ describe("start report suspicious activities step function", () => {
       .on(StartExecutionCommand)
       .rejects("SomeStepFunctionException");
     await expect(
-      async () => await callAsyncStepFunction(testStepFunctionARN, input),
+      async () => await callAsyncStepFunction(testStepFunctionARN, input)
     ).rejects.toThrow("SomeStepFunctionException");
     expect(consoleErrorMock).toHaveBeenCalledTimes(2);
     expect(consoleErrorMock.mock.calls[0][0]).toContain(
-      "Failed to start Report Suspicious Activity state machine.",
+      "Failed to start Report Suspicious Activity state machine."
     );
   });
 
@@ -67,7 +67,7 @@ describe("start report suspicious activities step function", () => {
         stateMachineArn:
           "arn:aws:states:eu-west-2:111122223333:stateMachine:0_StateMachine-a-b-c.Report-suspicious",
         input: JSON.stringify(testSuspiciousActivity),
-      },
+      }
     );
   });
 });

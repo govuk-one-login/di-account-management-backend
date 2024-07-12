@@ -14,7 +14,7 @@ import {
 } from "./common/constants";
 
 const createNewActivityLogEntryFromTxmaEvent = (
-  txmaEvent: TxmaEvent,
+  txmaEvent: TxmaEvent
 ): ActivityLogEntry =>
   <ActivityLogEntry>{
     event_id: txmaEvent.event_id,
@@ -40,14 +40,14 @@ export const validateTxmaEventBody = (txmaEvent: TxmaEvent): void => {
 };
 
 export const formatIntoActivityLogEntry = (
-  txmaEvent: TxmaEvent,
+  txmaEvent: TxmaEvent
 ): ActivityLogEntry => {
   return createNewActivityLogEntryFromTxmaEvent(txmaEvent);
 };
 
 export const sendSqsMessage = async (
   messageBody: string,
-  queueUrl: string | undefined,
+  queueUrl: string | undefined
 ): Promise<string | undefined> => {
   const { AWS_REGION } = process.env;
   const client = new SQSClient({ region: AWS_REGION });
@@ -69,32 +69,32 @@ export const handler = async (event: DynamoDBStreamEvent): Promise<void> => {
         const txmaEvent = unmarshall(
           record.dynamodb?.NewImage?.event.M as {
             [key: string]: AttributeValue;
-          },
+          }
         ) as TxmaEvent;
         if (allowedTxmaEvents.includes(txmaEvent.event_name)) {
           validateTxmaEventBody(txmaEvent);
           const formattedRecord = formatIntoActivityLogEntry(txmaEvent);
           const messageId = await sendSqsMessage(
             JSON.stringify(formattedRecord),
-            OUTPUT_QUEUE_URL,
+            OUTPUT_QUEUE_URL
           );
           console.log(`[Message sent to QUEUE] with message id = ${messageId}`);
         } else {
           console.log(
-            `DB stream sent a ${txmaEvent.event_name} event. Irrelevant for activity log so ignoring`,
+            `DB stream sent a ${txmaEvent.event_name} event. Irrelevant for activity log so ignoring`
           );
         }
       } catch (err) {
         console.error(
           "[Error occurred] unable to format activity log event",
-          err,
+          err
         );
         const messageId = await sendSqsMessage(JSON.stringify(record), DLQ_URL);
         console.error(
           `[Message sent to DLQ] with message id = ${messageId}`,
-          err,
+          err
         );
       }
-    }),
+    })
   );
 };

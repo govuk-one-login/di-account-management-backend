@@ -43,6 +43,29 @@ npm run lint
 npm run test
 ```
 
+### Post-deploy tests
+
+We run integration tests against the deployed application in our build environment as part of the pipeline.
+We bundle them in `post-deploy-tests.Dockerfile`; this contains a `/run-tests.sh` script which wraps the tests.
+
+To run the container locally against the build environment run:
+
+```bash
+aws sso login --profile di-account-build-admin
+
+eval "$(aws configure export-credentials --profile di-account-build-admin --format env)"
+
+docker build . -t test -f post-deploy-tests.Dockerfile
+
+docker run -t \
+  -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
+  -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
+  -e AWS_SESSION_TOKEN=$AWS_SESSION_TOKEN \
+  -e AWS_SECURITY_TOKEN=$AWS_SECURITY_TOKEN \
+  -e AWS_DEFAULT_REGION="eu-west-2" \
+  test
+```
+
 ## Deploying the application
 
 Deploy the application to the `dev` AWS account by running

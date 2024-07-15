@@ -3625,21 +3625,21 @@ Resources:
   # Test permissons
   #######################
 
-  PostDeployTestPolicy:
+  WriteActivityLogFunctionTestPolicy:
     Condition: GrantTestPermissions
-    Type: AWS::IAM::ManagedPolicy
+    Type: AWS::Lambda::Permission
     Properties:
-      Roles:
-        - !Select [1, !Split ["/", !Ref TestRoleArn]]
-      PolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: Allow
-            Action:
-              - lambda:InvokeFunction
-            Resource:
-              - !GetAtt WriteActivityLogFunction.Arn
-              - !GetAtt DeleteActivityLogFunction.Arn
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref WriteActivityLogFunction
+      Principal: !Ref TestRoleArn
+
+  DeleteActivityLogFunctionTestPolicy:
+    Condition: GrantTestPermissions
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref DeleteActivityLogFunction
+      Principal: !Ref TestRoleArn
 
   #######################
   # Encryption

@@ -675,6 +675,7 @@ Resources:
         Variables:
           TABLE_NAME: !Ref RawEventsStoreTableName
           DLQ_URL: !Ref SaveRawEventsDeadLetterQueue
+          NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
         Alarms:
           - !Ref SaveRawEventsFunctionDeploymentAlarm
@@ -682,10 +683,15 @@ Resources:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
+        Format: "esm"
+        OutExtension:
+          - .js=.mjs
         Target: "es2020"
         Sourcemap: true
         EntryPoints:
           - save-raw-events.ts
+        Banner:
+          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
 
   SaveRawEventsDeadLetterQueue:
     Type: AWS::SQS::Queue
@@ -831,6 +837,7 @@ Resources:
           TABLE_NAME: !Ref UserServicesStoreTableName
           DLQ_URL: !Ref QueryUserServicesDeadLetterQueue
           OUTPUT_QUEUE_URL: !Ref UserServicesToFormatQueue
+          NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
         Alarms:
           - !Ref QueryUserServicesFunctionDeploymentAlarm
@@ -838,10 +845,15 @@ Resources:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
+        Format: "esm"
+        OutExtension:
+          - .js=.mjs
         Target: "es2020"
         Sourcemap: true
         EntryPoints:
           - query-user-services.ts
+        Banner:
+          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
 
   QueryUserServicesDeadLetterQueue:
     Type: AWS::SQS::Queue
@@ -991,6 +1003,7 @@ Resources:
         Variables:
           DLQ_URL: !Ref FormatUserServicesDeadLetterQueue
           OUTPUT_QUEUE_URL: !Ref UserServicesToWriteQueue
+          NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
         Alarms:
           - !Ref FormatUserServicesFunctionDeploymentAlarm
@@ -998,10 +1011,15 @@ Resources:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
+        Format: "esm"
+        OutExtension:
+          - .js=.mjs
         Target: "es2020"
         Sourcemap: true
         EntryPoints:
           - format-user-services.ts
+        Banner:
+          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
 
   FormatUserServicesDeadLetterQueue:
     Type: AWS::SQS::Queue
@@ -1129,6 +1147,7 @@ Resources:
         Variables:
           TABLE_NAME: !Ref UserServicesStoreTableName
           DLQ_URL: !Ref WriteUserServicesDeadLetterQueue
+          NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
         Alarms:
           - !Ref WriteUserServicesFunctionDeploymentAlarm
@@ -1136,10 +1155,15 @@ Resources:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
+        Format: "esm"
+        OutExtension:
+          - .js=.mjs
         Target: "es2020"
         Sourcemap: true
         EntryPoints:
           - write-user-services.ts
+        Banner:
+          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
 
   WriteUserServicesDeadLetterQueue:
     Type: AWS::SQS::Queue
@@ -1374,6 +1398,7 @@ Resources:
         Variables:
           TABLE_NAME: !Ref UserServicesStoreTableName
           DLQ_URL: !Ref DeleteUserServicesDeadLetterQueue
+          NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
         Alarms:
           - !Ref DeleteUserServicesFunctionDeploymentAlarm
@@ -1381,10 +1406,15 @@ Resources:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
+        Format: "esm"
+        OutExtension:
+          - .js=.mjs
         Target: "es2020"
         Sourcemap: true
         EntryPoints:
           - delete-user-services.ts
+        Banner:
+          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
 
   DeleteUserServicesRole:
     Type: AWS::IAM::Role
@@ -1606,6 +1636,7 @@ Resources:
               !Ref Environment,
               GOVACCOUNTSPUBLISHINGAPIURL,
             ]
+          NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
         Alarms:
           - !Ref DeleteEmailSubscriptionsFunctionDeploymentAlarm
@@ -1613,10 +1644,15 @@ Resources:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
+        Format: "esm"
+        OutExtension:
+          - .js=.mjs
         Target: "es2020"
         Sourcemap: true
         EntryPoints:
           - delete-email-subscriptions.ts
+        Banner:
+          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
 
   DeleteEmailSubscriptionsDeadLetterQueue:
     Type: AWS::SQS::Queue
@@ -1721,6 +1757,7 @@ Resources:
           VERIFY_ACCESS_VALUE: !Sub "{{resolve:secretsmanager:/${AWS::StackName}/Config/Storage/VerificationSecret}}"
           ACCOUNT_ID: !Sub "${AWS::AccountId}"
           ENVIRONMENT: !Ref Environment
+          NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
         Alarms:
           - !Ref WriteActivityLogFunctionDeploymentAlarm
@@ -1728,10 +1765,15 @@ Resources:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
+        Format: "esm"
+        OutExtension:
+          - .js=.mjs
         Target: "es2020"
         Sourcemap: true
         EntryPoints:
           - write-activity-log.ts
+        Banner:
+          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
 
   WriteActivityLogDeadLetterQueue:
     Type: AWS::SQS::Queue
@@ -1887,6 +1929,7 @@ Resources:
           ACCOUNT_ID: !Sub "${AWS::AccountId}"
           GENERATOR_KEY_ARN: !GetAtt GeneratorKey.Arn
           WRAPPING_KEY_ARN: !GetAtt WrapperKey.Arn
+          NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
         Alarms:
           - !Ref FormatActivityLogFunctionDeploymentAlarm
@@ -1894,10 +1937,15 @@ Resources:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
+        Format: "esm"
+        OutExtension:
+          - .js=.mjs
         Target: "es2020"
         Sourcemap: true
         EntryPoints:
           - format-activity-log.ts
+        Banner:
+          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
 
   FormatActivityLogDeadLetterQueue:
     Type: AWS::SQS::Queue
@@ -2103,6 +2151,7 @@ Resources:
         Variables:
           TABLE_NAME: !Ref ActivityLogsStoreTableName
           DLQ_URL: !Ref DeleteActivityLogDeadLetterQueue
+          NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
         Alarms:
           - !Ref DeleteActivityLogFunctionDeploymentAlarm
@@ -2110,10 +2159,15 @@ Resources:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
+        Format: "esm"
+        OutExtension:
+          - .js=.mjs
         Target: "es2020"
         Sourcemap: true
         EntryPoints:
           - delete-activity-log.ts
+        Banner:
+          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
 
   DeleteActivityLogRole:
     Type: AWS::IAM::Role
@@ -2264,6 +2318,7 @@ Resources:
           VERIFY_ACCESS_VALUE: !Sub "{{resolve:secretsmanager:/${AWS::StackName}/Config/Storage/VerificationSecret}}"
           ACCOUNT_ID: !Sub "${AWS::AccountId}"
           ENVIRONMENT: !Ref Environment
+          NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
         Alarms:
           - !Ref MarkActivityReportedFunctionDeploymentAlarm
@@ -2271,10 +2326,15 @@ Resources:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
+        Format: "esm"
+        OutExtension:
+          - .js=.mjs
         Target: "es2020"
         Sourcemap: true
         EntryPoints:
           - mark-activity-reported.ts
+        Banner:
+          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
 
   MarkActivityReportedRole:
     Type: AWS::IAM::Role
@@ -2354,6 +2414,7 @@ Resources:
         Variables:
           EVENT_NAME: HOME_REPORT_SUSPICIOUS_ACTIVITY
           TXMA_QUEUE_URL: !Ref AuditOutputQueue
+          NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
         Alarms:
           - !Ref SendSuspiciousActivityFunctionDeploymentAlarm
@@ -2361,10 +2422,15 @@ Resources:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
+        Format: "esm"
+        OutExtension:
+          - .js=.mjs
         Target: "es2020"
         Sourcemap: true
         EntryPoints:
           - send-suspicious-activity.ts
+        Banner:
+          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
 
   SendSuspiciousActivityRole:
     Type: AWS::IAM::Role
@@ -2456,6 +2522,7 @@ Resources:
               REPORTSUSPISCIOUSACTIVITYTEMPLATEID,
             ]
           ENVIRONMENT_NAME: !Ref Environment
+          NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
         Alarms:
           - !Ref SendConfEmailFunctionDeploymentAlarm
@@ -2463,10 +2530,15 @@ Resources:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
+        Format: "esm"
+        OutExtension:
+          - .js=.mjs
         Target: "es2020"
         Sourcemap: true
         EntryPoints:
           - send-conf-email.ts
+        Banner:
+          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
 
   SendConfEmailRole:
     Type: AWS::IAM::Role
@@ -2556,6 +2628,7 @@ Resources:
           ZENDESK_API_URL_KEY: /account-mgmt-backend/zendesk-api-url-key
           ZENDESK_TICKET_FORM_ID: /account-mgmt-backend/zendesk-ticket-form-id-key
           ACTIVITY_LOG_TABLE: !Ref ActivityLogsStoreTableName
+          NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
         Alarms:
           - !Ref CreateSupportTicketsDeploymentAlarm
@@ -2563,10 +2636,15 @@ Resources:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
+        Format: "esm"
+        OutExtension:
+          - .js=.mjs
         Target: "es2020"
         Sourcemap: true
         EntryPoints:
           - create-support-ticket.ts
+        Banner:
+          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
 
   CreateSupportTicketRole:
     Type: AWS::IAM::Role
@@ -2762,6 +2840,7 @@ Resources:
           STATE_MACHINE_ARN: !Ref ReportSuspiciousActivityStepFunction
           STEP_FUNCTION_ALIAS: "latest"
           DLQ_URL: !Ref TriggerSuspiciousActivityStepDeadLetterQueue
+          NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
         Alarms:
           - !Ref TriggerSuspiciousActivityStepFunctionDeploymentAlarm
@@ -2769,10 +2848,15 @@ Resources:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
+        Format: "esm"
+        OutExtension:
+          - .js=.mjs
         Target: "es2020"
         Sourcemap: true
         EntryPoints:
           - trigger-rsa-step.ts
+        Banner:
+          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
 
   TriggerSuspiciousActivityStepRole:
     Type: AWS::IAM::Role

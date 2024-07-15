@@ -30,7 +30,7 @@ jobs:
           node-version-file: ".nvmrc"
 
       - name: Install ESbuild
-        run: npm install -g esbuild@0.21.5
+        run: npm install -g esbuild@0.23
 
       - name: Test
         run: npm ci && npm test

@@ -272,6 +272,9 @@ Mappings:
   EnvironmentVariables:
     ### These environment variables are referenced further down the file.
     ### Please ensure that any variables defined for an environment are defined for _all_ environments.
+    demo:
+      GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.integration.publishing.service.gov.uk"
+      REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "2b3170b5-159e-457f-a282-f30f6006dc32"
     dev:
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.integration.publishing.service.gov.uk"
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "2b3170b5-159e-457f-a282-f30f6006dc32"

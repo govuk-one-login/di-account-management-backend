@@ -9,14 +9,14 @@ set -euxo pipefail
 
 aws lambda invoke \
   --function-name build-account-mgmt-backend-write-activity-log:live \
-  --payload file://post-deploy-tests/fixtures/write-activity-log.json \
+  --payload file://./write-activity-log.json \
   --cli-binary-format raw-in-base64-out \
   --output json \
   /dev/null
 
 aws lambda invoke \
   --function-name build-account-mgmt-backend-delete-activity-log:live \
-  --payload file://post-deploy-tests/fixtures/delete-activity-log.json \
+  --payload file://./delete-activity-log.json \
   --cli-binary-format raw-in-base64-out \
   --output json \
   /dev/null

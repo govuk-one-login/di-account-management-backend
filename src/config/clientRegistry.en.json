@@ -150,6 +150,11 @@
       "description": "Search and apply for apprenticeships in England.",
       "link_text": "Go to your account to search for an apprenticeship",
       "link_href": "https://www.findapprenticeship.service.gov.uk/apprenticeshipsearch"
+    },
+    "iJNgycwBNEWGQvkuiLxOdVmVzG9": {
+      "header": "Driving with a medical condition",
+      "link_text": "Driving with a medical condition",
+      "link_href": "https://www.gov.uk/browse/driving/disability-health-condition"
     }
   },
   "integration": {
@@ -297,6 +302,11 @@
       "description": "Search and apply for apprenticeships in England.",
       "link_text": "Go to your account to search for an apprenticeship",
       "link_href": "https://www.findapprenticeship.service.gov.uk/apprenticeshipsearch"
+    },
+    "iJNgycwBNEWGQvkuiLxOdVmVzG9": {
+      "header": "Driving with a medical condition",
+      "link_text": "Driving with a medical condition",
+      "link_href": "https://www.gov.uk/browse/driving/disability-health-condition"
     }
   },
   "staging": {
@@ -444,6 +454,11 @@
       "description": "Search and apply for apprenticeships in England.",
       "link_text": "Go to your account to search for an apprenticeship",
       "link_href": "https://www.findapprenticeship.service.gov.uk/apprenticeshipsearch"
+    },
+    "drivingMedicalCondition": {
+      "header": "Driving with a medical condition",
+      "link_text": "Driving with a medical condition",
+      "link_href": "https://www.gov.uk/browse/driving/disability-health-condition"
     }
   },
   "build": {
@@ -591,6 +606,11 @@
       "description": "Search and apply for apprenticeships in England.",
       "link_text": "Go to your account to search for an apprenticeship",
       "link_href": "https://www.findapprenticeship.service.gov.uk/apprenticeshipsearch"
+    },
+    "drivingMedicalCondition": {
+      "header": "Driving with a medical condition",
+      "link_text": "Driving with a medical condition",
+      "link_href": "https://www.gov.uk/browse/driving/disability-health-condition"
     }
   },
   "dev": {
@@ -738,6 +758,11 @@
       "description": "Search and apply for apprenticeships in England.",
       "link_text": "Go to your account to search for an apprenticeship",
       "link_href": "https://www.findapprenticeship.service.gov.uk/apprenticeshipsearch"
+    },
+    "drivingMedicalCondition": {
+      "header": "Driving with a medical condition",
+      "link_text": "Driving with a medical condition",
+      "link_href": "https://www.gov.uk/browse/driving/disability-health-condition"
     }
   },
   "local": {
@@ -885,6 +910,11 @@
       "description": "Search and apply for apprenticeships in England.",
       "link_text": "Go to your account to search for an apprenticeship",
       "link_href": "https://www.findapprenticeship.service.gov.uk/apprenticeshipsearch"
+    },
+    "drivingMedicalCondition": {
+      "header": "Driving with a medical condition",
+      "link_text": "Driving with a medical condition",
+      "link_href": "https://www.gov.uk/browse/driving/disability-health-condition"
     }
   }
 }

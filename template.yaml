@@ -4723,6 +4723,7 @@ Resources:
       Type: String
       Value: "please-set-me"
     UpdateReplacePolicy: Retain
+    DeletionPolicy: Delete
 
   VPCFlowLogsSplunkSubscription:
     Condition: ExportLogsToSplunk

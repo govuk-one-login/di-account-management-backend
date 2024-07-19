@@ -2354,7 +2354,6 @@ Resources:
     Type: AWS::Serverless::Function
     DependsOn:
       - WriteActivityLogFunctionLogGroup
-      - BackupWrappingKeyArnSSM
     Properties:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-write-activity-log
       CodeUri: src
@@ -2429,8 +2428,6 @@ Resources:
 
   WriteActivityRecordPolicy:
     Type: AWS::IAM::ManagedPolicy
-    DependsOn:
-      - BackupWrappingKeyArnSSM
     Properties:
       PolicyDocument:
         Version: "2012-10-17"
@@ -4725,6 +4722,7 @@ Resources:
       Name: !Sub "/${AWS::StackName}/${Environment}/Backup/KMS/WrappingKey/ARN"
       Type: String
       Value: "please-set-me"
+    UpdateReplacePolicy: Retain
 
   VPCFlowLogsSplunkSubscription:
     Condition: ExportLogsToSplunk

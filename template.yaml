@@ -2350,6 +2350,7 @@ Resources:
     Type: AWS::Serverless::Function
     DependsOn:
       - WriteActivityLogFunctionLogGroup
+      - BackupWrappingKeyArnSSM
     Properties:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-write-activity-log
       CodeUri: src
@@ -2423,6 +2424,8 @@ Resources:
 
   WriteActivityRecordPolicy:
     Type: AWS::IAM::ManagedPolicy
+    DependsOn:
+      - BackupWrappingKeyArnSSM
     Properties:
       PolicyDocument:
         Version: "2012-10-17"

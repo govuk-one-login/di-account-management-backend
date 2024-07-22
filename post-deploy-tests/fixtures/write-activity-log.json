@@ -1,7 +1,151 @@
 {
   "Records": [
     {
+      "messageId": "19dd0b57-b21e-4ac1-bd88-01bbb068cb70",
+      "receiptHandle": "MessageReceiptHandle",
+      "body": "{\"event_id\":\"event-id-1\",\"event_type\":\"AUTH_AUTH_CODE_ISSUED\",\"session_id\":\"session-id\",\"user_id\":\"post-deploy-tests\",\"timestamp\":1720465374,\"client_id\":\"client-id\",\"reported_suspicious\":false}",
+      "attributes": {
+        "ApproximateReceiveCount": "1",
+        "SentTimestamp": "1523232000000",
+        "SenderId": "123456789012",
+        "ApproximateFirstReceiveTimestamp": "1523232000001"
+      },
+      "messageAttributes": {},
+      "md5OfBody": "e359050680237e70f4b71093185eca98",
+      "eventSource": "aws:sqs",
+      "eventSourceARN": "arn:aws:sqs:eu-west-2:123456789012:MyQueue",
+      "awsRegion": "eu-west-2"
+    },
+    {
+      "messageId": "19dd0b57-b21e-4ac1-bd88-01bbb068cb71",
+      "receiptHandle": "MessageReceiptHandle",
+      "body": "{\"event_id\":\"event-id-1\",\"event_type\":\"AUTH_AUTH_CODE_ISSUED\",\"session_id\":\"session-id\",\"user_id\":\"post-deploy-tests\",\"timestamp\":1720465374,\"client_id\":\"client-id\",\"reported_suspicious\":false}",
+      "attributes": {
+        "ApproximateReceiveCount": "1",
+        "SentTimestamp": "1523232000000",
+        "SenderId": "123456789012",
+        "ApproximateFirstReceiveTimestamp": "1523232000001"
+      },
+      "messageAttributes": {},
+      "md5OfBody": "e359050680237e70f4b71093185eca98",
+      "eventSource": "aws:sqs",
+      "eventSourceARN": "arn:aws:sqs:eu-west-2:123456789012:MyQueue",
+      "awsRegion": "eu-west-2"
+    },
+    {
+      "messageId": "19dd0b57-b21e-4ac1-bd88-01bbb068cb72",
+      "receiptHandle": "MessageReceiptHandle",
+      "body": "{\"event_id\":\"event-id-1\",\"event_type\":\"AUTH_AUTH_CODE_ISSUED\",\"session_id\":\"session-id\",\"user_id\":\"post-deploy-tests\",\"timestamp\":1720465374,\"client_id\":\"client-id\",\"reported_suspicious\":false}",
+      "attributes": {
+        "ApproximateReceiveCount": "1",
+        "SentTimestamp": "1523232000000",
+        "SenderId": "123456789012",
+        "ApproximateFirstReceiveTimestamp": "1523232000001"
+      },
+      "messageAttributes": {},
+      "md5OfBody": "e359050680237e70f4b71093185eca98",
+      "eventSource": "aws:sqs",
+      "eventSourceARN": "arn:aws:sqs:eu-west-2:123456789012:MyQueue",
+      "awsRegion": "eu-west-2"
+    },
+    {
+      "messageId": "19dd0b57-b21e-4ac1-bd88-01bbb068cb73",
+      "receiptHandle": "MessageReceiptHandle",
+      "body": "{\"event_id\":\"event-id-1\",\"event_type\":\"AUTH_AUTH_CODE_ISSUED\",\"session_id\":\"session-id\",\"user_id\":\"post-deploy-tests\",\"timestamp\":1720465374,\"client_id\":\"client-id\",\"reported_suspicious\":false}",
+      "attributes": {
+        "ApproximateReceiveCount": "1",
+        "SentTimestamp": "1523232000000",
+        "SenderId": "123456789012",
+        "ApproximateFirstReceiveTimestamp": "1523232000001"
+      },
+      "messageAttributes": {},
+      "md5OfBody": "e359050680237e70f4b71093185eca98",
+      "eventSource": "aws:sqs",
+      "eventSourceARN": "arn:aws:sqs:eu-west-2:123456789012:MyQueue",
+      "awsRegion": "eu-west-2"
+    },
+    {
+      "messageId": "19dd0b57-b21e-4ac1-bd88-01bbb068cb74",
+      "receiptHandle": "MessageReceiptHandle",
+      "body": "{\"event_id\":\"event-id-1\",\"event_type\":\"AUTH_AUTH_CODE_ISSUED\",\"session_id\":\"session-id\",\"user_id\":\"post-deploy-tests\",\"timestamp\":1720465374,\"client_id\":\"client-id\",\"reported_suspicious\":false}",
+      "attributes": {
+        "ApproximateReceiveCount": "1",
+        "SentTimestamp": "1523232000000",
+        "SenderId": "123456789012",
+        "ApproximateFirstReceiveTimestamp": "1523232000001"
+      },
+      "messageAttributes": {},
+      "md5OfBody": "e359050680237e70f4b71093185eca98",
+      "eventSource": "aws:sqs",
+      "eventSourceARN": "arn:aws:sqs:eu-west-2:123456789012:MyQueue",
+      "awsRegion": "eu-west-2"
+    },
+    {
+      "messageId": "19dd0b57-b21e-4ac1-bd88-01bbb068cb75",
+      "receiptHandle": "MessageReceiptHandle",
+      "body": "{\"event_id\":\"event-id-1\",\"event_type\":\"AUTH_AUTH_CODE_ISSUED\",\"session_id\":\"session-id\",\"user_id\":\"post-deploy-tests\",\"timestamp\":1720465374,\"client_id\":\"client-id\",\"reported_suspicious\":false}",
+      "attributes": {
+        "ApproximateReceiveCount": "1",
+        "SentTimestamp": "1523232000000",
+        "SenderId": "123456789012",
+        "ApproximateFirstReceiveTimestamp": "1523232000001"
+      },
+      "messageAttributes": {},
+      "md5OfBody": "e359050680237e70f4b71093185eca98",
+      "eventSource": "aws:sqs",
+      "eventSourceARN": "arn:aws:sqs:eu-west-2:123456789012:MyQueue",
+      "awsRegion": "eu-west-2"
+    },
+    {
+      "messageId": "19dd0b57-b21e-4ac1-bd88-01bbb068cb76",
+      "receiptHandle": "MessageReceiptHandle",
+      "body": "{\"event_id\":\"event-id-1\",\"event_type\":\"AUTH_AUTH_CODE_ISSUED\",\"session_id\":\"session-id\",\"user_id\":\"post-deploy-tests\",\"timestamp\":1720465374,\"client_id\":\"client-id\",\"reported_suspicious\":false}",
+      "attributes": {
+        "ApproximateReceiveCount": "1",
+        "SentTimestamp": "1523232000000",
+        "SenderId": "123456789012",
+        "ApproximateFirstReceiveTimestamp": "1523232000001"
+      },
+      "messageAttributes": {},
+      "md5OfBody": "e359050680237e70f4b71093185eca98",
+      "eventSource": "aws:sqs",
+      "eventSourceARN": "arn:aws:sqs:eu-west-2:123456789012:MyQueue",
+      "awsRegion": "eu-west-2"
+    },
+    {
+      "messageId": "19dd0b57-b21e-4ac1-bd88-01bbb068cb77",
+      "receiptHandle": "MessageReceiptHandle",
+      "body": "{\"event_id\":\"event-id-1\",\"event_type\":\"AUTH_AUTH_CODE_ISSUED\",\"session_id\":\"session-id\",\"user_id\":\"post-deploy-tests\",\"timestamp\":1720465374,\"client_id\":\"client-id\",\"reported_suspicious\":false}",
+      "attributes": {
+        "ApproximateReceiveCount": "1",
+        "SentTimestamp": "1523232000000",
+        "SenderId": "123456789012",
+        "ApproximateFirstReceiveTimestamp": "1523232000001"
+      },
+      "messageAttributes": {},
+      "md5OfBody": "e359050680237e70f4b71093185eca98",
+      "eventSource": "aws:sqs",
+      "eventSourceARN": "arn:aws:sqs:eu-west-2:123456789012:MyQueue",
+      "awsRegion": "eu-west-2"
+    },
+    {
       "messageId": "19dd0b57-b21e-4ac1-bd88-01bbb068cb78",
+      "receiptHandle": "MessageReceiptHandle",
+      "body": "{\"event_id\":\"event-id-1\",\"event_type\":\"AUTH_AUTH_CODE_ISSUED\",\"session_id\":\"session-id\",\"user_id\":\"post-deploy-tests\",\"timestamp\":1720465374,\"client_id\":\"client-id\",\"reported_suspicious\":false}",
+      "attributes": {
+        "ApproximateReceiveCount": "1",
+        "SentTimestamp": "1523232000000",
+        "SenderId": "123456789012",
+        "ApproximateFirstReceiveTimestamp": "1523232000001"
+      },
+      "messageAttributes": {},
+      "md5OfBody": "e359050680237e70f4b71093185eca98",
+      "eventSource": "aws:sqs",
+      "eventSourceARN": "arn:aws:sqs:eu-west-2:123456789012:MyQueue",
+      "awsRegion": "eu-west-2"
+    },
+    {
+      "messageId": "19dd0b57-b21e-4ac1-bd88-01bbb068cb79",
       "receiptHandle": "MessageReceiptHandle",
       "body": "{\"event_id\":\"event-id-1\",\"event_type\":\"AUTH_AUTH_CODE_ISSUED\",\"session_id\":\"session-id\",\"user_id\":\"post-deploy-tests\",\"timestamp\":1720465374,\"client_id\":\"client-id\",\"reported_suspicious\":false}",
       "attributes": {

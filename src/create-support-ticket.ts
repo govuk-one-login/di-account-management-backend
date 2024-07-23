@@ -135,6 +135,7 @@ export const handler = async (
   let eventIdentifier: string | undefined = undefined;
   try {
     eventIdentifier = input.event_id;
+    console.log(`started processing event with ID: ${eventIdentifier}`);
     if (
       !ZENDESK_API_USER_KEY ||
       !ZENDESK_API_TOKEN_KEY ||
@@ -210,7 +211,7 @@ export const handler = async (
         );
       }
     }
-
+    console.log(`finished processing event with ID: ${eventIdentifier}`);
     return input;
   } catch (error: unknown) {
     console.error(

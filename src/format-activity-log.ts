@@ -66,6 +66,7 @@ export const handler = async (event: DynamoDBStreamEvent): Promise<void> => {
   await Promise.all(
     Records.map(async (record) => {
       try {
+        console.log(`started processing event with ID: ${record.eventID}`);
         const txmaEvent = unmarshall(
           record.dynamodb?.NewImage?.event.M as {
             [key: string]: AttributeValue;
@@ -84,6 +85,7 @@ export const handler = async (event: DynamoDBStreamEvent): Promise<void> => {
             `DB stream sent a ${txmaEvent.event_name} event. Irrelevant for activity log so ignoring`
           );
         }
+        console.log(`finished processing event with ID: ${record.eventID}`);
       } catch (err) {
         console.error(
           "[Error occurred] unable to format activity log event",

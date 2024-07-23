@@ -12,6 +12,9 @@ export const handler = async (event: SNSEvent): Promise<void> => {
   await Promise.all(
     event.Records.map(async (record) => {
       try {
+        console.log(
+          `started processing message with ID: ${record.Sns.MessageId}`
+        );
         if (!STATE_MACHINE_ARN || !DLQ_URL) {
           throw new Error(
             "Error Occurred - Required environment variables to trigger report suspicious activity steps are not provided."
@@ -31,6 +34,9 @@ export const handler = async (event: SNSEvent): Promise<void> => {
           );
         }
         await callAsyncStepFunction(STATE_MACHINE_ARN, receivedEvent);
+        console.log(
+          `finished processing message with ID: ${record.Sns.MessageId}`
+        );
       } catch (error: unknown) {
         console.error(
           `[Error occurred], trigger report suspicious activity step function:, ${

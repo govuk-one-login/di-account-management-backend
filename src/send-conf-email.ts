@@ -117,6 +117,7 @@ export const handler = async (
 ): Promise<ReportSuspiciousActivityEvent> => {
   const { NOTIFY_API_KEY, TEMPLATE_ID } = process.env;
   try {
+    console.log(`started processing event with ID: ${input.event_id}`);
     assert(NOTIFY_API_KEY, "NOTIFY_API_KEY env variable not set");
     assert(TEMPLATE_ID, "TEMPLATE_ID env variable not set");
 
@@ -133,6 +134,7 @@ export const handler = async (
     if (response?.data?.id) {
       input.notify_message_id = response.data.id;
     }
+    console.log(`finished processing event with ID: ${input.event_id}`);
     return input;
   } catch (err) {
     notifyErrorHandler(err as IError, "sending email for event");

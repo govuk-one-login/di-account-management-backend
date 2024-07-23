@@ -65,9 +65,15 @@ export const handler = async (event: SNSEvent): Promise<void> => {
   await Promise.all(
     event.Records.map(async (record) => {
       try {
+        console.log(
+          `started processing message with ID: ${record.Sns.MessageId}`
+        );
         const userData: UserData = JSON.parse(record.Sns.Message);
         validateUserData(userData);
         await deleteEmailSubscription(userData);
+        console.log(
+          `finished processing message with ID: ${record.Sns.MessageId}`
+        );
       } catch (err) {
         const message: SendMessageRequest = {
           QueueUrl: DLQ_URL,

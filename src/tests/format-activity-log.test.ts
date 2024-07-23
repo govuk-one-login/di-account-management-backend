@@ -36,7 +36,7 @@ describe("handler", () => {
 
   test("Ignores any Non allowed event", async () => {
     await handler(MUCKY_DYNAMODB_STREAM_EVENT);
-    expect(consoleLogMock).toHaveBeenCalledTimes(1);
+    expect(consoleLogMock).toHaveBeenCalledTimes(3);
     expect(consoleLogMock).toHaveBeenCalledWith(
       `DB stream sent a ${randomEventType} event. Irrelevant for activity log so ignoring`
     );

@@ -91,6 +91,7 @@ export const handler = async (event: DynamoDBStreamEvent): Promise<void> => {
   await Promise.all(
     Records.map(async (record) => {
       try {
+        console.log(`started processing event with ID: ${record.eventID}`);
         const txmaEvent = unmarshall(
           record.dynamodb?.NewImage?.event.M as {
             [key: string]: AttributeValue;
@@ -109,6 +110,7 @@ export const handler = async (event: DynamoDBStreamEvent): Promise<void> => {
             `DB stream sent a ${txmaEvent.event_name} event. Irrelevant for service card so ignoring`
           );
         }
+        console.log(`finished processing event with ID: ${record.eventID}`);
       } catch (err) {
         const messageId = await sendSqsMessage(JSON.stringify(record), DLQ_URL);
         console.error(

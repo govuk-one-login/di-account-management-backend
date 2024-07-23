@@ -109,6 +109,7 @@ export const queryActivityLog = async (
 export const handler = async (
   input: ReportSuspiciousActivityStepInput
 ): Promise<ReportSuspiciousActivityEvent> => {
+  console.log(`started processing event with ID: ${input.event_id}`);
   const { ACTIVITY_LOG_TABLE_NAME } = process.env;
   const { GENERATOR_KEY_ARN } = process.env;
   const { WRAPPING_KEY_ARN } = process.env;
@@ -172,5 +173,6 @@ export const handler = async (
   if (input.device_information) {
     reportedEvent.device_information = input.device_information;
   }
+  console.log(`finished processing event with ID: ${input.event_id}`);
   return reportedEvent;
 };

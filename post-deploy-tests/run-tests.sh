@@ -11,10 +11,10 @@ aws lambda invoke \
   --function-name build-account-mgmt-backend-write-activity-log:live \
   --payload "$(cat /write-activity-log.json | base64)" \
   --output json \
-  /dev/null
+  /dev/null | jq -e -n 'if input.StatusCode == 200 then true else halt_error(1) end'
 
 aws lambda invoke \
   --function-name build-account-mgmt-backend-delete-activity-log:live \
   --payload "$(cat /delete-activity-log.json | base64)" \
   --output json \
-  /dev/null
+  /dev/null | jq -e -n 'if input.StatusCode == 200 then true else halt_error(1) end'

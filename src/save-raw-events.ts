@@ -26,9 +26,9 @@ const getEventId = (): string => {
 };
 
 const getTTLDate = (): number => {
-  const SECONDS_IN_A_DAY = 60 * 60 * 24;
+  const secondsInADay = 60 * 60 * 24;
   const secondsSinceEpoch = Math.round(Date.now() / 1000);
-  const expirationTime = secondsSinceEpoch + 14 * SECONDS_IN_A_DAY;
+  const expirationTime = secondsSinceEpoch + 14 * secondsInADay;
   return expirationTime;
 };
 

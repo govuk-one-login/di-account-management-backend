@@ -5,13 +5,13 @@ import { Service, UserRecordEvent, UserServices } from "../common/model";
 import "aws-sdk-client-mock-jest";
 import {
   handler,
-  sendSqsMessage,
   validateTxmaEventBody,
   validateUser,
   queryUserServices,
 } from "../query-user-services";
 import { DynamoDBStreamEvent, DynamoDBRecord } from "aws-lambda";
 import { TxmaEvent, UserData } from "../common/model";
+import { sendSqsMessage } from "../common/sqs";
 
 export const userId = "user_id";
 export const clientId = "client_id";
@@ -254,6 +254,7 @@ describe("sendSqsMessage", () => {
   beforeEach(() => {
     sqsMock.reset();
     process.env.QUEUE_URL = queueUrl;
+    process.env.AWS_REGION = "AWS_REGION";
   });
   afterEach(() => {
     jest.clearAllMocks();
@@ -262,7 +263,8 @@ describe("sendSqsMessage", () => {
     sqsMock.on(SendMessageCommand).resolves({ MessageId: messageId });
 
     expect(
-      await sendSqsMessage(JSON.stringify(userRecordEvents), queueUrl)
+      (await sendSqsMessage(JSON.stringify(userRecordEvents), queueUrl))
+        .MessageId
     ).toEqual(messageId);
     expect(
       sqsMock.commandCalls(SendMessageCommand, {

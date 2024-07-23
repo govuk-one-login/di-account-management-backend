@@ -4,7 +4,6 @@ import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 import {
   formatIntoActivityLogEntry,
   handler,
-  sendSqsMessage,
   validateTxmaEventBody,
 } from "../format-activity-log";
 import {
@@ -18,6 +17,7 @@ import {
   tableName,
   TEST_DYNAMO_STREAM_EVENT,
 } from "./testFixtures";
+import { sendSqsMessage } from "../common/sqs";
 
 const sqsMock = mockClient(SQSClient);
 
@@ -27,6 +27,7 @@ describe("handler", () => {
     sqsMock.reset();
     process.env.TABLE_NAME = tableName;
     process.env.OUTPUT_QUEUE_URL = queueUrl;
+    process.env.AWS_REGION = "AWS_REGION";
     consoleLogMock = jest.spyOn(global.console, "log").mockImplementation();
     sqsMock.on(SendMessageCommand).resolves({ MessageId: messageId });
   });
@@ -170,6 +171,7 @@ describe("sendSqsMessage", () => {
   beforeEach(() => {
     sqsMock.reset();
     process.env.QUEUE_URL = queueUrl;
+    process.env.AWS_REGION = "AWS_REGION";
   });
 
   afterEach(() => {
@@ -179,7 +181,8 @@ describe("sendSqsMessage", () => {
   test("Send the SQS event on the queue", async () => {
     sqsMock.on(SendMessageCommand).resolves({ MessageId: messageId });
     expect(
-      await sendSqsMessage(JSON.stringify(MUTABLE_TXMA_EVENT), queueUrl)
+      (await sendSqsMessage(JSON.stringify(MUTABLE_TXMA_EVENT), queueUrl))
+        .MessageId
     ).toEqual(messageId);
     expect(
       sqsMock.commandCalls(SendMessageCommand, {

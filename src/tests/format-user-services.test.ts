@@ -7,7 +7,6 @@ import {
   newServicePresenter,
   existingServicePresenter,
   validateAndParseSQSRecord,
-  sendSqsMessage,
   conditionallyUpsertServiceList,
   formatRecord,
   prettifyDate,
@@ -20,6 +19,7 @@ import {
   makeSQSInputFixture,
   makeTxmaEvent,
 } from "./testUtils";
+import { sendSqsMessage } from "../common/sqs";
 
 const sqsMock = mockClient(SQSClient);
 
@@ -209,6 +209,7 @@ describe("sendSqsMessage", () => {
   beforeEach(() => {
     sqsMock.reset();
     sqsMock.on(SendMessageCommand).resolves({ MessageId: messageID });
+    process.env.AWS_REGION = "AWS_REGION";
   });
   afterEach(() => {
     jest.clearAllMocks();
@@ -219,7 +220,8 @@ describe("sendSqsMessage", () => {
     services: [makeServiceRecord("client1234", 1)],
   });
   test("Send the SQS event on the queue", async () => {
-    const messageId = await sendSqsMessage(userRecordEvents, queueURL);
+    const messageId = (await sendSqsMessage(userRecordEvents, queueURL))
+      .MessageId;
     expect(messageId).toEqual(messageID);
     expect(sqsMock).toHaveReceivedCommandWith(SendMessageCommand, {
       QueueUrl: queueURL,

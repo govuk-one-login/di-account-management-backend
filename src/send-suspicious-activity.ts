@@ -1,9 +1,4 @@
-import {
-  SendMessageCommand,
-  SendMessageCommandOutput,
-  SendMessageRequest,
-  SQSClient,
-} from "@aws-sdk/client-sqs";
+import { SendMessageCommandOutput } from "@aws-sdk/client-sqs";
 import { ReportSuspiciousActivityEvent, TxMAAuditEvent } from "./common/model";
 import {
   COMPONENT_ID,
@@ -12,19 +7,7 @@ import {
 } from "./common/constants";
 import VALIDATOR_RULES_MAP from "./common/validator-rules";
 import validateObject from "./common/validator";
-
-export const sendSqsMessage = async (
-  messageBody: string,
-  queueUrl: string | undefined
-): Promise<SendMessageCommandOutput> => {
-  const { AWS_REGION } = process.env;
-  const client = new SQSClient({ region: AWS_REGION });
-  const message: SendMessageRequest = {
-    QueueUrl: queueUrl,
-    MessageBody: messageBody,
-  };
-  return client.send(new SendMessageCommand(message));
-};
+import { sendSqsMessage } from "./common/sqs";
 
 export const transformToTxMAEvent = (
   event: ReportSuspiciousActivityEvent,

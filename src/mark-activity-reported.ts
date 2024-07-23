@@ -1,10 +1,4 @@
 import {
-  SendMessageCommand,
-  SendMessageCommandOutput,
-  SendMessageRequest,
-  SQSClient,
-} from "@aws-sdk/client-sqs";
-import {
   DynamoDBDocumentClient,
   QueryCommand,
   UpdateCommand,
@@ -24,19 +18,6 @@ import redact from "./common/redact";
 
 const dynamoClient = new DynamoDBClient({});
 const dynamoDocClient = DynamoDBDocumentClient.from(dynamoClient);
-
-export const sendSqsMessage = async (
-  messageBody: string,
-  queueUrl: string | undefined
-): Promise<SendMessageCommandOutput> => {
-  const { AWS_REGION } = process.env;
-  const client = new SQSClient({ region: AWS_REGION });
-  const message: SendMessageRequest = {
-    QueueUrl: queueUrl,
-    MessageBody: messageBody,
-  };
-  return client.send(new SendMessageCommand(message));
-};
 
 export const markEventAsReported = async (
   tableName: string,

@@ -1,12 +1,6 @@
 import axios, { AxiosResponse } from "axios";
 import { getSecret } from "@aws-lambda-powertools/parameters/secrets";
 import {
-  SendMessageCommand,
-  SendMessageCommandOutput,
-  SendMessageRequest,
-  SQSClient,
-} from "@aws-sdk/client-sqs";
-import {
   CreateTicketPayload,
   HttpError,
   ReportSuspiciousActivityEvent,
@@ -106,19 +100,6 @@ export async function createTicket(
     );
   }
 }
-
-export const sendSqsMessage = async (
-  messageBody: string,
-  queueUrl: string | undefined
-): Promise<SendMessageCommandOutput> => {
-  const { AWS_REGION } = process.env;
-  const client = new SQSClient({ region: AWS_REGION });
-  const message: SendMessageRequest = {
-    QueueUrl: queueUrl,
-    MessageBody: messageBody,
-  };
-  return client.send(new SendMessageCommand(message));
-};
 
 export const handler = async (
   input: ReportSuspiciousActivityEvent

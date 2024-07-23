@@ -1,17 +1,12 @@
 import { DynamoDBStreamEvent } from "aws-lambda";
 import { AttributeValue } from "@aws-sdk/client-dynamodb";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
-
-import {
-  SendMessageCommand,
-  SendMessageRequest,
-  SQSClient,
-} from "@aws-sdk/client-sqs";
 import { ActivityLogEntry, TxmaEvent } from "./common/model";
 import {
   allowedTxmaEvents,
   REPORT_SUSPICIOUS_ACTIVITY_DEFAULT,
 } from "./common/constants";
+import { sendSqsMessage } from "./common/sqs";
 
 const createNewActivityLogEntryFromTxmaEvent = (
   txmaEvent: TxmaEvent
@@ -45,20 +40,6 @@ export const formatIntoActivityLogEntry = (
   return createNewActivityLogEntryFromTxmaEvent(txmaEvent);
 };
 
-export const sendSqsMessage = async (
-  messageBody: string,
-  queueUrl: string | undefined
-): Promise<string | undefined> => {
-  const { AWS_REGION } = process.env;
-  const client = new SQSClient({ region: AWS_REGION });
-  const message: SendMessageRequest = {
-    QueueUrl: queueUrl,
-    MessageBody: messageBody,
-  };
-  const result = await client.send(new SendMessageCommand(message));
-  return result.MessageId;
-};
-
 export const handler = async (event: DynamoDBStreamEvent): Promise<void> => {
   const { OUTPUT_QUEUE_URL, DLQ_URL } = process.env;
   const { Records } = event;
@@ -75,7 +56,7 @@ export const handler = async (event: DynamoDBStreamEvent): Promise<void> => {
         if (allowedTxmaEvents.includes(txmaEvent.event_name)) {
           validateTxmaEventBody(txmaEvent);
           const formattedRecord = formatIntoActivityLogEntry(txmaEvent);
-          const messageId = await sendSqsMessage(
+          const { MessageId: messageId } = await sendSqsMessage(
             JSON.stringify(formattedRecord),
             OUTPUT_QUEUE_URL
           );

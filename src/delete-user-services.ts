@@ -5,12 +5,8 @@ import {
   DeleteCommand,
   DeleteCommandOutput,
 } from "@aws-sdk/lib-dynamodb";
-import {
-  SendMessageCommand,
-  SendMessageRequest,
-  SQSClient,
-} from "@aws-sdk/client-sqs";
 import { UserData } from "./common/model";
+import { sendSqsMessage } from "./common/sqs";
 
 const marshallOptions = {
   convertClassInstanceToMap: true,
@@ -22,8 +18,6 @@ const dynamoDocClient = DynamoDBDocumentClient.from(
   dynamoClient,
   translateConfig
 );
-
-const sqsClient = new SQSClient({});
 
 export const validateUserData = (userData: UserData): UserData => {
   if (userData.user_id) {
@@ -48,6 +42,9 @@ export const deleteUserData = async (
 
 export const handler = async (event: SNSEvent): Promise<void> => {
   const { DLQ_URL } = process.env;
+  if (!DLQ_URL) {
+    throw new Error("DLQ_URL environment variable is not set");
+  }
 
   await Promise.all(
     event.Records.map(async (record) => {
@@ -61,16 +58,16 @@ export const handler = async (event: SNSEvent): Promise<void> => {
         console.log(
           `finished processing message with ID: ${record.Sns.MessageId}`
         );
-      } catch (err) {
-        const message: SendMessageRequest = {
-          QueueUrl: DLQ_URL,
-          MessageBody: record.Sns.Message,
-        };
-        const result = await sqsClient.send(new SendMessageCommand(message));
-        console.error(
-          `[Message sent to DLQ] with message id = ${result.MessageId}`,
-          err
-        );
+      } catch (error) {
+        console.error(`[Error occurred]: ${(error as Error).message}`);
+        try {
+          const result = await sendSqsMessage(record.Sns.Message, DLQ_URL);
+          console.error(
+            `[Message sent to DLQ] with message id = ${result.MessageId}`
+          );
+        } catch (dlqError) {
+          console.error(`Failed to send message to DLQ: `, dlqError);
+        }
       }
     })
   );

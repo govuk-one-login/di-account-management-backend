@@ -175,6 +175,7 @@ describe("handler", () => {
       sqsMock.on(SendMessageCommand).resolves({ MessageId: "MessageId" });
       dynamoMock.reset();
       dynamoMock.rejectsOnce("mock error");
+      process.env.AWS_REGION = "AWS_REGION";
     });
 
     afterEach(() => {

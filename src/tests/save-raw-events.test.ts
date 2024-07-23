@@ -143,7 +143,7 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrowError(new Error(`Could not validate UserServices`));
+    }).toThrowError(new Error(`Could not validate TxmaEvent`));
   });
 
   test("throws error when client_id value is null", () => {
@@ -154,7 +154,7 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrowError(new Error(`Could not validate UserServices`));
+    }).toThrowError(new Error(`Could not validate TxmaEvent`));
   });
 
   test("throws error when timestamp key is missing", () => {
@@ -165,7 +165,7 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrowError(new Error(`Could not validate UserServices`));
+    }).toThrowError(new Error(`Could not validate TxmaEvent`));
   });
 
   test("throws error when timestamp value is null", () => {
@@ -176,7 +176,7 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrowError(new Error(`Could not validate UserServices`));
+    }).toThrowError(new Error(`Could not validate TxmaEvent`));
   });
 
   test("throws error when event_name key is missing", () => {
@@ -187,7 +187,7 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrowError(new Error(`Could not validate UserServices`));
+    }).toThrowError(new Error(`Could not validate TxmaEvent`));
   });
 
   test("throws error when event name value is null", () => {
@@ -198,7 +198,7 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrowError(new Error(`Could not validate UserServices`));
+    }).toThrowError(new Error(`Could not validate TxmaEvent`));
   });
 
   test("throws error when user key is missing", () => {
@@ -209,7 +209,7 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrowError(new Error(`Could not validate UserServices`));
+    }).toThrowError(new Error(`Could not validate TxmaEvent`));
   });
 
   test("throws error when user_id key is missing", () => {
@@ -240,6 +240,7 @@ describe("handler", () => {
     dynamoMock.reset();
     sqsMock.reset();
     process.env.TABLE_NAME = "TABLE_NAME";
+    process.env.DLQ_URL = "DLQ_URL";
     jest.spyOn(Date, "now").mockImplementation(() => TIMESTAMP);
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-expect-error
@@ -275,6 +276,7 @@ describe("handler error handling", () => {
     sqsMock.reset();
     process.env.TABLE_NAME = "TABLE_NAME";
     process.env.DLQ_URL = "DLQ_URL";
+    process.env.AWS_REGION = "AWS_REGION";
     consoleErrorMock = jest.spyOn(global.console, "error").mockImplementation();
     sqsMock.on(SendMessageCommand).resolves({ MessageId: "MessageId" });
     dynamoMock.rejectsOnce("mock error");
@@ -287,7 +289,7 @@ describe("handler error handling", () => {
 
   test("logs the error message", async () => {
     await handler(TEST_SQS_EVENT);
-    expect(consoleErrorMock).toHaveBeenCalledTimes(1);
+    expect(consoleErrorMock).toHaveBeenCalledTimes(2);
   });
 
   test("sends the event to the dead letter queue", async () => {

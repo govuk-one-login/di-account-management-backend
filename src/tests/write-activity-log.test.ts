@@ -37,19 +37,28 @@ describe("ValidateActivityLogEntries", () => {
   test("throws an error when user_id is missing", () => {
     expect(() => {
       validateActivityLogEntry(ACTIVITY_LOG_ENTRY_NO_USER_ID);
-    }).toThrowError(new Error(`Could not validate activity log entry`));
+    }).toThrowError(
+      new Error(
+        `Activity log entry validation failed for event_id: ab12345a-a12b-3ced-ef12-12a3b4cd5678`
+      )
+    );
   });
 
   test("throws an error when timestamp is missing", () => {
     expect(() => {
       validateActivityLogEntry(ACTIVITY_LOG_ENTRY_NO_TIMESTAMP);
-    }).toThrowError(new Error(`Could not validate activity log entry`));
+    }).toThrowError(
+      new Error(
+        `Activity log entry validation failed for event_id: ab12345a-a12b-3ced-ef12-12a3b4cd5678`
+      )
+    );
   });
 });
 
 describe("writeActivityLogEntry", () => {
   beforeEach(() => {
     dynamoMock.reset();
+    process.env.TABLE_NAME = "tableName";
   });
 
   afterEach(() => {
@@ -70,6 +79,9 @@ describe("lambdaHandler", () => {
   beforeEach(() => {
     dynamoMock.reset();
     sqsMock.reset();
+    process.env.TABLE_NAME = "TABLE_NAME";
+    process.env.DLQ_URL = "DLQ_URL";
+    process.env.AWS_REGION = "AWS_REGION";
   });
 
   afterEach(() => {
@@ -90,7 +102,9 @@ describe("lambdaHandler", () => {
       consoleErrorMock = jest
         .spyOn(global.console, "error")
         .mockImplementation();
-
+      process.env.TABLE_NAME = "TABLE_NAME";
+      process.env.DLQ_URL = "DLQ_URL";
+      process.env.AWS_REGION = "AWS_REGION";
       dynamoMock.rejectsOnce("mock error");
     });
 
@@ -100,7 +114,7 @@ describe("lambdaHandler", () => {
 
     test("logs the error message", async () => {
       await handler(TEST_SQS_EVENT);
-      expect(consoleErrorMock).toHaveBeenCalledTimes(1);
+      expect(consoleErrorMock).toHaveBeenCalledTimes(2);
     });
 
     test("sends the event to the dead letter queue", async () => {

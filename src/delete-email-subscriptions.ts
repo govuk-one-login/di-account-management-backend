@@ -1,12 +1,6 @@
 import { SNSEvent } from "aws-lambda";
-import {
-  SQSClient,
-  SendMessageRequest,
-  SendMessageCommand,
-} from "@aws-sdk/client-sqs";
 import { UserData } from "./common/model";
-
-const sqsClient = new SQSClient({});
+import { sendSqsMessage } from "./common/sqs";
 
 export const getRequestConfig = (token: string | undefined) => {
   const config = {
@@ -61,6 +55,9 @@ export const deleteEmailSubscription = async (userData: UserData) => {
 
 export const handler = async (event: SNSEvent): Promise<void> => {
   const { DLQ_URL } = process.env;
+  if (!DLQ_URL) {
+    throw new Error("DLQ_URL environment variable is not set");
+  }
 
   await Promise.all(
     event.Records.map(async (record) => {
@@ -74,16 +71,16 @@ export const handler = async (event: SNSEvent): Promise<void> => {
         console.log(
           `finished processing message with ID: ${record.Sns.MessageId}`
         );
-      } catch (err) {
-        const message: SendMessageRequest = {
-          QueueUrl: DLQ_URL,
-          MessageBody: record.Sns.Message,
-        };
-        const result = await sqsClient.send(new SendMessageCommand(message));
-        console.error(
-          `[Message sent to DLQ] with message id = ${result.MessageId}`,
-          err
-        );
+      } catch (error) {
+        console.error(`[Error occurred]: ${(error as Error).message}`);
+        try {
+          const result = await sendSqsMessage(record.Sns.Message, DLQ_URL);
+          console.error(
+            `[Message sent to DLQ] with message id = ${result.MessageId}`
+          );
+        } catch (dlqError) {
+          console.error(`Failed to send message to DLQ: `, dlqError);
+        }
       }
     })
   );

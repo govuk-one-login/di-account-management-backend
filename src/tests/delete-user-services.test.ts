@@ -41,6 +41,8 @@ describe("handler", () => {
     dynamoMock.reset();
     sqsMock.reset();
     process.env.TABLE_NAME = "TABLE_NAME";
+    process.env.DLQ_URL = "DLQ_URL";
+    process.env.AWS_REGION = "AWS_REGION";
   });
 
   afterEach(() => {
@@ -70,7 +72,7 @@ describe("handler", () => {
 
     test("logs the error message", async () => {
       await handler(TEST_SNS_EVENT_WITH_TWO_RECORDS);
-      expect(consoleErrorMock).toHaveBeenCalledTimes(1);
+      expect(consoleErrorMock).toHaveBeenCalledTimes(2);
     });
 
     test("sends the event to the dead letter queue", async () => {

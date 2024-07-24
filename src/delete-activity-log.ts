@@ -121,6 +121,9 @@ export const handler = async (event: SNSEvent): Promise<void> => {
   await Promise.all(
     event.Records.map(async (record) => {
       try {
+        console.log(
+          `started processing message with ID: ${record.Sns.MessageId}`
+        );
         assert(DLQ_URL);
         assert(TABLE_NAME);
 
@@ -131,6 +134,9 @@ export const handler = async (event: SNSEvent): Promise<void> => {
         if (activityLogEntries) {
           await batchDeleteActivityLog(TABLE_NAME, activityLogEntries);
         }
+        console.log(
+          `finished processing message with ID: ${record.Sns.MessageId}`
+        );
       } catch (err) {
         console.error("Error in handler", err);
         const message: SendMessageRequest = {

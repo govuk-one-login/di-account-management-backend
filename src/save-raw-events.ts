@@ -78,9 +78,11 @@ export const handler = async (event: SQSEvent): Promise<void> => {
   await Promise.all(
     event.Records.map(async (record) => {
       try {
+        console.log(`started processing message with ID: ${record.messageId}`);
         const txmaEvent: TxmaEvent = JSON.parse(record.body);
         validateTxmaEventBody(txmaEvent);
         await writeRawTxmaEvent(txmaEvent);
+        console.log(`finished processing message with ID: ${record.messageId}`);
       } catch (err) {
         const message: SendMessageRequest = {
           QueueUrl: DLQ_URL,

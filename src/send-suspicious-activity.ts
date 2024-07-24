@@ -109,6 +109,7 @@ export const handler = async (
 ): Promise<void> => {
   const { EVENT_NAME, TXMA_QUEUE_URL } = process.env;
   try {
+    console.log(`started processing event with ID: ${input.event_id}`);
     if (!EVENT_NAME) {
       throw new Error(
         "Cannot handle event as event name has not been provided in the environment"
@@ -137,6 +138,7 @@ export const handler = async (
       );
     }
     await sendAuditEvent(txMAEvent, TXMA_QUEUE_URL);
+    console.log(`finished processing event with ID: ${input.event_id}`);
   } catch (err: unknown) {
     console.error(
       `Error occurred sending event to TxMA: ${(err as Error).message}`

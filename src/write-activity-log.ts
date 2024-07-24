@@ -59,6 +59,7 @@ export const handler = async (event: SQSEvent): Promise<void> => {
   await Promise.all(
     event.Records.map(async (record) => {
       try {
+        console.log(`started processing message with ID: ${record.messageId}`);
         const activityLogEntry: ActivityLogEntry = JSON.parse(record.body);
         validateActivityLogEntry(activityLogEntry);
         const encryptedActivityLog: EncryptedActivityLogEntry = {
@@ -74,6 +75,7 @@ export const handler = async (event: SQSEvent): Promise<void> => {
           reported_suspicious: activityLogEntry.reported_suspicious,
         };
         await writeActivityLogEntry(encryptedActivityLog);
+        console.log(`finished processing message with ID: ${record.messageId}`);
       } catch (err) {
         const message: SendMessageRequest = {
           QueueUrl: DLQ_URL,

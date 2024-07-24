@@ -142,12 +142,14 @@ export const handler = async (event: SQSEvent): Promise<void> => {
   await Promise.all(
     Records.map(async (record) => {
       try {
+        console.log(`started processing message with ID: ${record.messageId}`);
         const formattedRecord = formatRecord(validateAndParseSQSRecord(record));
         const messageId = await sendSqsMessage(
           JSON.stringify(formattedRecord),
           OUTPUT_QUEUE_URL
         );
         console.log(`[Message sent to QUEUE] with message id = ${messageId}`);
+        console.log(`finished processing message with ID: ${record.messageId}`);
       } catch (err) {
         const messageId = await sendSqsMessage(record.body, DLQ_URL);
         console.error(

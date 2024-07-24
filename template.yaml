@@ -942,6 +942,7 @@ Resources:
                   Value: !Ref SaveRawEventsFunction
             Period: 300
             Stat: Sum
+          ReturnData: false
         - Id: invocations
           MetricStat:
             Metric:
@@ -952,9 +953,11 @@ Resources:
                   Value: !Ref SaveRawEventsFunction
             Period: 300
             Stat: Sum
+          ReturnData: false
         - Id: successRate
           Expression: "1 - (errors / invocations)"
           Label: "Success Rate"
+          ReturnData: true
       Threshold: 0.95
       ComparisonOperator: LessThanThreshold
       EvaluationPeriods: 1
@@ -1207,6 +1210,7 @@ Resources:
                   Value: !Ref QueryUserServicesFunction
             Period: 300
             Stat: Sum
+          ReturnData: false
         - Id: invocations
           MetricStat:
             Metric:
@@ -1217,9 +1221,11 @@ Resources:
                   Value: !Ref QueryUserServicesFunction
             Period: 300
             Stat: Sum
+          ReturnData: false
         - Id: successRate
           Expression: "1 - (errors / invocations)"
           Label: "Success Rate"
+          ReturnData: true
       Threshold: 0.95
       ComparisonOperator: LessThanThreshold
       EvaluationPeriods: 1
@@ -1444,6 +1450,7 @@ Resources:
                   Value: !Ref FormatUserServicesFunction
             Period: 300
             Stat: Sum
+          ReturnData: false
         - Id: invocations
           MetricStat:
             Metric:
@@ -1454,9 +1461,11 @@ Resources:
                   Value: !Ref FormatUserServicesFunction
             Period: 300
             Stat: Sum
+          ReturnData: false
         - Id: successRate
           Expression: "1 - (errors / invocations)"
           Label: "Success Rate"
+          ReturnData: true
       Threshold: 0.95
       ComparisonOperator: LessThanThreshold
       EvaluationPeriods: 1
@@ -1660,6 +1669,7 @@ Resources:
                   Value: !Ref WriteUserServicesFunction
             Period: 300
             Stat: Sum
+          ReturnData: false
         - Id: invocations
           MetricStat:
             Metric:
@@ -1670,9 +1680,11 @@ Resources:
                   Value: !Ref WriteUserServicesFunction
             Period: 300
             Stat: Sum
+          ReturnData: false
         - Id: successRate
           Expression: "1 - (errors / invocations)"
           Label: "Success Rate"
+          ReturnData: true
       Threshold: 0.95
       ComparisonOperator: LessThanThreshold
       EvaluationPeriods: 1
@@ -2047,6 +2059,7 @@ Resources:
                   Value: !Ref DeleteUserServicesFunction
             Period: 300
             Stat: Sum
+          ReturnData: false
         - Id: invocations
           MetricStat:
             Metric:
@@ -2057,9 +2070,11 @@ Resources:
                   Value: !Ref DeleteUserServicesFunction
             Period: 300
             Stat: Sum
+          ReturnData: false
         - Id: successRate
           Expression: "1 - (errors / invocations)"
           Label: "Success Rate"
+          ReturnData: true
       Threshold: 0.95
       ComparisonOperator: LessThanThreshold
       EvaluationPeriods: 1
@@ -2327,6 +2342,7 @@ Resources:
                   Value: !Ref DeleteEmailSubscriptionsFunction
             Period: 300
             Stat: Sum
+          ReturnData: false
         - Id: invocations
           MetricStat:
             Metric:
@@ -2337,9 +2353,11 @@ Resources:
                   Value: !Ref DeleteEmailSubscriptionsFunction
             Period: 300
             Stat: Sum
+          ReturnData: false
         - Id: successRate
           Expression: "1 - (errors / invocations)"
           Label: "Success Rate"
+          ReturnData: true
       Threshold: 0.95
       ComparisonOperator: LessThanThreshold
       EvaluationPeriods: 1
@@ -2561,6 +2579,7 @@ Resources:
                   Value: !Ref DeleteEmailSubscriptionsFunction
             Period: 300
             Stat: Sum
+          ReturnData: false
         - Id: invocations
           MetricStat:
             Metric:
@@ -2571,9 +2590,11 @@ Resources:
                   Value: !Ref DeleteEmailSubscriptionsFunction
             Period: 300
             Stat: Sum
+          ReturnData: false
         - Id: successRate
           Expression: "1 - (errors / invocations)"
           Label: "Success Rate"
+          ReturnData: true
       Threshold: 0.95
       ComparisonOperator: LessThanThreshold
       EvaluationPeriods: 1
@@ -2834,6 +2855,7 @@ Resources:
                   Value: !Ref FormatActivityLogFunction
             Period: 300
             Stat: Sum
+          ReturnData: false
         - Id: invocations
           MetricStat:
             Metric:
@@ -2844,9 +2866,11 @@ Resources:
                   Value: !Ref FormatActivityLogFunction
             Period: 300
             Stat: Sum
+          ReturnData: false
         - Id: successRate
           Expression: "1 - (errors / invocations)"
           Label: "Success Rate"
+          ReturnData: true
       Threshold: 0.95
       ComparisonOperator: LessThanThreshold
       EvaluationPeriods: 1
@@ -3153,6 +3177,7 @@ Resources:
                   Value: !Ref DeleteActivityLogFunction
             Period: 300
             Stat: Sum
+          ReturnData: false
         - Id: invocations
           MetricStat:
             Metric:
@@ -3163,9 +3188,11 @@ Resources:
                   Value: !Ref DeleteActivityLogFunction
             Period: 300
             Stat: Sum
+          ReturnData: false
         - Id: successRate
           Expression: "1 - (errors / invocations)"
           Label: "Success Rate"
+          ReturnData: true
       Threshold: 0.95
       ComparisonOperator: LessThanThreshold
       EvaluationPeriods: 1
@@ -3296,6 +3323,7 @@ Resources:
                   Value: !Ref MarkActivityReportedFunction
             Period: 300
             Stat: Sum
+          ReturnData: false
         - Id: invocations
           MetricStat:
             Metric:
@@ -3306,9 +3334,11 @@ Resources:
                   Value: !Ref MarkActivityReportedFunction
             Period: 300
             Stat: Sum
+          ReturnData: false
         - Id: successRate
           Expression: "1 - (errors / invocations)"
           Label: "Success Rate"
+          ReturnData: true
       Threshold: 0.95
       ComparisonOperator: LessThanThreshold
       EvaluationPeriods: 1
@@ -3440,6 +3470,7 @@ Resources:
                   Value: !Ref SendSuspiciousActivityFunction
             Period: 300
             Stat: Sum
+          ReturnData: false
         - Id: invocations
           MetricStat:
             Metric:
@@ -3450,9 +3481,11 @@ Resources:
                   Value: !Ref SendSuspiciousActivityFunction
             Period: 300
             Stat: Sum
+          ReturnData: false
         - Id: successRate
           Expression: "1 - (errors / invocations)"
           Label: "Success Rate"
+          ReturnData: true
       Threshold: 0.95
       ComparisonOperator: LessThanThreshold
       EvaluationPeriods: 1
@@ -3787,6 +3820,7 @@ Resources:
                   Value: !Ref CreateSupportTicketFunction
             Period: 300
             Stat: Sum
+          ReturnData: false
         - Id: invocations
           MetricStat:
             Metric:
@@ -3797,9 +3831,11 @@ Resources:
                   Value: !Ref CreateSupportTicketFunction
             Period: 300
             Stat: Sum
+          ReturnData: false
         - Id: successRate
           Expression: "1 - (errors / invocations)"
           Label: "Success Rate"
+          ReturnData: true
       Threshold: 0.95
       ComparisonOperator: LessThanThreshold
       EvaluationPeriods: 1
@@ -4024,6 +4060,7 @@ Resources:
                   Value: !Ref TriggerSuspiciousActivityStepFunction
             Period: 300
             Stat: Sum
+          ReturnData: false
         - Id: invocations
           MetricStat:
             Metric:
@@ -4034,9 +4071,11 @@ Resources:
                   Value: !Ref TriggerSuspiciousActivityStepFunction
             Period: 300
             Stat: Sum
+          ReturnData: false
         - Id: successRate
           Expression: "1 - (errors / invocations)"
           Label: "Success Rate"
+          ReturnData: true
       Threshold: 0.95
       ComparisonOperator: LessThanThreshold
       EvaluationPeriods: 1
@@ -4219,6 +4258,7 @@ Resources:
                   Value: !Ref ReportSuspiciousActivityStepFunction
             Period: 300
             Stat: Sum
+          ReturnData: false
         - Id: invocations
           MetricStat:
             Metric:
@@ -4229,9 +4269,11 @@ Resources:
                   Value: !Ref ReportSuspiciousActivityStepFunction
             Period: 300
             Stat: Sum
+          ReturnData: false
         - Id: successRate
           Expression: "1 - (errors / invocations)"
           Label: "Success Rate"
+          ReturnData: true
       Threshold: 0.95
       ComparisonOperator: LessThanThreshold
       EvaluationPeriods: 1

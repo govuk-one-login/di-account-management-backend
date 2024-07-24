@@ -98,7 +98,9 @@ export const handler = async (
         "Cannot handle event as event name has not been provided in the environment"
       );
     }
-
+    if (!TXMA_QUEUE_URL) {
+      throw new Error("TXMA_QUEUE_URL environment variable is not defined");
+    }
     if (!validateObject(input, VALIDATOR_RULES_MAP.get(EVENT_NAME))) {
       throw new Error(
         `Received Event: ${JSON.stringify(input)} failed validation.`

@@ -55,16 +55,15 @@ export const deleteEmailSubscription = async (userData: UserData) => {
 
 export const handler = async (event: SNSEvent): Promise<void> => {
   const { DLQ_URL } = process.env;
-  if (!DLQ_URL) {
-    throw new Error("DLQ_URL environment variable is not set");
-  }
-
   await Promise.all(
     event.Records.map(async (record) => {
       try {
         console.log(
           `started processing message with ID: ${record.Sns.MessageId}`
         );
+        if (!DLQ_URL) {
+          throw new Error("DLQ_URL environment variable is not set");
+        }
         const userData: UserData = JSON.parse(record.Sns.Message);
         validateUserData(userData);
         await deleteEmailSubscription(userData);

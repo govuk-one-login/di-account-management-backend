@@ -74,6 +74,14 @@ export const handler = async (event: DynamoDBStreamEvent): Promise<void> => {
     Records.map(async (record) => {
       try {
         console.log(`started processing event with ID: ${record.eventID}`);
+        if (!DLQ_URL) {
+          throw new Error("DLQ_URL environment variable is not defined");
+        }
+        if (!OUTPUT_QUEUE_URL) {
+          throw new Error(
+            "OUTPUT_QUEUE_URL environment variable is not defined"
+          );
+        }
         const txmaEvent = unmarshall(
           record.dynamodb?.NewImage?.event.M as {
             [key: string]: AttributeValue;

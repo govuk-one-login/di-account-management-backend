@@ -209,7 +209,7 @@ describe("sendSqsMessage", () => {
   beforeEach(() => {
     sqsMock.reset();
     sqsMock.on(SendMessageCommand).resolves({ MessageId: messageID });
-    process.env.AWS_REGION = "AWS_REGION";
+    process.env.AWS_REGION = "AwsRegion";
   });
   afterEach(() => {
     jest.clearAllMocks();
@@ -248,6 +248,8 @@ describe("handler", () => {
     sqsMock.reset();
     process.env.OUTPUT_SQS_NAME = sqsQueueName;
     process.env.OUTPUT_QUEUE_URL = queueURL;
+    process.env.DLQ_URL = "DlqUrl";
+    process.env.AWS_REGION = "AwsRegion";
     sqsMock.on(SendMessageCommand).resolves({ MessageId: messageID });
   });
 

@@ -120,11 +120,16 @@ export const formatRecord = (record: UserRecordEvent) => {
 export const handler = async (event: SQSEvent): Promise<void> => {
   const { OUTPUT_QUEUE_URL, DLQ_URL } = process.env;
   const { Records } = event;
-
   await Promise.all(
     Records.map(async (record) => {
       try {
         console.log(`started processing message with ID: ${record.messageId}`);
+        if (!OUTPUT_QUEUE_URL) {
+          throw new Error("OUTPUT_QUEUE_URL environment variable is not set");
+        }
+        if (!DLQ_URL) {
+          throw new Error("DLQ_URL environment variable is not set");
+        }
         const formattedRecord = formatRecord(validateAndParseSQSRecord(record));
         const { MessageId: messageId } = await sendSqsMessage(
           JSON.stringify(formattedRecord),

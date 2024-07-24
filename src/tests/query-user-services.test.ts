@@ -19,6 +19,7 @@ export const date = new Date();
 export const tableName = "TableName";
 export const messageId = "MyMessageId";
 export const queueUrl = "http://my_queue_url";
+export const dlqUrl = "DlqUrl";
 const timestamp = date.valueOf();
 
 const user: UserData = {
@@ -281,6 +282,7 @@ describe("handler", () => {
     sqsMock.reset();
     process.env.TABLE_NAME = tableName;
     process.env.OUTPUT_QUEUE_URL = queueUrl;
+    process.env.DLQ_URL = dlqUrl;
     sqsMock.on(SendMessageCommand).resolves({ MessageId: messageId });
     dynamoMock.on(GetCommand).resolves({ Item: userServices });
   });

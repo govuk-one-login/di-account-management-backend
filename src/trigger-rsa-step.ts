@@ -20,25 +20,29 @@ const validateReceivedEvent = (
 
 export const handler = async (event: SNSEvent): Promise<void> => {
   const { STATE_MACHINE_ARN, DLQ_URL } = process.env;
-  if (!STATE_MACHINE_ARN || !DLQ_URL) {
-    throw new Error(
-      "Required environment variables STATE_MACHINE_ARN or DLQ_URL are not provided."
-    );
-  }
-
   await Promise.all(
     event.Records.map(async (record) => {
       try {
-        const messageId = record.Sns.MessageId;
+        console.log(
+          `Started processing message with ID: ${record.Sns.MessageId}`
+        );
+        if (!STATE_MACHINE_ARN) {
+          throw new Error(
+            "STATE_MACHINE_ARN environment variable is not defined"
+          );
+        }
+        if (!DLQ_URL) {
+          throw new Error("DLQ_URL environment variable is not defined");
+        }
         const messageBody = record.Sns.Message;
-        console.log(`Started processing message with ID: ${messageId}`);
-
         const receivedEvent: ReportSuspiciousActivityStepInput =
           JSON.parse(messageBody);
         validateReceivedEvent(receivedEvent);
 
         await callAsyncStepFunction(STATE_MACHINE_ARN, receivedEvent);
-        console.log(`Finished processing message with ID: ${messageId}`);
+        console.log(
+          `Finished processing message with ID: ${record.Sns.MessageId}`
+        );
       } catch (error) {
         console.error(`[Error occurred]: ${(error as Error).message}`);
         try {

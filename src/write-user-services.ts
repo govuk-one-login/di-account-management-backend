@@ -54,14 +54,13 @@ export const writeUserServices = async (
 
 export const handler = async (event: SQSEvent): Promise<void> => {
   const { DLQ_URL } = process.env;
-  if (!DLQ_URL) {
-    throw new Error("DLQ_URL environment variable is not set");
-  }
-
   await Promise.all(
     event.Records.map(async (record) => {
       try {
         console.log(`Started processing message with ID: ${record.messageId}`);
+        if (!DLQ_URL) {
+          throw new Error("DLQ_URL environment variable is not set");
+        }
         const userServices: UserServices = JSON.parse(record.body);
         validateUserServices(userServices);
         await writeUserServices(userServices);

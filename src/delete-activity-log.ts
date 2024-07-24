@@ -109,20 +109,19 @@ export const batchDeleteActivityLog = async (
 };
 
 export const handler = async (event: SNSEvent): Promise<void> => {
+  const { DLQ_URL, TABLE_NAME } = process.env;
   await Promise.all(
     event.Records.map(async (record) => {
-      const { DLQ_URL, TABLE_NAME } = process.env;
-      if (!DLQ_URL) {
-        throw new Error("DLQ_URL environment variable is not set");
-      }
-      if (!TABLE_NAME) {
-        throw new Error("TABLE_NAME environment variable is not set");
-      }
       try {
         console.log(
           `started processing message with ID: ${record.Sns.MessageId}`
         );
-
+        if (!DLQ_URL) {
+          throw new Error("DLQ_URL environment variable is not set");
+        }
+        if (!TABLE_NAME) {
+          throw new Error("TABLE_NAME environment variable is not set");
+        }
         const userData: UserData = JSON.parse(record.Sns.Message);
         validateUserData(userData);
         const activityLogEntries: ActivityLogEntry[] | undefined =

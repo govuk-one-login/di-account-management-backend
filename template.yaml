@@ -393,6 +393,7 @@ Resources:
   ######################################
   # Dummy events store
   ######################################
+
   DummyEventStore:
     Type: AWS::DynamoDB::Table
     DeletionPolicy: Delete
@@ -433,6 +434,7 @@ Resources:
   ######################################
   # Raw events store
   ######################################
+
   RawEventsStore:
     Type: AWS::DynamoDB::Table
     DeletionPolicy: Delete
@@ -476,6 +478,7 @@ Resources:
   ######################################
   # User services store
   ######################################
+
   UserServicesStore:
     Type: AWS::DynamoDB::Table
     DeletionPolicy: Delete
@@ -510,6 +513,7 @@ Resources:
   #########################
   # User Activity Log store
   #########################
+
   UserActivityLogsStore:
     Type: AWS::DynamoDB::Table
     DeletionPolicy: Delete
@@ -557,12 +561,38 @@ Resources:
   ######################################
   # TxMA Event Queue (Dummy for now)
   ######################################
+
   TxMAInputDummyQueue:
     Type: AWS::SQS::Queue
     Properties:
       KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
+
+  TxMAInputDummyQueueOldestMessageAgeAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            TxMAInputDummyQueueOldestMessageAgeAlarm,
+          ],
+        ]
+      MetricName: ApproximateAgeOfOldestMessage
+      Namespace: AWS/SQS
+      Statistic: Maximum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 300
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt TxMAInputDummyQueue.QueueName
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
 
   ########################################
   # Output queue for audit events to TxMA
@@ -659,9 +689,60 @@ Resources:
       Type: String
       Value: !GetAtt AuditEncryptionKey.Arn
 
+  AuditOutputQueueOldestMessageAgeAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            AuditOutputQueueOldestMessageAgeAlarm,
+          ],
+        ]
+      MetricName: ApproximateAgeOfOldestMessage
+      Namespace: AWS/SQS
+      Statistic: Maximum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 300
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt AuditOutputQueue.QueueName
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+
+  AuditDeadLetterQueueOldestMessageAgeAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            AuditDeadLetterQueueOldestMessageAgeAlarm,
+          ],
+        ]
+      MetricName: ApproximateAgeOfOldestMessage
+      Namespace: AWS/SQS
+      Statistic: Maximum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 300
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt AuditDeadLetterQueue.QueueName
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+
   ######################
   # Save Raw Events
   ######################
+
   SaveRawEventsFunction:
     Type: AWS::Serverless::Function
     DependsOn:
@@ -813,12 +894,79 @@ Resources:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
       ActionsEnabled: true
 
+  SaveRawEventsDeadLetterQueueOldestMessageAgeAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            SaveRawEventsDeadLetterQueueOldestMessageAgeAlarm,
+          ],
+        ]
+      MetricName: ApproximateAgeOfOldestMessage
+      Namespace: AWS/SQS
+      Statistic: Maximum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 300
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt SaveRawEventsDeadLetterQueue.QueueName
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+
+  SaveRawEventsFunctionSuccessRate:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            SaveRawEventsFunctionSuccessRate,
+          ],
+        ]
+      Metrics:
+        - Id: errors
+          MetricStat:
+            Metric:
+              Namespace: AWS/Lambda
+              MetricName: Errors
+              Dimensions:
+                - Name: FunctionName
+                  Value: !Ref SaveRawEventsFunction
+            Period: 300
+            Stat: Sum
+        - Id: invocations
+          MetricStat:
+            Metric:
+              Namespace: AWS/Lambda
+              MetricName: Invocations
+              Dimensions:
+                - Name: FunctionName
+                  Value: !Ref SaveRawEventsFunction
+            Period: 300
+            Stat: Sum
+        - Id: successRate
+          Expression: "1 - (errors / invocations)"
+          Label: "Success Rate"
+      Threshold: 0.95
+      ComparisonOperator: LessThanThreshold
+      EvaluationPeriods: 1
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+
   ########################
   # Querying User Services
   ########################
+
   QueryUserServicesFunction:
     Type: AWS::Serverless::Function
-
     DependsOn:
       - QueryUserServicesFunctionLogGroup
     Properties:
@@ -990,9 +1138,98 @@ Resources:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
       ActionsEnabled: true
 
+  QueryUserServicesDeadLetterQueueOldestMessageAgeAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            QueryUserServicesDeadLetterQueueOldestMessageAgeAlarm,
+          ],
+        ]
+      MetricName: ApproximateAgeOfOldestMessage
+      Namespace: AWS/SQS
+      Statistic: Maximum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 300
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt QueryUserServicesDeadLetterQueue.QueueName
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+
+  UserServicesToFormatQueueOldestMessageAgeAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            UserServicesToFormatQueueOldestMessageAgeAlarm,
+          ],
+        ]
+      MetricName: ApproximateAgeOfOldestMessage
+      Namespace: AWS/SQS
+      Statistic: Maximum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 300
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt UserServicesToFormatQueue.QueueName
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+
+  QueryUserServicesFunctionSuccessRate:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [!Ref AWS::StackName, !Ref Environment, QueryUserServicesFunction],
+        ]
+      Metrics:
+        - Id: errors
+          MetricStat:
+            Metric:
+              Namespace: AWS/Lambda
+              MetricName: Errors
+              Dimensions:
+                - Name: FunctionName
+                  Value: !Ref QueryUserServicesFunction
+            Period: 300
+            Stat: Sum
+        - Id: invocations
+          MetricStat:
+            Metric:
+              Namespace: AWS/Lambda
+              MetricName: Invocations
+              Dimensions:
+                - Name: FunctionName
+                  Value: !Ref QueryUserServicesFunction
+            Period: 300
+            Stat: Sum
+        - Id: successRate
+          Expression: "1 - (errors / invocations)"
+          Label: "Success Rate"
+      Threshold: 0.95
+      ComparisonOperator: LessThanThreshold
+      EvaluationPeriods: 1
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+
   #################################
   # Formatting User Services Record
   #################################
+
   FormatUserServicesFunction:
     Type: AWS::Serverless::Function
     DependsOn:
@@ -1134,9 +1371,102 @@ Resources:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
       ActionsEnabled: true
 
+  FormatUserServicesDeadLetterQueueOldestMessageAgeAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            FormatUserServicesDeadLetterQueueOldestMessageAgeAlarm,
+          ],
+        ]
+      MetricName: ApproximateAgeOfOldestMessage
+      Namespace: AWS/SQS
+      Statistic: Maximum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 300
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt FormatUserServicesDeadLetterQueue.QueueName
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+
+  UserServicesToWriteQueueOldestMessageAgeAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            UserServicesToWriteQueueOldestMessageAgeAlarm,
+          ],
+        ]
+      MetricName: ApproximateAgeOfOldestMessage
+      Namespace: AWS/SQS
+      Statistic: Maximum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 300
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt UserServicesToWriteQueue.QueueName
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+
+  FormatUserServicesFunctionSuccessRate:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            FormatUserServicesFunctionSuccessRate,
+          ],
+        ]
+      Metrics:
+        - Id: errors
+          MetricStat:
+            Metric:
+              Namespace: AWS/Lambda
+              MetricName: Errors
+              Dimensions:
+                - Name: FunctionName
+                  Value: !Ref FormatUserServicesFunction
+            Period: 300
+            Stat: Sum
+        - Id: invocations
+          MetricStat:
+            Metric:
+              Namespace: AWS/Lambda
+              MetricName: Invocations
+              Dimensions:
+                - Name: FunctionName
+                  Value: !Ref FormatUserServicesFunction
+            Period: 300
+            Stat: Sum
+        - Id: successRate
+          Expression: "1 - (errors / invocations)"
+          Label: "Success Rate"
+      Threshold: 0.95
+      ComparisonOperator: LessThanThreshold
+      EvaluationPeriods: 1
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+
   #########################
   # Write the User Services
   #########################
+
   WriteUserServicesFunction:
     Type: AWS::Serverless::Function
     DependsOn:
@@ -1282,9 +1612,77 @@ Resources:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
       ActionsEnabled: true
 
+  WriteUserServicesDeadLetterQueueOldestMessageAgeAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            WriteUserServicesDeadLetterQueueOldestMessageAgeAlarm,
+          ],
+        ]
+      MetricName: ApproximateAgeOfOldestMessage
+      Namespace: AWS/SQS
+      Statistic: Maximum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 300
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt WriteUserServicesDeadLetterQueue.QueueName
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+
+  WriteUserServicesFunctionSuccessRate:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            WriteUserServicesFunctionSuccessRate,
+          ],
+        ]
+      Metrics:
+        - Id: errors
+          MetricStat:
+            Metric:
+              Namespace: AWS/Lambda
+              MetricName: Errors
+              Dimensions:
+                - Name: FunctionName
+                  Value: !Ref WriteUserServicesFunction
+            Period: 300
+            Stat: Sum
+        - Id: invocations
+          MetricStat:
+            Metric:
+              Namespace: AWS/Lambda
+              MetricName: Invocations
+              Dimensions:
+                - Name: FunctionName
+                  Value: !Ref WriteUserServicesFunction
+            Period: 300
+            Stat: Sum
+        - Id: successRate
+          Expression: "1 - (errors / invocations)"
+          Label: "Success Rate"
+      Threshold: 0.95
+      ComparisonOperator: LessThanThreshold
+      EvaluationPeriods: 1
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+
   ##################################
   # Notification of Account Deletion
   ##################################
+
   UserAccountDeletionTopic:
     Type: AWS::SNS::Topic
     Properties:
@@ -1375,6 +1773,7 @@ Resources:
   ################################
   # Deleting User Services Records
   ################################
+
   DeleteUserServicesSubscription:
     Type: AWS::SNS::Subscription
     Properties:
@@ -1575,9 +1974,102 @@ Resources:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
       ActionsEnabled: true
 
+  DeleteUserServicesDeadLetterQueueOldestMessageAgeAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            DeleteUserServicesDeadLetterQueueOldestMessageAgeAlarm,
+          ],
+        ]
+      MetricName: ApproximateAgeOfOldestMessage
+      Namespace: AWS/SQS
+      Statistic: Maximum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 300
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt DeleteUserServicesDeadLetterQueue.QueueName
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+
+  UserAccountDeletionTopicDeadLetterQueueOldestMessageAgeAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            UserAccountDeletionTopicDeadLetterQueueOldestMessageAgeAlarm,
+          ],
+        ]
+      MetricName: ApproximateAgeOfOldestMessage
+      Namespace: AWS/SQS
+      Statistic: Maximum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 300
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt UserAccountDeletionTopicDeadLetterQueue.QueueName
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+
+  DeleteUserServicesFunctionSuccessRate:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            DeleteUserServicesFunctionSuccessRate,
+          ],
+        ]
+      Metrics:
+        - Id: errors
+          MetricStat:
+            Metric:
+              Namespace: AWS/Lambda
+              MetricName: Errors
+              Dimensions:
+                - Name: FunctionName
+                  Value: !Ref DeleteUserServicesFunction
+            Period: 300
+            Stat: Sum
+        - Id: invocations
+          MetricStat:
+            Metric:
+              Namespace: AWS/Lambda
+              MetricName: Invocations
+              Dimensions:
+                - Name: FunctionName
+                  Value: !Ref DeleteUserServicesFunction
+            Period: 300
+            Stat: Sum
+        - Id: successRate
+          Expression: "1 - (errors / invocations)"
+          Label: "Success Rate"
+      Threshold: 0.95
+      ComparisonOperator: LessThanThreshold
+      EvaluationPeriods: 1
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+
   ############################
   # Delete Email Subscriptions
   ############################
+
   DeleteEmailSubscriptionsSubscription:
     Type: AWS::SNS::Subscription
     Properties:
@@ -1737,9 +2229,127 @@ Resources:
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
 
+  UserAccountDeletionTopicSubscriptionDeleteEmailSubscriptionsDeadLetterQueueOldestMessageAgeAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            UserAccountDeletionTopicSubscriptionDeleteEmailSubscriptionsDeadLetterQueueOldestMessageAgeAlarm,
+          ],
+        ]
+      MetricName: ApproximateAgeOfOldestMessage
+      Namespace: AWS/SQS
+      Statistic: Maximum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 300
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt UserAccountDeletionTopicSubscriptionDeleteEmailSubscriptionsDeadLetterQueue.QueueName
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+
+  DeleteEmailSubscriptionsDeadLetterQueueOldestMessageAgeAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            DeleteEmailSubscriptionsDeadLetterQueueOldestMessageAgeAlarm,
+          ],
+        ]
+      MetricName: ApproximateAgeOfOldestMessage
+      Namespace: AWS/SQS
+      Statistic: Maximum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 300
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt DeleteEmailSubscriptionsDeadLetterQueue.QueueName
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+
+  ActivityLogToFormatQueueOldestMessageAgeAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            ActivityLogToFormatQueueOldestMessageAgeAlarm,
+          ],
+        ]
+      MetricName: ApproximateAgeOfOldestMessage
+      Namespace: AWS/SQS
+      Statistic: Maximum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 300
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt ActivityLogToFormatQueue.QueueName
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+
+  DeleteEmailSubscriptionsFunctionSuccessRate:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            DeleteEmailSubscriptionsFunctionSuccessRate,
+          ],
+        ]
+      Metrics:
+        - Id: errors
+          MetricStat:
+            Metric:
+              Namespace: AWS/Lambda
+              MetricName: Errors
+              Dimensions:
+                - Name: FunctionName
+                  Value: !Ref DeleteEmailSubscriptionsFunction
+            Period: 300
+            Stat: Sum
+        - Id: invocations
+          MetricStat:
+            Metric:
+              Namespace: AWS/Lambda
+              MetricName: Invocations
+              Dimensions:
+                - Name: FunctionName
+                  Value: !Ref DeleteEmailSubscriptionsFunction
+            Period: 300
+            Stat: Sum
+        - Id: successRate
+          Expression: "1 - (errors / invocations)"
+          Label: "Success Rate"
+      Threshold: 0.95
+      ComparisonOperator: LessThanThreshold
+      EvaluationPeriods: 1
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+
   ###################
   # Write Activity Log
   ###################
+
   WriteActivityLogFunction:
     Type: AWS::Serverless::Function
     DependsOn:
@@ -1903,9 +2513,77 @@ Resources:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
       ActionsEnabled: true
 
+  WriteActivityLogDeadLetterQueueOldestMessageAgeAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            WriteActivityLogDeadLetterQueueOldestMessageAgeAlarm,
+          ],
+        ]
+      MetricName: ApproximateAgeOfOldestMessage
+      Namespace: AWS/SQS
+      Statistic: Maximum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 300
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt WriteActivityLogDeadLetterQueue.QueueName
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+
+  WriteActivityLogFunctionSuccessRate:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            WriteActivityLogFunctionSuccessRate,
+          ],
+        ]
+      Metrics:
+        - Id: errors
+          MetricStat:
+            Metric:
+              Namespace: AWS/Lambda
+              MetricName: Errors
+              Dimensions:
+                - Name: FunctionName
+                  Value: !Ref DeleteEmailSubscriptionsFunction
+            Period: 300
+            Stat: Sum
+        - Id: invocations
+          MetricStat:
+            Metric:
+              Namespace: AWS/Lambda
+              MetricName: Invocations
+              Dimensions:
+                - Name: FunctionName
+                  Value: !Ref DeleteEmailSubscriptionsFunction
+            Period: 300
+            Stat: Sum
+        - Id: successRate
+          Expression: "1 - (errors / invocations)"
+          Label: "Success Rate"
+      Threshold: 0.95
+      ComparisonOperator: LessThanThreshold
+      EvaluationPeriods: 1
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+
   #######################
   # Formatting Activity Log
   #######################
+
   FormatActivityLogFunction:
     Type: AWS::Serverless::Function
     DependsOn:
@@ -2083,9 +2761,102 @@ Resources:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
       ActionsEnabled: true
 
+  FormatActivityLogDeadLetterQueueOldestMessageAgeAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            FormatActivityLogDeadLetterQueueOldestMessageAgeAlarm,
+          ],
+        ]
+      MetricName: ApproximateAgeOfOldestMessage
+      Namespace: AWS/SQS
+      Statistic: Maximum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 300
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt FormatActivityLogDeadLetterQueue.QueueName
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+
+  ActivityLogToWriteQueueOldestMessageAgeAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            ActivityLogToWriteQueueOldestMessageAgeAlarm,
+          ],
+        ]
+      MetricName: ApproximateAgeOfOldestMessage
+      Namespace: AWS/SQS
+      Statistic: Maximum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 300
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt ActivityLogToWriteQueue.QueueName
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+
+  FormatActivityLogFunctionSuccessRate:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            FormatActivityLogFunctionSuccessRate,
+          ],
+        ]
+      Metrics:
+        - Id: errors
+          MetricStat:
+            Metric:
+              Namespace: AWS/Lambda
+              MetricName: Errors
+              Dimensions:
+                - Name: FunctionName
+                  Value: !Ref FormatActivityLogFunction
+            Period: 300
+            Stat: Sum
+        - Id: invocations
+          MetricStat:
+            Metric:
+              Namespace: AWS/Lambda
+              MetricName: Invocations
+              Dimensions:
+                - Name: FunctionName
+                  Value: !Ref FormatActivityLogFunction
+            Period: 300
+            Stat: Sum
+        - Id: successRate
+          Expression: "1 - (errors / invocations)"
+          Label: "Success Rate"
+      Threshold: 0.95
+      ComparisonOperator: LessThanThreshold
+      EvaluationPeriods: 1
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+
   ################################
   # Deleting Activity Log Records
   ################################
+
   DeleteActivityLogSubscription:
     Type: AWS::SNS::Subscription
     Properties:
@@ -2309,9 +3080,102 @@ Resources:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
       ActionsEnabled: true
 
+  DeleteActivityLogSubscriptionDeadLetterQueueOldestMessageAgeAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            DeleteActivityLogSubscriptionDeadLetterQueueOldestMessageAgeAlarm,
+          ],
+        ]
+      MetricName: ApproximateAgeOfOldestMessage
+      Namespace: AWS/SQS
+      Statistic: Maximum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 300
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt DeleteActivityLogSubscriptionDeadLetterQueue.QueueName
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+
+  DeleteActivityLogDeadLetterQueueOldestMessageAgeAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            DeleteActivityLogDeadLetterQueueOldestMessageAgeAlarm,
+          ],
+        ]
+      MetricName: ApproximateAgeOfOldestMessage
+      Namespace: AWS/SQS
+      Statistic: Maximum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 300
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt DeleteActivityLogDeadLetterQueue.QueueName
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+
+  DeleteActivityLogFunctionSuccessRate:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            DeleteActivityLogFunctionSuccessRate,
+          ],
+        ]
+      Metrics:
+        - Id: errors
+          MetricStat:
+            Metric:
+              Namespace: AWS/Lambda
+              MetricName: Errors
+              Dimensions:
+                - Name: FunctionName
+                  Value: !Ref DeleteActivityLogFunction
+            Period: 300
+            Stat: Sum
+        - Id: invocations
+          MetricStat:
+            Metric:
+              Namespace: AWS/Lambda
+              MetricName: Invocations
+              Dimensions:
+                - Name: FunctionName
+                  Value: !Ref DeleteActivityLogFunction
+            Period: 300
+            Stat: Sum
+        - Id: successRate
+          Expression: "1 - (errors / invocations)"
+          Label: "Success Rate"
+      Threshold: 0.95
+      ComparisonOperator: LessThanThreshold
+      EvaluationPeriods: 1
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+
   ######################
   # Mark Suspicious Activity as Reported
   ######################
+
   MarkActivityReportedFunction:
     DependsOn:
       - MarkActivityReportedLogGroup
@@ -2408,6 +3272,48 @@ Resources:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-mark-activity-reported"
       RetentionInDays: 30
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
+
+  MarkActivityReportedFunctionSuccessRate:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            MarkActivityReportedFunctionSuccessRate,
+          ],
+        ]
+      Metrics:
+        - Id: errors
+          MetricStat:
+            Metric:
+              Namespace: AWS/Lambda
+              MetricName: Errors
+              Dimensions:
+                - Name: FunctionName
+                  Value: !Ref MarkActivityReportedFunction
+            Period: 300
+            Stat: Sum
+        - Id: invocations
+          MetricStat:
+            Metric:
+              Namespace: AWS/Lambda
+              MetricName: Invocations
+              Dimensions:
+                - Name: FunctionName
+                  Value: !Ref MarkActivityReportedFunction
+            Period: 300
+            Stat: Sum
+        - Id: successRate
+          Expression: "1 - (errors / invocations)"
+          Label: "Success Rate"
+      Threshold: 0.95
+      ComparisonOperator: LessThanThreshold
+      EvaluationPeriods: 1
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
 
   ######################
   # Send Suspicious Activity to TxMA
@@ -2511,9 +3417,52 @@ Resources:
       FilterPattern: ""
       LogGroupName: !Ref SendSuspiciousActivityFunctionLogGroup
 
+  SendSuspiciousActivityFunctionSuccessRate:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            SendSuspiciousActivityFunctionSuccessRate,
+          ],
+        ]
+      Metrics:
+        - Id: errors
+          MetricStat:
+            Metric:
+              Namespace: AWS/Lambda
+              MetricName: Errors
+              Dimensions:
+                - Name: FunctionName
+                  Value: !Ref SendSuspiciousActivityFunction
+            Period: 300
+            Stat: Sum
+        - Id: invocations
+          MetricStat:
+            Metric:
+              Namespace: AWS/Lambda
+              MetricName: Invocations
+              Dimensions:
+                - Name: FunctionName
+                  Value: !Ref SendSuspiciousActivityFunction
+            Period: 300
+            Stat: Sum
+        - Id: successRate
+          Expression: "1 - (errors / invocations)"
+          Label: "Success Rate"
+      Threshold: 0.95
+      ComparisonOperator: LessThanThreshold
+      EvaluationPeriods: 1
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+
   ######################
   # Send confirmation for suspicious activity
   ######################
+
   SendConfEmailFunction:
     DependsOn:
       - SendConfEmailFunctionLogGroup
@@ -2618,9 +3567,52 @@ Resources:
       FilterPattern: ""
       LogGroupName: !Ref SendConfEmailFunctionLogGroup
 
+  SendConfEmailFunctionSuccessRate:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            SendConfEmailFunctionSuccessRate,
+          ],
+        ]
+      Metrics:
+        - Id: errors
+          MetricStat:
+            Metric:
+              Namespace: AWS/Lambda
+              MetricName: Errors
+              Dimensions:
+                - Name: FunctionName
+                  Value: !Ref SendConfEmailFunction
+            Period: 300
+            Stat: Sum
+        - Id: invocations
+          MetricStat:
+            Metric:
+              Namespace: AWS/Lambda
+              MetricName: Invocations
+              Dimensions:
+                - Name: FunctionName
+                  Value: !Ref SendConfEmailFunction
+            Period: 300
+            Stat: Sum
+        - Id: successRate
+          Expression: "1 - (errors / invocations)"
+          Label: "Success Rate"
+      Threshold: 0.95
+      ComparisonOperator: LessThanThreshold
+      EvaluationPeriods: 1
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+
   ######################
   # Create ticket for suspicious activity
   ######################
+
   CreateSupportTicketFunction:
     DependsOn:
       - CreateSupportTicketFunctionLogGroup
@@ -2769,9 +3761,52 @@ Resources:
       FilterPattern: ""
       LogGroupName: !Ref CreateSupportTicketFunctionLogGroup
 
+  CreateSupportTicketFunctionSuccessRate:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            CreateSupportTicketFunctionSuccessRate,
+          ],
+        ]
+      Metrics:
+        - Id: errors
+          MetricStat:
+            Metric:
+              Namespace: AWS/Lambda
+              MetricName: Errors
+              Dimensions:
+                - Name: FunctionName
+                  Value: !Ref CreateSupportTicketFunction
+            Period: 300
+            Stat: Sum
+        - Id: invocations
+          MetricStat:
+            Metric:
+              Namespace: AWS/Lambda
+              MetricName: Invocations
+              Dimensions:
+                - Name: FunctionName
+                  Value: !Ref CreateSupportTicketFunction
+            Period: 300
+            Stat: Sum
+        - Id: successRate
+          Expression: "1 - (errors / invocations)"
+          Label: "Success Rate"
+      Threshold: 0.95
+      ComparisonOperator: LessThanThreshold
+      EvaluationPeriods: 1
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+
   ######################
   # Trigger Report Suspicious Activity Step Function
   ######################
+
   TriggerSuspiciousActivityStepSubscription:
     Type: AWS::SNS::Subscription
     Properties:
@@ -2938,9 +3973,77 @@ Resources:
       FilterPattern: ""
       LogGroupName: !Ref TriggerSuspiciousActivityStepFunctionLogGroup
 
+  TriggerSuspiciousActivityStepDeadLetterQueueOldestMessageAgeAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            TriggerSuspiciousActivityStepDeadLetterQueueOldestMessageAgeAlarm,
+          ],
+        ]
+      MetricName: ApproximateAgeOfOldestMessage
+      Namespace: AWS/SQS
+      Statistic: Maximum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 300
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt TriggerSuspiciousActivityStepDeadLetterQueue.QueueName
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+
+  TriggerSuspiciousActivityStepFunctionSuccessRate:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            TriggerSuspiciousActivityStepFunctionSuccessRate,
+          ],
+        ]
+      Metrics:
+        - Id: errors
+          MetricStat:
+            Metric:
+              Namespace: AWS/Lambda
+              MetricName: Errors
+              Dimensions:
+                - Name: FunctionName
+                  Value: !Ref TriggerSuspiciousActivityStepFunction
+            Period: 300
+            Stat: Sum
+        - Id: invocations
+          MetricStat:
+            Metric:
+              Namespace: AWS/Lambda
+              MetricName: Invocations
+              Dimensions:
+                - Name: FunctionName
+                  Value: !Ref TriggerSuspiciousActivityStepFunction
+            Period: 300
+            Stat: Sum
+        - Id: successRate
+          Expression: "1 - (errors / invocations)"
+          Label: "Success Rate"
+      Threshold: 0.95
+      ComparisonOperator: LessThanThreshold
+      EvaluationPeriods: 1
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+
   ######################
   # Report Suspicious Activity Step Function
   ######################
+
   ReportSuspiciousActivityStepFunction:
     Type: AWS::Serverless::StateMachine
     Properties:
@@ -3089,6 +4192,48 @@ Resources:
       EvaluationPeriods: 1
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/HighAlertNotificationTopic/ARN}}"
+
+  ReportSuspiciousActivityStepFunctionSuccessRate:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            ReportSuspiciousActivityStepFunctionSuccessRate,
+          ],
+        ]
+      Metrics:
+        - Id: errors
+          MetricStat:
+            Metric:
+              Namespace: AWS/Lambda
+              MetricName: Errors
+              Dimensions:
+                - Name: FunctionName
+                  Value: !Ref ReportSuspiciousActivityStepFunction
+            Period: 300
+            Stat: Sum
+        - Id: invocations
+          MetricStat:
+            Metric:
+              Namespace: AWS/Lambda
+              MetricName: Invocations
+              Dimensions:
+                - Name: FunctionName
+                  Value: !Ref ReportSuspiciousActivityStepFunction
+            Period: 300
+            Stat: Sum
+        - Id: successRate
+          Expression: "1 - (errors / invocations)"
+          Label: "Success Rate"
+      Threshold: 0.95
+      ComparisonOperator: LessThanThreshold
+      EvaluationPeriods: 1
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
 
   #######################
   # Canary Deployment
@@ -3656,6 +4801,7 @@ Resources:
   #######################
   # Encryption
   #######################
+
   QueueKmsKey:
     Type: AWS::KMS::Key
     Properties:

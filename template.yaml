@@ -3590,6 +3590,7 @@ Resources:
                   Value: !Ref SendConfEmailFunction
             Period: 300
             Stat: Sum
+          ReturnData: false
         - Id: invocations
           MetricStat:
             Metric:
@@ -3600,9 +3601,11 @@ Resources:
                   Value: !Ref SendConfEmailFunction
             Period: 300
             Stat: Sum
+          ReturnData: false
         - Id: successRate
           Expression: "1 - (errors / invocations)"
           Label: "Success Rate"
+          ReturnData: true
       Threshold: 0.95
       ComparisonOperator: LessThanThreshold
       EvaluationPeriods: 1

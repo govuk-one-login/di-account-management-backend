@@ -48,7 +48,7 @@ describe("generateExpectedContext", () => {
       await generateExpectedContext(userId);
     } catch (error) {
       expect((error as Error).message).toEqual(
-        "Missing AWS_REGION environment variable"
+        'Environment variable "AWS_REGION" is not set.'
       );
     }
   });
@@ -59,7 +59,7 @@ describe("generateExpectedContext", () => {
       await generateExpectedContext(userId);
     } catch (error) {
       expect((error as Error).message).toEqual(
-        "Missing ACCOUNT_ID environment variable"
+        'Environment variable "ACCOUNT_ID" is not set.'
       );
     }
   });
@@ -70,7 +70,7 @@ describe("generateExpectedContext", () => {
       await generateExpectedContext(userId);
     } catch (error) {
       expect((error as Error).message).toEqual(
-        "Missing ENVIRONMENT environment variable"
+        'Environment variable "ENVIRONMENT" is not set.'
       );
     }
   });
@@ -81,7 +81,7 @@ describe("generateExpectedContext", () => {
       await generateExpectedContext(userId);
     } catch (error) {
       expect((error as Error).message).toEqual(
-        "Missing VERIFY_ACCESS_VALUE environment variable"
+        'Environment variable "VERIFY_ACCESS_VALUE" is not set.'
       );
     }
   });

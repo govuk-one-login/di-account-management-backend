@@ -7,6 +7,7 @@ import {
 import { DynamoDBDocumentClient, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { ActivityLogEntry, UserData } from "./common/model";
 import { sendSqsMessage } from "./common/sqs";
+import { getEnvironmentVariable } from "./common/utils";
 
 const marshallOptions = {
   convertClassInstanceToMap: true,
@@ -109,19 +110,14 @@ export const batchDeleteActivityLog = async (
 };
 
 export const handler = async (event: SNSEvent): Promise<void> => {
-  const { DLQ_URL, TABLE_NAME } = process.env;
+  const DLQ_URL = getEnvironmentVariable("DLQ_URL");
+  const TABLE_NAME = getEnvironmentVariable("TABLE_NAME");
   await Promise.all(
     event.Records.map(async (record) => {
       try {
         console.log(
           `started processing message with ID: ${record.Sns.MessageId}`
         );
-        if (!DLQ_URL) {
-          throw new Error("DLQ_URL environment variable is not set");
-        }
-        if (!TABLE_NAME) {
-          throw new Error("TABLE_NAME environment variable is not set");
-        }
         const userData: UserData = JSON.parse(record.Sns.Message);
         validateUserData(userData);
         const activityLogEntries: ActivityLogEntry[] | undefined =
@@ -133,7 +129,6 @@ export const handler = async (event: SNSEvent): Promise<void> => {
           `finished processing message with ID: ${record.Sns.MessageId}`
         );
       } catch (error) {
-        console.error(`[Error occurred]: ${(error as Error).message}`);
         try {
           const result = await sendSqsMessage(record.Sns.Message, DLQ_URL);
           console.error(

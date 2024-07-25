@@ -72,7 +72,7 @@ describe("handler", () => {
 
     test("logs the error message", async () => {
       await handler(TEST_SNS_EVENT_WITH_TWO_RECORDS);
-      expect(consoleErrorMock).toHaveBeenCalledTimes(2);
+      expect(consoleErrorMock).toHaveBeenCalledTimes(1);
     });
 
     test("sends the event to the dead letter queue", async () => {

@@ -8,6 +8,7 @@ import {
 import { ActivityLogEntry, EncryptedActivityLogEntry } from "./common/model";
 import encryptData from "./common/encrypt-data";
 import { sendSqsMessage } from "./common/sqs";
+import { getEnvironmentVariable } from "./common/utils";
 
 const dynamoDocClient = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 
@@ -32,10 +33,7 @@ export const validateActivityLogEntry = (
 export const writeActivityLogEntry = async (
   activityLogEntry: EncryptedActivityLogEntry
 ): Promise<PutCommandOutput> => {
-  const { TABLE_NAME } = process.env;
-  if (!TABLE_NAME) {
-    throw new Error("TABLE_NAME environment variable is not set");
-  }
+  const TABLE_NAME = getEnvironmentVariable("TABLE_NAME");
   const command = new PutCommand({
     TableName: TABLE_NAME,
     Item: {
@@ -52,17 +50,13 @@ export const writeActivityLogEntry = async (
 };
 
 export const handler = async (event: SQSEvent): Promise<void> => {
-  const { DLQ_URL } = process.env;
+  const DLQ_URL = getEnvironmentVariable("DLQ_URL");
   await Promise.all(
     event.Records.map(async (record) => {
       try {
         console.log(`Started processing message with ID: ${record.messageId}`);
-        if (!DLQ_URL) {
-          throw new Error("DLQ_URL environment variable is not set");
-        }
         const activityLogEntry: ActivityLogEntry = JSON.parse(record.body);
         validateActivityLogEntry(activityLogEntry);
-
         const encryptedActivityLog: EncryptedActivityLogEntry = {
           event_id: activityLogEntry.event_id,
           event_type: await encryptData(
@@ -75,11 +69,9 @@ export const handler = async (event: SQSEvent): Promise<void> => {
           client_id: activityLogEntry.client_id,
           reported_suspicious: activityLogEntry.reported_suspicious,
         };
-
         await writeActivityLogEntry(encryptedActivityLog);
         console.log(`Finished processing message with ID: ${record.messageId}`);
       } catch (error) {
-        console.error(`[Error occurred]: ${(error as Error).message}`);
         try {
           const result = await sendSqsMessage(record.body, DLQ_URL);
           console.error(

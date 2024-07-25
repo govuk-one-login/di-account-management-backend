@@ -114,7 +114,7 @@ describe("lambdaHandler", () => {
 
     test("logs the error message", async () => {
       await handler(TEST_SQS_EVENT);
-      expect(consoleErrorMock).toHaveBeenCalledTimes(2);
+      expect(consoleErrorMock).toHaveBeenCalledTimes(1);
     });
 
     test("sends the event to the dead letter queue", async () => {

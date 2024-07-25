@@ -138,7 +138,7 @@ describe("validateUserServices", () => {
   });
 });
 
-describe("validateServices", () => {
+describe("validateService", () => {
   const parseServices = (service: string) => {
     return JSON.parse(service) as Service;
   };

@@ -7,6 +7,7 @@ import {
 } from "@aws-sdk/lib-dynamodb";
 import { UserData } from "./common/model";
 import { sendSqsMessage } from "./common/sqs";
+import { getEnvironmentVariable } from "./common/utils";
 
 const marshallOptions = {
   convertClassInstanceToMap: true,
@@ -31,8 +32,7 @@ export const validateUserData = (userData: UserData): UserData => {
 export const deleteUserData = async (
   userData: UserData
 ): Promise<DeleteCommandOutput> => {
-  const { TABLE_NAME } = process.env;
-
+  const TABLE_NAME = getEnvironmentVariable("TABLE_NAME");
   const command = new DeleteCommand({
     TableName: TABLE_NAME,
     Key: { user_id: userData.user_id },
@@ -41,16 +41,13 @@ export const deleteUserData = async (
 };
 
 export const handler = async (event: SNSEvent): Promise<void> => {
-  const { DLQ_URL } = process.env;
+  const DLQ_URL = getEnvironmentVariable("DLQ_URL");
   await Promise.all(
     event.Records.map(async (record) => {
       try {
         console.log(
           `started processing message with ID: ${record.Sns.MessageId}`
         );
-        if (!DLQ_URL) {
-          throw new Error("DLQ_URL environment variable is not set");
-        }
         const userData: UserData = JSON.parse(record.Sns.Message);
         validateUserData(userData);
         await deleteUserData(userData);
@@ -58,7 +55,6 @@ export const handler = async (event: SNSEvent): Promise<void> => {
           `finished processing message with ID: ${record.Sns.MessageId}`
         );
       } catch (error) {
-        console.error(`[Error occurred]: ${(error as Error).message}`);
         try {
           const result = await sendSqsMessage(record.Sns.Message, DLQ_URL);
           console.error(

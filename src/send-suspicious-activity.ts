@@ -8,6 +8,7 @@ import {
 import VALIDATOR_RULES_MAP from "./common/validator-rules";
 import validateObject from "./common/validator";
 import { sendSqsMessage } from "./common/sqs";
+import { getEnvironmentVariable } from "./common/utils";
 
 export const transformToTxMAEvent = (
   event: ReportSuspiciousActivityEvent,
@@ -90,17 +91,10 @@ export async function sendAuditEvent(
 export const handler = async (
   input: ReportSuspiciousActivityEvent
 ): Promise<void> => {
-  const { EVENT_NAME, TXMA_QUEUE_URL } = process.env;
+  const EVENT_NAME = getEnvironmentVariable("EVENT_NAME");
+  const TXMA_QUEUE_URL = getEnvironmentVariable("TXMA_QUEUE_URL");
   try {
     console.log(`started processing event with ID: ${input.event_id}`);
-    if (!EVENT_NAME) {
-      throw new Error(
-        "Cannot handle event as event name has not been provided in the environment"
-      );
-    }
-    if (!TXMA_QUEUE_URL) {
-      throw new Error("TXMA_QUEUE_URL environment variable is not defined");
-    }
     if (!validateObject(input, VALIDATOR_RULES_MAP.get(EVENT_NAME))) {
       throw new Error(
         `Received Event: ${JSON.stringify(input)} failed validation.`
@@ -111,7 +105,6 @@ export const handler = async (
       input,
       EventNamesEnum.HOME_REPORT_SUSPICIOUS_ACTIVITY
     );
-
     if (
       !validateObject(
         txMAEvent,

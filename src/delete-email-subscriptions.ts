@@ -1,6 +1,7 @@
 import { SNSEvent } from "aws-lambda";
 import { UserData } from "./common/model";
 import { sendSqsMessage } from "./common/sqs";
+import { getEnvironmentVariable } from "./common/utils";
 
 export const getRequestConfig = (token: string | undefined) => {
   const config = {
@@ -38,8 +39,12 @@ const getDeleteUrl = (
 };
 
 export const deleteEmailSubscription = async (userData: UserData) => {
-  const { GOV_ACCOUNTS_PUBLISHING_API_TOKEN, GOV_ACCOUNTS_PUBLISHING_API_URL } =
-    process.env;
+  const GOV_ACCOUNTS_PUBLISHING_API_TOKEN = getEnvironmentVariable(
+    "GOV_ACCOUNTS_PUBLISHING_API_TOKEN"
+  );
+  const GOV_ACCOUNTS_PUBLISHING_API_URL = getEnvironmentVariable(
+    "GOV_ACCOUNTS_PUBLISHING_API_URL"
+  );
   const deleteUrl = getDeleteUrl(GOV_ACCOUNTS_PUBLISHING_API_URL, userData);
   const config = getRequestConfig(GOV_ACCOUNTS_PUBLISHING_API_TOKEN);
 
@@ -54,16 +59,13 @@ export const deleteEmailSubscription = async (userData: UserData) => {
 };
 
 export const handler = async (event: SNSEvent): Promise<void> => {
-  const { DLQ_URL } = process.env;
+  const DLQ_URL = getEnvironmentVariable("DLQ_URL");
   await Promise.all(
     event.Records.map(async (record) => {
       try {
         console.log(
           `started processing message with ID: ${record.Sns.MessageId}`
         );
-        if (!DLQ_URL) {
-          throw new Error("DLQ_URL environment variable is not set");
-        }
         const userData: UserData = JSON.parse(record.Sns.Message);
         validateUserData(userData);
         await deleteEmailSubscription(userData);
@@ -71,7 +73,6 @@ export const handler = async (event: SNSEvent): Promise<void> => {
           `finished processing message with ID: ${record.Sns.MessageId}`
         );
       } catch (error) {
-        console.error(`[Error occurred]: ${(error as Error).message}`);
         try {
           const result = await sendSqsMessage(record.Sns.Message, DLQ_URL);
           console.error(

@@ -19,6 +19,7 @@ describe("start report suspicious activities step function", () => {
   const input = testSuspiciousActivity;
   let consoleErrorMock: jest.SpyInstance;
   beforeEach(() => {
+    process.env.AWS_REGION = "AWS_REGION";
     consoleErrorMock = jest.spyOn(global.console, "error").mockImplementation();
     mockStepFunctionClient.on(StartExecutionCommand).resolves({
       executionArn: "dummy-executionArn",

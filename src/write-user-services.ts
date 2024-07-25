@@ -7,6 +7,7 @@ import {
 } from "@aws-sdk/lib-dynamodb";
 import { Service, UserServices } from "./common/model";
 import { sendSqsMessage } from "./common/sqs";
+import { getEnvironmentVariable } from "./common/utils";
 
 const dynamoDocClient = DynamoDBDocumentClient.from(new DynamoDBClient({}), {
   marshallOptions: { convertClassInstanceToMap: true },
@@ -41,10 +42,7 @@ export const validateUserServices = (userServices: UserServices): void => {
 export const writeUserServices = async (
   userServices: UserServices
 ): Promise<PutCommandOutput> => {
-  const { TABLE_NAME } = process.env;
-  if (!TABLE_NAME) {
-    throw new Error("TABLE_NAME environment variable is not set");
-  }
+  const TABLE_NAME = getEnvironmentVariable("TABLE_NAME");
   const command = new PutCommand({
     TableName: TABLE_NAME,
     Item: { user_id: userServices.user_id, services: userServices.services },
@@ -53,14 +51,11 @@ export const writeUserServices = async (
 };
 
 export const handler = async (event: SQSEvent): Promise<void> => {
-  const { DLQ_URL } = process.env;
+  const DLQ_URL = getEnvironmentVariable("DLQ_URL");
   await Promise.all(
     event.Records.map(async (record) => {
       try {
         console.log(`Started processing message with ID: ${record.messageId}`);
-        if (!DLQ_URL) {
-          throw new Error("DLQ_URL environment variable is not set");
-        }
         const userServices: UserServices = JSON.parse(record.body);
         validateUserServices(userServices);
         await writeUserServices(userServices);

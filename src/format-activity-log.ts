@@ -7,6 +7,7 @@ import {
   REPORT_SUSPICIOUS_ACTIVITY_DEFAULT,
 } from "./common/constants";
 import { sendSqsMessage } from "./common/sqs";
+import { getEnvironmentVariable } from "./common/utils";
 
 const createNewActivityLogEntryFromTxmaEvent = (
   txmaEvent: TxmaEvent
@@ -41,18 +42,13 @@ export const formatIntoActivityLogEntry = (
 };
 
 export const handler = async (event: DynamoDBStreamEvent): Promise<void> => {
-  const { OUTPUT_QUEUE_URL, DLQ_URL } = process.env;
   const { Records } = event;
+  const OUTPUT_QUEUE_URL = getEnvironmentVariable("OUTPUT_QUEUE_URL");
+  const DLQ_URL = getEnvironmentVariable("DLQ_URL");
   await Promise.all(
     Records.map(async (record) => {
       try {
         console.log(`started processing event with ID: ${record.eventID}`);
-        if (!OUTPUT_QUEUE_URL) {
-          throw new Error("OUTPUT_QUEUE_URL environment variable is not set");
-        }
-        if (!DLQ_URL) {
-          throw new Error("DLQ_URL environment variable is not set");
-        }
         const txmaEvent = unmarshall(
           record.dynamodb?.NewImage?.event.M as {
             [key: string]: AttributeValue;

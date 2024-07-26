@@ -4722,8 +4722,6 @@ Resources:
       Name: !Sub "/${AWS::StackName}/${Environment}/Backup/KMS/WrappingKey/ARN"
       Type: String
       Value: "please-set-me"
-    UpdateReplacePolicy: Retain
-    DeletionPolicy: Delete
 
   VPCFlowLogsSplunkSubscription:
     Condition: ExportLogsToSplunk

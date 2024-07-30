@@ -1,9 +1,4 @@
-import {
-  SendMessageCommand,
-  SendMessageCommandOutput,
-  SendMessageRequest,
-  SQSClient,
-} from "@aws-sdk/client-sqs";
+import { SendMessageCommandOutput } from "@aws-sdk/client-sqs";
 import { ReportSuspiciousActivityEvent, TxMAAuditEvent } from "./common/model";
 import {
   COMPONENT_ID,
@@ -12,19 +7,8 @@ import {
 } from "./common/constants";
 import VALIDATOR_RULES_MAP from "./common/validator-rules";
 import validateObject from "./common/validator";
-
-export const sendSqsMessage = async (
-  messageBody: string,
-  queueUrl: string | undefined
-): Promise<SendMessageCommandOutput> => {
-  const { AWS_REGION } = process.env;
-  const client = new SQSClient({ region: AWS_REGION });
-  const message: SendMessageRequest = {
-    QueueUrl: queueUrl,
-    MessageBody: messageBody,
-  };
-  return client.send(new SendMessageCommand(message));
-};
+import { sendSqsMessage } from "./common/sqs";
+import { getEnvironmentVariable } from "./common/utils";
 
 export const transformToTxMAEvent = (
   event: ReportSuspiciousActivityEvent,
@@ -107,15 +91,10 @@ export async function sendAuditEvent(
 export const handler = async (
   input: ReportSuspiciousActivityEvent
 ): Promise<void> => {
-  const { EVENT_NAME, TXMA_QUEUE_URL } = process.env;
+  const EVENT_NAME = getEnvironmentVariable("EVENT_NAME");
+  const TXMA_QUEUE_URL = getEnvironmentVariable("TXMA_QUEUE_URL");
   try {
     console.log(`started processing event with ID: ${input.event_id}`);
-    if (!EVENT_NAME) {
-      throw new Error(
-        "Cannot handle event as event name has not been provided in the environment"
-      );
-    }
-
     if (!validateObject(input, VALIDATOR_RULES_MAP.get(EVENT_NAME))) {
       throw new Error(
         `Received Event: ${JSON.stringify(input)} failed validation.`
@@ -126,7 +105,6 @@ export const handler = async (
       input,
       EventNamesEnum.HOME_REPORT_SUSPICIOUS_ACTIVITY
     );
-
     if (
       !validateObject(
         txMAEvent,

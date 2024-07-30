@@ -5,13 +5,13 @@ import { Service, UserRecordEvent, UserServices } from "../common/model";
 import "aws-sdk-client-mock-jest";
 import {
   handler,
-  sendSqsMessage,
   validateTxmaEventBody,
   validateUser,
   queryUserServices,
 } from "../query-user-services";
 import { DynamoDBStreamEvent, DynamoDBRecord } from "aws-lambda";
 import { TxmaEvent, UserData } from "../common/model";
+import { sendSqsMessage } from "../common/sqs";
 
 export const userId = "user_id";
 export const clientId = "client_id";
@@ -19,6 +19,7 @@ export const date = new Date();
 export const tableName = "TableName";
 export const messageId = "MyMessageId";
 export const queueUrl = "http://my_queue_url";
+export const dlqUrl = "DlqUrl";
 const timestamp = date.valueOf();
 
 const user: UserData = {
@@ -254,6 +255,7 @@ describe("sendSqsMessage", () => {
   beforeEach(() => {
     sqsMock.reset();
     process.env.QUEUE_URL = queueUrl;
+    process.env.AWS_REGION = "AWS_REGION";
   });
   afterEach(() => {
     jest.clearAllMocks();
@@ -262,7 +264,8 @@ describe("sendSqsMessage", () => {
     sqsMock.on(SendMessageCommand).resolves({ MessageId: messageId });
 
     expect(
-      await sendSqsMessage(JSON.stringify(userRecordEvents), queueUrl)
+      (await sendSqsMessage(JSON.stringify(userRecordEvents), queueUrl))
+        .MessageId
     ).toEqual(messageId);
     expect(
       sqsMock.commandCalls(SendMessageCommand, {
@@ -279,6 +282,7 @@ describe("handler", () => {
     sqsMock.reset();
     process.env.TABLE_NAME = tableName;
     process.env.OUTPUT_QUEUE_URL = queueUrl;
+    process.env.DLQ_URL = dlqUrl;
     sqsMock.on(SendMessageCommand).resolves({ MessageId: messageId });
     dynamoMock.on(GetCommand).resolves({ Item: userServices });
   });

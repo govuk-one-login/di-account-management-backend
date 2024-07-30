@@ -1,10 +1,5 @@
 import { DynamoDBStreamEvent } from "aws-lambda";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
-import {
-  SendMessageCommand,
-  SendMessageRequest,
-  SQSClient,
-} from "@aws-sdk/client-sqs";
 import { DynamoDBDocumentClient, GetCommand } from "@aws-sdk/lib-dynamodb";
 import { AttributeValue, DynamoDBClient } from "@aws-sdk/client-dynamodb";
 
@@ -15,6 +10,8 @@ import {
   UserRecordEvent,
   UserServices,
 } from "./common/model";
+import { sendSqsMessage } from "./common/sqs";
+import { getEnvironmentVariable } from "./common/utils";
 
 const marshallOptions = {
   convertClassInstanceToMap: true,
@@ -28,8 +25,7 @@ const dynamoDocClient = DynamoDBDocumentClient.from(
 );
 
 export const queryUserServices = async (userId: string): Promise<Service[]> => {
-  const { TABLE_NAME } = process.env;
-
+  const TABLE_NAME = getEnvironmentVariable("TABLE_NAME");
   const command = new GetCommand({
     TableName: TABLE_NAME,
     Key: {
@@ -37,7 +33,6 @@ export const queryUserServices = async (userId: string): Promise<Service[]> => {
     },
   });
   const results = await dynamoDocClient.send(command);
-
   return results.Item ? (results.Item as UserServices).services : [];
 };
 
@@ -71,23 +66,10 @@ const createUserRecordEvent = (
   return userRecordEvent;
 };
 
-export const sendSqsMessage = async (
-  messageBody: string,
-  queueUrl: string | undefined
-): Promise<string | undefined> => {
-  const { AWS_REGION } = process.env;
-  const client = new SQSClient({ region: AWS_REGION });
-  const message: SendMessageRequest = {
-    QueueUrl: queueUrl,
-    MessageBody: messageBody,
-  };
-  const result = await client.send(new SendMessageCommand(message));
-  return result.MessageId;
-};
-
 export const handler = async (event: DynamoDBStreamEvent): Promise<void> => {
-  const { OUTPUT_QUEUE_URL, DLQ_URL } = process.env;
   const { Records } = event;
+  const OUTPUT_QUEUE_URL = getEnvironmentVariable("OUTPUT_QUEUE_URL");
+  const DLQ_URL = getEnvironmentVariable("DLQ_URL");
   await Promise.all(
     Records.map(async (record) => {
       try {
@@ -100,7 +82,7 @@ export const handler = async (event: DynamoDBStreamEvent): Promise<void> => {
         if (txmaEvent.event_name === "AUTH_AUTH_CODE_ISSUED") {
           validateTxmaEventBody(txmaEvent);
           const results = await queryUserServices(txmaEvent.user.user_id);
-          const messageId = await sendSqsMessage(
+          const { MessageId: messageId } = await sendSqsMessage(
             JSON.stringify(createUserRecordEvent(txmaEvent, results)),
             OUTPUT_QUEUE_URL
           );
@@ -112,7 +94,10 @@ export const handler = async (event: DynamoDBStreamEvent): Promise<void> => {
         }
         console.log(`finished processing event with ID: ${record.eventID}`);
       } catch (err) {
-        const messageId = await sendSqsMessage(JSON.stringify(record), DLQ_URL);
+        const { MessageId: messageId } = await sendSqsMessage(
+          JSON.stringify(record),
+          DLQ_URL
+        );
         console.error(
           `[Message sent to DLQ] with message id = ${messageId}`,
           err

@@ -49,7 +49,7 @@ describe("handler error handling", () => {
     }
     expect(consoleErrorMock).toHaveBeenCalledTimes(1);
     expect(consoleErrorMock.mock.calls[0][0]).toContain(
-      "[Error occurred], unable to send suspicious activity event with ID: 522c5ab4-7e66-4b2a-8f5c-4d31dc4e93e6 to Zendesk, Not all environment variables required to successfully send to Zendesk are provided."
+      'Environment variable "ZENDESK_GROUP_ID_KEY" is not set.'
     );
     expect(errorThrown).toBeTruthy();
   });

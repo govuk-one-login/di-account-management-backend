@@ -175,6 +175,7 @@ describe("handler", () => {
       sqsMock.on(SendMessageCommand).resolves({ MessageId: "MessageId" });
       dynamoMock.reset();
       dynamoMock.rejectsOnce("mock error");
+      process.env.AWS_REGION = "AWS_REGION";
     });
 
     afterEach(() => {
@@ -183,7 +184,7 @@ describe("handler", () => {
 
     test("logs the error message", async () => {
       await handler(TEST_SNS_EVENT_WITH_TWO_RECORDS);
-      expect(consoleErrorMock).toHaveBeenCalledTimes(4);
+      expect(consoleErrorMock).toHaveBeenCalledTimes(2);
     });
 
     test("sends the event to the dead letter queue", async () => {

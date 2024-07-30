@@ -1,59 +1,55 @@
 import { SNSEvent } from "aws-lambda";
 import { ReportSuspiciousActivityStepInput } from "./common/model";
 import { callAsyncStepFunction } from "./common/call-async-step-function";
-import {
-  SendMessageCommand,
-  SendMessageRequest,
-  SQSClient,
-} from "@aws-sdk/client-sqs";
+import { sendSqsMessage } from "./common/sqs";
+import { getEnvironmentVariable } from "./common/utils";
+
+const validateReceivedEvent = (
+  event: ReportSuspiciousActivityStepInput
+): void => {
+  if (
+    event.event_id === undefined ||
+    event.email === undefined ||
+    event.persistent_session_id === undefined ||
+    event.user_id === undefined
+  ) {
+    throw new Error(
+      "Validation Failed - Required input to trigger report suspicious activity steps are not provided"
+    );
+  }
+};
 
 export const handler = async (event: SNSEvent): Promise<void> => {
-  const { STATE_MACHINE_ARN, DLQ_URL } = process.env;
+  const STATE_MACHINE_ARN = getEnvironmentVariable("STATE_MACHINE_ARN");
+  const DLQ_URL = getEnvironmentVariable("DLQ_URL");
   await Promise.all(
     event.Records.map(async (record) => {
       try {
         console.log(
-          `started processing message with ID: ${record.Sns.MessageId}`
+          `Started processing message with ID: ${record.Sns.MessageId}`
         );
-        if (!STATE_MACHINE_ARN || !DLQ_URL) {
-          throw new Error(
-            "Error Occurred - Required environment variables to trigger report suspicious activity steps are not provided."
-          );
-        }
-        const receivedEvent: ReportSuspiciousActivityStepInput = JSON.parse(
-          record.Sns.Message
-        );
-        if (
-          receivedEvent.event_id === undefined ||
-          receivedEvent.email === undefined ||
-          receivedEvent.persistent_session_id === undefined ||
-          receivedEvent.user_id === undefined
-        ) {
-          throw new Error(
-            "Validation Failed - Required input to trigger report suspicious activity steps are not provided"
-          );
-        }
+        const messageBody = record.Sns.Message;
+        const receivedEvent: ReportSuspiciousActivityStepInput =
+          JSON.parse(messageBody);
+        validateReceivedEvent(receivedEvent);
         await callAsyncStepFunction(STATE_MACHINE_ARN, receivedEvent);
         console.log(
-          `finished processing message with ID: ${record.Sns.MessageId}`
+          `Finished processing message with ID: ${record.Sns.MessageId}`
         );
-      } catch (error: unknown) {
+      } catch (error) {
         console.error(
           `[Error occurred], trigger report suspicious activity step function:, ${
             (error as Error).message
           }`
         );
-        const { AWS_REGION } = process.env;
-        const client = new SQSClient({ region: AWS_REGION });
-        const message: SendMessageRequest = {
-          QueueUrl: DLQ_URL,
-          MessageBody: record.Sns.Message,
-        };
-        const result = await client.send(new SendMessageCommand(message));
-        console.error(
-          `[Message sent to DLQ] with message id = ${result.MessageId}`,
-          error
-        );
+        try {
+          const result = await sendSqsMessage(record.Sns.Message, DLQ_URL);
+          console.error(
+            `[Message sent to DLQ] with message id = ${result.MessageId}`
+          );
+        } catch (dlqError) {
+          console.error(`Failed to send message to DLQ: `, dlqError);
+        }
       }
     })
   );

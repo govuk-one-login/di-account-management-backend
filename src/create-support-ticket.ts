@@ -1,12 +1,6 @@
 import axios, { AxiosResponse } from "axios";
 import { getSecret } from "@aws-lambda-powertools/parameters/secrets";
 import {
-  SendMessageCommand,
-  SendMessageCommandOutput,
-  SendMessageRequest,
-  SQSClient,
-} from "@aws-sdk/client-sqs";
-import {
   CreateTicketPayload,
   HttpError,
   ReportSuspiciousActivityEvent,
@@ -17,6 +11,7 @@ import {
 } from "./common/constants";
 import { DynamoDBDocumentClient, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { getEnvironmentVariable } from "./common/utils";
 
 const dynamoClient = new DynamoDBClient({});
 const dynamoDocClient = DynamoDBDocumentClient.from(dynamoClient);
@@ -107,48 +102,23 @@ export async function createTicket(
   }
 }
 
-export const sendSqsMessage = async (
-  messageBody: string,
-  queueUrl: string | undefined
-): Promise<SendMessageCommandOutput> => {
-  const { AWS_REGION } = process.env;
-  const client = new SQSClient({ region: AWS_REGION });
-  const message: SendMessageRequest = {
-    QueueUrl: queueUrl,
-    MessageBody: messageBody,
-  };
-  return client.send(new SendMessageCommand(message));
-};
-
 export const handler = async (
   input: ReportSuspiciousActivityEvent
 ): Promise<ReportSuspiciousActivityEvent> => {
-  const {
-    ZENDESK_GROUP_ID_KEY,
-    ZENDESK_TAGS_KEY,
-    ZENDESK_API_TOKEN_KEY,
-    ZENDESK_API_USER_KEY,
-    ZENDESK_API_URL_KEY,
-    ZENDESK_TICKET_FORM_ID,
-    ACTIVITY_LOG_TABLE,
-  } = process.env;
   let eventIdentifier: string | undefined = undefined;
   try {
     eventIdentifier = input.event_id;
+    const ZENDESK_GROUP_ID_KEY = getEnvironmentVariable("ZENDESK_GROUP_ID_KEY");
+    const ZENDESK_API_TOKEN_KEY = getEnvironmentVariable(
+      "ZENDESK_API_TOKEN_KEY"
+    );
+    const ZENDESK_API_USER_KEY = getEnvironmentVariable("ZENDESK_API_USER_KEY");
+    const ZENDESK_API_URL_KEY = getEnvironmentVariable("ZENDESK_API_URL_KEY");
+    const ZENDESK_TICKET_FORM_ID = getEnvironmentVariable(
+      "ZENDESK_TICKET_FORM_ID"
+    );
+    const ACTIVITY_LOG_TABLE = getEnvironmentVariable("ACTIVITY_LOG_TABLE");
     console.log(`started processing event with ID: ${eventIdentifier}`);
-    if (
-      !ZENDESK_API_USER_KEY ||
-      !ZENDESK_API_TOKEN_KEY ||
-      !ZENDESK_API_URL_KEY ||
-      !ZENDESK_GROUP_ID_KEY ||
-      !ZENDESK_TICKET_FORM_ID ||
-      !ACTIVITY_LOG_TABLE
-    ) {
-      throw new Error(
-        "Not all environment variables required to successfully send to Zendesk are provided."
-      );
-    }
-
     validateSuspiciousActivity(input);
     const zendeskUserName = await getSecret(ZENDESK_API_USER_KEY, {
       maxAge: 900,
@@ -165,11 +135,16 @@ export const handler = async (
     const zendeskTicketFormId = await getSecret(ZENDESK_TICKET_FORM_ID, {
       maxAge: 900,
     });
-    const zendeskTicketTags = ZENDESK_TAGS_KEY
-      ? await getSecret(ZENDESK_TAGS_KEY, {
-          maxAge: 900,
-        })
-      : undefined;
+
+    let zendeskTicketTags: string | undefined;
+    try {
+      const ZENDESK_TAGS_KEY = getEnvironmentVariable("ZENDESK_TAGS_KEY");
+      zendeskTicketTags = await getSecret(ZENDESK_TAGS_KEY, {
+        maxAge: 900,
+      });
+    } catch (error) {
+      zendeskTicketTags = undefined;
+    }
 
     if (
       !zendeskUserName ||
@@ -213,7 +188,7 @@ export const handler = async (
     }
     console.log(`finished processing event with ID: ${eventIdentifier}`);
     return input;
-  } catch (error: unknown) {
+  } catch (error) {
     console.error(
       `[Error occurred], unable to send suspicious activity event with ID: ${eventIdentifier} to Zendesk, ${
         (error as Error).message

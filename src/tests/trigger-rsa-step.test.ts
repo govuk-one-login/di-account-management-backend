@@ -18,6 +18,7 @@ describe("handler", () => {
     jest.resetModules();
     process.env.STATE_MACHINE_ARN = "ReportSuspiciousActivityStepFunction";
     process.env.DLQ_URL = "DLQ_URL";
+    process.env.AWS_REGION = "AWS_REGION";
     consoleErrorMock = jest.spyOn(global.console, "error").mockImplementation();
     (callAsyncStepFunction as jest.Mock).mockImplementation(() => {
       return {

@@ -5,88 +5,71 @@ import {
   PutCommand,
   PutCommandOutput,
 } from "@aws-sdk/lib-dynamodb";
-import {
-  SendMessageCommand,
-  SendMessageRequest,
-  SQSClient,
-} from "@aws-sdk/client-sqs";
 import { Service, UserServices } from "./common/model";
+import { sendSqsMessage } from "./common/sqs";
+import { getEnvironmentVariable } from "./common/utils";
 
-const marshallOptions = {
-  convertClassInstanceToMap: true,
-};
-const translateConfig = { marshallOptions };
+const dynamoDocClient = DynamoDBDocumentClient.from(new DynamoDBClient({}), {
+  marshallOptions: { convertClassInstanceToMap: true },
+});
 
-const dynamoClient = new DynamoDBClient({});
-const dynamoDocClient = DynamoDBDocumentClient.from(
-  dynamoClient,
-  translateConfig
-);
-
-const sqsClient = new SQSClient({});
-
-export const validateServices = (services: Service[]): void => {
-  for (let i = 0; i < services.length; i += 1) {
-    const service = services[i];
-    if (
-      !(
-        service.client_id !== undefined &&
-        service.count_successful_logins &&
-        service.count_successful_logins >= 0 &&
-        service.last_accessed !== undefined &&
-        service.last_accessed_pretty !== undefined
-      )
-    ) {
-      throw new Error(`Could not validate Service`);
-    }
+export const validateService = (service: Service): void => {
+  const {
+    client_id,
+    count_successful_logins,
+    last_accessed,
+    last_accessed_pretty,
+  } = service;
+  if (
+    client_id === undefined ||
+    count_successful_logins === undefined ||
+    count_successful_logins < 0 ||
+    last_accessed === undefined ||
+    last_accessed_pretty === undefined
+  ) {
+    throw new Error(`Service validation failed for client_id: ${client_id}`);
   }
 };
 
 export const validateUserServices = (userServices: UserServices): void => {
-  if (
-    userServices.user_id !== undefined &&
-    userServices.services !== undefined
-  ) {
-    validateServices(userServices.services);
-  } else {
-    throw new Error(`Could not validate UserServices`);
+  const { user_id, services } = userServices;
+  if (user_id === undefined || services === undefined) {
+    throw new Error(`UserServices validation failed for user_id: ${user_id}`);
   }
+  services.forEach(validateService);
 };
 
 export const writeUserServices = async (
   userServices: UserServices
 ): Promise<PutCommandOutput> => {
-  const { TABLE_NAME } = process.env;
+  const TABLE_NAME = getEnvironmentVariable("TABLE_NAME");
   const command = new PutCommand({
     TableName: TABLE_NAME,
-    Item: {
-      user_id: userServices.user_id,
-      services: userServices.services,
-    },
+    Item: { user_id: userServices.user_id, services: userServices.services },
   });
   return dynamoDocClient.send(command);
 };
 
 export const handler = async (event: SQSEvent): Promise<void> => {
-  const { DLQ_URL } = process.env;
+  const DLQ_URL = getEnvironmentVariable("DLQ_URL");
   await Promise.all(
     event.Records.map(async (record) => {
       try {
-        console.log(`started processing message with ID: ${record.messageId}`);
+        console.log(`Started processing message with ID: ${record.messageId}`);
         const userServices: UserServices = JSON.parse(record.body);
         validateUserServices(userServices);
         await writeUserServices(userServices);
-        console.log(`finished processing message with ID: ${record.messageId}`);
-      } catch (err) {
-        const message: SendMessageRequest = {
-          QueueUrl: DLQ_URL,
-          MessageBody: record.body,
-        };
-        const result = await sqsClient.send(new SendMessageCommand(message));
-        console.error(
-          `[Message sent to DLQ] with message id = ${result.MessageId}`,
-          err
-        );
+        console.log(`Finished processing message with ID: ${record.messageId}`);
+      } catch (error) {
+        console.error(`[Error occurred]: ${(error as Error).message}`);
+        try {
+          const result = await sendSqsMessage(record.body, DLQ_URL);
+          console.error(
+            `[Message sent to DLQ] with message id = ${result.MessageId}`
+          );
+        } catch (dlqError) {
+          console.error(`Failed to send message to DLQ: `, dlqError);
+        }
       }
     })
   );

@@ -1,8 +1,3 @@
-import {
-  SendMessageCommand,
-  SendMessageRequest,
-  SQSClient,
-} from "@aws-sdk/client-sqs";
 import { SQSEvent, SQSRecord } from "aws-lambda";
 import type {
   UserData,
@@ -10,6 +5,8 @@ import type {
   Service,
   TxmaEvent,
 } from "./common/model";
+import { sendSqsMessage } from "./common/sqs";
+import { getEnvironmentVariable } from "./common/utils";
 
 const validateUserService = (service: Service): void => {
   if (
@@ -121,30 +118,16 @@ export const formatRecord = (record: UserRecordEvent) => {
   };
 };
 
-export const sendSqsMessage = async (
-  messageBody: string,
-  queueUrl: string | undefined
-): Promise<string | undefined> => {
-  const { AWS_REGION } = process.env;
-  const client = new SQSClient({ region: AWS_REGION });
-  const message: SendMessageRequest = {
-    QueueUrl: queueUrl,
-    MessageBody: messageBody,
-  };
-  const result = await client.send(new SendMessageCommand(message));
-  return result.MessageId;
-};
-
 export const handler = async (event: SQSEvent): Promise<void> => {
-  const { OUTPUT_QUEUE_URL, DLQ_URL } = process.env;
   const { Records } = event;
-
+  const OUTPUT_QUEUE_URL = getEnvironmentVariable("OUTPUT_QUEUE_URL");
+  const DLQ_URL = getEnvironmentVariable("DLQ_URL");
   await Promise.all(
     Records.map(async (record) => {
       try {
         console.log(`started processing message with ID: ${record.messageId}`);
         const formattedRecord = formatRecord(validateAndParseSQSRecord(record));
-        const messageId = await sendSqsMessage(
+        const { MessageId: messageId } = await sendSqsMessage(
           JSON.stringify(formattedRecord),
           OUTPUT_QUEUE_URL
         );

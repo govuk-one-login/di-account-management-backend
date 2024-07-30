@@ -154,7 +154,7 @@ describe("handler", () => {
   });
 
   test("the handler log and throw an error", async () => {
-    process.env.ACTIVITY_LOG_TABLE_NAME = undefined;
+    process.env.GENERATOR_KEY_ARN = undefined;
     let errorThrown = false;
     try {
       await handler(testSuspiciousActivity);

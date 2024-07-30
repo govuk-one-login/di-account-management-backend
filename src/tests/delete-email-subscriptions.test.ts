@@ -8,6 +8,8 @@ import { TEST_SNS_EVENT, TEST_USER_DATA } from "./testFixtures";
 describe("handler", () => {
   beforeEach(() => {
     jest.restoreAllMocks();
+    process.env.AWS_REGION = "AWS_REGION";
+    process.env.DLQ_URL = "DLQ_URL";
   });
 
   afterEach(() => {

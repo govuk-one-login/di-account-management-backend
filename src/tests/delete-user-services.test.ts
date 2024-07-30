@@ -41,6 +41,8 @@ describe("handler", () => {
     dynamoMock.reset();
     sqsMock.reset();
     process.env.TABLE_NAME = "TABLE_NAME";
+    process.env.DLQ_URL = "DLQ_URL";
+    process.env.AWS_REGION = "AWS_REGION";
   });
 
   afterEach(() => {

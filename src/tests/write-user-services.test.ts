@@ -3,9 +3,9 @@ import { SendMessageCommand, SQSClient } from "@aws-sdk/client-sqs";
 import { mockClient } from "aws-sdk-client-mock";
 import {
   handler,
-  writeUserServices,
-  validateServices,
+  validateService,
   validateUserServices,
+  writeUserServices,
 } from "../write-user-services";
 import { Service, UserServices } from "../common/model";
 import {
@@ -15,7 +15,6 @@ import {
 } from "./testFixtures";
 
 export const date = timestamp;
-export const tableName = "TableName";
 export const clientId = "clientId";
 export const userId = "userId";
 
@@ -26,7 +25,8 @@ describe("writeUserServices", () => {
   beforeEach(() => {
     dynamoMock.reset();
 
-    process.env.TABLE_NAME = tableName;
+    process.env.TABLE_NAME = "TABLE_NAME";
+    process.env.DLQ_URL = "DLQ_URL";
   });
 
   afterEach(() => {
@@ -43,7 +43,9 @@ describe("lambdaHandler", () => {
   beforeEach(() => {
     dynamoMock.reset();
     sqsMock.reset();
-    process.env.TABLE_NAME = tableName;
+    process.env.TABLE_NAME = "TABLE_NAME";
+    process.env.DLQ_URL = "DLQ_URL";
+    process.env.AWS_REGION = "AWS_REGION";
   });
 
   afterEach(() => {
@@ -73,7 +75,7 @@ describe("lambdaHandler", () => {
 
     test("logs the error message", async () => {
       await handler(TEST_SQS_EVENT_WITH_USER_SERVICES);
-      expect(consoleErrorMock).toHaveBeenCalledTimes(1);
+      expect(consoleErrorMock).toHaveBeenCalledTimes(2);
     });
 
     test("sends the event to the dead letter queue", async () => {
@@ -136,25 +138,23 @@ describe("validateUserServices", () => {
   });
 });
 
-describe("validateServices", () => {
+describe("validateService", () => {
   const parseServices = (service: string) => {
-    return JSON.parse(service) as Service[];
+    return JSON.parse(service) as Service;
   };
 
   test("doesn't throw an error with valid data", () => {
     const services = parseServices(
-      JSON.stringify([
-        {
-          client_id: clientId,
-          last_accessed: date,
-          last_accessed_pretty: new Intl.DateTimeFormat("en-GB", {
-            dateStyle: "long",
-          }).format(date),
-          count_successful_logins: 1,
-        },
-      ])
+      JSON.stringify({
+        client_id: clientId,
+        last_accessed: date,
+        last_accessed_pretty: new Intl.DateTimeFormat("en-GB", {
+          dateStyle: "long",
+        }).format(date),
+        count_successful_logins: 1,
+      })
     );
-    expect(validateServices(services)).toBe(undefined);
+    expect(validateService(services)).toBe(undefined);
   });
 
   describe("throws an error", () => {
@@ -171,7 +171,7 @@ describe("validateServices", () => {
         ])
       );
       expect(() => {
-        validateServices(services);
+        validateService(services);
       }).toThrowError();
     });
 
@@ -188,7 +188,7 @@ describe("validateServices", () => {
         ])
       );
       expect(() => {
-        validateServices(services);
+        validateService(services);
       }).toThrowError();
     });
 
@@ -203,7 +203,7 @@ describe("validateServices", () => {
         ])
       );
       expect(() => {
-        validateServices(services);
+        validateService(services);
       }).toThrowError();
     });
 
@@ -217,7 +217,7 @@ describe("validateServices", () => {
         ])
       );
       expect(() => {
-        validateServices(services);
+        validateService(services);
       }).toThrowError();
     });
 
@@ -232,7 +232,7 @@ describe("validateServices", () => {
         ])
       );
       expect(() => {
-        validateServices(services);
+        validateService(services);
       }).toThrowError();
     });
   });

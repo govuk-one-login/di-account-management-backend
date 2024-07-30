@@ -1,10 +1,4 @@
 import {
-  SendMessageCommand,
-  SendMessageCommandOutput,
-  SendMessageRequest,
-  SQSClient,
-} from "@aws-sdk/client-sqs";
-import {
   DynamoDBDocumentClient,
   QueryCommand,
   UpdateCommand,
@@ -15,28 +9,14 @@ import {
   ReportSuspiciousActivityStepInput,
   ReportSuspiciousActivityEvent,
 } from "./common/model";
-import assert from "node:assert";
 import crypto from "crypto";
 import { COMPONENT_ID, EventNamesEnum } from "./common/constants";
-import { getCurrentTimestamp } from "./common/utils";
+import { getCurrentTimestamp, getEnvironmentVariable } from "./common/utils";
 import { decryptData } from "./decrypt-data";
 import redact from "./common/redact";
 
 const dynamoClient = new DynamoDBClient({});
 const dynamoDocClient = DynamoDBDocumentClient.from(dynamoClient);
-
-export const sendSqsMessage = async (
-  messageBody: string,
-  queueUrl: string | undefined
-): Promise<SendMessageCommandOutput> => {
-  const { AWS_REGION } = process.env;
-  const client = new SQSClient({ region: AWS_REGION });
-  const message: SendMessageRequest = {
-    QueueUrl: queueUrl,
-    MessageBody: messageBody,
-  };
-  return client.send(new SendMessageCommand(message));
-};
 
 export const markEventAsReported = async (
   tableName: string,
@@ -83,7 +63,9 @@ export const queryActivityLog = async (
   eventId: string
 ): Promise<ActivityLogEntry | undefined> => {
   try {
-    const { ACTIVITY_LOG_TABLE_NAME } = process.env;
+    const ACTIVITY_LOG_TABLE_NAME = getEnvironmentVariable(
+      "ACTIVITY_LOG_TABLE_NAME"
+    );
     const command = {
       TableName: ACTIVITY_LOG_TABLE_NAME,
       KeyConditionExpression: "user_id = :user_id and event_id = :event_id",
@@ -110,19 +92,17 @@ export const handler = async (
   input: ReportSuspiciousActivityStepInput
 ): Promise<ReportSuspiciousActivityEvent> => {
   console.log(`started processing event with ID: ${input.event_id}`);
-  const { ACTIVITY_LOG_TABLE_NAME } = process.env;
-  const { GENERATOR_KEY_ARN } = process.env;
-  const { WRAPPING_KEY_ARN } = process.env;
+  const activityLog = await queryActivityLog(input.user_id, input.event_id);
   const event_id = `${crypto.randomUUID()}`;
   const timestamps = getCurrentTimestamp();
-
-  const activityLog = await queryActivityLog(input.user_id, input.event_id);
-
   if (activityLog) {
     try {
-      assert(ACTIVITY_LOG_TABLE_NAME);
-      assert(GENERATOR_KEY_ARN);
-      assert(WRAPPING_KEY_ARN);
+      const ACTIVITY_LOG_TABLE_NAME = getEnvironmentVariable(
+        "ACTIVITY_LOG_TABLE_NAME"
+      );
+      const GENERATOR_KEY_ARN = getEnvironmentVariable("GENERATOR_KEY_ARN");
+      const WRAPPING_KEY_ARN = getEnvironmentVariable("WRAPPING_KEY_ARN");
+
       await markEventAsReported(
         ACTIVITY_LOG_TABLE_NAME,
         activityLog.user_id,

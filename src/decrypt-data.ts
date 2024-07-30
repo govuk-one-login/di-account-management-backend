@@ -5,6 +5,7 @@ import {
 } from "@aws-crypto/client-node";
 import buildKmsKeyring from "./common/kms-keyring-builder";
 import getHashedAccessCheckValue from "./common/get-access-check-value";
+import { getEnvironmentVariable } from "./common/utils";
 
 const MAX_ENCRYPTED_DATA_KEY = 5;
 const DECODING = "utf8";
@@ -18,24 +19,10 @@ let keyring: KmsKeyringNode;
 export async function generateExpectedContext(
   userId: string
 ): Promise<EncryptionContext> {
-  const { AWS_REGION, ACCOUNT_ID, ENVIRONMENT, VERIFY_ACCESS_VALUE } =
-    process.env;
-  if (AWS_REGION === undefined) {
-    throw new Error("Missing AWS_REGION environment variable");
-  }
-
-  if (ACCOUNT_ID === undefined) {
-    throw new Error("Missing ACCOUNT_ID environment variable");
-  }
-
-  if (ENVIRONMENT === undefined) {
-    throw new Error("Missing ENVIRONMENT environment variable");
-  }
-
-  if (VERIFY_ACCESS_VALUE === undefined) {
-    throw new Error("Missing VERIFY_ACCESS_VALUE environment variable");
-  }
-
+  const AWS_REGION = getEnvironmentVariable("AWS_REGION");
+  const ACCOUNT_ID = getEnvironmentVariable("ACCOUNT_ID");
+  const ENVIRONMENT = getEnvironmentVariable("ENVIRONMENT");
+  const VERIFY_ACCESS_VALUE = getEnvironmentVariable("VERIFY_ACCESS_VALUE");
   let accessCheckValue;
   try {
     accessCheckValue = await getHashedAccessCheckValue(VERIFY_ACCESS_VALUE);

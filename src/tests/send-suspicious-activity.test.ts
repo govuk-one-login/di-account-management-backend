@@ -2,12 +2,9 @@ import "aws-sdk-client-mock-jest";
 import { SendMessageCommand, SQSClient } from "@aws-sdk/client-sqs";
 import { mockClient } from "aws-sdk-client-mock";
 
-import {
-  handler,
-  sendAuditEvent,
-  sendSqsMessage,
-} from "../send-suspicious-activity";
+import { handler, sendAuditEvent } from "../send-suspicious-activity";
 import { ReportSuspiciousActivityEvent, TxMAAuditEvent } from "../common/model";
+import { sendSqsMessage } from "../common/sqs";
 
 const sqsMock = mockClient(SQSClient);
 const TXMA_QUEUE_URL = "TXMA_QUEUE_URL";
@@ -16,6 +13,7 @@ describe("sendAuditEventToTxMA", () => {
   beforeEach(() => {
     sqsMock.reset();
     sqsMock.on(SendMessageCommand).resolves({ MessageId: "MessageId" });
+    process.env.AWS_REGION = "AWS_REGION";
   });
 
   afterEach(() => {
@@ -107,6 +105,7 @@ describe("sendAuditEventToTxMA", () => {
 describe("sendSQSMessage", () => {
   beforeEach(() => {
     process.env.TXMA_QUEUE_URL = TXMA_QUEUE_URL;
+    process.env.AWS_REGION = "AWS_REGION";
     sqsMock.reset();
   });
 

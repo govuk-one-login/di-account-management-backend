@@ -1,12 +1,7 @@
 import { SNSEvent } from "aws-lambda";
-import {
-  SQSClient,
-  SendMessageRequest,
-  SendMessageCommand,
-} from "@aws-sdk/client-sqs";
 import { UserData } from "./common/model";
-
-const sqsClient = new SQSClient({});
+import { sendSqsMessage } from "./common/sqs";
+import { getEnvironmentVariable } from "./common/utils";
 
 export const getRequestConfig = (token: string | undefined) => {
   const config = {
@@ -44,8 +39,12 @@ const getDeleteUrl = (
 };
 
 export const deleteEmailSubscription = async (userData: UserData) => {
-  const { GOV_ACCOUNTS_PUBLISHING_API_TOKEN, GOV_ACCOUNTS_PUBLISHING_API_URL } =
-    process.env;
+  const GOV_ACCOUNTS_PUBLISHING_API_TOKEN = getEnvironmentVariable(
+    "GOV_ACCOUNTS_PUBLISHING_API_TOKEN"
+  );
+  const GOV_ACCOUNTS_PUBLISHING_API_URL = getEnvironmentVariable(
+    "GOV_ACCOUNTS_PUBLISHING_API_URL"
+  );
   const deleteUrl = getDeleteUrl(GOV_ACCOUNTS_PUBLISHING_API_URL, userData);
   const config = getRequestConfig(GOV_ACCOUNTS_PUBLISHING_API_TOKEN);
 
@@ -60,8 +59,7 @@ export const deleteEmailSubscription = async (userData: UserData) => {
 };
 
 export const handler = async (event: SNSEvent): Promise<void> => {
-  const { DLQ_URL } = process.env;
-
+  const DLQ_URL = getEnvironmentVariable("DLQ_URL");
   await Promise.all(
     event.Records.map(async (record) => {
       try {
@@ -74,16 +72,15 @@ export const handler = async (event: SNSEvent): Promise<void> => {
         console.log(
           `finished processing message with ID: ${record.Sns.MessageId}`
         );
-      } catch (err) {
-        const message: SendMessageRequest = {
-          QueueUrl: DLQ_URL,
-          MessageBody: record.Sns.Message,
-        };
-        const result = await sqsClient.send(new SendMessageCommand(message));
-        console.error(
-          `[Message sent to DLQ] with message id = ${result.MessageId}`,
-          err
-        );
+      } catch (error) {
+        try {
+          const result = await sendSqsMessage(record.Sns.Message, DLQ_URL);
+          console.error(
+            `[Message sent to DLQ] with message id = ${result.MessageId}`
+          );
+        } catch (dlqError) {
+          console.error(`Failed to send message to DLQ: `, dlqError);
+        }
       }
     })
   );

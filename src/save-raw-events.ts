@@ -6,16 +6,14 @@ import {
   PutCommand,
   PutCommandOutput,
 } from "@aws-sdk/lib-dynamodb";
-import {
-  SendMessageCommand,
-  SendMessageRequest,
-  SQSClient,
-} from "@aws-sdk/client-sqs";
 import { TxmaEvent, UserData } from "./common/model";
+import { sendSqsMessage } from "./common/sqs";
+import { getEnvironmentVariable } from "./common/utils";
 
 const marshallOptions = {
   convertClassInstanceToMap: true,
 };
+
 const translateConfig = { marshallOptions };
 
 const dynamoClient = new DynamoDBClient({});
@@ -23,22 +21,21 @@ const dynamoDocClient = DynamoDBDocumentClient.from(
   dynamoClient,
   translateConfig
 );
-const sqsClient = new SQSClient({});
 
-export const getEventId = (): string => {
-  return `${crypto.randomUUID()}`;
+const getEventId = (): string => {
+  return crypto.randomUUID();
 };
 
-export const getTTLDate = (): number => {
-  const SECONDS_IN_AN_DAY = 60 * 60 * 24;
+const getTTLDate = (): number => {
+  const secondsInADay = 60 * 60 * 24;
   const secondsSinceEpoch = Math.round(Date.now() / 1000);
-  const expirationTime = secondsSinceEpoch + 14 * SECONDS_IN_AN_DAY;
+  const expirationTime = secondsSinceEpoch + 14 * secondsInADay;
   return expirationTime;
 };
 
 export const validateUser = (user: UserData): void => {
   if (!user.user_id || !user.session_id) {
-    throw new Error(`Could not validate User`);
+    throw new Error("Could not validate User");
   }
 };
 
@@ -51,15 +48,14 @@ export const validateTxmaEventBody = (txmaEvent: TxmaEvent): void => {
   ) {
     validateUser(txmaEvent.user);
   } else {
-    throw new Error(`Could not validate UserServices`);
+    throw new Error("Could not validate TxmaEvent");
   }
 };
 
 export const writeRawTxmaEvent = async (
   txmaEvent: TxmaEvent
 ): Promise<PutCommandOutput> => {
-  const { TABLE_NAME } = process.env;
-
+  const TABLE_NAME = getEnvironmentVariable("TABLE_NAME");
   const command = new PutCommand({
     TableName: TABLE_NAME,
     Item: {
@@ -69,30 +65,29 @@ export const writeRawTxmaEvent = async (
       remove_at: getTTLDate(),
     },
   });
+
   return dynamoDocClient.send(command);
 };
 
 export const handler = async (event: SQSEvent): Promise<void> => {
-  const { DLQ_URL } = process.env;
-
+  const DLQ_URL = getEnvironmentVariable("DLQ_URL");
   await Promise.all(
     event.Records.map(async (record) => {
       try {
-        console.log(`started processing message with ID: ${record.messageId}`);
+        console.log(`Started processing message with ID: ${record.messageId}`);
         const txmaEvent: TxmaEvent = JSON.parse(record.body);
         validateTxmaEventBody(txmaEvent);
         await writeRawTxmaEvent(txmaEvent);
-        console.log(`finished processing message with ID: ${record.messageId}`);
-      } catch (err) {
-        const message: SendMessageRequest = {
-          QueueUrl: DLQ_URL,
-          MessageBody: record.body,
-        };
-        const result = await sqsClient.send(new SendMessageCommand(message));
-        console.error(
-          `[Message sent to DLQ] with message id = ${result.MessageId}`,
-          err
-        );
+        console.log(`Finished processing message with ID: ${record.messageId}`);
+      } catch (error) {
+        try {
+          const result = await sendSqsMessage(record.body, DLQ_URL);
+          console.error(
+            `[Message sent to DLQ] with message id = ${result.MessageId}`
+          );
+        } catch (dlqError) {
+          console.error(`Failed to send message to DLQ: `, dlqError);
+        }
       }
     })
   );

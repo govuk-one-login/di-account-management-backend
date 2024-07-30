@@ -5,40 +5,35 @@ import {
   PutCommand,
   PutCommandOutput,
 } from "@aws-sdk/lib-dynamodb";
-import {
-  SendMessageCommand,
-  SendMessageRequest,
-  SQSClient,
-} from "@aws-sdk/client-sqs";
 import { ActivityLogEntry, EncryptedActivityLogEntry } from "./common/model";
 import encryptData from "./common/encrypt-data";
+import { sendSqsMessage } from "./common/sqs";
+import { getEnvironmentVariable } from "./common/utils";
 
-const dynamoClient = new DynamoDBClient({});
-const dynamoDocClient = DynamoDBDocumentClient.from(dynamoClient);
-const sqsClient = new SQSClient({});
+const dynamoDocClient = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 
 export const validateActivityLogEntry = (
   activityLogEntry: ActivityLogEntry
 ): void => {
   if (
-    !(
-      activityLogEntry.user_id !== undefined &&
-      activityLogEntry.session_id !== undefined &&
-      activityLogEntry.timestamp !== undefined &&
-      activityLogEntry.event_type !== undefined &&
-      activityLogEntry.event_id !== undefined &&
-      activityLogEntry.client_id !== undefined &&
-      activityLogEntry.reported_suspicious !== undefined
-    )
+    activityLogEntry.user_id === undefined ||
+    activityLogEntry.session_id === undefined ||
+    activityLogEntry.timestamp === undefined ||
+    activityLogEntry.event_type === undefined ||
+    activityLogEntry.event_id === undefined ||
+    activityLogEntry.client_id === undefined ||
+    activityLogEntry.reported_suspicious === undefined
   ) {
-    throw new Error(`Could not validate activity log entry`);
+    throw new Error(
+      `Activity log entry validation failed for event_id: ${activityLogEntry.event_id ?? null}`
+    );
   }
 };
 
 export const writeActivityLogEntry = async (
   activityLogEntry: EncryptedActivityLogEntry
 ): Promise<PutCommandOutput> => {
-  const { TABLE_NAME } = process.env;
+  const TABLE_NAME = getEnvironmentVariable("TABLE_NAME");
   const command = new PutCommand({
     TableName: TABLE_NAME,
     Item: {
@@ -55,11 +50,11 @@ export const writeActivityLogEntry = async (
 };
 
 export const handler = async (event: SQSEvent): Promise<void> => {
-  const { DLQ_URL } = process.env;
+  const DLQ_URL = getEnvironmentVariable("DLQ_URL");
   await Promise.all(
     event.Records.map(async (record) => {
       try {
-        console.log(`started processing message with ID: ${record.messageId}`);
+        console.log(`Started processing message with ID: ${record.messageId}`);
         const activityLogEntry: ActivityLogEntry = JSON.parse(record.body);
         validateActivityLogEntry(activityLogEntry);
         const encryptedActivityLog: EncryptedActivityLogEntry = {
@@ -75,17 +70,16 @@ export const handler = async (event: SQSEvent): Promise<void> => {
           reported_suspicious: activityLogEntry.reported_suspicious,
         };
         await writeActivityLogEntry(encryptedActivityLog);
-        console.log(`finished processing message with ID: ${record.messageId}`);
-      } catch (err) {
-        const message: SendMessageRequest = {
-          QueueUrl: DLQ_URL,
-          MessageBody: record.body,
-        };
-        const result = await sqsClient.send(new SendMessageCommand(message));
-        console.error(
-          `[Message sent to DLQ] with message id = ${result.MessageId}`,
-          err
-        );
+        console.log(`Finished processing message with ID: ${record.messageId}`);
+      } catch (error) {
+        try {
+          const result = await sendSqsMessage(record.body, DLQ_URL);
+          console.error(
+            `[Message sent to DLQ] with message id = ${result.MessageId}`
+          );
+        } catch (dlqError) {
+          console.error(`Failed to send message to DLQ: `, dlqError);
+        }
       }
     })
   );

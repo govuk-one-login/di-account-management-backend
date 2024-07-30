@@ -5,13 +5,9 @@ import {
   WriteRequest,
 } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, QueryCommand } from "@aws-sdk/lib-dynamodb";
-import {
-  SendMessageCommand,
-  SendMessageRequest,
-  SQSClient,
-} from "@aws-sdk/client-sqs";
 import { ActivityLogEntry, UserData } from "./common/model";
-import assert from "node:assert";
+import { sendSqsMessage } from "./common/sqs";
+import { getEnvironmentVariable } from "./common/utils";
 
 const marshallOptions = {
   convertClassInstanceToMap: true,
@@ -23,8 +19,6 @@ const dynamoDocClient = DynamoDBDocumentClient.from(
   dynamoClient,
   translateConfig
 );
-
-const sqsClient = new SQSClient({});
 
 export const validateUserData = (userData: UserData): UserData => {
   if (userData.user_id) {
@@ -116,17 +110,14 @@ export const batchDeleteActivityLog = async (
 };
 
 export const handler = async (event: SNSEvent): Promise<void> => {
-  const { DLQ_URL, TABLE_NAME } = process.env;
-
+  const DLQ_URL = getEnvironmentVariable("DLQ_URL");
+  const TABLE_NAME = getEnvironmentVariable("TABLE_NAME");
   await Promise.all(
     event.Records.map(async (record) => {
       try {
         console.log(
           `started processing message with ID: ${record.Sns.MessageId}`
         );
-        assert(DLQ_URL);
-        assert(TABLE_NAME);
-
         const userData: UserData = JSON.parse(record.Sns.Message);
         validateUserData(userData);
         const activityLogEntries: ActivityLogEntry[] | undefined =
@@ -137,17 +128,15 @@ export const handler = async (event: SNSEvent): Promise<void> => {
         console.log(
           `finished processing message with ID: ${record.Sns.MessageId}`
         );
-      } catch (err) {
-        console.error("Error in handler", err);
-        const message: SendMessageRequest = {
-          QueueUrl: DLQ_URL,
-          MessageBody: record.Sns.Message,
-        };
-        const result = await sqsClient.send(new SendMessageCommand(message));
-        console.error(
-          `[Message sent to DLQ] with message id = ${result.MessageId}`,
-          err
-        );
+      } catch (error) {
+        try {
+          const result = await sendSqsMessage(record.Sns.Message, DLQ_URL);
+          console.error(
+            `[Message sent to DLQ] with message id = ${result.MessageId}`
+          );
+        } catch (dlqError) {
+          console.error(`Failed to send message to DLQ: `, dlqError);
+        }
       }
     })
   );

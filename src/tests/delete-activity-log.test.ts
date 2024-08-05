@@ -163,22 +163,13 @@ describe("handler", () => {
   });
 
   describe("error handling", () => {
-    let consoleErrorMock: jest.SpyInstance;
-
     beforeEach(() => {
       sqsMock.reset();
-      consoleErrorMock = jest
-        .spyOn(global.console, "error")
-        .mockImplementation();
       sqsMock.on(SendMessageCommand).resolves({ MessageId: "MessageId" });
       dynamoMock.reset();
       dynamoMock.rejectsOnce("mock error");
       process.env.AWS_REGION = "AWS_REGION";
       process.env.TABLE_NAME = "TABLE_NAME";
-    });
-
-    afterEach(() => {
-      consoleErrorMock.mockRestore();
     });
 
     test("throws an error", async () => {

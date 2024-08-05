@@ -248,7 +248,6 @@ describe("handler", () => {
     sqsMock.reset();
     process.env.OUTPUT_SQS_NAME = sqsQueueName;
     process.env.OUTPUT_QUEUE_URL = queueURL;
-    process.env.DLQ_URL = "DlqUrl";
     process.env.AWS_REGION = "AwsRegion";
     sqsMock.on(SendMessageCommand).resolves({ MessageId: messageID });
   });
@@ -329,9 +328,7 @@ describe("handler error handling ", () => {
   const messageID = "MyMessageId";
   const sqsQueueName = "ToWriteSQS";
   const queueURL = "http://my_queue_url";
-  let consoleErrorMock: jest.SpyInstance;
   beforeEach(() => {
-    consoleErrorMock = jest.spyOn(global.console, "error").mockImplementation();
     sqsMock.reset();
     process.env.OUTPUT_SQS_NAME = sqsQueueName;
     process.env.OUTPUT_QUEUE_URL = queueURL;
@@ -364,8 +361,15 @@ describe("handler error handling ", () => {
         ServiceList: emptyServiceList,
       },
     ]);
-    await handler({ Records: inputSQSEvent });
-    expect(consoleErrorMock).toHaveBeenCalledTimes(1);
-    expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(1);
+
+    let errorMessage;
+    try {
+      await handler({ Records: inputSQSEvent });
+    } catch (error) {
+      errorMessage = (error as Error).message;
+    }
+    expect(errorMessage).toContain(
+      "Unable to format user services for message with ID: 19dd0b57-b21e-4ac1-bd88-01bbb068cb78, Could not validate txmaEvent"
+    );
   });
 });

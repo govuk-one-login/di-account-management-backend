@@ -80,7 +80,6 @@ describe("lambdaHandler", () => {
     dynamoMock.reset();
     sqsMock.reset();
     process.env.TABLE_NAME = "TABLE_NAME";
-    process.env.DLQ_URL = "DLQ_URL";
     process.env.AWS_REGION = "AWS_REGION";
   });
 
@@ -94,32 +93,24 @@ describe("lambdaHandler", () => {
   });
 
   describe("error handling", () => {
-    let consoleErrorMock: jest.SpyInstance;
-
     beforeEach(() => {
       sqsMock.reset();
       sqsMock.on(SendMessageCommand).resolves({ MessageId: "MessageId" });
-      consoleErrorMock = jest
-        .spyOn(global.console, "error")
-        .mockImplementation();
       process.env.TABLE_NAME = "TABLE_NAME";
-      process.env.DLQ_URL = "DLQ_URL";
       process.env.AWS_REGION = "AWS_REGION";
       dynamoMock.rejectsOnce("mock error");
     });
 
-    afterEach(() => {
-      consoleErrorMock.mockRestore();
-    });
-
     test("logs the error message", async () => {
-      await handler(TEST_SQS_EVENT);
-      expect(consoleErrorMock).toHaveBeenCalledTimes(1);
-    });
-
-    test("sends the event to the dead letter queue", async () => {
-      await handler(TEST_SQS_EVENT);
-      expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(1);
+      let errorMessage;
+      try {
+        await handler(TEST_SQS_EVENT);
+      } catch (error) {
+        errorMessage = (error as Error).message;
+      }
+      expect(errorMessage).toContain(
+        "Unable to write activity log for message with ID: 19dd0b57-b21e-4ac1-bd88-01bbb068cb78, mock error"
+      );
     });
   });
 });

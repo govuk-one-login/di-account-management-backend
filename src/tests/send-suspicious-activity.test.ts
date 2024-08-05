@@ -291,17 +291,13 @@ describe("handler", () => {
 });
 
 describe("handler error handling", () => {
-  let consoleErrorMock: jest.SpyInstance;
   beforeEach(() => {
     sqsMock.reset();
     process.env.EVENT_NAME = "ANOTHER_EVENT_NAME";
-    process.env.DLQ_URL = "DLQ_URL";
-    consoleErrorMock = jest.spyOn(global.console, "error").mockImplementation();
     sqsMock.on(SendMessageCommand).resolves({ MessageId: "MessageId" });
   });
 
   afterEach(() => {
-    consoleErrorMock.mockRestore();
     jest.clearAllMocks();
   });
 
@@ -330,12 +326,16 @@ describe("handler error handling", () => {
       notify_message_id: "12345678",
     };
     let errorThrown = false;
+    let errorMessage = "";
     try {
       await handler(input);
     } catch (error) {
       errorThrown = true;
+      errorMessage = (error as Error).message;
     }
     expect(errorThrown).toBeTruthy();
-    expect(consoleErrorMock).toHaveBeenCalledTimes(1);
+    expect(errorMessage).toContain(
+      'Error occurred sending event to TxMA: Received Event: {"event_id":"522c5ab4-7e66-4b2a-8f5c-4d31dc4e93e6","event_type":"HOME_REPORT_SUSPICIOUS_ACTIVITY","persistent_session_id":"persistent_session_id","session_id":"session_id","email_address":"email","component_id":"https://home.account.gov.uk","timestamp":1708971886,"event_timestamp_ms":1708971886515,"event_timestamp_ms_formatted":"2024-02-26T18:24:46.515Z","timestamp_formatted":"2024-02-26T18:24:46.515Z","suspicious_activity":{"event_type":"TXMA_EVENT","session_id":"123456789","user_id":"qwerty","timestamp":123456789,"client_id":"gov-uk","event_id":"ab12345a-a12b-3ced-ef12-12a3b4cd5678","reported_suspicious":true},"zendesk_ticket_id":"12345677","notify_message_id":"12345678"'
+    );
   });
 });

@@ -1,6 +1,5 @@
 import { SNSEvent } from "aws-lambda";
 import { UserData } from "./common/model";
-import { sendSqsMessage } from "./common/sqs";
 import { getEnvironmentVariable } from "./common/utils";
 
 export const getRequestConfig = (token: string | undefined) => {
@@ -59,7 +58,6 @@ export const deleteEmailSubscription = async (userData: UserData) => {
 };
 
 export const handler = async (event: SNSEvent): Promise<void> => {
-  const DLQ_URL = getEnvironmentVariable("DLQ_URL");
   await Promise.all(
     event.Records.map(async (record) => {
       try {
@@ -73,14 +71,11 @@ export const handler = async (event: SNSEvent): Promise<void> => {
           `finished processing message with ID: ${record.Sns.MessageId}`
         );
       } catch (error) {
-        try {
-          const result = await sendSqsMessage(record.Sns.Message, DLQ_URL);
-          console.error(
-            `[Message sent to DLQ] with message id = ${result.MessageId}`
-          );
-        } catch (dlqError) {
-          console.error(`Failed to send message to DLQ: `, dlqError);
-        }
+        throw new Error(
+          `Unable to delete activity log for message with ID: ${record.Sns.MessageId}, ${
+            (error as Error).message
+          }`
+        );
       }
     })
   );

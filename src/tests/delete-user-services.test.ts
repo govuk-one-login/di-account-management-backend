@@ -41,7 +41,6 @@ describe("handler", () => {
     dynamoMock.reset();
     sqsMock.reset();
     process.env.TABLE_NAME = "TABLE_NAME";
-    process.env.DLQ_URL = "DLQ_URL";
     process.env.AWS_REGION = "AWS_REGION";
   });
 
@@ -55,29 +54,22 @@ describe("handler", () => {
   });
 
   describe("error handling", () => {
-    let consoleErrorMock: jest.SpyInstance;
-
     beforeEach(() => {
       sqsMock.reset();
       sqsMock.on(SendMessageCommand).resolves({ MessageId: "MessageId" });
-      consoleErrorMock = jest
-        .spyOn(global.console, "error")
-        .mockImplementation();
       dynamoMock.rejectsOnce("mock error");
     });
 
-    afterEach(() => {
-      consoleErrorMock.mockRestore();
-    });
-
     test("logs the error message", async () => {
-      await handler(TEST_SNS_EVENT_WITH_TWO_RECORDS);
-      expect(consoleErrorMock).toHaveBeenCalledTimes(1);
-    });
-
-    test("sends the event to the dead letter queue", async () => {
-      await handler(TEST_SNS_EVENT_WITH_TWO_RECORDS);
-      expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(1);
+      let errorMessage;
+      try {
+        await handler(TEST_SNS_EVENT_WITH_TWO_RECORDS);
+      } catch (error) {
+        errorMessage = (error as Error).message;
+      }
+      expect(errorMessage).toContain(
+        "Unable to delete user services for message with ID: MessageId, mock error"
+      );
     });
   });
 });

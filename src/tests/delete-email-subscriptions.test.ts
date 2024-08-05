@@ -9,7 +9,6 @@ describe("handler", () => {
   beforeEach(() => {
     jest.restoreAllMocks();
     process.env.AWS_REGION = "AWS_REGION";
-    process.env.DLQ_URL = "DLQ_URL";
   });
 
   afterEach(() => {

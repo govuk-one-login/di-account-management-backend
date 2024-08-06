@@ -93,15 +93,6 @@ Conditions:
               - !Ref Environment
               - "demo"
 
-  IsDevelopmentOrDemo:
-    Fn::Or:
-      - Fn::Equals:
-          - !Ref Environment
-          - "dev"
-      - Fn::Equals:
-          - !Ref Environment
-          - "demo"
-
   UseInternalEvents: !Or
     - !Equals [!Ref Environment, demo]
     - !Equals [!Ref Environment, dev]
@@ -209,7 +200,7 @@ Globals:
       Type:
         Fn::If:
           - UseCanaryDeployment
-          - LambdaCanary10Percent2Minutes
+          - Linear10PercentEvery1Minute
           - AllAtOnce
       Role: !GetAtt CodeDeployServiceRole.Arn
 

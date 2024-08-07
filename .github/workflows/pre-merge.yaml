@@ -6,10 +6,12 @@ on:
   push:
     branches:
       - test-2
+
 permissions: read-all
+
 jobs:
-  deploy:
   environment: Demo-test
+  deploy:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -29,6 +31,7 @@ jobs:
         with:
           role-to-assume: ${{ secrets.CloudFormationStackTestingGitHubActionsRole }}
           aws-region: eu-west-2
+  
   test:
       runs-on: ubuntu-latest
       defaults:

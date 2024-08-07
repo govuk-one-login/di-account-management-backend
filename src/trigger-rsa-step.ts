@@ -1,7 +1,6 @@
 import { SNSEvent } from "aws-lambda";
 import { ReportSuspiciousActivityStepInput } from "./common/model";
 import { callAsyncStepFunction } from "./common/call-async-step-function";
-import { sendSqsMessage } from "./common/sqs";
 import { getEnvironmentVariable } from "./common/utils";
 
 const validateReceivedEvent = (
@@ -21,7 +20,6 @@ const validateReceivedEvent = (
 
 export const handler = async (event: SNSEvent): Promise<void> => {
   const STATE_MACHINE_ARN = getEnvironmentVariable("STATE_MACHINE_ARN");
-  const DLQ_URL = getEnvironmentVariable("DLQ_URL");
   await Promise.all(
     event.Records.map(async (record) => {
       try {
@@ -37,19 +35,11 @@ export const handler = async (event: SNSEvent): Promise<void> => {
           `Finished processing message with ID: ${record.Sns.MessageId}`
         );
       } catch (error) {
-        console.error(
-          `[Error occurred], trigger report suspicious activity step function:, ${
+        throw new Error(
+          `Unable to trigger rsa step for message with ID: ${record.Sns.MessageId}, ${
             (error as Error).message
           }`
         );
-        try {
-          const result = await sendSqsMessage(record.Sns.Message, DLQ_URL);
-          console.error(
-            `[Message sent to DLQ] with message id = ${result.MessageId}`
-          );
-        } catch (dlqError) {
-          console.error(`Failed to send message to DLQ: `, dlqError);
-        }
       }
     })
   );

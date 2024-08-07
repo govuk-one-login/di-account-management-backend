@@ -6,7 +6,6 @@ import {
   PutCommandOutput,
 } from "@aws-sdk/lib-dynamodb";
 import { Service, UserServices } from "./common/model";
-import { sendSqsMessage } from "./common/sqs";
 import { getEnvironmentVariable } from "./common/utils";
 
 const dynamoDocClient = DynamoDBDocumentClient.from(new DynamoDBClient({}), {
@@ -51,7 +50,6 @@ export const writeUserServices = async (
 };
 
 export const handler = async (event: SQSEvent): Promise<void> => {
-  const DLQ_URL = getEnvironmentVariable("DLQ_URL");
   await Promise.all(
     event.Records.map(async (record) => {
       try {
@@ -61,15 +59,11 @@ export const handler = async (event: SQSEvent): Promise<void> => {
         await writeUserServices(userServices);
         console.log(`Finished processing message with ID: ${record.messageId}`);
       } catch (error) {
-        console.error(`[Error occurred]: ${(error as Error).message}`);
-        try {
-          const result = await sendSqsMessage(record.body, DLQ_URL);
-          console.error(
-            `[Message sent to DLQ] with message id = ${result.MessageId}`
-          );
-        } catch (dlqError) {
-          console.error(`Failed to send message to DLQ: `, dlqError);
-        }
+        throw new Error(
+          `Unable to write user sercjces for message with ID: ${record.messageId}, ${
+            (error as Error).message
+          }`
+        );
       }
     })
   );

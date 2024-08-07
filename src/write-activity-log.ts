@@ -7,7 +7,6 @@ import {
 } from "@aws-sdk/lib-dynamodb";
 import { ActivityLogEntry, EncryptedActivityLogEntry } from "./common/model";
 import encryptData from "./common/encrypt-data";
-import { sendSqsMessage } from "./common/sqs";
 import { getEnvironmentVariable } from "./common/utils";
 
 const dynamoDocClient = DynamoDBDocumentClient.from(new DynamoDBClient({}));
@@ -50,7 +49,6 @@ export const writeActivityLogEntry = async (
 };
 
 export const handler = async (event: SQSEvent): Promise<void> => {
-  const DLQ_URL = getEnvironmentVariable("DLQ_URL");
   await Promise.all(
     event.Records.map(async (record) => {
       try {
@@ -72,14 +70,11 @@ export const handler = async (event: SQSEvent): Promise<void> => {
         await writeActivityLogEntry(encryptedActivityLog);
         console.log(`Finished processing message with ID: ${record.messageId}`);
       } catch (error) {
-        try {
-          const result = await sendSqsMessage(record.body, DLQ_URL);
-          console.error(
-            `[Message sent to DLQ] with message id = ${result.MessageId}`
-          );
-        } catch (dlqError) {
-          console.error(`Failed to send message to DLQ: `, dlqError);
-        }
+        throw new Error(
+          `Unable to write activity log for message with ID: ${record.messageId}, ${
+            (error as Error).message
+          }`
+        );
       }
     })
   );

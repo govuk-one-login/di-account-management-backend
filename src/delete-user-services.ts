@@ -6,7 +6,6 @@ import {
   DeleteCommandOutput,
 } from "@aws-sdk/lib-dynamodb";
 import { UserData } from "./common/model";
-import { sendSqsMessage } from "./common/sqs";
 import { getEnvironmentVariable } from "./common/utils";
 
 const marshallOptions = {
@@ -41,7 +40,6 @@ export const deleteUserData = async (
 };
 
 export const handler = async (event: SNSEvent): Promise<void> => {
-  const DLQ_URL = getEnvironmentVariable("DLQ_URL");
   await Promise.all(
     event.Records.map(async (record) => {
       try {
@@ -55,14 +53,11 @@ export const handler = async (event: SNSEvent): Promise<void> => {
           `finished processing message with ID: ${record.Sns.MessageId}`
         );
       } catch (error) {
-        try {
-          const result = await sendSqsMessage(record.Sns.Message, DLQ_URL);
-          console.error(
-            `[Message sent to DLQ] with message id = ${result.MessageId}`
-          );
-        } catch (dlqError) {
-          console.error(`Failed to send message to DLQ: `, dlqError);
-        }
+        throw new Error(
+          `Unable to delete user services for message with ID: ${record.Sns.MessageId}, ${
+            (error as Error).message
+          }`
+        );
       }
     })
   );

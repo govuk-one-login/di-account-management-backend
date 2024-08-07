@@ -6,7 +6,6 @@ import {
 } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { ActivityLogEntry, UserData } from "./common/model";
-import { sendSqsMessage } from "./common/sqs";
 import { getEnvironmentVariable } from "./common/utils";
 
 const marshallOptions = {
@@ -110,7 +109,6 @@ export const batchDeleteActivityLog = async (
 };
 
 export const handler = async (event: SNSEvent): Promise<void> => {
-  const DLQ_URL = getEnvironmentVariable("DLQ_URL");
   const TABLE_NAME = getEnvironmentVariable("TABLE_NAME");
   await Promise.all(
     event.Records.map(async (record) => {
@@ -129,14 +127,11 @@ export const handler = async (event: SNSEvent): Promise<void> => {
           `finished processing message with ID: ${record.Sns.MessageId}`
         );
       } catch (error) {
-        try {
-          const result = await sendSqsMessage(record.Sns.Message, DLQ_URL);
-          console.error(
-            `[Message sent to DLQ] with message id = ${result.MessageId}`
-          );
-        } catch (dlqError) {
-          console.error(`Failed to send message to DLQ: `, dlqError);
-        }
+        throw new Error(
+          `Unable to delete activity log for message with ID: ${record.Sns.MessageId}, ${
+            (error as Error).message
+          }`
+        );
       }
     })
   );

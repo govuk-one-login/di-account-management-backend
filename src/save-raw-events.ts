@@ -7,7 +7,6 @@ import {
   PutCommandOutput,
 } from "@aws-sdk/lib-dynamodb";
 import { TxmaEvent, UserData } from "./common/model";
-import { sendSqsMessage } from "./common/sqs";
 import { getEnvironmentVariable } from "./common/utils";
 
 const marshallOptions = {
@@ -70,7 +69,6 @@ export const writeRawTxmaEvent = async (
 };
 
 export const handler = async (event: SQSEvent): Promise<void> => {
-  const DLQ_URL = getEnvironmentVariable("DLQ_URL");
   await Promise.all(
     event.Records.map(async (record) => {
       try {
@@ -80,14 +78,11 @@ export const handler = async (event: SQSEvent): Promise<void> => {
         await writeRawTxmaEvent(txmaEvent);
         console.log(`Finished processing message with ID: ${record.messageId}`);
       } catch (error) {
-        try {
-          const result = await sendSqsMessage(record.body, DLQ_URL);
-          console.error(
-            `[Message sent to DLQ] with message id = ${result.MessageId}`
-          );
-        } catch (dlqError) {
-          console.error(`Failed to send message to DLQ: `, dlqError);
-        }
+        throw new Error(
+          `Unable to save raw events for message with ID: ${record.messageId}, ${
+            (error as Error).message
+          }`
+        );
       }
     })
   );

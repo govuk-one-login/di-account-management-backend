@@ -28,7 +28,6 @@ describe("handler", () => {
     process.env.TABLE_NAME = tableName;
     process.env.OUTPUT_QUEUE_URL = queueUrl;
     process.env.AWS_REGION = "AWS_REGION";
-    process.env.DLQ_URL = "DlqURL";
     consoleLogMock = jest.spyOn(global.console, "log").mockImplementation();
     sqsMock.on(SendMessageCommand).resolves({ MessageId: messageId });
   });
@@ -58,13 +57,7 @@ describe("handler", () => {
   });
 
   describe("error handing ", () => {
-    let consoleErrorMock: jest.SpyInstance;
-
     beforeEach(() => {
-      consoleErrorMock = jest
-        .spyOn(global.console, "error")
-        .mockImplementation();
-
       sqsMock.reset();
       process.env.TABLE_NAME = tableName;
       process.env.OUTPUT_QUEUE_URL = queueUrl;
@@ -73,17 +66,18 @@ describe("handler", () => {
 
     afterEach(() => {
       jest.clearAllMocks();
-      consoleErrorMock.mockRestore();
     });
 
     test("logs the error message", async () => {
-      await handler(ERROR_DYNAMODB_STREAM_EVENT);
-      expect(consoleErrorMock).toHaveBeenCalledTimes(2);
-    });
-
-    test("sends the event to dead letter queue", async () => {
-      await handler(ERROR_DYNAMODB_STREAM_EVENT);
-      expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(1);
+      let errorMessage;
+      try {
+        await handler(ERROR_DYNAMODB_STREAM_EVENT);
+      } catch (error) {
+        errorMessage = (error as Error).message;
+      }
+      expect(errorMessage).toContain(
+        "Unable to format activity log for event with ID: 1234567, No value defined: {}"
+      );
     });
   });
 });

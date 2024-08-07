@@ -118,9 +118,6 @@ export const handler = async (
     await sendAuditEvent(txMAEvent, TXMA_QUEUE_URL);
     console.log(`finished processing event with ID: ${input.event_id}`);
   } catch (err: unknown) {
-    console.error(
-      `Error occurred sending event to TxMA: ${(err as Error).message}`
-    );
     throw new Error(
       `Error occurred sending event to TxMA: ${(err as Error).message}`
     );

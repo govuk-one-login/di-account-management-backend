@@ -69,7 +69,6 @@ const createUserRecordEvent = (
 export const handler = async (event: DynamoDBStreamEvent): Promise<void> => {
   const { Records } = event;
   const OUTPUT_QUEUE_URL = getEnvironmentVariable("OUTPUT_QUEUE_URL");
-  const DLQ_URL = getEnvironmentVariable("DLQ_URL");
   await Promise.all(
     Records.map(async (record) => {
       try {
@@ -93,14 +92,11 @@ export const handler = async (event: DynamoDBStreamEvent): Promise<void> => {
           );
         }
         console.log(`finished processing event with ID: ${record.eventID}`);
-      } catch (err) {
-        const { MessageId: messageId } = await sendSqsMessage(
-          JSON.stringify(record),
-          DLQ_URL
-        );
-        console.error(
-          `[Message sent to DLQ] with message id = ${messageId}`,
-          err
+      } catch (error) {
+        throw new Error(
+          `Unable to query user services for message with ID: ${record.eventID}, ${
+            (error as Error).message
+          }`
         );
       }
     })

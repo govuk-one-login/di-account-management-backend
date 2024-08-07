@@ -189,13 +189,8 @@ export const handler = async (
     console.log(`finished processing event with ID: ${eventIdentifier}`);
     return input;
   } catch (error) {
-    console.error(
-      `[Error occurred], unable to send suspicious activity event with ID: ${eventIdentifier} to Zendesk, ${
-        (error as Error).message
-      }`
-    );
     throw new Error(
-      `[Error occurred], unable to send suspicious activity event with ID: ${eventIdentifier} to Zendesk, ${
+      `Unable to send suspicious activity event with ID: ${eventIdentifier} to Zendesk, ${
         (error as Error).message
       }`
     );

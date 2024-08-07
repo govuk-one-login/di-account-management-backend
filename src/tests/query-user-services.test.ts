@@ -282,7 +282,6 @@ describe("handler", () => {
     sqsMock.reset();
     process.env.TABLE_NAME = tableName;
     process.env.OUTPUT_QUEUE_URL = queueUrl;
-    process.env.DLQ_URL = dlqUrl;
     sqsMock.on(SendMessageCommand).resolves({ MessageId: messageId });
     dynamoMock.on(GetCommand).resolves({ Item: userServices });
   });
@@ -317,10 +316,7 @@ describe("handler", () => {
 });
 
 describe("handler error handing ", () => {
-  let consoleErrorMock: jest.SpyInstance;
-
   beforeEach(() => {
-    consoleErrorMock = jest.spyOn(global.console, "error").mockImplementation();
     dynamoMock.reset();
     sqsMock.reset();
     process.env.TABLE_NAME = tableName;
@@ -331,14 +327,18 @@ describe("handler error handing ", () => {
 
   afterEach(() => {
     jest.clearAllMocks();
-    consoleErrorMock.mockRestore();
   });
+
   test("logs the error message", async () => {
-    await handler(TEST_DYNAMO_STREAM_EVENT);
-    expect(consoleErrorMock).toHaveBeenCalledTimes(2);
-  });
-  test("sends the event to dead letter queue", async () => {
-    await handler(TEST_DYNAMO_STREAM_EVENT);
-    expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(2);
+    let errorMessage;
+    try {
+      await handler(TEST_DYNAMO_STREAM_EVENT);
+    } catch (error) {
+      errorMessage = (error as Error).message;
+    }
+
+    expect(errorMessage).toContain(
+      "Unable to query user services for message with ID: 1234567, mock error"
+    );
   });
 });

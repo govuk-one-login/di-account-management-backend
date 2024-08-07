@@ -121,7 +121,6 @@ export const formatRecord = (record: UserRecordEvent) => {
 export const handler = async (event: SQSEvent): Promise<void> => {
   const { Records } = event;
   const OUTPUT_QUEUE_URL = getEnvironmentVariable("OUTPUT_QUEUE_URL");
-  const DLQ_URL = getEnvironmentVariable("DLQ_URL");
   await Promise.all(
     Records.map(async (record) => {
       try {
@@ -133,11 +132,11 @@ export const handler = async (event: SQSEvent): Promise<void> => {
         );
         console.log(`[Message sent to QUEUE] with message id = ${messageId}`);
         console.log(`finished processing message with ID: ${record.messageId}`);
-      } catch (err) {
-        const messageId = await sendSqsMessage(record.body, DLQ_URL);
-        console.error(
-          `[Message sent to DLQ] with message id = ${messageId}`,
-          err
+      } catch (error) {
+        throw new Error(
+          `Unable to format user services for message with ID: ${record.messageId}, ${
+            (error as Error).message
+          }`
         );
       }
     })

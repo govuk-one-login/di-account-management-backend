@@ -76,11 +76,7 @@ export const queryActivityLog = async (
     };
     const response = await dynamoDocClient.send(new QueryCommand(command));
     return response.Items ? (response.Items[0] as ActivityLogEntry) : undefined;
-  } catch (error: unknown) {
-    console.error(
-      `Error querying activity log with user_id: ${userId} and event_id: ${eventId} Error message is: `,
-      (error as Error).message
-    );
+  } catch (error) {
     throw Error(
       `Error querying activity log with user_id: ${userId} 
       and timestamp_group_id: ${eventId} Error is: ${(error as Error).message}`
@@ -128,10 +124,6 @@ export const handler = async (
       );
     }
   } else {
-    console.error(
-      `No activity log exist in DB for with user_id : ${input.user_id} " +
-        and event id: ${input.event_id}`
-    );
     throw new Error(
       `No activity log exist in DB for with user_id : ${input.user_id} " +
         and event id: ${input.event_id}`

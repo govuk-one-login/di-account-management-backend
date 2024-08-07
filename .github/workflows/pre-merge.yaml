@@ -9,6 +9,7 @@ on:
 permissions: read-all
 jobs:
   deploy:
+  environment: Demo-test
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -26,14 +27,14 @@ jobs:
       - name: Set up AWS creds
         uses: aws-actions/configure-aws-credentials@v4.0.1
         with:
-          role-to-assume: ${{ secrets.premerge-CloudFormationStackTestingGitHubActionsRole }}
+          role-to-assume: ${{ secrets.CloudFormationStackTestingGitHubActionsRole }}
           aws-region: eu-west-2
   test:
       runs-on: ubuntu-latest
       defaults:
         run:
           shell: bash
-          working-directory: ./pre-merge-github-role
+          working-directory: ./pre-merge-integration-tests
       timeout-minutes: 60
       permissions:
         id-token: write
@@ -53,7 +54,7 @@ jobs:
         - name: Set up AWS creds
           uses: aws-actions/configure-aws-credentials@v4.0.1
           with:
-            role-to-assume: ${{ secrets.premerge-CloudFormationStackTestingGitHubActionsRole }}
+            role-to-assume: ${{ secrets.CloudFormationStackTestingGitHubActionsRole }}
             aws-region: eu-west-2
         - name: Run testing script
           run: python3 $GITHUB_WORKSPACE/pre-merge-integration-tests/api_call.py

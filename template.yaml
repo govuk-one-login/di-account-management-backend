@@ -770,7 +770,7 @@ Resources:
           NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
         Alarms:
-          - !Ref SaveRawEventsFunctionDeploymentAlarm
+          - !Ref SaveRawEventsFunctionSuccessRate
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -1001,7 +1001,7 @@ Resources:
           NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
         Alarms:
-          - !Ref QueryUserServicesFunctionDeploymentAlarm
+          - !Ref QueryUserServicesFunctionSuccessRate
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -1258,7 +1258,7 @@ Resources:
           NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
         Alarms:
-          - !Ref FormatUserServicesFunctionDeploymentAlarm
+          - !Ref FormatUserServicesFunctionSuccessRate
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -1497,7 +1497,7 @@ Resources:
           NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
         Alarms:
-          - !Ref WriteUserServicesFunctionDeploymentAlarm
+          - !Ref WriteUserServicesFunctionSuccessRate
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -1819,7 +1819,7 @@ Resources:
           NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
         Alarms:
-          - !Ref DeleteUserServicesFunctionDeploymentAlarm
+          - !Ref DeleteUserServicesFunctionSuccessRate
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -2152,7 +2152,7 @@ Resources:
           NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
         Alarms:
-          - !Ref DeleteEmailSubscriptionsFunctionDeploymentAlarm
+          - !Ref DeleteEmailSubscriptionsFunctionSuccessRate
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -2393,7 +2393,7 @@ Resources:
           NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
         Alarms:
-          - !Ref WriteActivityLogFunctionDeploymentAlarm
+          - !Ref WriteActivityLogFunctionSuccessRate
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -2635,7 +2635,7 @@ Resources:
           NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
         Alarms:
-          - !Ref FormatActivityLogFunctionDeploymentAlarm
+          - !Ref FormatActivityLogFunctionSuccessRate
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -2952,7 +2952,7 @@ Resources:
           NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
         Alarms:
-          - !Ref DeleteActivityLogFunctionDeploymentAlarm
+          - !Ref DeleteActivityLogFunctionSuccessRate
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -3215,7 +3215,7 @@ Resources:
           NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
         Alarms:
-          - !Ref MarkActivityReportedFunctionDeploymentAlarm
+          - !Ref MarkActivityReportedFunctionSuccessRate
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -3356,7 +3356,7 @@ Resources:
           NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
         Alarms:
-          - !Ref SendSuspiciousActivityFunctionDeploymentAlarm
+          - !Ref SendSuspiciousActivityFunctionSuccessRate
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -3510,7 +3510,7 @@ Resources:
           NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
         Alarms:
-          - !Ref SendConfEmailFunctionDeploymentAlarm
+          - !Ref SendConfEmailFunctionSuccessRate
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -3662,7 +3662,7 @@ Resources:
           NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
         Alarms:
-          - !Ref CreateSupportTicketsDeploymentAlarm
+          - !Ref CreateSupportTicketFunctionSuccessRate
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -3919,7 +3919,7 @@ Resources:
           NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
         Alarms:
-          - !Ref TriggerSuspiciousActivityStepFunctionDeploymentAlarm
+          - !Ref TriggerSuspiciousActivityStepFunctionSuccessRate
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -4294,524 +4294,6 @@ Resources:
           !Ref PermissionsBoundary,
           !Ref AWS::NoValue,
         ]
-
-  CreateSupportTicketsDeploymentAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Properties:
-      AlarmName:
-        !Join [
-          "-",
-          [
-            !Ref AWS::StackName,
-            !Ref Environment,
-            "CreateSupportTicketsDeploymentAlarm",
-          ],
-        ]
-      AlarmDescription: "Alarm for Lambda function errors during canary deployment"
-      Namespace: "AWS/Lambda"
-      MetricName: "Errors"
-      Dimensions:
-        - Name: Resource
-          Value:
-            !Join [
-              ":",
-              [
-                !Ref CreateSupportTicketFunction,
-                !GetAtt CreateSupportTicketFunction.Version.Version,
-              ],
-            ]
-        - Name: "FunctionName"
-          Value: !Ref CreateSupportTicketFunction
-      Statistic: "Sum"
-      Period: 60
-      EvaluationPeriods: 2
-      Threshold: 0
-      ComparisonOperator: "GreaterThanThreshold"
-      AlarmActions:
-        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
-      ActionsEnabled: true
-      TreatMissingData: notBreaching
-
-  DeleteActivityLogFunctionDeploymentAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Properties:
-      AlarmName:
-        !Join [
-          "-",
-          [
-            !Ref AWS::StackName,
-            !Ref Environment,
-            "DeleteActivityLogFunctionDeploymentAlarm",
-          ],
-        ]
-      AlarmDescription: "Alarm for Lambda function errors during canary deployment"
-      Namespace: "AWS/Lambda"
-      MetricName: "Errors"
-      Dimensions:
-        - Name: Resource
-          Value:
-            !Join [
-              ":",
-              [
-                !Ref DeleteActivityLogFunction,
-                !GetAtt DeleteActivityLogFunction.Version.Version,
-              ],
-            ]
-        - Name: "FunctionName"
-          Value: !Ref DeleteActivityLogFunction
-      Statistic: "Sum"
-      Period: 60
-      EvaluationPeriods: 1
-      Threshold: 0
-      ComparisonOperator: "GreaterThanThreshold"
-      AlarmActions:
-        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
-      ActionsEnabled: true
-      TreatMissingData: notBreaching
-
-  SendConfEmailFunctionDeploymentAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Properties:
-      AlarmName:
-        !Join [
-          "-",
-          [
-            !Ref AWS::StackName,
-            !Ref Environment,
-            "SendConfEmailFunctionDeploymentAlarm",
-          ],
-        ]
-      AlarmDescription: "Alarm for Lambda function errors during canary deployment"
-      Namespace: "AWS/Lambda"
-      MetricName: "Errors"
-      Dimensions:
-        - Name: Resource
-          Value:
-            !Join [
-              ":",
-              [
-                !Ref SendConfEmailFunction,
-                !GetAtt SendConfEmailFunction.Version.Version,
-              ],
-            ]
-        - Name: "FunctionName"
-          Value: !Ref SendConfEmailFunction
-      Statistic: "Sum"
-      Period: 60
-      EvaluationPeriods: 1
-      Threshold: 0
-      ComparisonOperator: "GreaterThanThreshold"
-      AlarmActions:
-        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
-      ActionsEnabled: true
-      TreatMissingData: notBreaching
-
-  FormatActivityLogFunctionDeploymentAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Properties:
-      AlarmName:
-        !Join [
-          "-",
-          [
-            !Ref AWS::StackName,
-            !Ref Environment,
-            "FormatActivityLogFunctionDeploymentAlarm",
-          ],
-        ]
-      AlarmDescription: "Alarm for Lambda function errors during canary deployment"
-      Namespace: "AWS/Lambda"
-      MetricName: "Errors"
-      Dimensions:
-        - Name: Resource
-          Value:
-            !Join [
-              ":",
-              [
-                !Ref FormatActivityLogFunction,
-                !GetAtt FormatActivityLogFunction.Version.Version,
-              ],
-            ]
-        - Name: "FunctionName"
-          Value: !Ref FormatActivityLogFunction
-      Statistic: "Sum"
-      Period: 60
-      EvaluationPeriods: 1
-      Threshold: 0
-      ComparisonOperator: "GreaterThanThreshold"
-      AlarmActions:
-        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
-      ActionsEnabled: true
-      TreatMissingData: notBreaching
-
-  QueryUserServicesFunctionDeploymentAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Properties:
-      AlarmName:
-        !Join [
-          "-",
-          [
-            !Ref AWS::StackName,
-            !Ref Environment,
-            "QueryUserServicesFunctionDeploymentAlarm",
-          ],
-        ]
-      AlarmDescription: "Alarm for Lambda function errors during canary deployment"
-      Namespace: "AWS/Lambda"
-      MetricName: "Errors"
-      Dimensions:
-        - Name: Resource
-          Value:
-            !Join [
-              ":",
-              [
-                !Ref QueryUserServicesFunction,
-                !GetAtt QueryUserServicesFunction.Version.Version,
-              ],
-            ]
-        - Name: "FunctionName"
-          Value: !Ref QueryUserServicesFunction
-      Statistic: "Sum"
-      Period: 60
-      EvaluationPeriods: 1
-      Threshold: 0
-      ComparisonOperator: "GreaterThanThreshold"
-      AlarmActions:
-        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
-      ActionsEnabled: true
-      TreatMissingData: notBreaching
-
-  WriteActivityLogFunctionDeploymentAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Properties:
-      AlarmName:
-        !Join [
-          "-",
-          [
-            !Ref AWS::StackName,
-            !Ref Environment,
-            "WriteActivityLogFunctionDeploymentAlarm",
-          ],
-        ]
-      AlarmDescription: "Alarm for Lambda function errors during canary deployment"
-      Namespace: "AWS/Lambda"
-      MetricName: "Errors"
-      Dimensions:
-        - Name: Resource
-          Value:
-            !Join [
-              ":",
-              [
-                !Ref WriteActivityLogFunction,
-                !GetAtt WriteActivityLogFunction.Version.Version,
-              ],
-            ]
-        - Name: "FunctionName"
-          Value: !Ref WriteActivityLogFunction
-      Statistic: "Sum"
-      Period: 60
-      EvaluationPeriods: 1
-      Threshold: 0
-      ComparisonOperator: "GreaterThanThreshold"
-      AlarmActions:
-        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
-      ActionsEnabled: true
-      TreatMissingData: notBreaching
-
-  DeleteUserServicesFunctionDeploymentAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Properties:
-      AlarmName:
-        !Join [
-          "-",
-          [
-            !Ref AWS::StackName,
-            !Ref Environment,
-            "DeleteUserServicesFunctionDeploymentAlarm",
-          ],
-        ]
-      AlarmDescription: "Alarm for Lambda function errors during canary deployment"
-      Namespace: "AWS/Lambda"
-      MetricName: "Errors"
-      Dimensions:
-        - Name: Resource
-          Value:
-            !Join [
-              ":",
-              [
-                !Ref DeleteUserServicesFunction,
-                !GetAtt DeleteUserServicesFunction.Version.Version,
-              ],
-            ]
-        - Name: "FunctionName"
-          Value: !Ref DeleteUserServicesFunction
-      Statistic: "Sum"
-      Period: 60
-      EvaluationPeriods: 1
-      Threshold: 0
-      ComparisonOperator: "GreaterThanThreshold"
-      AlarmActions:
-        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
-      ActionsEnabled: true
-      TreatMissingData: notBreaching
-
-  MarkActivityReportedFunctionDeploymentAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Properties:
-      AlarmName:
-        !Join [
-          "-",
-          [
-            !Ref AWS::StackName,
-            !Ref Environment,
-            "MarkActivityReportedFunctionDeploymentAlarm",
-          ],
-        ]
-      AlarmDescription: "Alarm for Lambda function errors during canary deployment"
-      Namespace: "AWS/Lambda"
-      MetricName: "Errors"
-      Dimensions:
-        - Name: Resource
-          Value:
-            !Join [
-              ":",
-              [
-                !Ref MarkActivityReportedFunction,
-                !GetAtt MarkActivityReportedFunction.Version.Version,
-              ],
-            ]
-        - Name: "FunctionName"
-          Value: !Ref MarkActivityReportedFunction
-      Statistic: "Sum"
-      Period: 60
-      EvaluationPeriods: 1
-      Threshold: 0
-      ComparisonOperator: "GreaterThanThreshold"
-      AlarmActions:
-        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
-      ActionsEnabled: true
-      TreatMissingData: notBreaching
-
-  DeleteEmailSubscriptionsFunctionDeploymentAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Properties:
-      AlarmName:
-        !Join [
-          "-",
-          [
-            !Ref AWS::StackName,
-            !Ref Environment,
-            "DeleteEmailSubscriptionsFunctionDeploymentAlarm",
-          ],
-        ]
-      AlarmDescription: "Alarm for Lambda function errors during canary deployment"
-      Namespace: "AWS/Lambda"
-      MetricName: "Errors"
-      Dimensions:
-        - Name: Resource
-          Value:
-            !Join [
-              ":",
-              [
-                !Ref DeleteEmailSubscriptionsFunction,
-                !GetAtt DeleteEmailSubscriptionsFunction.Version.Version,
-              ],
-            ]
-        - Name: "FunctionName"
-          Value: !Ref DeleteEmailSubscriptionsFunction
-      Statistic: "Sum"
-      Period: 60
-      EvaluationPeriods: 1
-      Threshold: 0
-      ComparisonOperator: "GreaterThanThreshold"
-      AlarmActions:
-        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
-      ActionsEnabled: true
-      TreatMissingData: notBreaching
-
-  SaveRawEventsFunctionDeploymentAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Properties:
-      AlarmName:
-        !Join [
-          "-",
-          [
-            !Ref AWS::StackName,
-            !Ref Environment,
-            "SaveRawEventsFunctionDeploymentAlarm",
-          ],
-        ]
-      AlarmDescription: "Alarm for Lambda function errors during canary deployment"
-      Namespace: "AWS/Lambda"
-      MetricName: "Errors"
-      Dimensions:
-        - Name: Resource
-          Value:
-            !Join [
-              ":",
-              [
-                !Ref SaveRawEventsFunction,
-                !GetAtt SaveRawEventsFunction.Version.Version,
-              ],
-            ]
-        - Name: "FunctionName"
-          Value: !Ref SaveRawEventsFunction
-      Statistic: "Sum"
-      Period: 60
-      EvaluationPeriods: 1
-      Threshold: 0
-      ComparisonOperator: "GreaterThanThreshold"
-      AlarmActions:
-        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
-      ActionsEnabled: true
-      TreatMissingData: notBreaching
-
-  WriteUserServicesFunctionDeploymentAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Properties:
-      AlarmName:
-        !Join [
-          "-",
-          [
-            !Ref AWS::StackName,
-            !Ref Environment,
-            "WriteUserServicesFunctionDeploymentAlarm",
-          ],
-        ]
-      AlarmDescription: "Alarm for Lambda function errors during canary deployment"
-      Namespace: "AWS/Lambda"
-      MetricName: "Errors"
-      Dimensions:
-        - Name: Resource
-          Value:
-            !Join [
-              ":",
-              [
-                !Ref WriteUserServicesFunction,
-                !GetAtt WriteUserServicesFunction.Version.Version,
-              ],
-            ]
-        - Name: "FunctionName"
-          Value: !Ref WriteUserServicesFunction
-      Statistic: "Sum"
-      Period: 60
-      EvaluationPeriods: 1
-      Threshold: 0
-      ComparisonOperator: "GreaterThanThreshold"
-      AlarmActions:
-        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
-      ActionsEnabled: true
-      TreatMissingData: notBreaching
-
-  SendSuspiciousActivityFunctionDeploymentAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Properties:
-      AlarmName:
-        !Join [
-          "-",
-          [
-            !Ref AWS::StackName,
-            !Ref Environment,
-            "SendSuspiciousActivityFunctionDeploymentAlarm",
-          ],
-        ]
-      AlarmDescription: "Alarm for Lambda function errors during canary deployment"
-      Namespace: "AWS/Lambda"
-      MetricName: "Errors"
-      Dimensions:
-        - Name: Resource
-          Value:
-            !Join [
-              ":",
-              [
-                !Ref SendSuspiciousActivityFunction,
-                !GetAtt SendSuspiciousActivityFunction.Version.Version,
-              ],
-            ]
-        - Name: "FunctionName"
-          Value: !Ref SendSuspiciousActivityFunction
-      Statistic: "Sum"
-      Period: 60
-      EvaluationPeriods: 1
-      Threshold: 0
-      ComparisonOperator: "GreaterThanThreshold"
-      AlarmActions:
-        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
-      ActionsEnabled: true
-      TreatMissingData: notBreaching
-
-  TriggerSuspiciousActivityStepFunctionDeploymentAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Properties:
-      AlarmName:
-        !Join [
-          "-",
-          [
-            !Ref AWS::StackName,
-            !Ref Environment,
-            "TriggerSuspiciousActivityStepFunctionDeploymentAlarm",
-          ],
-        ]
-      AlarmDescription: "Alarm for Lambda function errors during canary deployment"
-      Namespace: "AWS/Lambda"
-      MetricName: "Errors"
-      Dimensions:
-        - Name: Resource
-          Value:
-            !Join [
-              ":",
-              [
-                !Ref TriggerSuspiciousActivityStepFunction,
-                !GetAtt TriggerSuspiciousActivityStepFunction.Version.Version,
-              ],
-            ]
-        - Name: "FunctionName"
-          Value: !Ref TriggerSuspiciousActivityStepFunction
-      Statistic: "Sum"
-      Period: 60
-      EvaluationPeriods: 1
-      Threshold: 0
-      ComparisonOperator: "GreaterThanThreshold"
-      AlarmActions:
-        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
-      ActionsEnabled: true
-      TreatMissingData: notBreaching
-
-  FormatUserServicesFunctionDeploymentAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Properties:
-      AlarmName:
-        !Join [
-          "-",
-          [
-            !Ref AWS::StackName,
-            !Ref Environment,
-            "FormatUserServicesFunctionDeploymentAlarm",
-          ],
-        ]
-      AlarmDescription: "Alarm for Lambda function errors during canary deployment"
-      Namespace: "AWS/Lambda"
-      MetricName: "Errors"
-      Dimensions:
-        - Name: Resource
-          Value:
-            !Join [
-              ":",
-              [
-                !Ref FormatUserServicesFunction,
-                !GetAtt FormatUserServicesFunction.Version.Version,
-              ],
-            ]
-        - Name: "FunctionName"
-          Value: !Ref FormatUserServicesFunction
-      Statistic: "Sum"
-      Period: 60
-      EvaluationPeriods: 1
-      Threshold: 0
-      ComparisonOperator: "GreaterThanThreshold"
-      AlarmActions:
-        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
-      ActionsEnabled: true
-      TreatMissingData: notBreaching
 
   #######################
   # Test permissons

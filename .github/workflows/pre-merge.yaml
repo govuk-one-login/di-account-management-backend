@@ -1,0 +1,59 @@
+name:  pre-merge check
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - test-2
+permissions: read-all
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: pre-merge-integration-tests
+    timeout-minutes: 7
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set up AWS creds
+        uses: aws-actions/configure-aws-credentials@v4.0.1
+        with:
+          role-to-assume: ${{ secrets.premerge-CloudFormationStackTestingGitHubActionsRole }}
+          aws-region: eu-west-2
+  test:
+      runs-on: ubuntu-latest
+      defaults:
+        run:
+          shell: bash
+          working-directory: ./pre-merge-github-role
+      timeout-minutes: 60
+      permissions:
+        id-token: write
+        contents: read
+      needs: deploy
+      steps:
+        - name: Checkout repo
+          uses: actions/checkout@v4
+          with:
+            fetch-depth: 0
+        - name: Set up Python 3.12
+          uses: actions/setup-python@v5
+          with:
+            python-version: "3.12"
+            cache: 'pip'
+        - run: pip install -r $GITHUB_WORKSPACE/pre-merge-integration-tests/requirements.txt
+        - name: Set up AWS creds
+          uses: aws-actions/configure-aws-credentials@v4.0.1
+          with:
+            role-to-assume: ${{ secrets.premerge-CloudFormationStackTestingGitHubActionsRole }}
+            aws-region: eu-west-2
+        - name: Run testing script
+          run: python3 $GITHUB_WORKSPACE/pre-merge-integration-tests/api_call.py

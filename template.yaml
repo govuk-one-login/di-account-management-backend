@@ -70,17 +70,6 @@ Parameters:
     Type: String
     Default: Accounts
 
-  LambdaDeploymentPreference:
-    Description: "Specifies the configuration to enable gradual Lambda deployments"
-    Type: String
-    Default: "Canary10Percent5Minutes"
-    AllowedValues:
-      - AllAtOnce
-      - Canary10Percent5Minutes
-      - Canary10Percent10Minutes
-      - Canary10Percent15Minutes
-      - Canary10Percent30Minutes
-
 Conditions:
   UseCodeSigning:
     Fn::Not:
@@ -104,15 +93,6 @@ Conditions:
               - !Ref Environment
               - "demo"
 
-  IsDevelopmentOrDemo:
-    Fn::Or:
-      - Fn::Equals:
-          - !Ref Environment
-          - "dev"
-      - Fn::Equals:
-          - !Ref Environment
-          - "demo"
-
   UseInternalEvents: !Or
     - !Equals [!Ref Environment, demo]
     - !Equals [!Ref Environment, dev]
@@ -134,6 +114,10 @@ Conditions:
       - Fn::Equals:
           - !Ref TestRoleArn
           - "none"
+
+  UseCanaryDeployment: !Or
+    - !Equals [!Ref Environment, production]
+    - !Equals [!Ref Environment, integration]
 
 Globals:
   Function:
@@ -215,8 +199,8 @@ Globals:
       Enabled: true
       Type:
         Fn::If:
-          - IsDevelopmentOrDemo
-          - !Ref LambdaDeploymentPreference
+          - UseCanaryDeployment
+          - Linear10PercentEvery1Minute
           - AllAtOnce
       Role: !GetAtt CodeDeployServiceRole.Arn
 

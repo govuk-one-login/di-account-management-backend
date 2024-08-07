@@ -767,7 +767,6 @@ Resources:
       Environment:
         Variables:
           TABLE_NAME: !Ref RawEventsStoreTableName
-          DLQ_URL: !Ref SaveRawEventsDeadLetterQueue
           NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
         Alarms:
@@ -998,7 +997,6 @@ Resources:
       Environment:
         Variables:
           TABLE_NAME: !Ref UserServicesStoreTableName
-          DLQ_URL: !Ref QueryUserServicesDeadLetterQueue
           OUTPUT_QUEUE_URL: !Ref UserServicesToFormatQueue
           NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
@@ -1256,7 +1254,6 @@ Resources:
       Role: !GetAtt FormatUserServicesRole.Arn
       Environment:
         Variables:
-          DLQ_URL: !Ref FormatUserServicesDeadLetterQueue
           OUTPUT_QUEUE_URL: !Ref UserServicesToWriteQueue
           NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
@@ -1497,7 +1494,6 @@ Resources:
       Environment:
         Variables:
           TABLE_NAME: !Ref UserServicesStoreTableName
-          DLQ_URL: !Ref WriteUserServicesDeadLetterQueue
           NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
         Alarms:
@@ -1820,7 +1816,6 @@ Resources:
       Environment:
         Variables:
           TABLE_NAME: !Ref UserServicesStoreTableName
-          DLQ_URL: !Ref DeleteUserServicesDeadLetterQueue
           NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
         Alarms:
@@ -2147,7 +2142,6 @@ Resources:
         TargetArn: !GetAtt DeleteEmailSubscriptionsDeadLetterQueue.Arn
       Environment:
         Variables:
-          DLQ_URL: !Ref DeleteEmailSubscriptionsDeadLetterQueue
           GOV_ACCOUNTS_PUBLISHING_API_TOKEN: !Sub "{{resolve:secretsmanager:/${AccountManagementFrontendStackName}/Config/Publishing/API/Key}}"
           GOV_ACCOUNTS_PUBLISHING_API_URL:
             !FindInMap [
@@ -2390,7 +2384,6 @@ Resources:
       Environment:
         Variables:
           TABLE_NAME: !Ref ActivityLogsStoreTableName
-          DLQ_URL: !Ref WriteActivityLogDeadLetterQueue
           GENERATOR_KEY_ARN: !GetAtt GeneratorKey.Arn
           WRAPPING_KEY_ARN: !GetAtt WrapperKey.Arn
           BACKUP_WRAPPING_KEY_ARN: !Sub "{{resolve:ssm:/${AWS::StackName}/${Environment}/Backup/KMS/WrappingKey/ARN}}"
@@ -2634,7 +2627,6 @@ Resources:
       Role: !GetAtt FormatActivityLogRole.Arn
       Environment:
         Variables:
-          DLQ_URL: !Ref FormatActivityLogDeadLetterQueue
           OUTPUT_QUEUE_URL: !Ref ActivityLogToWriteQueue
           ENVIRONMENT: !Ref Environment
           ACCOUNT_ID: !Sub "${AWS::AccountId}"
@@ -3924,7 +3916,6 @@ Resources:
         Variables:
           STATE_MACHINE_ARN: !Ref ReportSuspiciousActivityStepFunction
           STEP_FUNCTION_ALIAS: "latest"
-          DLQ_URL: !Ref TriggerSuspiciousActivityStepDeadLetterQueue
           NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
         Alarms:

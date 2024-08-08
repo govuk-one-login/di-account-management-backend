@@ -1,7 +1,6 @@
 name:  pre-merge check
 on:
   workflow_dispatch:
-  push:
     branches:
       - test-2
 

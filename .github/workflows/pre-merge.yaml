@@ -9,7 +9,7 @@ on:
           - Branch name
           - Commit SHA
           - Tag
-        default: Branch name
+        default: test-2
       gitRef:
         description: "Input branch name, commit SHA, or tag"
         required: true

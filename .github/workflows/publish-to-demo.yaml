@@ -53,6 +53,11 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Fill in backup wrapping key
+        run: .github/workflows/find-and-replace-backup-wrapping-key.sh
+        env:
+          WRAPPING_KEY_ARN: ${{ secrets.WRAPPING_KEY_ARN }}
+
       - name: Install Node.js
         uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # pin@v3
         with:

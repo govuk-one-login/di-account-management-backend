@@ -48,7 +48,7 @@
   },
   "dependencies": {
     "@aws-crypto/client-node": "^4.0.1",
-    "@aws-lambda-powertools/parameters": "^2.6.0",
+    "@aws-lambda-powertools/parameters": "^2.7.0",
     "@aws-sdk/client-dynamodb": "^3.624.0",
     "@aws-sdk/client-secrets-manager": "^3.624.0",
     "@aws-sdk/client-sfn": "^3.624.0",
@@ -59,7 +59,7 @@
     "axios": "^1.7.3",
     "esbuild": "0.23.0",
     "jest-when": "^3.6.0",
-    "notifications-node-client": "^8.2.0"
+    "notifications-node-client": "^8.2.1"
   },
   "lint-staged": {
     "**/*.{js,jsx,ts,tsx,json,css,scss,md,yaml}": [

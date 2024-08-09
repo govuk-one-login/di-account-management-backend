@@ -320,12 +320,12 @@ Mappings:
   EnvironmentConfiguration:
     demo:
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
-      zendeskGroupIdSecretArn: arn:aws:secretsmanager:eu-west-2:654654326096:secret:account-mgmt-backend/zendesk-group-id-token-jn0K88
-      zendeskTagsSecretArn: arn:aws:secretsmanager:eu-west-2:654654326096:secret:account-mgmt-backend/zendesk-tags-key-o0yqP7
-      zendeskApiTokenSecretArn: arn:aws:secretsmanager:eu-west-2:654654326096:secret:account-mgmt-backend/zendesk-api-token-9OK6kw
-      zendeskApiUserSecretArn: arn:aws:secretsmanager:eu-west-2:654654326096:secret:account-mgmt-backend/zendesk-api-user-key-xFarET
+      zendeskGroupIdSecretArn: arn:aws:secretsmanager:eu-west-2:654654326096:secret:/account-mgmt-backend/zendesk-group-id-token-jn0K88
+      zendeskTagsSecretArn: arn:aws:secretsmanager:eu-west-2:654654326096:secret:/account-mgmt-backend/zendesk-tags-key-o0yqP7
+      zendeskApiTokenSecretArn: arn:aws:secretsmanager:eu-west-2:654654326096:secret:/account-mgmt-backend/zendesk-api-token-9OK6kw
+      zendeskApiUserSecretArn: arn:aws:secretsmanager:eu-west-2:654654326096:secret:/account-mgmt-backend/zendesk-api-user-key-xFarET
       zendeskApiUrlSecretArn: arn:aws:secretsmanager:eu-west-2:654654326096:secret:account-mgmt-backend/zendesk-api-url-key-0SJMs3
-      zendeskTicketFormIdSecretArn: arn:aws:secretsmanager:eu-west-2:654654326096:secret:account-mgmt-backend/zendesk-ticket-form-id-key-KtEVtO
+      zendeskTicketFormIdSecretArn: arn:aws:secretsmanager:eu-west-2:654654326096:secret:/account-mgmt-backend/zendesk-ticket-form-id-key-KtEVtO
       notifyApiKeySecretArn: arn:aws:secretsmanager:eu-west-2:654654326096:secret:account-mgmt-backend/notify-api-key-T4d4Wz
     dev:
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables

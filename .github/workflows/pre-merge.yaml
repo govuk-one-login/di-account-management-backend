@@ -1,4 +1,4 @@
-name:  pre-merge check
+name:  pre-merge check. 
 on:
   workflow_dispatch:
   push: 

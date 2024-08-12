@@ -290,7 +290,7 @@ describe("handler", () => {
       .mockRejectedValueOnce(errorResponse);
 
     await expect(handler(input)).rejects.toThrow(
-      "Error sending email for event"
+      'Error context is:sending email for event, response is: {"status":"404","statusText":"Not Found"}'
     );
   });
 });

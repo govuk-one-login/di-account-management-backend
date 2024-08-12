@@ -171,5 +171,7 @@ const notifyErrorHandler = (err: IError, context: string): never => {
       throw new Error(`Error ${context}: ${JSON.stringify(sanitisedError)}`);
     }
   }
-  throw new Error(`Error ${context}`);
+  throw new Error(
+    `Error context is:${context}, response is: ${JSON.stringify(err.response)}`
+  );
 };

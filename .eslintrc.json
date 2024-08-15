@@ -3,6 +3,13 @@
   "overrides": [
     {
       "files": ["src/**/*.ts"]
+    },
+    {
+      "files": ["**/*.test.ts", "**/*.spec.ts"], // Adapt this pattern to your test files, if necessary
+      "rules": {
+        "@typescript-eslint/no-unused-expressions": "off",
+        "@typescript-eslint/no-require-imports": "off"
+      }
     }
   ],
   "extends": [
@@ -24,6 +31,15 @@
     "import/no-extraneous-dependencies": [
       "off",
       { "devDependencies": ["**/*.test.ts"] }
+    ],
+    "@typescript-eslint/no-unused-vars": [
+      "error",
+      {
+        "vars": "all",
+        "args": "after-used",
+        "ignoreRestSiblings": true,
+        "caughtErrors": "none"
+      }
     ]
   }
 }

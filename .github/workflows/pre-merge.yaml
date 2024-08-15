@@ -1,0 +1,70 @@
+name: pre-merge check
+
+on:
+  workflow_call:
+    inputs:
+      gitRef:
+        required: false
+        type: string
+        default: ${{ github.ref }}
+  push:
+    branches:
+      - test-2
+
+permissions: read-all
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: pre-merge-integration-tests
+    timeout-minutes: 7
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@8f4b7f84864484a7bf31766abe9204da3cbe65b3 # pin@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set up AWS creds
+        uses: aws-actions/configure-aws-credentials@e1e17a757e536f70e52b5a12b2e8d1d1c60e04ef # pin@v1-node16
+        with:
+          role-to-assume: ${{ secrets.CloudFormationStackTestingGitHubActionsRole }}
+          aws-region: eu-west-2
+
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: ./pre-merge-integration-tests
+    timeout-minutes: 60
+    permissions:
+      id-token: write
+      contents: read
+    needs: deploy
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@8f4b7f84864484a7bf31766abe9204da3cbe65b3 # pin@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.9
+        uses: actions/setup-python@d27e3f3d7c64b4bbf8e4abfb9b63b83e846e0435 # pin@v4
+        with:
+          python-version: "3.9"
+          cache: "pip"
+      - run: pip install -r $GITHUB_WORKSPACE/pre-merge-integration-tests/requirements.txt
+
+      - name: Set up AWS creds
+        uses: aws-actions/configure-aws-credentials@e1e17a757e536f70e52b5a12b2e8d1d1c60e04ef # pin@v1-node16
+        with:
+          role-to-assume: ${{ secrets.CloudFormationStackTestingGitHubActionsRole }}
+          aws-region: eu-west-2
+
+      - name: Run testing script
+        run: python3 $GITHUB_WORKSPACE/pre-merge-integration-tests/api_call.py

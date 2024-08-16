@@ -2370,7 +2370,7 @@ Resources:
           TABLE_NAME: !Ref ActivityLogsStoreTableName
           GENERATOR_KEY_ARN: !GetAtt GeneratorKey.Arn
           WRAPPING_KEY_ARN: !GetAtt WrapperKey.Arn
-          BACKUP_WRAPPING_KEY_ARN: !Sub "{{resolve:ssm:/${AWS::StackName}/${Environment}/Backup/KMS/WrappingKey/ARN}}"
+          BACKUP_WRAPPING_KEY_ARN: !GetAtt BackupWrappingKeyArnSSM.Value
           VERIFY_ACCESS_VALUE: !Sub "{{resolve:secretsmanager:/${AWS::StackName}/Config/Storage/VerificationSecret}}"
           ACCOUNT_ID: !Sub "${AWS::AccountId}"
           ENVIRONMENT: !Ref Environment
@@ -2464,7 +2464,7 @@ Resources:
               - kms:Encrypt
             Resource:
               - !GetAtt WrapperKey.Arn
-              - !Sub "{{resolve:ssm:/${AWS::StackName}/${Environment}/Backup/KMS/WrappingKey/ARN}}"
+              - !GetAtt BackupWrappingKeyArnSSM.Value
 
   WriteActivityLogFunctionLogGroup:
     Type: AWS::Logs::LogGroup

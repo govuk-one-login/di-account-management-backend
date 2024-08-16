@@ -117,7 +117,8 @@ Resources:
             Action:
               - "cloudformation:DescribeStackEvents"
             Resource:
-              - !Sub "arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/${AWS::StackName}/*"
+              # - !Sub "arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/${AWS::StackName}/*"
+              - !Sub 'arn:${AWS::Partition}:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/*'
 
   CloudFormationStackTestingGitHubActionsRole:
     Type: AWS::IAM::Role

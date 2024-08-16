@@ -5,7 +5,7 @@ import time
 client = boto3.client('cloudformation')
 
 # Name of the CloudFormation stack
-stack_name = 'dns-certs'  # Replace with actual stack name
+stack_name = 'platform-alerting'  # Replace with actual stack name
 
 def call_describe_stack_events(stack_name):
     try:

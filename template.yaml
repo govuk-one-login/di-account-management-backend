@@ -735,6 +735,7 @@ Resources:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-save-raw-events
       CodeUri: src
       PackageType: Zip
+      MemorySize: 256
       Events:
         InputQueue:
           Type: SQS
@@ -959,6 +960,7 @@ Resources:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-query-user-services
       CodeUri: src
       PackageType: Zip
+      MemorySize: 256
       Events:
         DynamoStream:
           Type: DynamoDB
@@ -1226,6 +1228,7 @@ Resources:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-format-user-services
       CodeUri: src
       PackageType: Zip
+      MemorySize: 256
       Events:
         UserServicesToFormatQueue:
           Type: SQS
@@ -1465,6 +1468,7 @@ Resources:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-write-user-services
       CodeUri: src
       PackageType: Zip
+      MemorySize: 256
       Events:
         UserServicesToWriteQueue:
           Type: SQS
@@ -2591,6 +2595,7 @@ Resources:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-format-activity-log
       CodeUri: src
       PackageType: Zip
+      MemorySize: 256
       Events:
         DynamoStream:
           Type: DynamoDB

@@ -5,7 +5,6 @@ import { ReportSuspiciousActivityEvent } from "../common/model";
 describe("validate", () => {
   let suspiciousActivityEvent: ReportSuspiciousActivityEvent;
   let suspiciousActivityEventRule: ValidationRules | undefined;
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
   beforeEach(() => {
     suspiciousActivityEvent = {
       event_id: "522c5ab4-7e66-4b2a-8f5c-4d31dc4e93e6",

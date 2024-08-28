@@ -16,7 +16,6 @@ describe("handler", () => {
   });
 
   test("that it successfully processes the SNS message", async () => {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires,global-require
     const module = require("../delete-email-subscriptions");
     const validateUserDataMock = jest
       .spyOn(module, "validateUserData")

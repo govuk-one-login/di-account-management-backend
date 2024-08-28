@@ -74,12 +74,12 @@ export const validateAndParseSQSRecord = (
 };
 
 export const newServicePresenter = (TxmaEvent: TxmaEvent): Service =>
-  <Service>{
+  ({
     client_id: TxmaEvent.client_id,
     count_successful_logins: 1,
     last_accessed: TxmaEvent.timestamp,
     last_accessed_pretty: prettifyDate(TxmaEvent.timestamp),
-  };
+  }) as Service;
 
 export const existingServicePresenter = (
   service: Service,

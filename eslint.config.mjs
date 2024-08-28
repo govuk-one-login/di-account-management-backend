@@ -9,6 +9,7 @@ export default [
   {languageOptions: { globals: globals.node, parser: tsEslintParser }},
   pluginJs.configs.recommended,
   ...tsEslint.configs.recommended,
+  ...tsEslint.configs.stylistic,
   {
     ignores: [".aws-sam/"]
   },

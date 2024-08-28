@@ -2354,6 +2354,7 @@ Resources:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-write-activity-log
       CodeUri: src
       PackageType: Zip
+      MemorySize: 256
       Timeout: 30
       Events:
         ActivityLogToWriteQueue:

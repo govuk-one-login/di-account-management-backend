@@ -5,7 +5,6 @@ import {
 } from "@aws-sdk/client-secrets-manager";
 import { buildEncrypt, MessageHeader } from "@aws-crypto/client-node";
 import { when } from "jest-when";
-import encryptData from "../common/encrypt-data";
 import { TEST_ACTIVITY_LOG_ENTRY } from "./testFixtures";
 
 const mockedSecretsManager = mockClient(SecretsManagerClient).on(
@@ -28,15 +27,9 @@ describe("encryptData", () => {
     jwt: string;
   };
 
-  beforeEach(() => {
-    const activityLogEntry = JSON.stringify(TEST_ACTIVITY_LOG_ENTRY);
-
-    encryptDataInput = {
-      activityLogData: activityLogEntry,
-      userId: "test_user_123",
-      jwt: "",
-    };
-
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let encryptData: typeof import("../common/encrypt-data").encryptData;
+  beforeAll(async () => {
     process.env.GENERATOR_KEY_ARN =
       "arn:aws:kms:eu-west-2:111122223333:key/bc436485-5092-42b8-92a3-0aa8b93536dc";
     process.env.VERIFY_ACCESS_VALUE = "access-param-test-value";
@@ -47,6 +40,15 @@ describe("encryptData", () => {
       "arn:aws:kms:eu-west-2:111122223333:key/49c5492b-b1bc-42a8-9a5c-b2015e810c1c";
     process.env.BACKUP_WRAPPING_KEY_ARN =
       "arn:aws:kms:eu-west-2:111122223333:key/49c5492b-b1bc-42a8-9a5c-b2015e810c1c";
+    encryptData = (await import("../common/encrypt-data")).encryptData;
+  });
+  beforeEach(async () => {
+    const activityLogEntry = JSON.stringify(TEST_ACTIVITY_LOG_ENTRY);
+    encryptDataInput = {
+      activityLogData: activityLogEntry,
+      userId: "test_user_123",
+      jwt: "",
+    };
   });
 
   it("should return the encryption result Base64 encoded", async () => {

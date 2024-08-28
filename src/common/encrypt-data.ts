@@ -5,40 +5,45 @@ import { getEnvironmentVariable } from "./utils";
 
 const MAX_ENCRYPTED_DATA_KEY = 5;
 const ENCODING = "base64";
+const GENERATOR_KEY_ARN = getEnvironmentVariable("GENERATOR_KEY_ARN");
+const WRAPPING_KEY_ARN = getEnvironmentVariable("WRAPPING_KEY_ARN");
+const BACKUP_WRAPPING_KEY_ARN = getEnvironmentVariable(
+  "BACKUP_WRAPPING_KEY_ARN"
+);
+const VERIFY_ACCESS_VALUE = getEnvironmentVariable("VERIFY_ACCESS_VALUE");
+const AWS_REGION = getEnvironmentVariable("AWS_REGION");
+const ACCOUNT_ID = getEnvironmentVariable("ACCOUNT_ID");
+const ENVIRONMENT = getEnvironmentVariable("ENVIRONMENT");
 
-let kmsKeyring: KmsKeyringNode;
+let kmsKeyring: KmsKeyringNode | undefined = undefined;
 const encryptClientConfig = { maxEncryptedDataKeys: MAX_ENCRYPTED_DATA_KEY };
-let encryptClient = buildEncrypt(encryptClientConfig);
+const encryptClient = buildEncrypt(encryptClientConfig);
 
-const encryptData = async (
+let accessCheckValue: string;
+
+const initializeEncryptionResources = async () => {
+  if (!kmsKeyring) {
+    kmsKeyring = await buildKmsKeyring(
+      GENERATOR_KEY_ARN,
+      WRAPPING_KEY_ARN,
+      BACKUP_WRAPPING_KEY_ARN
+    );
+  }
+  if (!accessCheckValue) {
+    try {
+      accessCheckValue = await getHashedAccessCheckValue(VERIFY_ACCESS_VALUE);
+    } catch (error) {
+      console.error("Unable to obtain Access Verification value.");
+      throw error;
+    }
+  }
+};
+
+export const encryptData = async (
   toEncrypt: string,
   userId: string
 ): Promise<string> => {
-  const GENERATOR_KEY_ARN = getEnvironmentVariable("GENERATOR_KEY_ARN");
-  const WRAPPING_KEY_ARN = getEnvironmentVariable("WRAPPING_KEY_ARN");
-  const BACKUP_WRAPPING_KEY_ARN = getEnvironmentVariable(
-    "BACKUP_WRAPPING_KEY_ARN"
-  );
-  const VERIFY_ACCESS_VALUE = getEnvironmentVariable("VERIFY_ACCESS_VALUE");
-  const AWS_REGION = getEnvironmentVariable("AWS_REGION");
-  const ACCOUNT_ID = getEnvironmentVariable("ACCOUNT_ID");
-  const ENVIRONMENT = getEnvironmentVariable("ENVIRONMENT");
-
-  kmsKeyring ??= await buildKmsKeyring(
-    GENERATOR_KEY_ARN,
-    WRAPPING_KEY_ARN,
-    BACKUP_WRAPPING_KEY_ARN
-  );
-  encryptClient ??= buildEncrypt(encryptClientConfig);
-  const { encrypt } = encryptClient;
-
-  let accessCheckValue;
-  try {
-    accessCheckValue = await getHashedAccessCheckValue(VERIFY_ACCESS_VALUE);
-  } catch (error) {
-    console.error("Unable to obtain Access Verification value.");
-    throw error;
-  }
+  await initializeEncryptionResources();
 
   const encryptionContext = {
     origin: AWS_REGION,
@@ -49,11 +54,10 @@ const encryptData = async (
   };
 
   try {
-    const { result } = await encrypt(kmsKeyring, toEncrypt, {
+    const { result } = await encryptClient.encrypt(kmsKeyring!, toEncrypt, {
       encryptionContext,
     });
-    const response = result.toString(ENCODING);
-    return response;
+    return result.toString(ENCODING);
   } catch (error: unknown) {
     console.error("Failed to encrypt data.", { error });
     throw error;

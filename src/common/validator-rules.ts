@@ -1,9 +1,7 @@
 import { ValidationRulesKeyEnum } from "./constants";
 
-export interface ValidationRule {
-  /* eslint-disable @typescript-eslint/no-explicit-any */
-  (value: any): boolean;
-}
+/* eslint-disable @typescript-eslint/no-explicit-any */
+export type ValidationRule = (value: any) => boolean;
 
 export interface ValidationRules {
   [key: string]: ValidationRule[] | ValidationRules;

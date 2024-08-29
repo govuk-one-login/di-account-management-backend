@@ -74,9 +74,7 @@ export const handler = async (event: DynamoDBStreamEvent): Promise<void> => {
       try {
         console.log(`started processing event with ID: ${record.eventID}`);
         const txmaEvent = unmarshall(
-          record.dynamodb?.NewImage?.event.M as {
-            [key: string]: AttributeValue;
-          }
+          record.dynamodb?.NewImage?.event.M as Record<string, AttributeValue>
         ) as TxmaEvent;
         if (txmaEvent.event_name === "AUTH_AUTH_CODE_ISSUED") {
           validateTxmaEventBody(txmaEvent);

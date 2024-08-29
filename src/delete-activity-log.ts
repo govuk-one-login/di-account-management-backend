@@ -42,7 +42,6 @@ export const getAllActivityLogEntriesForUser = async (
     ExclusiveStartKey: lastEvaluatedKey,
   };
   do {
-    // eslint-disable-next-line no-await-in-loop
     const response = await dynamoDocClient.send(new QueryCommand(command));
 
     if (response.Items) {

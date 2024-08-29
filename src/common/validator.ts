@@ -13,9 +13,7 @@ function validateObject(
         const rules: ValidationRule[] = validationRules[
           key
         ] as ValidationRule[];
-        // eslint-disable-next-line no-restricted-syntax
         if (typeof event[key] !== "object") {
-          // eslint-disable-next-line no-restricted-syntax
           for (const rule of rules) {
             if (!rule(value)) {
               return false;

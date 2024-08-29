@@ -156,7 +156,7 @@ export interface CreateTicket {
   comment: Comment;
   subject?: string;
   group_id?: number;
-  tags?: ReadonlyArray<string> | null;
+  tags?: readonly string[] | null;
   requester?: RequesterAnonymous;
   ticket_form_id?: number;
 }
@@ -165,12 +165,12 @@ interface RequesterAnonymous {
   name?: string;
   email?: string;
 }
-export type RPClient = {
+export interface RPClient {
   header: string;
   description?: string;
   link_text: string;
   link_href: string;
-};
+}
 export type Environment =
   | "production"
   | "integration"

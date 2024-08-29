@@ -13,7 +13,7 @@ export enum ValidationRulesKeyEnum {
   extensions = "extensions",
 }
 
-export const allowedTxmaEvents: Array<string> = [
+export const allowedTxmaEvents: string[] = [
   "AUTH_AUTH_CODE_ISSUED",
   "AUTH_IPV_AUTHORISATION_REQUESTED",
   "AUTH_IPV_SUCCESSFUL_IDENTITY_RESPONSE_RECEIVED",

@@ -165,7 +165,7 @@ describe("handler", () => {
 
   test("handler successfully sends audit event to txma", async () => {
     const consoleLog = jest.spyOn(console, "log").mockImplementation();
-    const BASE64_ENCODED_DEVICE_INFO: string =
+    const BASE64_ENCODED_DEVICE_INFO =
       "WEwuLXxLeGZPO2Fgcyo2V2R+KUQmUjFcc3V0SU4+L25WIT0+KzNVdkdKLGUnJVZKdzheUmtjblokNEhCLzNvaUB2PTZ3SVhMWDNua1d3a2tlSm1BPk8nVnYlKC9I%";
     const input: ReportSuspiciousActivityEvent = {
       event_id: "522c5ab4-7e66-4b2a-8f5c-4d31dc4e93e6",

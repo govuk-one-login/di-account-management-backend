@@ -12,7 +12,7 @@ import { getEnvironmentVariable } from "./common/utils";
 const createNewActivityLogEntryFromTxmaEvent = (
   txmaEvent: TxmaEvent
 ): ActivityLogEntry =>
-  <ActivityLogEntry>{
+  ({
     event_id: txmaEvent.event_id,
     event_type: txmaEvent.event_name,
     session_id: txmaEvent.user?.session_id,
@@ -20,7 +20,7 @@ const createNewActivityLogEntryFromTxmaEvent = (
     client_id: txmaEvent.client_id,
     timestamp: txmaEvent.timestamp,
     reported_suspicious: REPORT_SUSPICIOUS_ACTIVITY_DEFAULT,
-  };
+  }) as ActivityLogEntry;
 
 export const validateTxmaEventBody = (txmaEvent: TxmaEvent): void => {
   if (
@@ -49,9 +49,7 @@ export const handler = async (event: DynamoDBStreamEvent): Promise<void> => {
       try {
         console.log(`started processing event with ID: ${record.eventID}`);
         const txmaEvent = unmarshall(
-          record.dynamodb?.NewImage?.event.M as {
-            [key: string]: AttributeValue;
-          }
+          record.dynamodb?.NewImage?.event.M as Record<string, AttributeValue>
         ) as TxmaEvent;
         if (allowedTxmaEvents.includes(txmaEvent.event_name)) {
           validateTxmaEventBody(txmaEvent);

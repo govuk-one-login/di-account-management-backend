@@ -27,7 +27,6 @@ describe("encryptData", () => {
     jwt: string;
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let encryptData: typeof import("../common/encrypt-data").encryptData;
   beforeAll(async () => {
     process.env.GENERATOR_KEY_ARN =

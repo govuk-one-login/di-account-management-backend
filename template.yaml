@@ -166,7 +166,7 @@ Globals:
               ]
         DT_OPEN_TELEMETRY_ENABLE_INTEGRATION: "true"
     Architectures: ["arm64"]
-    MemorySize: 128
+    MemorySize: 256
     KmsKeyArn: !GetAtt LambdaKMSKey.Arn
     ReservedConcurrentExecutions: 10
     Runtime: nodejs18.x
@@ -735,7 +735,6 @@ Resources:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-save-raw-events
       CodeUri: src
       PackageType: Zip
-      MemorySize: 256
       Events:
         InputQueue:
           Type: SQS
@@ -960,7 +959,6 @@ Resources:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-query-user-services
       CodeUri: src
       PackageType: Zip
-      MemorySize: 256
       Events:
         DynamoStream:
           Type: DynamoDB
@@ -1228,7 +1226,6 @@ Resources:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-format-user-services
       CodeUri: src
       PackageType: Zip
-      MemorySize: 256
       Events:
         UserServicesToFormatQueue:
           Type: SQS
@@ -1468,7 +1465,6 @@ Resources:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-write-user-services
       CodeUri: src
       PackageType: Zip
-      MemorySize: 256
       Events:
         UserServicesToWriteQueue:
           Type: SQS
@@ -2358,7 +2354,6 @@ Resources:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-write-activity-log
       CodeUri: src
       PackageType: Zip
-      MemorySize: 256
       Timeout: 30
       Events:
         ActivityLogToWriteQueue:
@@ -2595,7 +2590,6 @@ Resources:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-format-activity-log
       CodeUri: src
       PackageType: Zip
-      MemorySize: 256
       Events:
         DynamoStream:
           Type: DynamoDB

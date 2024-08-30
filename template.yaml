@@ -735,7 +735,7 @@ Resources:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-save-raw-events
       CodeUri: src
       PackageType: Zip
-      MemorySize: 165
+      MemorySize: 170
       Events:
         InputQueue:
           Type: SQS
@@ -1468,7 +1468,7 @@ Resources:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-write-user-services
       CodeUri: src
       PackageType: Zip
-      MemorySize: 165
+      MemorySize: 170
       Events:
         UserServicesToWriteQueue:
           Type: SQS
@@ -2595,7 +2595,7 @@ Resources:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-format-activity-log
       CodeUri: src
       PackageType: Zip
-      MemorySize: 175
+      MemorySize: 180
       Events:
         DynamoStream:
           Type: DynamoDB

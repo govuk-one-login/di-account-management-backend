@@ -124,14 +124,18 @@ export const handler = async (
     const notifyApiKey = await getSecret(NOTIFY_API_KEY, {
       maxAge: 900,
     });
+    console.log(1, notifyApiKey);
     assert(notifyApiKey, `${NOTIFY_API_KEY} secret not retrieved`);
+    console.log(2);
     const response = await sendConfMail(
       notifyApiKey as string,
       TEMPLATE_ID,
       input
     );
+    console.log(3, response);
     if (response?.data?.id) {
       input.notify_message_id = response.data.id;
+      console.log(4, input.notify_message_id);
     }
     console.log(`finished processing event with ID: ${input.event_id}`);
     return input;

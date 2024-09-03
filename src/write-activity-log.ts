@@ -35,15 +35,7 @@ export const writeActivityLogEntry = async (
   const TABLE_NAME = getEnvironmentVariable("TABLE_NAME");
   const command = new PutCommand({
     TableName: TABLE_NAME,
-    Item: {
-      user_id: activityLogEntry.user_id,
-      timestamp: activityLogEntry.timestamp,
-      session_id: activityLogEntry.session_id,
-      event_type: activityLogEntry.event_type,
-      event_id: activityLogEntry.event_id,
-      client_id: activityLogEntry.client_id,
-      reported_suspicious: activityLogEntry.reported_suspicious,
-    },
+    Item: { ...activityLogEntry },
   });
   return dynamoDocClient.send(command);
 };

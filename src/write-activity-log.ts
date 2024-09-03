@@ -14,22 +14,18 @@ const dynamoDocClient = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 export const validateActivityLogEntry = (
   activityLogEntry: ActivityLogEntry
 ): void => {
-  const requiredFields = [
-    "user_id",
-    "session_id",
-    "timestamp",
-    "event_type",
-    "event_id",
-    "client_id",
-    "reported_suspicious",
-  ];
-
-  for (const field of requiredFields) {
-    if (activityLogEntry[field as keyof ActivityLogEntry] === undefined) {
-      throw new Error(
-        `Activity log entry validation failed for event_id: ${activityLogEntry.event_id ?? "unknown"}`
-      );
-    }
+  if (
+    activityLogEntry.user_id === undefined ||
+    activityLogEntry.session_id === undefined ||
+    activityLogEntry.timestamp === undefined ||
+    activityLogEntry.event_type === undefined ||
+    activityLogEntry.event_id === undefined ||
+    activityLogEntry.client_id === undefined ||
+    activityLogEntry.reported_suspicious === undefined
+  ) {
+    throw new Error(
+      `Activity log entry validation failed for event_id: ${activityLogEntry.event_id ?? null}`
+    );
   }
 };
 

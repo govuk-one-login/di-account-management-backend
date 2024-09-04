@@ -118,7 +118,9 @@ export const handler = async (
   input: ReportSuspiciousActivityEvent
 ): Promise<ReportSuspiciousActivityEvent> => {
   const NOTIFY_API_KEY = getEnvironmentVariable("NOTIFY_API_KEY");
+  console.log(5, NOTIFY_API_KEY);
   const TEMPLATE_ID = getEnvironmentVariable("TEMPLATE_ID");
+  console.log(6, TEMPLATE_ID);
   try {
     console.log(`started processing event with ID: ${input.event_id}`);
     const notifyApiKey = await getSecret(NOTIFY_API_KEY, {

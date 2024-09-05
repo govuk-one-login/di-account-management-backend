@@ -136,6 +136,7 @@ export const handler = async (
     console.log(`finished processing event with ID: ${input.event_id}`);
     return input;
   } catch (err) {
+    console.error(`Error processing event with ID: ${input.event_id}`, err);
     notifyErrorHandler(err as IError, "sending email for event");
     // redundant but TS keeps complaining about notifyErrorHandler return
     throw err;

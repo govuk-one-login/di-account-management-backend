@@ -164,9 +164,8 @@
     },
     "IJ_TuVEgIqAWT2mCe9b5uocMyNs": {
       "header": "Hawlio taliadau ychwanegol ar gyfer dysgu",
-      "description": "Dechrau neu barhau cais i hawlio taliad cymhelliant mewn ysgolion neu addysg bellach.",
-      "link_text": "Ewch i'ch cais taliadau ychwanegol ar gyfer dysgu",
-      "link_href": "https://www.gov.uk/government/collections/additional-payments-for-teaching-eligibility-and-payment-details "
+      "link_text": "Hawlio taliadau ychwanegol ar gyfer dysgu",
+      "link_href": "https://www.gov.uk/government/collections/additional-payments-for-teaching-eligibility-and-payment-details"
     }
   },
   "integration": {
@@ -334,9 +333,8 @@
     },
     "IJ_TuVEgIqAWT2mCe9b5uocMyNs": {
       "header": "Hawlio taliadau ychwanegol ar gyfer dysgu",
-      "description": "Dechrau neu barhau cais i hawlio taliad cymhelliant mewn ysgolion neu addysg bellach.",
-      "link_text": "Ewch i'ch cais taliadau ychwanegol ar gyfer dysgu",
-      "link_href": "https://www.gov.uk/government/collections/additional-payments-for-teaching-eligibility-and-payment-details "
+      "link_text": "Hawlio taliadau ychwanegol ar gyfer dysgu",
+      "link_href": "https://www.gov.uk/government/collections/additional-payments-for-teaching-eligibility-and-payment-details"
     }
   },
   "staging": {
@@ -504,9 +502,8 @@
     },
     "dfeClaimAdditionalPaymentsTeaching": {
       "header": "Hawlio taliadau ychwanegol ar gyfer dysgu",
-      "description": "Dechrau neu barhau cais i hawlio taliad cymhelliant mewn ysgolion neu addysg bellach.",
-      "link_text": "Ewch i'ch cais taliadau ychwanegol ar gyfer dysgu",
-      "link_href": "https://www.gov.uk/government/collections/additional-payments-for-teaching-eligibility-and-payment-details "
+      "link_text": "Hawlio taliadau ychwanegol ar gyfer dysgu",
+      "link_href": "https://www.gov.uk/government/collections/additional-payments-for-teaching-eligibility-and-payment-details"
     }
   },
   "build": {
@@ -674,9 +671,8 @@
     },
     "dfeClaimAdditionalPaymentsTeaching": {
       "header": "Hawlio taliadau ychwanegol ar gyfer dysgu",
-      "description": "Dechrau neu barhau cais i hawlio taliad cymhelliant mewn ysgolion neu addysg bellach.",
-      "link_text": "Ewch i'ch cais taliadau ychwanegol ar gyfer dysgu",
-      "link_href": "https://www.gov.uk/government/collections/additional-payments-for-teaching-eligibility-and-payment-details "
+      "link_text": "Hawlio taliadau ychwanegol ar gyfer dysgu",
+      "link_href": "https://www.gov.uk/government/collections/additional-payments-for-teaching-eligibility-and-payment-details"
     }
   },
   "dev": {
@@ -844,9 +840,8 @@
     },
     "dfeClaimAdditionalPaymentsTeaching": {
       "header": "Hawlio taliadau ychwanegol ar gyfer dysgu",
-      "description": "Dechrau neu barhau cais i hawlio taliad cymhelliant mewn ysgolion neu addysg bellach.",
-      "link_text": "Ewch i'ch cais taliadau ychwanegol ar gyfer dysgu",
-      "link_href": "https://www.gov.uk/government/collections/additional-payments-for-teaching-eligibility-and-payment-details "
+      "link_text": "Hawlio taliadau ychwanegol ar gyfer dysgu",
+      "link_href": "https://www.gov.uk/government/collections/additional-payments-for-teaching-eligibility-and-payment-details"
     }
   },
   "local": {
@@ -1014,9 +1009,8 @@
     },
     "dfeClaimAdditionalPaymentsTeaching": {
       "header": "Hawlio taliadau ychwanegol ar gyfer dysgu",
-      "description": "Dechrau neu barhau cais i hawlio taliad cymhelliant mewn ysgolion neu addysg bellach.",
-      "link_text": "Ewch i'ch cais taliadau ychwanegol ar gyfer dysgu",
-      "link_href": "https://www.gov.uk/government/collections/additional-payments-for-teaching-eligibility-and-payment-details "
+      "link_text": "Hawlio taliadau ychwanegol ar gyfer dysgu",
+      "link_href": "https://www.gov.uk/government/collections/additional-payments-for-teaching-eligibility-and-payment-details"
     }
   }
 }

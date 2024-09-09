@@ -166,6 +166,12 @@
       "header": "Hawlio taliadau ychwanegol ar gyfer dysgu",
       "link_text": "Hawlio taliadau ychwanegol ar gyfer dysgu",
       "link_href": "https://www.gov.uk/government/collections/additional-payments-for-teaching-eligibility-and-payment-details"
+    },
+    "companyHouseAccounts": {
+      "header": "Dod o hyd i a diweddaru gwybodaeth cwmni",
+      "description": "Gweld a diweddaru gwybodaeth eich cwmni, er enghraifft, hanes ffeilio a chyfeiriad swyddfa gofrestredig.",
+      "link_text": "Ewch i Dŷ'r Cwmnïau",
+      "link_href": "https://identity.company-information.service.gov.uk/user/account"
     }
   },
   "integration": {
@@ -335,6 +341,12 @@
       "header": "Hawlio taliadau ychwanegol ar gyfer dysgu",
       "link_text": "Hawlio taliadau ychwanegol ar gyfer dysgu",
       "link_href": "https://www.gov.uk/government/collections/additional-payments-for-teaching-eligibility-and-payment-details"
+    },
+    "companyHouseAccounts": {
+      "header": "Dod o hyd i a diweddaru gwybodaeth cwmni",
+      "description": "Gweld a diweddaru gwybodaeth eich cwmni, er enghraifft, hanes ffeilio a chyfeiriad swyddfa gofrestredig.",
+      "link_text": "Ewch i Dŷ'r Cwmnïau",
+      "link_href": "https://identity.company-information.service.gov.uk/user/account"
     }
   },
   "staging": {
@@ -504,6 +516,12 @@
       "header": "Hawlio taliadau ychwanegol ar gyfer dysgu",
       "link_text": "Hawlio taliadau ychwanegol ar gyfer dysgu",
       "link_href": "https://www.gov.uk/government/collections/additional-payments-for-teaching-eligibility-and-payment-details"
+    },
+    "companyHouseAccounts": {
+      "header": "Dod o hyd i a diweddaru gwybodaeth cwmni",
+      "description": "Gweld a diweddaru gwybodaeth eich cwmni, er enghraifft, hanes ffeilio a chyfeiriad swyddfa gofrestredig.",
+      "link_text": "Ewch i Dŷ'r Cwmnïau",
+      "link_href": "https://identity.company-information.service.gov.uk/user/account"
     }
   },
   "build": {
@@ -673,6 +691,12 @@
       "header": "Hawlio taliadau ychwanegol ar gyfer dysgu",
       "link_text": "Hawlio taliadau ychwanegol ar gyfer dysgu",
       "link_href": "https://www.gov.uk/government/collections/additional-payments-for-teaching-eligibility-and-payment-details"
+    },
+    "companyHouseAccounts": {
+      "header": "Dod o hyd i a diweddaru gwybodaeth cwmni",
+      "description": "Gweld a diweddaru gwybodaeth eich cwmni, er enghraifft, hanes ffeilio a chyfeiriad swyddfa gofrestredig.",
+      "link_text": "Ewch i Dŷ'r Cwmnïau",
+      "link_href": "https://identity.company-information.service.gov.uk/user/account"
     }
   },
   "demo": {
@@ -1006,6 +1030,12 @@
       "header": "Hawlio taliadau ychwanegol ar gyfer dysgu",
       "link_text": "Hawlio taliadau ychwanegol ar gyfer dysgu",
       "link_href": "https://www.gov.uk/government/collections/additional-payments-for-teaching-eligibility-and-payment-details"
+    },
+    "companyHouseAccounts": {
+      "header": "Dod o hyd i a diweddaru gwybodaeth cwmni",
+      "description": "Gweld a diweddaru gwybodaeth eich cwmni, er enghraifft, hanes ffeilio a chyfeiriad swyddfa gofrestredig.",
+      "link_text": "Ewch i Dŷ'r Cwmnïau",
+      "link_href": "https://identity.company-information.service.gov.uk/user/account"
     }
   },
   "local": {
@@ -1175,6 +1205,12 @@
       "header": "Hawlio taliadau ychwanegol ar gyfer dysgu",
       "link_text": "Hawlio taliadau ychwanegol ar gyfer dysgu",
       "link_href": "https://www.gov.uk/government/collections/additional-payments-for-teaching-eligibility-and-payment-details"
+    },
+    "companyHouseAccounts": {
+      "header": "Dod o hyd i a diweddaru gwybodaeth cwmni",
+      "description": "Gweld a diweddaru gwybodaeth eich cwmni, er enghraifft, hanes ffeilio a chyfeiriad swyddfa gofrestredig.",
+      "link_text": "Ewch i Dŷ'r Cwmnïau",
+      "link_href": "https://identity.company-information.service.gov.uk/user/account"
     }
   }
 }

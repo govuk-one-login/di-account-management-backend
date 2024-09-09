@@ -161,6 +161,11 @@
       "description": "Rhannu manylion pwer atwrnai parhaus.",
       "link_text": "Ewch i'ch dangosfwrdd pwer atwrnai parhaus",
       "link_href": "https://use-lasting-power-of-attorney.service.gov.uk/lpa/dashboard"
+    },
+    "IJ_TuVEgIqAWT2mCe9b5uocMyNs": {
+      "header": "Hawlio taliadau ychwanegol ar gyfer dysgu",
+      "link_text": "Hawlio taliadau ychwanegol ar gyfer dysgu",
+      "link_href": "https://www.gov.uk/government/collections/additional-payments-for-teaching-eligibility-and-payment-details"
     }
   },
   "integration": {
@@ -325,6 +330,11 @@
       "description": "Rhannu manylion pwer atwrnai parhaus.",
       "link_text": "Ewch i'ch dangosfwrdd pwer atwrnai parhaus",
       "link_href": "https://use-lasting-power-of-attorney.service.gov.uk/lpa/dashboard"
+    },
+    "IJ_TuVEgIqAWT2mCe9b5uocMyNs": {
+      "header": "Hawlio taliadau ychwanegol ar gyfer dysgu",
+      "link_text": "Hawlio taliadau ychwanegol ar gyfer dysgu",
+      "link_href": "https://www.gov.uk/government/collections/additional-payments-for-teaching-eligibility-and-payment-details"
     }
   },
   "staging": {
@@ -489,6 +499,11 @@
       "description": "Rhannu manylion pwer atwrnai parhaus.",
       "link_text": "Ewch i'ch dangosfwrdd pwer atwrnai parhaus",
       "link_href": "https://use-lasting-power-of-attorney.service.gov.uk/lpa/dashboard"
+    },
+    "dfeClaimAdditionalPayments": {
+      "header": "Hawlio taliadau ychwanegol ar gyfer dysgu",
+      "link_text": "Hawlio taliadau ychwanegol ar gyfer dysgu",
+      "link_href": "https://www.gov.uk/government/collections/additional-payments-for-teaching-eligibility-and-payment-details"
     }
   },
   "build": {
@@ -653,6 +668,11 @@
       "description": "Rhannu manylion pwer atwrnai parhaus.",
       "link_text": "Ewch i'ch dangosfwrdd pwer atwrnai parhaus",
       "link_href": "https://use-lasting-power-of-attorney.service.gov.uk/lpa/dashboard"
+    },
+    "dfeClaimAdditionalPayments": {
+      "header": "Hawlio taliadau ychwanegol ar gyfer dysgu",
+      "link_text": "Hawlio taliadau ychwanegol ar gyfer dysgu",
+      "link_href": "https://www.gov.uk/government/collections/additional-payments-for-teaching-eligibility-and-payment-details"
     }
   },
   "dev": {
@@ -817,6 +837,11 @@
       "description": "Rhannu manylion pwer atwrnai parhaus.",
       "link_text": "Ewch i'ch dangosfwrdd pwer atwrnai parhaus",
       "link_href": "https://use-lasting-power-of-attorney.service.gov.uk/lpa/dashboard"
+    },
+    "dfeClaimAdditionalPayments": {
+      "header": "Hawlio taliadau ychwanegol ar gyfer dysgu",
+      "link_text": "Hawlio taliadau ychwanegol ar gyfer dysgu",
+      "link_href": "https://www.gov.uk/government/collections/additional-payments-for-teaching-eligibility-and-payment-details"
     }
   },
   "local": {
@@ -981,6 +1006,11 @@
       "description": "Rhannu manylion pwer atwrnai parhaus.",
       "link_text": "Ewch i'ch dangosfwrdd pwer atwrnai parhaus",
       "link_href": "https://use-lasting-power-of-attorney.service.gov.uk/lpa/dashboard"
+    },
+    "dfeClaimAdditionalPayments": {
+      "header": "Hawlio taliadau ychwanegol ar gyfer dysgu",
+      "link_text": "Hawlio taliadau ychwanegol ar gyfer dysgu",
+      "link_href": "https://www.gov.uk/government/collections/additional-payments-for-teaching-eligibility-and-payment-details"
     }
   }
 }

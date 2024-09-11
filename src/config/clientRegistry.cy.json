@@ -861,6 +861,12 @@
       "description": "Rhannu manylion pwer atwrnai parhaus.",
       "link_text": "Ewch i'ch dangosfwrdd pwer atwrnai parhaus",
       "link_href": "https://use-lasting-power-of-attorney.service.gov.uk/lpa/dashboard"
+    },
+    "companyHouseAccounts": {
+      "header": "Dod o hyd i a diweddaru gwybodaeth cwmni",
+      "description": "Gweld a diweddaru gwybodaeth eich cwmni, er enghraifft, hanes ffeilio a chyfeiriad swyddfa gofrestredig.",
+      "link_text": "Ewch i Dŷ'r Cwmnïau",
+      "link_href": "https://identity.company-information.service.gov.uk/user/account"
     }
   },
   "dev": {

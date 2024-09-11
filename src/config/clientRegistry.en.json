@@ -172,6 +172,12 @@
       "header": "Claim additional payments for teaching",
       "link_text": "Claim additional payments for teaching",
       "link_href": "https://www.gov.uk/government/collections/additional-payments-for-teaching-eligibility-and-payment-details"
+    },
+    "Hp9xO0Wda9EcI_2IO8OGeYJyrT0": {
+      "header": "Find and update company information",
+      "description": "View and update your company information, for example, filing history and registered office address.",
+      "link_text": "Go to Companies House",
+      "link_href": "https://identity.company-information.service.gov.uk/user/account"
     }
   },
   "integration": {
@@ -341,6 +347,12 @@
       "header": "Claim additional payments for teaching",
       "link_text": "Claim additional payments for teaching",
       "link_href": "https://www.gov.uk/government/collections/additional-payments-for-teaching-eligibility-and-payment-details"
+    },
+    "VdmfAXiINT9wpUsGO_vVnPEbsAE": {
+      "header": "Find and update company information",
+      "description": "View and update your company information, for example, filing history and registered office address.",
+      "link_text": "Go to Companies House",
+      "link_href": "https://identity.company-information.service.gov.uk/user/account"
     }
   },
   "staging": {
@@ -510,6 +522,12 @@
       "header": "Claim additional payments for teaching",
       "link_text": "Claim additional payments for teaching",
       "link_href": "https://www.gov.uk/government/collections/additional-payments-for-teaching-eligibility-and-payment-details"
+    },
+    "companyHouseAccounts": {
+      "header": "Find and update company information",
+      "description": "View and update your company information, for example, filing history and registered office address.",
+      "link_text": "Go to Companies House",
+      "link_href": "https://identity.company-information.service.gov.uk/user/account"
     }
   },
   "build": {
@@ -679,6 +697,12 @@
       "header": "Claim additional payments for teaching",
       "link_text": "Claim additional payments for teaching",
       "link_href": "https://www.gov.uk/government/collections/additional-payments-for-teaching-eligibility-and-payment-details"
+    },
+    "companyHouseAccounts": {
+      "header": "Find and update company information",
+      "description": "View and update your company information, for example, filing history and registered office address.",
+      "link_text": "Go to Companies House",
+      "link_href": "https://identity.company-information.service.gov.uk/user/account"
     }
   },
   "demo": {
@@ -843,6 +867,12 @@
       "description": "Share details of a lasting power of attorney.",
       "link_text": "Go to your lasting power of attorney dashboard",
       "link_href": "https://use-lasting-power-of-attorney.service.gov.uk/lpa/dashboard"
+    },
+    "companyHouseAccounts": {
+      "header": "Find and update company information",
+      "description": "View and update your company information, for example, filing history and registered office address.",
+      "link_text": "Go to Companies House",
+      "link_href": "https://identity.company-information.service.gov.uk/user/account"
     }
   },
   "dev": {
@@ -1012,6 +1042,12 @@
       "header": "Claim additional payments for teaching",
       "link_text": "Claim additional payments for teaching",
       "link_href": "https://www.gov.uk/government/collections/additional-payments-for-teaching-eligibility-and-payment-details"
+    },
+    "companyHouseAccounts": {
+      "header": "Find and update company information",
+      "description": "View and update your company information, for example, filing history and registered office address.",
+      "link_text": "Go to Companies House",
+      "link_href": "https://identity.company-information.service.gov.uk/user/account"
     }
   },
   "local": {
@@ -1181,6 +1217,12 @@
       "header": "Claim additional payments for teaching",
       "link_text": "Claim additional payments for teaching",
       "link_href": "https://www.gov.uk/government/collections/additional-payments-for-teaching-eligibility-and-payment-details"
+    },
+    "companyHouseAccounts": {
+      "header": "Find and update company information",
+      "description": "View and update your company information, for example, filing history and registered office address.",
+      "link_text": "Go to Companies House",
+      "link_href": "https://identity.company-information.service.gov.uk/user/account"
     }
   }
 }

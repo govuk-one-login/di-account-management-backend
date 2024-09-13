@@ -118,7 +118,7 @@ Resources:
               - "sqs:*"
               - "dynamodb:*"
             Resource:
-              - *
+              - "*"
 
   CloudFormationStackTestingGitHubActionsRole:
     Type: AWS::IAM::Role

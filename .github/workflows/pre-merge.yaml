@@ -22,7 +22,6 @@ jobs:
     defaults:
       run:
         shell: bash
-        working-directory: pre-merge-integration-tests
     timeout-minutes: 7
     permissions:
       id-token: write
@@ -44,7 +43,6 @@ jobs:
     defaults:
       run:
         shell: bash
-        working-directory: ./pre-merge-integration-tests
     timeout-minutes: 60
     permissions:
       id-token: write
@@ -56,18 +54,9 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up Python 3.9
-        uses: actions/setup-python@d27e3f3d7c64b4bbf8e4abfb9b63b83e846e0435 # pin@v4
+      - uses: govuk-one-login/github-actions/sam/check-stack-updated@a95754d9c2eca71d3334d5c023b2dd379818c60c #bau-new-cloudformation-polling-action
         with:
-          python-version: "3.9"
-          cache: "pip"
-      - run: pip install -r $GITHUB_WORKSPACE/pre-merge-integration-tests/requirements.txt
+          stack-name: home-backend
+          gh-polling-role: ${{ secrets.CloudFormationStackPollingGitHubActionsRole }}
 
-      - name: Set up AWS creds
-        uses: aws-actions/configure-aws-credentials@e1e17a757e536f70e52b5a12b2e8d1d1c60e04ef # pin@v1-node16
-        with:
-          role-to-assume: ${{ secrets.CloudFormationStackTestingGitHubActionsRole }}
-          aws-region: eu-west-2
 
-      - name: Run testing script
-        run: python3 $GITHUB_WORKSPACE/pre-merge-integration-tests/api_call.py

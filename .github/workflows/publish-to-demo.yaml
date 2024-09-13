@@ -114,3 +114,11 @@ jobs:
           artifact-bucket-name: ${{ secrets.DEMO_ARTIFACT_BUCKET_NAME }}
           signing-profile-name: ${{ secrets.DEMO_SIGNING_PROFILE_NAME }}
           template-file: .aws-sam/build/template.yaml
+
+      - name: Poll for stack update
+        uses: govuk-one-login/github-actions/sam/check-stack-updated@a95754d9c2eca71d3334d5c023b2dd379818c60c #bau-new-cloudformation-polling-action
+        with:
+          stack-name: home-backend
+          gh-polling-role: ${{ secrets.DEMO_UPDATE_POLLING_ROLE }}
+
+

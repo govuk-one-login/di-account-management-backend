@@ -755,6 +755,7 @@ Resources:
         TargetArn: !GetAtt SaveRawEventsDeadLetterQueue.Arn
       Handler: save-raw-events.handler
       Role: !GetAtt SaveRawEventsRole.Arn
+      ReservedConcurrentExecutions: !Ref ProvisionedConcurrency
       ProvisionedConcurrencyConfig:
         ProvisionedConcurrentExecutions: !Ref ProvisionedConcurrency
       Environment:
@@ -2378,6 +2379,7 @@ Resources:
         TargetArn: !GetAtt WriteActivityLogDeadLetterQueue.Arn
       Handler: write-activity-log.handler
       Role: !GetAtt WriteActivityRecordRole.Arn
+      ReservedConcurrentExecutions: !Ref ProvisionedConcurrency
       ProvisionedConcurrencyConfig:
         ProvisionedConcurrentExecutions: !Ref ProvisionedConcurrency
       Environment:
@@ -2625,6 +2627,7 @@ Resources:
         TargetArn: !GetAtt FormatActivityLogDeadLetterQueue.Arn
       Handler: format-activity-log.handler
       Role: !GetAtt FormatActivityLogRole.Arn
+      ReservedConcurrentExecutions: !Ref ProvisionedConcurrency
       ProvisionedConcurrencyConfig:
         ProvisionedConcurrentExecutions: !Ref ProvisionedConcurrency
       Environment:

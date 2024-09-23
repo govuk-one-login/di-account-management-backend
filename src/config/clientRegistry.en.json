@@ -353,6 +353,24 @@
       "description": "View and update your company information, for example, filing history and registered office address.",
       "link_text": "Go to Companies House",
       "link_href": "https://find-and-update.company-information.service.gov.uk/"
+    },
+    "iOf3hyG7eymusbSUS6LgFeQ7AtU": {
+      "header": "Repay and manage benefit money you owe",
+      "description": "Use this service if you need to repay money to the Department for Work and Pensions (DWP).",
+      "link_text": "Go to your repay and manage benefit money you owe account",
+      "link_href": "http://localhost:8000/landing?source=your-services"
+    },
+    "sqae3L7gOdizeRqFMw_KCDlhcyg": {
+      "header": "Repay and manage benefit money you owe",
+      "description": "Use this service if you need to repay money to the Department for Work and Pensions (DWP).",
+      "link_text": "Go to your repay and manage benefit money you owe account",
+      "link_href": "https://repay-my-debt.services.aks-test-ext.np.az.dwpcloud.uk/oidv-sign-in"
+    },
+    "RtE7mP5yzCrdthst1kuVHS1SsSw": {
+      "header": "Repay and manage benefit money you owe",
+      "description": "Use this service if you need to repay money to the Department for Work and Pensions (DWP).",
+      "link_text": "Go to your repay and manage benefit money you owe account",
+      "link_href": "https://repay-my-debt.services.aks-test-ext.np.az.dwpcloud.uk/oidv-sign-in"
     }
   },
   "staging": {
@@ -528,6 +546,12 @@
       "description": "View and update your company information, for example, filing history and registered office address.",
       "link_text": "Go to Companies House",
       "link_href": "https://find-and-update.company-information.service.gov.uk/"
+    },
+    "dwpBenefitOwed": {
+      "header": "Repay and manage benefit money you owe",
+      "description": "Use this service if you need to repay money to the Department for Work and Pensions (DWP).",
+      "link_text": "Go to your repay and manage benefit money you owe account",
+      "link_href": "http://localhost:8000/landing?source=your-services"
     }
   },
   "build": {
@@ -703,6 +727,12 @@
       "description": "View and update your company information, for example, filing history and registered office address.",
       "link_text": "Go to Companies House",
       "link_href": "https://find-and-update.company-information.service.gov.uk/"
+    },
+    "dwpBenefitOwed": {
+      "header": "Repay and manage benefit money you owe",
+      "description": "Use this service if you need to repay money to the Department for Work and Pensions (DWP).",
+      "link_text": "Go to your repay and manage benefit money you owe account",
+      "link_href": "http://localhost:8000/landing?source=your-services"
     }
   },
   "demo": {
@@ -873,6 +903,12 @@
       "description": "View and update your company information, for example, filing history and registered office address.",
       "link_text": "Go to Companies House",
       "link_href": "https://find-and-update.company-information.service.gov.uk/"
+    },
+    "dwpBenefitOwed": {
+      "header": "Repay and manage benefit money you owe",
+      "description": "Use this service if you need to repay money to the Department for Work and Pensions (DWP).",
+      "link_text": "Go to your repay and manage benefit money you owe account",
+      "link_href": "http://localhost:8000/landing?source=your-services"
     }
   },
   "dev": {
@@ -1048,6 +1084,12 @@
       "description": "View and update your company information, for example, filing history and registered office address.",
       "link_text": "Go to Companies House",
       "link_href": "https://find-and-update.company-information.service.gov.uk/"
+    },
+    "dwpBenefitOwed": {
+      "header": "Repay and manage benefit money you owe",
+      "description": "Use this service if you need to repay money to the Department for Work and Pensions (DWP).",
+      "link_text": "Go to your repay and manage benefit money you owe account",
+      "link_href": "http://localhost:8000/landing?source=your-services"
     }
   },
   "local": {
@@ -1223,6 +1265,12 @@
       "description": "View and update your company information, for example, filing history and registered office address.",
       "link_text": "Go to Companies House",
       "link_href": "https://find-and-update.company-information.service.gov.uk/"
+    },
+    "dwpBenefitOwed": {
+      "header": "Repay and manage benefit money you owe",
+      "description": "Use this service if you need to repay money to the Department for Work and Pensions (DWP).",
+      "link_text": "Go to your repay and manage benefit money you owe account",
+      "link_href": "http://localhost:8000/landing?source=your-services"
     }
   }
 }

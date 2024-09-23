@@ -134,7 +134,7 @@ export const handler = async (event: SQSEvent): Promise<void> => {
         console.log(`finished processing message with ID: ${record.messageId}`);
       } catch (error) {
         throw new Error(
-          `Unable to format user services for message with ID: ${record.messageId}, ${
+          ` Unable to format user services for message with ID: ${record.messageId}, ${
             (error as Error).message
           }`
         );

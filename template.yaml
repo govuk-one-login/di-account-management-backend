@@ -71,7 +71,7 @@ Parameters:
     Default: Accounts
   ProvisionedConcurrency:
     Type: Number
-    Default: 20
+    Default: 30
     Description: "The number of provisioned concurrent executions for the Lambda function"
     MinValue: 1
     MaxValue: 100
@@ -989,6 +989,9 @@ Resources:
         TargetArn: !GetAtt QueryUserServicesDeadLetterQueue.Arn
       Handler: query-user-services.handler
       Role: !GetAtt QueryUserServicesRole.Arn
+      ReservedConcurrentExecutions: !Ref ProvisionedConcurrency
+      ProvisionedConcurrencyConfig:
+        ProvisionedConcurrentExecutions: !Ref ProvisionedConcurrency
       Environment:
         Variables:
           TABLE_NAME: !Ref UserServicesStoreTableName
@@ -1248,6 +1251,9 @@ Resources:
         TargetArn: !GetAtt FormatUserServicesDeadLetterQueue.Arn
       Handler: format-user-services.handler
       Role: !GetAtt FormatUserServicesRole.Arn
+      ReservedConcurrentExecutions: !Ref ProvisionedConcurrency
+      ProvisionedConcurrencyConfig:
+        ProvisionedConcurrentExecutions: !Ref ProvisionedConcurrency
       Environment:
         Variables:
           OUTPUT_QUEUE_URL: !Ref UserServicesToWriteQueue

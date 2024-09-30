@@ -71,7 +71,7 @@ Parameters:
     Default: Accounts
   ProvisionedConcurrency:
     Type: Number
-    Default: 20
+    Default: 30
     Description: "The number of provisioned concurrent executions for the Lambda function"
     MinValue: 1
     MaxValue: 100
@@ -741,7 +741,7 @@ Resources:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-save-raw-events
       CodeUri: src
       PackageType: Zip
-      MemorySize: 170
+      MemorySize: 220
       Events:
         InputQueue:
           Type: SQS
@@ -969,7 +969,7 @@ Resources:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-query-user-services
       CodeUri: src
       PackageType: Zip
-      MemorySize: 200
+      MemorySize: 250
       Events:
         DynamoStream:
           Type: DynamoDB
@@ -989,6 +989,9 @@ Resources:
         TargetArn: !GetAtt QueryUserServicesDeadLetterQueue.Arn
       Handler: query-user-services.handler
       Role: !GetAtt QueryUserServicesRole.Arn
+      ReservedConcurrentExecutions: !Ref ProvisionedConcurrency
+      ProvisionedConcurrencyConfig:
+        ProvisionedConcurrentExecutions: !Ref ProvisionedConcurrency
       Environment:
         Variables:
           TABLE_NAME: !Ref UserServicesStoreTableName
@@ -1237,7 +1240,7 @@ Resources:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-format-user-services
       CodeUri: src
       PackageType: Zip
-      MemorySize: 195
+      MemorySize: 245
       Events:
         UserServicesToFormatQueue:
           Type: SQS
@@ -1248,6 +1251,9 @@ Resources:
         TargetArn: !GetAtt FormatUserServicesDeadLetterQueue.Arn
       Handler: format-user-services.handler
       Role: !GetAtt FormatUserServicesRole.Arn
+      ReservedConcurrentExecutions: !Ref ProvisionedConcurrency
+      ProvisionedConcurrencyConfig:
+        ProvisionedConcurrentExecutions: !Ref ProvisionedConcurrency
       Environment:
         Variables:
           OUTPUT_QUEUE_URL: !Ref UserServicesToWriteQueue
@@ -1477,7 +1483,7 @@ Resources:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-write-user-services
       CodeUri: src
       PackageType: Zip
-      MemorySize: 170
+      MemorySize: 220
       Events:
         UserServicesToWriteQueue:
           Type: SQS
@@ -2368,7 +2374,7 @@ Resources:
       CodeUri: src
       PackageType: Zip
       Timeout: 30
-      MemorySize: 205
+      MemorySize: 250
       Events:
         ActivityLogToWriteQueue:
           Type: SQS
@@ -2607,7 +2613,7 @@ Resources:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-format-activity-log
       CodeUri: src
       PackageType: Zip
-      MemorySize: 180
+      MemorySize: 230
       Events:
         DynamoStream:
           Type: DynamoDB

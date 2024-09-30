@@ -178,6 +178,12 @@
       "description": "Gwneud cais am drwydded fewnforio ar gyfer ffrwydryn gwrth-bersonél, offer artaith i'w harddangos, drylliau a bwledi.",
       "link_text": "Ewch i'ch cyfrif trwydded mewnforio",
       "link_href": "https://apply-for-an-import-licence.service.gov.uk/workbasket/"
+    },
+    "Xj93G5rMO2CsouiG8DJf36siQRk": {
+      "header": "Gwneud cais am dystysgrif allforio",
+      "description": "Gwneud cais am dystysgrif i allforio colur, erosolau, plaladdwyr neu nwyddau eraill.",
+      "link_text": "Ewch i'ch cyfrif gwneud cais am dystysgrif allforio",
+      "link_href": "https://apply-for-an-export-certificate.service.gov.uk/workbasket/"
     }
   },
   "integration": {
@@ -377,6 +383,12 @@
       "description": "Gwneud cais am drwydded fewnforio ar gyfer ffrwydryn gwrth-bersonél, offer artaith i'w harddangos, drylliau a bwledi.",
       "link_text": "Ewch i'ch cyfrif trwydded mewnforio",
       "link_href": "https://apply-for-an-import-licence.service.gov.uk/workbasket/"
+    },
+    "Xj93G5rMO2CsouiG8DJf36siQRk": {
+      "header": "Gwneud cais am dystysgrif allforio",
+      "description": "Gwneud cais am dystysgrif i allforio colur, erosolau, plaladdwyr neu nwyddau eraill.",
+      "link_text": "Ewch i'ch cyfrif gwneud cais am dystysgrif allforio",
+      "link_href": "https://apply-for-an-export-certificate.service.gov.uk/workbasket/"
     }
   },
   "staging": {
@@ -564,6 +576,12 @@
       "description": "Gwneud cais am drwydded fewnforio ar gyfer ffrwydryn gwrth-bersonél, offer artaith i'w harddangos, drylliau a bwledi.",
       "link_text": "Ewch i'ch cyfrif trwydded mewnforio",
       "link_href": "https://apply-for-an-import-licence.service.gov.uk/workbasket/"
+    },
+    "dbtApplyForAnExportCertificate": {
+      "header": "Gwneud cais am dystysgrif allforio",
+      "description": "Gwneud cais am dystysgrif i allforio colur, erosolau, plaladdwyr neu nwyddau eraill.",
+      "link_text": "Ewch i'ch cyfrif gwneud cais am dystysgrif allforio",
+      "link_href": "https://apply-for-an-export-certificate.service.gov.uk/workbasket/"
     }
   },
   "build": {
@@ -751,6 +769,12 @@
       "description": "Gwneud cais am drwydded fewnforio ar gyfer ffrwydryn gwrth-bersonél, offer artaith i'w harddangos, drylliau a bwledi.",
       "link_text": "Ewch i'ch cyfrif trwydded mewnforio",
       "link_href": "https://apply-for-an-import-licence.service.gov.uk/workbasket/"
+    },
+    "dbtApplyForAnExportCertificate": {
+      "header": "Gwneud cais am dystysgrif allforio",
+      "description": "Gwneud cais am dystysgrif i allforio colur, erosolau, plaladdwyr neu nwyddau eraill.",
+      "link_text": "Ewch i'ch cyfrif gwneud cais am dystysgrif allforio",
+      "link_href": "https://apply-for-an-export-certificate.service.gov.uk/workbasket/"
     }
   },
   "demo": {
@@ -933,6 +957,12 @@
       "description": "Gwneud cais am drwydded fewnforio ar gyfer ffrwydryn gwrth-bersonél, offer artaith i'w harddangos, drylliau a bwledi.",
       "link_text": "Ewch i'ch cyfrif trwydded mewnforio",
       "link_href": "https://apply-for-an-import-licence.service.gov.uk/workbasket/"
+    },
+    "dbtApplyForAnExportCertificate": {
+      "header": "Gwneud cais am dystysgrif allforio",
+      "description": "Gwneud cais am dystysgrif i allforio colur, erosolau, plaladdwyr neu nwyddau eraill.",
+      "link_text": "Ewch i'ch cyfrif gwneud cais am dystysgrif allforio",
+      "link_href": "https://apply-for-an-export-certificate.service.gov.uk/workbasket/"
     }
   },
   "dev": {
@@ -1120,6 +1150,12 @@
       "description": "Gwneud cais am drwydded fewnforio ar gyfer ffrwydryn gwrth-bersonél, offer artaith i'w harddangos, drylliau a bwledi.",
       "link_text": "Ewch i'ch cyfrif trwydded mewnforio",
       "link_href": "https://apply-for-an-import-licence.service.gov.uk/workbasket/"
+    },
+    "dbtApplyForAnExportCertificate": {
+      "header": "Gwneud cais am dystysgrif allforio",
+      "description": "Gwneud cais am dystysgrif i allforio colur, erosolau, plaladdwyr neu nwyddau eraill.",
+      "link_text": "Ewch i'ch cyfrif gwneud cais am dystysgrif allforio",
+      "link_href": "https://apply-for-an-export-certificate.service.gov.uk/workbasket/"
     }
   },
   "local": {
@@ -1307,6 +1343,12 @@
       "description": "Gwneud cais am drwydded fewnforio ar gyfer ffrwydryn gwrth-bersonél, offer artaith i'w harddangos, drylliau a bwledi.",
       "link_text": "Ewch i'ch cyfrif trwydded mewnforio",
       "link_href": "https://apply-for-an-import-licence.service.gov.uk/workbasket/"
+    },
+    "dbtApplyForAnExportCertificate": {
+      "header": "Gwneud cais am dystysgrif allforio",
+      "description": "Gwneud cais am dystysgrif i allforio colur, erosolau, plaladdwyr neu nwyddau eraill.",
+      "link_text": "Ewch i'ch cyfrif gwneud cais am dystysgrif allforio",
+      "link_href": "https://apply-for-an-export-certificate.service.gov.uk/workbasket/"
     }
   }
 }

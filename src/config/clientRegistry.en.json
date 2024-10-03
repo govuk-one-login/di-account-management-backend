@@ -357,19 +357,19 @@
     "iOf3hyG7eymusbSUS6LgFeQ7AtU": {
       "header": "Repay and manage benefit money you owe",
       "description": "Use this service if you need to repay money to the Department for Work and Pensions (DWP).",
-      "link_text": "Go to your repay and manage benefit money you owe account",
+      "link_text": "Go to your Repay and manage benefit money you owe account",
       "link_href": "http://localhost:8000/landing?source=your-services"
     },
     "sqae3L7gOdizeRqFMw_KCDlhcyg": {
       "header": "Repay and manage benefit money you owe",
       "description": "Use this service if you need to repay money to the Department for Work and Pensions (DWP).",
-      "link_text": "Go to your repay and manage benefit money you owe account",
+      "link_text": "Go to your Repay and manage benefit money you owe account",
       "link_href": "https://repay-my-debt.services.aks-test-ext.np.az.dwpcloud.uk/oidv-sign-in"
     },
     "RtE7mP5yzCrdthst1kuVHS1SsSw": {
       "header": "Repay and manage benefit money you owe",
       "description": "Use this service if you need to repay money to the Department for Work and Pensions (DWP).",
-      "link_text": "Go to your repay and manage benefit money you owe account",
+      "link_text": "Go to your Repay and manage benefit money you owe account",
       "link_href": "https://repay-my-debt.services.aks-test-ext.np.az.dwpcloud.uk/oidv-sign-in"
     }
   },
@@ -550,7 +550,7 @@
     "dwpBenefitOwed": {
       "header": "Repay and manage benefit money you owe",
       "description": "Use this service if you need to repay money to the Department for Work and Pensions (DWP).",
-      "link_text": "Go to your repay and manage benefit money you owe account",
+      "link_text": "Go to your Repay and manage benefit money you owe account",
       "link_href": "http://localhost:8000/landing?source=your-services"
     }
   },
@@ -731,7 +731,7 @@
     "dwpBenefitOwed": {
       "header": "Repay and manage benefit money you owe",
       "description": "Use this service if you need to repay money to the Department for Work and Pensions (DWP).",
-      "link_text": "Go to your repay and manage benefit money you owe account",
+      "link_text": "Go to your Repay and manage benefit money you owe account",
       "link_href": "http://localhost:8000/landing?source=your-services"
     }
   },
@@ -907,7 +907,7 @@
     "dwpBenefitOwed": {
       "header": "Repay and manage benefit money you owe",
       "description": "Use this service if you need to repay money to the Department for Work and Pensions (DWP).",
-      "link_text": "Go to your repay and manage benefit money you owe account",
+      "link_text": "Go to your Repay and manage benefit money you owe account",
       "link_href": "http://localhost:8000/landing?source=your-services"
     }
   },
@@ -1088,7 +1088,7 @@
     "dwpBenefitOwed": {
       "header": "Repay and manage benefit money you owe",
       "description": "Use this service if you need to repay money to the Department for Work and Pensions (DWP).",
-      "link_text": "Go to your repay and manage benefit money you owe account",
+      "link_text": "Go to your Repay and manage benefit money you owe account",
       "link_href": "http://localhost:8000/landing?source=your-services"
     }
   },
@@ -1269,7 +1269,7 @@
     "dwpBenefitOwed": {
       "header": "Repay and manage benefit money you owe",
       "description": "Use this service if you need to repay money to the Department for Work and Pensions (DWP).",
-      "link_text": "Go to your repay and manage benefit money you owe account",
+      "link_text": "Go to your Repay and manage benefit money you owe account",
       "link_href": "http://localhost:8000/landing?source=your-services"
     }
   }

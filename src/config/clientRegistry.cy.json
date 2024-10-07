@@ -174,9 +174,9 @@
       "link_href": "https://find-and-update.company-information.service.gov.uk/"
     },
     "gSKx5snZtYsQWSQZRoKI2oV-7lQ": {
-      "header": "Apply for an import licence",
-      "description": "Apply for an import licence for anti-personnel mines, torture equipment for display, firearms and ammunition.",
-      "link_text": "Go to your apply for an import licence account",
+      "header": "Gwneud cais am drwydded fewnforio",
+      "description": "Gwneud cais am drwydded fewnforio ar gyfer ffrwydryn gwrth-bersonél, offer artaith i'w harddangos, drylliau a bwledi.",
+      "link_text": "Ewch i'ch cyfrif trwydded mewnforio",
       "link_href": "https://apply-for-an-import-licence.service.gov.uk/workbasket/"
     }
   },
@@ -375,7 +375,7 @@
     "gSKx5snZtYsQWSQZRoKI2oV-7lQ": {
       "header": "Gwneud cais am drwydded fewnforio",
       "description": "Gwneud cais am drwydded fewnforio ar gyfer ffrwydryn gwrth-bersonél, offer artaith i'w harddangos, drylliau a bwledi.",
-      "link_text": "Mynd i'ch cyfrif gwneud cais am drwydded fewnforio",
+      "link_text": "Ewch i'ch cyfrif trwydded mewnforio",
       "link_href": "https://apply-for-an-import-licence.service.gov.uk/workbasket/"
     }
   },
@@ -562,7 +562,7 @@
     "dbtApplyForAnImportLicense": {
       "header": "Gwneud cais am drwydded fewnforio",
       "description": "Gwneud cais am drwydded fewnforio ar gyfer ffrwydryn gwrth-bersonél, offer artaith i'w harddangos, drylliau a bwledi.",
-      "link_text": "Mynd i'ch cyfrif gwneud cais am drwydded fewnforio",
+      "link_text": "Ewch i'ch cyfrif trwydded mewnforio",
       "link_href": "https://apply-for-an-import-licence.service.gov.uk/workbasket/"
     }
   },
@@ -749,7 +749,7 @@
     "dbtApplyForAnImportLicense": {
       "header": "Gwneud cais am drwydded fewnforio",
       "description": "Gwneud cais am drwydded fewnforio ar gyfer ffrwydryn gwrth-bersonél, offer artaith i'w harddangos, drylliau a bwledi.",
-      "link_text": "Mynd i'ch cyfrif gwneud cais am drwydded fewnforio",
+      "link_text": "Ewch i'ch cyfrif trwydded mewnforio",
       "link_href": "https://apply-for-an-import-licence.service.gov.uk/workbasket/"
     }
   },
@@ -931,7 +931,7 @@
     "dbtApplyForAnImportLicense": {
       "header": "Gwneud cais am drwydded fewnforio",
       "description": "Gwneud cais am drwydded fewnforio ar gyfer ffrwydryn gwrth-bersonél, offer artaith i'w harddangos, drylliau a bwledi.",
-      "link_text": "Mynd i'ch cyfrif gwneud cais am drwydded fewnforio",
+      "link_text": "Ewch i'ch cyfrif trwydded mewnforio",
       "link_href": "https://apply-for-an-import-licence.service.gov.uk/workbasket/"
     }
   },
@@ -1118,7 +1118,7 @@
     "dbtApplyForAnImportLicense": {
       "header": "Gwneud cais am drwydded fewnforio",
       "description": "Gwneud cais am drwydded fewnforio ar gyfer ffrwydryn gwrth-bersonél, offer artaith i'w harddangos, drylliau a bwledi.",
-      "link_text": "Mynd i'ch cyfrif gwneud cais am drwydded fewnforio",
+      "link_text": "Ewch i'ch cyfrif trwydded mewnforio",
       "link_href": "https://apply-for-an-import-licence.service.gov.uk/workbasket/"
     }
   },
@@ -1305,7 +1305,7 @@
     "dbtApplyForAnImportLicense": {
       "header": "Gwneud cais am drwydded fewnforio",
       "description": "Gwneud cais am drwydded fewnforio ar gyfer ffrwydryn gwrth-bersonél, offer artaith i'w harddangos, drylliau a bwledi.",
-      "link_text": "Mynd i'ch cyfrif gwneud cais am drwydded fewnforio",
+      "link_text": "Ewch i'ch cyfrif trwydded mewnforio",
       "link_href": "https://apply-for-an-import-licence.service.gov.uk/workbasket/"
     }
   }

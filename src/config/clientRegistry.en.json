@@ -1120,6 +1120,12 @@
       "description": "Use this service if you need to repay money to the Department for Work and Pensions (DWP).",
       "link_text": "Go to your Repay and manage benefit money you owe account",
       "link_href": "http://localhost:8000/landing?source=your-services"
+    },
+    "hmpoCancelPassport": {
+      "header": "Cancel a lost or stolen passport",
+      "description": "Report a passport as lost or stolen or apply for a replacement.",
+      "link_text": "Go to your cancel a lost or stolen passport account",
+      "link_href": "https://www.loststolenpassport.service.gov.uk/lost-stolen/passport-holder"
     }
   },
   "local": {

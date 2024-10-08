@@ -178,6 +178,12 @@
       "description": "Gwneud cais am drwydded fewnforio ar gyfer ffrwydryn gwrth-bersonél, offer artaith i'w harddangos, drylliau a bwledi.",
       "link_text": "Ewch i'ch cyfrif trwydded mewnforio",
       "link_href": "https://apply-for-an-import-licence.service.gov.uk/workbasket/"
+    },
+    "Q2tqV5C1nGXFVMUcnpqbOUTrZuw": {
+      "header": "Cadarnhau manylion fy mhrentisiaethau (CMAD)",
+      "description": "Gwirio a chadarnhau eich manylion prentisiaeth.",
+      "link_text": "Ewch i'ch cyfrif i gadarnhau eich prentisiaeth",
+      "link_href": "https://confirm.my.apprenticeships.education.gov.uk/"
     }
   },
   "integration": {
@@ -354,22 +360,28 @@
       "link_text": "Ewch i Dŷ'r Cwmnïau",
       "link_href": "https://find-and-update.company-information.service.gov.uk/"
     },
+    "Q2tqV5C1nGXFVMUcnpqbOUTrZuw": {
+      "header": "Cadarnhau manylion fy mhrentisiaethau (CMAD)",
+      "description": "Gwirio a chadarnhau eich manylion prentisiaeth.",
+      "link_text": "Ewch i'ch cyfrif i gadarnhau eich prentisiaeth",
+      "link_href": "https://confirm.my.apprenticeships.education.gov.uk/"
+    },
     "iOf3hyG7eymusbSUS6LgFeQ7AtU": {
-      "header": "Repay and manage benefit money you owe",
-      "description": "Use this service if you need to repay money to the Department for Work and Pensions (DWP).",
-      "link_text": "Go to your repay and manage benefit money you owe account",
+      "header": "Ad-dalu a rheoli arian budd-dal sy'n ddyledus gennych",
+      "description": "Ad-dalu unrhyw arian sy'n ddyledus gennych i'r Adran Gwaith a Phensiynau (DWP).",
+      "link_text": "Ewch i Ad-dalu a rheoli arian budd-dal sy’n ddyledus gennych",
       "link_href": "http://localhost:8000/landing?source=your-services"
     },
     "sqae3L7gOdizeRqFMw_KCDlhcyg": {
-      "header": "Repay and manage benefit money you owe",
-      "description": "Use this service if you need to repay money to the Department for Work and Pensions (DWP).",
-      "link_text": "Go to your repay and manage benefit money you owe account",
+      "header": "Ad-dalu a rheoli arian budd-dal sy'n ddyledus gennych",
+      "description": "Ad-dalu unrhyw arian sy'n ddyledus gennych i'r Adran Gwaith a Phensiynau (DWP).",
+      "link_text": "Ewch i Ad-dalu a rheoli arian budd-dal sy’n ddyledus gennych",
       "link_href": "https://repay-my-debt.services.aks-test-ext.np.az.dwpcloud.uk/oidv-sign-in"
     },
     "RtE7mP5yzCrdthst1kuVHS1SsSw": {
-      "header": "Repay and manage benefit money you owe",
-      "description": "Use this service if you need to repay money to the Department for Work and Pensions (DWP).",
-      "link_text": "Go to your repay and manage benefit money you owe account",
+      "header": "Ad-dalu a rheoli arian budd-dal sy'n ddyledus gennych",
+      "description": "Ad-dalu unrhyw arian sy'n ddyledus gennych i'r Adran Gwaith a Phensiynau (DWP).",
+      "link_text": "Ewch i Ad-dalu a rheoli arian budd-dal sy’n ddyledus gennych",
       "link_href": "https://repay-my-debt.services.aks-test-ext.np.az.dwpcloud.uk/oidv-sign-in"
     },
     "gSKx5snZtYsQWSQZRoKI2oV-7lQ": {
@@ -552,6 +564,12 @@
       "description": "Gweld a diweddaru gwybodaeth eich cwmni, er enghraifft, hanes ffeilio a chyfeiriad swyddfa gofrestredig.",
       "link_text": "Ewch i Dŷ'r Cwmnïau",
       "link_href": "https://find-and-update.company-information.service.gov.uk/"
+    },
+    "CMAD": {
+      "header": "Cadarnhau manylion fy mhrentisiaethau (CMAD)",
+      "description": "Gwirio a chadarnhau eich manylion prentisiaeth.",
+      "link_text": "Ewch i'ch cyfrif i gadarnhau eich prentisiaeth",
+      "link_href": "https://confirm.my.apprenticeships.education.gov.uk/"
     },
     "dwpBenefitOwed": {
       "header": "Ad-dalu a rheoli arian budd-dal sy'n ddyledus gennych.",
@@ -740,6 +758,12 @@
       "link_text": "Ewch i Dŷ'r Cwmnïau",
       "link_href": "https://find-and-update.company-information.service.gov.uk/"
     },
+    "CMAD": {
+      "header": "Cadarnhau manylion fy mhrentisiaethau (CMAD)",
+      "description": "Gwirio a chadarnhau eich manylion prentisiaeth.",
+      "link_text": "Ewch i'ch cyfrif i gadarnhau eich prentisiaeth",
+      "link_href": "https://confirm.my.apprenticeships.education.gov.uk/"
+    },
     "dwpBenefitOwed": {
       "header": "Ad-dalu a rheoli arian budd-dal sy'n ddyledus gennych.",
       "description": "Ad-dalu unrhyw arian sy'n ddyledus gennych i'r Adran Gwaith a Phensiynau (DWP).",
@@ -921,6 +945,12 @@
       "description": "Gweld a diweddaru gwybodaeth eich cwmni, er enghraifft, hanes ffeilio a chyfeiriad swyddfa gofrestredig.",
       "link_text": "Ewch i Dŷ'r Cwmnïau",
       "link_href": "https://find-and-update.company-information.service.gov.uk/"
+    },
+    "CMAD": {
+      "header": "Cadarnhau manylion fy mhrentisiaethau (CMAD)",
+      "description": "Gwirio a chadarnhau eich manylion prentisiaeth.",
+      "link_text": "Ewch i'ch cyfrif i gadarnhau eich prentisiaeth",
+      "link_href": "https://confirm.my.apprenticeships.education.gov.uk/"
     },
     "dwpBenefitOwed": {
       "header": "Ad-dalu a rheoli arian budd-dal sy'n ddyledus gennych.",
@@ -1109,6 +1139,12 @@
       "link_text": "Ewch i Dŷ'r Cwmnïau",
       "link_href": "https://find-and-update.company-information.service.gov.uk/"
     },
+    "CMAD": {
+      "header": "Cadarnhau manylion fy mhrentisiaethau (CMAD)",
+      "description": "Gwirio a chadarnhau eich manylion prentisiaeth.",
+      "link_text": "Ewch i'ch cyfrif i gadarnhau eich prentisiaeth",
+      "link_href": "https://confirm.my.apprenticeships.education.gov.uk/"
+    },
     "dwpBenefitOwed": {
       "header": "Ad-dalu a rheoli arian budd-dal sy'n ddyledus gennych.",
       "description": "Ad-dalu unrhyw arian sy'n ddyledus gennych i'r Adran Gwaith a Phensiynau (DWP).",
@@ -1295,6 +1331,12 @@
       "description": "Gweld a diweddaru gwybodaeth eich cwmni, er enghraifft, hanes ffeilio a chyfeiriad swyddfa gofrestredig.",
       "link_text": "Ewch i Dŷ'r Cwmnïau",
       "link_href": "https://find-and-update.company-information.service.gov.uk/"
+    },
+    "CMAD": {
+      "header": "Cadarnhau manylion fy mhrentisiaethau (CMAD)",
+      "description": "Gwirio a chadarnhau eich manylion prentisiaeth.",
+      "link_text": "Ewch i'ch cyfrif i gadarnhau eich prentisiaeth",
+      "link_href": "https://confirm.my.apprenticeships.education.gov.uk/"
     },
     "dwpBenefitOwed": {
       "header": "Ad-dalu a rheoli arian budd-dal sy'n ddyledus gennych.",

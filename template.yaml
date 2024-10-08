@@ -69,12 +69,6 @@ Parameters:
     Description: Value for the System Tag
     Type: String
     Default: Accounts
-  ProvisionedConcurrency:
-    Type: Number
-    Default: 30
-    Description: "The number of provisioned concurrent executions for the Lambda function"
-    MinValue: 1
-    MaxValue: 100
 
 Conditions:
   UseCodeSigning:
@@ -755,9 +749,9 @@ Resources:
         TargetArn: !GetAtt SaveRawEventsDeadLetterQueue.Arn
       Handler: save-raw-events.handler
       Role: !GetAtt SaveRawEventsRole.Arn
-      ReservedConcurrentExecutions: !Ref ProvisionedConcurrency
+      ReservedConcurrentExecutions: 30
       ProvisionedConcurrencyConfig:
-        ProvisionedConcurrentExecutions: !Ref ProvisionedConcurrency
+        ProvisionedConcurrentExecutions: 30
       Environment:
         Variables:
           TABLE_NAME: !Ref RawEventsStoreTableName
@@ -989,9 +983,9 @@ Resources:
         TargetArn: !GetAtt QueryUserServicesDeadLetterQueue.Arn
       Handler: query-user-services.handler
       Role: !GetAtt QueryUserServicesRole.Arn
-      ReservedConcurrentExecutions: !Ref ProvisionedConcurrency
+      ReservedConcurrentExecutions: 30
       ProvisionedConcurrencyConfig:
-        ProvisionedConcurrentExecutions: !Ref ProvisionedConcurrency
+        ProvisionedConcurrentExecutions: 30
       Environment:
         Variables:
           TABLE_NAME: !Ref UserServicesStoreTableName
@@ -1251,9 +1245,9 @@ Resources:
         TargetArn: !GetAtt FormatUserServicesDeadLetterQueue.Arn
       Handler: format-user-services.handler
       Role: !GetAtt FormatUserServicesRole.Arn
-      ReservedConcurrentExecutions: !Ref ProvisionedConcurrency
+      ReservedConcurrentExecutions: 30
       ProvisionedConcurrencyConfig:
-        ProvisionedConcurrentExecutions: !Ref ProvisionedConcurrency
+        ProvisionedConcurrentExecutions: 30
       Environment:
         Variables:
           OUTPUT_QUEUE_URL: !Ref UserServicesToWriteQueue
@@ -2385,9 +2379,9 @@ Resources:
         TargetArn: !GetAtt WriteActivityLogDeadLetterQueue.Arn
       Handler: write-activity-log.handler
       Role: !GetAtt WriteActivityRecordRole.Arn
-      ReservedConcurrentExecutions: !Ref ProvisionedConcurrency
+      ReservedConcurrentExecutions: 30
       ProvisionedConcurrencyConfig:
-        ProvisionedConcurrentExecutions: !Ref ProvisionedConcurrency
+        ProvisionedConcurrentExecutions: 30
       Environment:
         Variables:
           TABLE_NAME: !Ref ActivityLogsStoreTableName
@@ -2633,9 +2627,9 @@ Resources:
         TargetArn: !GetAtt FormatActivityLogDeadLetterQueue.Arn
       Handler: format-activity-log.handler
       Role: !GetAtt FormatActivityLogRole.Arn
-      ReservedConcurrentExecutions: !Ref ProvisionedConcurrency
+      ReservedConcurrentExecutions: 30
       ProvisionedConcurrencyConfig:
-        ProvisionedConcurrentExecutions: !Ref ProvisionedConcurrency
+        ProvisionedConcurrentExecutions: 30
       Environment:
         Variables:
           OUTPUT_QUEUE_URL: !Ref ActivityLogToWriteQueue

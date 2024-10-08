@@ -184,6 +184,12 @@
       "description": "Apply for an import licence for anti-personnel mines, torture equipment for display, firearms and ammunition.",
       "link_text": "Go to your import licence account",
       "link_href": "https://apply-for-an-import-licence.service.gov.uk/workbasket/"
+    },      
+    "Q2tqV5C1nGXFVMUcnpqbOUTrZuw": {
+      "header": "Confirm my apprenticeship details (CMAD)",
+      "description": "Check and confirm your apprenticeship details.",
+      "link_text": "Go to your account to confirm your apprenticeship",
+      "link_href": "https://confirm.my.apprenticeships.education.gov.uk/"
     }
   },
   "integration": {
@@ -360,22 +366,28 @@
       "link_text": "Go to Companies House",
       "link_href": "https://find-and-update.company-information.service.gov.uk/"
     },
+    "Q2tqV5C1nGXFVMUcnpqbOUTrZuw": {
+      "header": "Confirm my apprenticeship details (CMAD)",
+      "description": "Check and confirm your apprenticeship details.",
+      "link_text": "Go to your account to confirm your apprenticeship",
+      "link_href": "https://confirm.my.apprenticeships.education.gov.uk/"
+    },
     "iOf3hyG7eymusbSUS6LgFeQ7AtU": {
       "header": "Repay and manage benefit money you owe",
       "description": "Use this service if you need to repay money to the Department for Work and Pensions (DWP).",
-      "link_text": "Go to your repay and manage benefit money you owe account",
+      "link_text": "Go to your Repay and manage benefit money you owe account",
       "link_href": "http://localhost:8000/landing?source=your-services"
     },
     "sqae3L7gOdizeRqFMw_KCDlhcyg": {
       "header": "Repay and manage benefit money you owe",
       "description": "Use this service if you need to repay money to the Department for Work and Pensions (DWP).",
-      "link_text": "Go to your repay and manage benefit money you owe account",
+      "link_text": "Go to your Repay and manage benefit money you owe account",
       "link_href": "https://repay-my-debt.services.aks-test-ext.np.az.dwpcloud.uk/oidv-sign-in"
     },
     "RtE7mP5yzCrdthst1kuVHS1SsSw": {
       "header": "Repay and manage benefit money you owe",
       "description": "Use this service if you need to repay money to the Department for Work and Pensions (DWP).",
-      "link_text": "Go to your repay and manage benefit money you owe account",
+      "link_text": "Go to your Repay and manage benefit money you owe account",
       "link_href": "https://repay-my-debt.services.aks-test-ext.np.az.dwpcloud.uk/oidv-sign-in"
     },
     "gSKx5snZtYsQWSQZRoKI2oV-7lQ": {
@@ -559,10 +571,16 @@
       "link_text": "Go to Companies House",
       "link_href": "https://find-and-update.company-information.service.gov.uk/"
     },
+    "CMAD": {
+      "header": "Confirm my apprenticeship details (CMAD)",
+      "description": "Check and confirm your apprenticeship details.",
+      "link_text": "Go to your account to confirm your apprenticeship",
+      "link_href": "https://confirm.my.apprenticeships.education.gov.uk/"
+    },
     "dwpBenefitOwed": {
       "header": "Repay and manage benefit money you owe",
       "description": "Use this service if you need to repay money to the Department for Work and Pensions (DWP).",
-      "link_text": "Go to your repay and manage benefit money you owe account",
+      "link_text": "Go to your Repay and manage benefit money you owe account",
       "link_href": "http://localhost:8000/landing?source=your-services"
     },
     "dbtApplyForAnImportLicense": {
@@ -746,10 +764,16 @@
       "link_text": "Go to Companies House",
       "link_href": "https://find-and-update.company-information.service.gov.uk/"
     },
+    "CMAD": {
+      "header": "Confirm my apprenticeship details (CMAD)",
+      "description": "Check and confirm your apprenticeship details.",
+      "link_text": "Go to your account to confirm your apprenticeship",
+      "link_href": "https://confirm.my.apprenticeships.education.gov.uk/"
+    },
     "dwpBenefitOwed": {
       "header": "Repay and manage benefit money you owe",
       "description": "Use this service if you need to repay money to the Department for Work and Pensions (DWP).",
-      "link_text": "Go to your repay and manage benefit money you owe account",
+      "link_text": "Go to your Repay and manage benefit money you owe account",
       "link_href": "http://localhost:8000/landing?source=your-services"
     },
     "dbtApplyForAnImportLicense": {
@@ -928,10 +952,16 @@
       "link_text": "Go to Companies House",
       "link_href": "https://find-and-update.company-information.service.gov.uk/"
     },
+    "CMAD": {
+      "header": "Confirm my apprenticeship details (CMAD)",
+      "description": "Check and confirm your apprenticeship details.",
+      "link_text": "Go to your account to confirm your apprenticeship",
+      "link_href": "https://confirm.my.apprenticeships.education.gov.uk/"
+    },
     "dwpBenefitOwed": {
       "header": "Repay and manage benefit money you owe",
       "description": "Use this service if you need to repay money to the Department for Work and Pensions (DWP).",
-      "link_text": "Go to your repay and manage benefit money you owe account",
+      "link_text": "Go to your Repay and manage benefit money you owe account",
       "link_href": "http://localhost:8000/landing?source=your-services"
     },
     "dbtApplyForAnImportLicense": {
@@ -1115,10 +1145,16 @@
       "link_text": "Go to Companies House",
       "link_href": "https://find-and-update.company-information.service.gov.uk/"
     },
+    "CMAD": {
+      "header": "Confirm my apprenticeship details (CMAD)",
+      "description": "Check and confirm your apprenticeship details.",
+      "link_text": "Go to your account to confirm your apprenticeship",
+      "link_href": "https://confirm.my.apprenticeships.education.gov.uk/"
+    },
     "dwpBenefitOwed": {
       "header": "Repay and manage benefit money you owe",
       "description": "Use this service if you need to repay money to the Department for Work and Pensions (DWP).",
-      "link_text": "Go to your repay and manage benefit money you owe account",
+      "link_text": "Go to your Repay and manage benefit money you owe account",
       "link_href": "http://localhost:8000/landing?source=your-services"
     },
     "dbtApplyForAnImportLicense": {
@@ -1302,10 +1338,16 @@
       "link_text": "Go to Companies House",
       "link_href": "https://find-and-update.company-information.service.gov.uk/"
     },
+    "CMAD": {
+      "header": "Confirm my apprenticeship details (CMAD)",
+      "description": "Check and confirm your apprenticeship details.",
+      "link_text": "Go to your account to confirm your apprenticeship",
+      "link_href": "https://confirm.my.apprenticeships.education.gov.uk/"
+    },
     "dwpBenefitOwed": {
       "header": "Repay and manage benefit money you owe",
       "description": "Use this service if you need to repay money to the Department for Work and Pensions (DWP).",
-      "link_text": "Go to your repay and manage benefit money you owe account",
+      "link_text": "Go to your Repay and manage benefit money you owe account",
       "link_href": "http://localhost:8000/landing?source=your-services"
     },
     "dbtApplyForAnImportLicense": {

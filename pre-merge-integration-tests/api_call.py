@@ -1,11 +1,16 @@
 import boto3
 import time
+import os
 
-# Initialize a session using CloudFormation
-client = boto3.client('cloudformation')
+# Initialize a session using SQS
+sqs_client = boto3.client('sqs')
+dynamodb_client = boto3.client('dynamodb')
 
-# Name of the CloudFormation stack
-stack_name = 'platform-alerting'  # Replace with actual stack name
+
+
+# Name of the SQS Queue
+queue_name = os.environ('SQS_QUEUE_ARN')
+dynamodb_table = os.environ('DYNAMODB_TABLE')
 
 def call_describe_stack_events(stack_name):
     try:

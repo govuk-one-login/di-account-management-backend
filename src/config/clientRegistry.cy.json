@@ -178,6 +178,12 @@
       "description": "Chwilio'r Mynegai cŵn peryglus am gŵn neu berchnogion i weld eu manylion a'u statws eithrio.",
       "link_text": "Ewch i'ch cyfrif Mynegai Cŵn Peryglus",
       "link_href": "https://dogsindex.defra.gov.uk"
+    },
+    "Q2tqV5C1nGXFVMUcnpqbOUTrZuw": {
+      "header": "Cadarnhau manylion fy mhrentisiaethau (CMAD)",
+      "description": "Gwirio a chadarnhau eich manylion prentisiaeth.",
+      "link_text": "Ewch i'ch cyfrif i gadarnhau eich prentisiaeth",
+      "link_href": "https://confirm.my.apprenticeships.education.gov.uk/"
     }
   },
   "integration": {
@@ -353,6 +359,12 @@
       "description": "Gweld a diweddaru gwybodaeth eich cwmni, er enghraifft, hanes ffeilio a chyfeiriad swyddfa gofrestredig.",
       "link_text": "Ewch i Dŷ'r Cwmnïau",
       "link_href": "https://find-and-update.company-information.service.gov.uk/"
+    },
+    "Q2tqV5C1nGXFVMUcnpqbOUTrZuw": {
+      "header": "Cadarnhau manylion fy mhrentisiaethau (CMAD)",
+      "description": "Gwirio a chadarnhau eich manylion prentisiaeth.",
+      "link_text": "Ewch i'ch cyfrif i gadarnhau eich prentisiaeth",
+      "link_href": "https://confirm.my.apprenticeships.education.gov.uk/"
     },
     "iOf3hyG7eymusbSUS6LgFeQ7AtU": {
       "header": "Ad-dalu a rheoli arian budd-dal sy'n ddyledus gennych",
@@ -553,6 +565,12 @@
       "link_text": "Ewch i Dŷ'r Cwmnïau",
       "link_href": "https://find-and-update.company-information.service.gov.uk/"
     },
+    "CMAD": {
+      "header": "Cadarnhau manylion fy mhrentisiaethau (CMAD)",
+      "description": "Gwirio a chadarnhau eich manylion prentisiaeth.",
+      "link_text": "Ewch i'ch cyfrif i gadarnhau eich prentisiaeth",
+      "link_href": "https://confirm.my.apprenticeships.education.gov.uk/"
+    },
     "dwpBenefitOwed": {
       "header": "Ad-dalu a rheoli arian budd-dal sy'n ddyledus gennych.",
       "description": "Ad-dalu unrhyw arian sy'n ddyledus gennych i'r Adran Gwaith a Phensiynau (DWP).",
@@ -740,6 +758,12 @@
       "link_text": "Ewch i Dŷ'r Cwmnïau",
       "link_href": "https://find-and-update.company-information.service.gov.uk/"
     },
+    "CMAD": {
+      "header": "Cadarnhau manylion fy mhrentisiaethau (CMAD)",
+      "description": "Gwirio a chadarnhau eich manylion prentisiaeth.",
+      "link_text": "Ewch i'ch cyfrif i gadarnhau eich prentisiaeth",
+      "link_href": "https://confirm.my.apprenticeships.education.gov.uk/"
+    },
     "dwpBenefitOwed": {
       "header": "Ad-dalu a rheoli arian budd-dal sy'n ddyledus gennych.",
       "description": "Ad-dalu unrhyw arian sy'n ddyledus gennych i'r Adran Gwaith a Phensiynau (DWP).",
@@ -921,6 +945,12 @@
       "description": "Gweld a diweddaru gwybodaeth eich cwmni, er enghraifft, hanes ffeilio a chyfeiriad swyddfa gofrestredig.",
       "link_text": "Ewch i Dŷ'r Cwmnïau",
       "link_href": "https://find-and-update.company-information.service.gov.uk/"
+    },
+    "CMAD": {
+      "header": "Cadarnhau manylion fy mhrentisiaethau (CMAD)",
+      "description": "Gwirio a chadarnhau eich manylion prentisiaeth.",
+      "link_text": "Ewch i'ch cyfrif i gadarnhau eich prentisiaeth",
+      "link_href": "https://confirm.my.apprenticeships.education.gov.uk/"
     },
     "dwpBenefitOwed": {
       "header": "Ad-dalu a rheoli arian budd-dal sy'n ddyledus gennych.",
@@ -1109,6 +1139,12 @@
       "link_text": "Ewch i Dŷ'r Cwmnïau",
       "link_href": "https://find-and-update.company-information.service.gov.uk/"
     },
+    "CMAD": {
+      "header": "Cadarnhau manylion fy mhrentisiaethau (CMAD)",
+      "description": "Gwirio a chadarnhau eich manylion prentisiaeth.",
+      "link_text": "Ewch i'ch cyfrif i gadarnhau eich prentisiaeth",
+      "link_href": "https://confirm.my.apprenticeships.education.gov.uk/"
+    },
     "dwpBenefitOwed": {
       "header": "Ad-dalu a rheoli arian budd-dal sy'n ddyledus gennych.",
       "description": "Ad-dalu unrhyw arian sy'n ddyledus gennych i'r Adran Gwaith a Phensiynau (DWP).",
@@ -1295,6 +1331,12 @@
       "description": "Gweld a diweddaru gwybodaeth eich cwmni, er enghraifft, hanes ffeilio a chyfeiriad swyddfa gofrestredig.",
       "link_text": "Ewch i Dŷ'r Cwmnïau",
       "link_href": "https://find-and-update.company-information.service.gov.uk/"
+    },
+    "CMAD": {
+      "header": "Cadarnhau manylion fy mhrentisiaethau (CMAD)",
+      "description": "Gwirio a chadarnhau eich manylion prentisiaeth.",
+      "link_text": "Ewch i'ch cyfrif i gadarnhau eich prentisiaeth",
+      "link_href": "https://confirm.my.apprenticeships.education.gov.uk/"
     },
     "dwpBenefitOwed": {
       "header": "Ad-dalu a rheoli arian budd-dal sy'n ddyledus gennych.",

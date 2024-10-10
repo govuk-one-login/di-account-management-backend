@@ -184,6 +184,12 @@
       "description": "Search the Dangerous dogs index for dogs or owners to view their details and exemption status.",
       "link_text": "Go to your Dangerous dogs index account",
       "link_href": "https://dogsindex.defra.gov.uk"
+    },
+    "Q2tqV5C1nGXFVMUcnpqbOUTrZuw": {
+      "header": "Confirm my apprenticeship details (CMAD)",
+      "description": "Check and confirm your apprenticeship details.",
+      "link_text": "Go to your account to confirm your apprenticeship",
+      "link_href": "https://confirm.my.apprenticeships.education.gov.uk/"
     }
   },
   "integration": {
@@ -359,6 +365,12 @@
       "description": "View and update your company information, for example, filing history and registered office address.",
       "link_text": "Go to Companies House",
       "link_href": "https://find-and-update.company-information.service.gov.uk/"
+    },
+    "Q2tqV5C1nGXFVMUcnpqbOUTrZuw": {
+      "header": "Confirm my apprenticeship details (CMAD)",
+      "description": "Check and confirm your apprenticeship details.",
+      "link_text": "Go to your account to confirm your apprenticeship",
+      "link_href": "https://confirm.my.apprenticeships.education.gov.uk/"
     },
     "iOf3hyG7eymusbSUS6LgFeQ7AtU": {
       "header": "Repay and manage benefit money you owe",
@@ -559,6 +571,12 @@
       "link_text": "Go to Companies House",
       "link_href": "https://find-and-update.company-information.service.gov.uk/"
     },
+    "CMAD": {
+      "header": "Confirm my apprenticeship details (CMAD)",
+      "description": "Check and confirm your apprenticeship details.",
+      "link_text": "Go to your account to confirm your apprenticeship",
+      "link_href": "https://confirm.my.apprenticeships.education.gov.uk/"
+    },
     "dwpBenefitOwed": {
       "header": "Repay and manage benefit money you owe",
       "description": "Use this service if you need to repay money to the Department for Work and Pensions (DWP).",
@@ -746,6 +764,12 @@
       "link_text": "Go to Companies House",
       "link_href": "https://find-and-update.company-information.service.gov.uk/"
     },
+    "CMAD": {
+      "header": "Confirm my apprenticeship details (CMAD)",
+      "description": "Check and confirm your apprenticeship details.",
+      "link_text": "Go to your account to confirm your apprenticeship",
+      "link_href": "https://confirm.my.apprenticeships.education.gov.uk/"
+    },
     "dwpBenefitOwed": {
       "header": "Repay and manage benefit money you owe",
       "description": "Use this service if you need to repay money to the Department for Work and Pensions (DWP).",
@@ -927,6 +951,12 @@
       "description": "View and update your company information, for example, filing history and registered office address.",
       "link_text": "Go to Companies House",
       "link_href": "https://find-and-update.company-information.service.gov.uk/"
+    },
+    "CMAD": {
+      "header": "Confirm my apprenticeship details (CMAD)",
+      "description": "Check and confirm your apprenticeship details.",
+      "link_text": "Go to your account to confirm your apprenticeship",
+      "link_href": "https://confirm.my.apprenticeships.education.gov.uk/"
     },
     "dwpBenefitOwed": {
       "header": "Repay and manage benefit money you owe",
@@ -1115,6 +1145,12 @@
       "link_text": "Go to Companies House",
       "link_href": "https://find-and-update.company-information.service.gov.uk/"
     },
+    "CMAD": {
+      "header": "Confirm my apprenticeship details (CMAD)",
+      "description": "Check and confirm your apprenticeship details.",
+      "link_text": "Go to your account to confirm your apprenticeship",
+      "link_href": "https://confirm.my.apprenticeships.education.gov.uk/"
+    },
     "dwpBenefitOwed": {
       "header": "Repay and manage benefit money you owe",
       "description": "Use this service if you need to repay money to the Department for Work and Pensions (DWP).",
@@ -1301,6 +1337,12 @@
       "description": "View and update your company information, for example, filing history and registered office address.",
       "link_text": "Go to Companies House",
       "link_href": "https://find-and-update.company-information.service.gov.uk/"
+    },
+    "CMAD": {
+      "header": "Confirm my apprenticeship details (CMAD)",
+      "description": "Check and confirm your apprenticeship details.",
+      "link_text": "Go to your account to confirm your apprenticeship",
+      "link_href": "https://confirm.my.apprenticeships.education.gov.uk/"
     },
     "dwpBenefitOwed": {
       "header": "Repay and manage benefit money you owe",

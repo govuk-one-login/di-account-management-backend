@@ -179,6 +179,12 @@
       "link_text": "Go to Companies House",
       "link_href": "https://find-and-update.company-information.service.gov.uk/"
     },
+    "l6GFmD8ndn7afVcm6SqAHlM8IVM": {
+      "header": "Cancel a lost or stolen passport",
+      "description": "Report a passport as lost or stolen or apply for a replacement.",
+      "link_text": "Go to your cancel a lost or stolen passport account",
+      "link_href": "https://www.loststolenpassport.service.gov.uk/lost-stolen/passport-holder"
+    },
     "u6cETcTbDeT5PZaRRvUskHQeZq8": {
       "header": "Dangerous dogs index",
       "description": "Search the Dangerous dogs index for dogs or owners to view their details and exemption status.",
@@ -402,6 +408,12 @@
       "link_text": "Go to your Repay and manage benefit money you owe account",
       "link_href": "https://repay-my-debt.services.aks-test-ext.np.az.dwpcloud.uk/oidv-sign-in"
     },
+    "l6GFmD8ndn7afVcm6SqAHlM8IVM": {
+      "header": "Cancel a lost or stolen passport",
+      "description": "Report a passport as lost or stolen or apply for a replacement.",
+      "link_text": "Go to your cancel a lost or stolen passport account",
+      "link_href": "https://www.loststolenpassport.service.gov.uk/lost-stolen/passport-holder"
+    },
     "u6cETcTbDeT5PZaRRvUskHQeZq8": {
       "header": "Dangerous dogs index",
       "description": "Search the Dangerous dogs index for dogs or owners to view their details and exemption status.",
@@ -606,6 +618,12 @@
       "description": "Use this service if you need to repay money to the Department for Work and Pensions (DWP).",
       "link_text": "Go to your Repay and manage benefit money you owe account",
       "link_href": "http://localhost:8000/landing?source=your-services"
+    },
+    "hmpoCancelPassport": {
+      "header": "Cancel a lost or stolen passport",
+      "description": "Report a passport as lost or stolen or apply for a replacement.",
+      "link_text": "Go to your cancel a lost or stolen passport account",
+      "link_href": "https://www.loststolenpassport.service.gov.uk/lost-stolen/passport-holder"
     },
     "defraDangerousDogsIndex": {
       "header": "Dangerous dogs index",
@@ -812,6 +830,12 @@
       "link_text": "Go to your Repay and manage benefit money you owe account",
       "link_href": "http://localhost:8000/landing?source=your-services"
     },
+    "hmpoCancelPassport": {
+      "header": "Cancel a lost or stolen passport",
+      "description": "Report a passport as lost or stolen or apply for a replacement.",
+      "link_text": "Go to your cancel a lost or stolen passport account",
+      "link_href": "https://www.loststolenpassport.service.gov.uk/lost-stolen/passport-holder"
+    },
     "defraDangerousDogsIndex": {
       "header": "Dangerous dogs index",
       "description": "Search the Dangerous dogs index for dogs or owners to view their details and exemption status.",
@@ -1011,6 +1035,12 @@
       "description": "Use this service if you need to repay money to the Department for Work and Pensions (DWP).",
       "link_text": "Go to your Repay and manage benefit money you owe account",
       "link_href": "http://localhost:8000/landing?source=your-services"
+    },
+    "hmpoCancelPassport": {
+      "header": "Cancel a lost or stolen passport",
+      "description": "Report a passport as lost or stolen or apply for a replacement.",
+      "link_text": "Go to your cancel a lost or stolen passport account",
+      "link_href": "https://www.loststolenpassport.service.gov.uk/lost-stolen/passport-holder"
     },
     "defraDangerousDogsIndex": {
       "header": "Dangerous dogs index",
@@ -1217,6 +1247,12 @@
       "link_text": "Go to your Repay and manage benefit money you owe account",
       "link_href": "http://localhost:8000/landing?source=your-services"
     },
+    "hmpoCancelPassport": {
+      "header": "Cancel a lost or stolen passport",
+      "description": "Report a passport as lost or stolen or apply for a replacement.",
+      "link_text": "Go to your cancel a lost or stolen passport account",
+      "link_href": "https://www.loststolenpassport.service.gov.uk/lost-stolen/passport-holder"
+    },
     "defraDangerousDogsIndex": {
       "header": "Dangerous dogs index",
       "description": "Search the Dangerous dogs index for dogs or owners to view their details and exemption status.",
@@ -1421,6 +1457,12 @@
       "description": "Use this service if you need to repay money to the Department for Work and Pensions (DWP).",
       "link_text": "Go to your Repay and manage benefit money you owe account",
       "link_href": "http://localhost:8000/landing?source=your-services"
+    },
+    "hmpoCancelPassport": {
+      "header": "Cancel a lost or stolen passport",
+      "description": "Report a passport as lost or stolen or apply for a replacement.",
+      "link_text": "Go to your cancel a lost or stolen passport account",
+      "link_href": "https://www.loststolenpassport.service.gov.uk/lost-stolen/passport-holder"
     },
     "defraDangerousDogsIndex": {
       "header": "Dangerous dogs index",

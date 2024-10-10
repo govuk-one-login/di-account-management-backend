@@ -178,6 +178,24 @@
       "description": "Rhoi gwybod am basbort sydd wedi cael ei golli neu wedi'i ddwyn neu wneud cais am basbort newydd.",
       "link_text": "Ewch i'ch cyfrif canslo eich pasbort sydd wedi cael ei golli neu ei ddwyn",
       "link_href": "https://www.loststolenpassport.service.gov.uk/lost-stolen/passport-holder"
+    }, 
+    "u6cETcTbDeT5PZaRRvUskHQeZq8": {
+      "header": "Mynegai cŵn peryglus",
+      "description": "Chwilio'r Mynegai cŵn peryglus am gŵn neu berchnogion i weld eu manylion a'u statws eithrio.",
+      "link_text": "Ewch i'ch cyfrif Mynegai Cŵn Peryglus",
+      "link_href": "https://dogsindex.defra.gov.uk"
+    },
+    "Xj93G5rMO2CsouiG8DJf36siQRk": {
+      "header": "Gwneud cais am dystysgrif allforio",
+      "description": "Gwneud cais am dystysgrif i allforio colur, erosolau, plaladdwyr neu nwyddau eraill.",
+      "link_text": "Ewch i'ch cyfrif tystysgrif allforio",
+      "link_href": "https://apply-for-an-export-certificate.service.gov.uk/workbasket/"
+    },
+    "gSKx5snZtYsQWSQZRoKI2oV-7lQ": {
+      "header": "Gwneud cais am drwydded fewnforio",
+      "description": "Gwneud cais am drwydded fewnforio ar gyfer ffrwydryn gwrth-bersonél, offer artaith i'w harddangos, drylliau a bwledi.",
+      "link_text": "Ewch i'ch cyfrif trwydded mewnforio",
+      "link_href": "https://apply-for-an-import-licence.service.gov.uk/workbasket/"
     },
     "Q2tqV5C1nGXFVMUcnpqbOUTrZuw": {
       "header": "Cadarnhau manylion fy mhrentisiaethau (CMAD)",
@@ -389,6 +407,24 @@
       "description": "Rhoi gwybod am basbort sydd wedi cael ei golli neu wedi'i ddwyn neu wneud cais am basbort newydd.",
       "link_text": "Ewch i'ch cyfrif canslo eich pasbort sydd wedi cael ei golli neu ei ddwyn",
       "link_href": "https://www.loststolenpassport.service.gov.uk/lost-stolen/passport-holder"
+    },
+    "u6cETcTbDeT5PZaRRvUskHQeZq8": {
+      "header": "Mynegai cŵn peryglus",
+      "description": "Chwilio'r Mynegai cŵn peryglus am gŵn neu berchnogion i weld eu manylion a'u statws eithrio.",
+      "link_text": "Ewch i'ch cyfrif Mynegai Cŵn Peryglus",
+      "link_href": "https://dogsindex.defra.gov.uk"
+    },
+    "Xj93G5rMO2CsouiG8DJf36siQRk": {
+      "header": "Gwneud cais am dystysgrif allforio",
+      "description": "Gwneud cais am dystysgrif i allforio colur, erosolau, plaladdwyr neu nwyddau eraill.",
+      "link_text": "Ewch i'ch cyfrif tystysgrif allforio",
+      "link_href": "https://apply-for-an-export-certificate.service.gov.uk/workbasket/"
+    },
+    "gSKx5snZtYsQWSQZRoKI2oV-7lQ": {
+      "header": "Gwneud cais am drwydded fewnforio",
+      "description": "Gwneud cais am drwydded fewnforio ar gyfer ffrwydryn gwrth-bersonél, offer artaith i'w harddangos, drylliau a bwledi.",
+      "link_text": "Ewch i'ch cyfrif trwydded mewnforio",
+      "link_href": "https://apply-for-an-import-licence.service.gov.uk/workbasket/"
     }
   },
   "staging": {
@@ -582,6 +618,24 @@
       "description": "Rhoi gwybod am basbort sydd wedi cael ei golli neu wedi'i ddwyn neu wneud cais am basbort newydd.",
       "link_text": "Ewch i'ch cyfrif canslo eich pasbort sydd wedi cael ei golli neu ei ddwyn",
       "link_href": "https://www.loststolenpassport.service.gov.uk/lost-stolen/passport-holder"
+    },
+    "defraDangerousDogsIndex": {
+      "header": "Mynegai cŵn peryglus",
+      "description": "Chwilio'r Mynegai cŵn peryglus am gŵn neu berchnogion i weld eu manylion a'u statws eithrio.",
+      "link_text": "Ewch i'ch cyfrif Mynegai Cŵn Peryglus",
+      "link_href": "https://dogsindex.defra.gov.uk"
+    },
+    "dbtApplyForAnExportCertificate": {
+      "header": "Gwneud cais am dystysgrif allforio",
+      "description": "Gwneud cais am dystysgrif i allforio colur, erosolau, plaladdwyr neu nwyddau eraill.",
+      "link_text": "Ewch i'ch cyfrif tystysgrif allforio",
+      "link_href": "https://apply-for-an-export-certificate.service.gov.uk/workbasket/"
+    },
+    "dbtApplyForAnImportLicense": {
+      "header": "Gwneud cais am drwydded fewnforio",
+      "description": "Gwneud cais am drwydded fewnforio ar gyfer ffrwydryn gwrth-bersonél, offer artaith i'w harddangos, drylliau a bwledi.",
+      "link_text": "Ewch i'ch cyfrif trwydded mewnforio",
+      "link_href": "https://apply-for-an-import-licence.service.gov.uk/workbasket/"
     }
   },
   "build": {
@@ -775,6 +829,24 @@
       "description": "Rhoi gwybod am basbort sydd wedi cael ei golli neu wedi'i ddwyn neu wneud cais am basbort newydd.",
       "link_text": "Ewch i'ch cyfrif canslo eich pasbort sydd wedi cael ei golli neu ei ddwyn",
       "link_href": "https://www.loststolenpassport.service.gov.uk/lost-stolen/passport-holder"
+    },
+    "defraDangerousDogsIndex": {
+      "header": "Mynegai cŵn peryglus",
+      "description": "Chwilio'r Mynegai cŵn peryglus am gŵn neu berchnogion i weld eu manylion a'u statws eithrio.",
+      "link_text": "Ewch i'ch cyfrif Mynegai Cŵn Peryglus",
+      "link_href": "https://dogsindex.defra.gov.uk"
+    },
+    "dbtApplyForAnExportCertificate": {
+      "header": "Gwneud cais am dystysgrif allforio",
+      "description": "Gwneud cais am dystysgrif i allforio colur, erosolau, plaladdwyr neu nwyddau eraill.",
+      "link_text": "Ewch i'ch cyfrif tystysgrif allforio",
+      "link_href": "https://apply-for-an-export-certificate.service.gov.uk/workbasket/"
+    },
+    "dbtApplyForAnImportLicense": {
+      "header": "Gwneud cais am drwydded fewnforio",
+      "description": "Gwneud cais am drwydded fewnforio ar gyfer ffrwydryn gwrth-bersonél, offer artaith i'w harddangos, drylliau a bwledi.",
+      "link_text": "Ewch i'ch cyfrif trwydded mewnforio",
+      "link_href": "https://apply-for-an-import-licence.service.gov.uk/workbasket/"
     }
   },
   "demo": {
@@ -963,6 +1035,24 @@
       "description": "Rhoi gwybod am basbort sydd wedi cael ei golli neu wedi'i ddwyn neu wneud cais am basbort newydd.",
       "link_text": "Ewch i'ch cyfrif canslo eich pasbort sydd wedi cael ei golli neu ei ddwyn",
       "link_href": "https://www.loststolenpassport.service.gov.uk/lost-stolen/passport-holder"
+    },
+    "defraDangerousDogsIndex": {
+      "header": "Mynegai cŵn peryglus",
+      "description": "Chwilio'r Mynegai cŵn peryglus am gŵn neu berchnogion i weld eu manylion a'u statws eithrio.",
+      "link_text": "Ewch i'ch cyfrif Mynegai Cŵn Peryglus",
+      "link_href": "https://dogsindex.defra.gov.uk"
+    },
+    "dbtApplyForAnExportCertificate": {
+      "header": "Gwneud cais am dystysgrif allforio",
+      "description": "Gwneud cais am dystysgrif i allforio colur, erosolau, plaladdwyr neu nwyddau eraill.",
+      "link_text": "Ewch i'ch cyfrif tystysgrif allforio",
+      "link_href": "https://apply-for-an-export-certificate.service.gov.uk/workbasket/"
+    },
+    "dbtApplyForAnImportLicense": {
+      "header": "Gwneud cais am drwydded fewnforio",
+      "description": "Gwneud cais am drwydded fewnforio ar gyfer ffrwydryn gwrth-bersonél, offer artaith i'w harddangos, drylliau a bwledi.",
+      "link_text": "Ewch i'ch cyfrif trwydded mewnforio",
+      "link_href": "https://apply-for-an-import-licence.service.gov.uk/workbasket/"
     }
   },
   "dev": {
@@ -1156,6 +1246,24 @@
       "description": "Rhoi gwybod am basbort sydd wedi cael ei golli neu wedi'i ddwyn neu wneud cais am basbort newydd.",
       "link_text": "Ewch i'ch cyfrif canslo eich pasbort sydd wedi cael ei golli neu ei ddwyn",
       "link_href": "https://www.loststolenpassport.service.gov.uk/lost-stolen/passport-holder"
+    },
+    "defraDangerousDogsIndex": {
+      "header": "Mynegai cŵn peryglus",
+      "description": "Chwilio'r Mynegai cŵn peryglus am gŵn neu berchnogion i weld eu manylion a'u statws eithrio.",
+      "link_text": "Ewch i'ch cyfrif Mynegai Cŵn Peryglus",
+      "link_href": "https://dogsindex.defra.gov.uk"
+    },
+    "dbtApplyForAnExportCertificate": {
+      "header": "Gwneud cais am dystysgrif allforio",
+      "description": "Gwneud cais am dystysgrif i allforio colur, erosolau, plaladdwyr neu nwyddau eraill.",
+      "link_text": "Ewch i'ch cyfrif tystysgrif allforio",
+      "link_href": "https://apply-for-an-export-certificate.service.gov.uk/workbasket/"
+    },
+    "dbtApplyForAnImportLicense": {
+      "header": "Gwneud cais am drwydded fewnforio",
+      "description": "Gwneud cais am drwydded fewnforio ar gyfer ffrwydryn gwrth-bersonél, offer artaith i'w harddangos, drylliau a bwledi.",
+      "link_text": "Ewch i'ch cyfrif trwydded mewnforio",
+      "link_href": "https://apply-for-an-import-licence.service.gov.uk/workbasket/"
     }
   },
   "local": {
@@ -1349,6 +1457,24 @@
       "description": "Rhoi gwybod am basbort sydd wedi cael ei golli neu wedi'i ddwyn neu wneud cais am basbort newydd.",
       "link_text": "Ewch i'ch cyfrif canslo eich pasbort sydd wedi cael ei golli neu ei ddwyn",
       "link_href": "https://www.loststolenpassport.service.gov.uk/lost-stolen/passport-holder"
+    },
+    "defraDangerousDogsIndex": {
+      "header": "Mynegai cŵn peryglus",
+      "description": "Chwilio'r Mynegai cŵn peryglus am gŵn neu berchnogion i weld eu manylion a'u statws eithrio.",
+      "link_text": "Ewch i'ch cyfrif Mynegai Cŵn Peryglus",
+      "link_href": "https://dogsindex.defra.gov.uk"
+    },
+    "dbtApplyForAnExportCertificate": {
+      "header": "Gwneud cais am dystysgrif allforio",
+      "description": "Gwneud cais am dystysgrif i allforio colur, erosolau, plaladdwyr neu nwyddau eraill.",
+      "link_text": "Ewch i'ch cyfrif tystysgrif allforio",
+      "link_href": "https://apply-for-an-export-certificate.service.gov.uk/workbasket/"
+    },
+    "dbtApplyForAnImportLicense": {
+      "header": "Gwneud cais am drwydded fewnforio",
+      "description": "Gwneud cais am drwydded fewnforio ar gyfer ffrwydryn gwrth-bersonél, offer artaith i'w harddangos, drylliau a bwledi.",
+      "link_text": "Ewch i'ch cyfrif trwydded mewnforio",
+      "link_href": "https://apply-for-an-import-licence.service.gov.uk/workbasket/"
     }
   }
 }

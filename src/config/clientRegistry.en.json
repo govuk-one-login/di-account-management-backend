@@ -190,7 +190,7 @@
       "description": "Apply for an import licence for anti-personnel mines, torture equipment for display, firearms and ammunition.",
       "link_text": "Go to your import licence account",
       "link_href": "https://apply-for-an-import-licence.service.gov.uk/workbasket/"
-    },      
+    },
     "Q2tqV5C1nGXFVMUcnpqbOUTrZuw": {
       "header": "Confirm my apprenticeship details (CMAD)",
       "description": "Check and confirm your apprenticeship details.",
@@ -1397,7 +1397,6 @@
       "description": "Apply for an import licence for anti-personnel mines, torture equipment for display, firearms and ammunition.",
       "link_text": "Go to your import licence account",
       "link_href": "https://apply-for-an-import-licence.service.gov.uk/workbasket/"
-    },
     }
   }
 }

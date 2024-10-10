@@ -173,6 +173,12 @@
       "link_text": "Ewch i Dŷ'r Cwmnïau",
       "link_href": "https://find-and-update.company-information.service.gov.uk/"
     },
+    "gSKx5snZtYsQWSQZRoKI2oV-7lQ": {
+      "header": "Gwneud cais am drwydded fewnforio",
+      "description": "Gwneud cais am drwydded fewnforio ar gyfer ffrwydryn gwrth-bersonél, offer artaith i'w harddangos, drylliau a bwledi.",
+      "link_text": "Ewch i'ch cyfrif trwydded mewnforio",
+      "link_href": "https://apply-for-an-import-licence.service.gov.uk/workbasket/"
+    },
     "Q2tqV5C1nGXFVMUcnpqbOUTrZuw": {
       "header": "Cadarnhau manylion fy mhrentisiaethau (CMAD)",
       "description": "Gwirio a chadarnhau eich manylion prentisiaeth.",
@@ -377,6 +383,12 @@
       "description": "Ad-dalu unrhyw arian sy'n ddyledus gennych i'r Adran Gwaith a Phensiynau (DWP).",
       "link_text": "Ewch i Ad-dalu a rheoli arian budd-dal sy’n ddyledus gennych",
       "link_href": "https://repay-my-debt.services.aks-test-ext.np.az.dwpcloud.uk/oidv-sign-in"
+    },
+    "gSKx5snZtYsQWSQZRoKI2oV-7lQ": {
+      "header": "Gwneud cais am drwydded fewnforio",
+      "description": "Gwneud cais am drwydded fewnforio ar gyfer ffrwydryn gwrth-bersonél, offer artaith i'w harddangos, drylliau a bwledi.",
+      "link_text": "Ewch i'ch cyfrif trwydded mewnforio",
+      "link_href": "https://apply-for-an-import-licence.service.gov.uk/workbasket/"
     }
   },
   "staging": {
@@ -564,6 +576,12 @@
       "description": "Ad-dalu unrhyw arian sy'n ddyledus gennych i'r Adran Gwaith a Phensiynau (DWP).",
       "link_text": "Ewch i Ad-dalu a rheoli arian budd-dal sy’n ddyledus gennych",
       "link_href": "http://localhost:8000/landing?source=your-services"
+    },
+    "dbtApplyForAnImportLicense": {
+      "header": "Gwneud cais am drwydded fewnforio",
+      "description": "Gwneud cais am drwydded fewnforio ar gyfer ffrwydryn gwrth-bersonél, offer artaith i'w harddangos, drylliau a bwledi.",
+      "link_text": "Ewch i'ch cyfrif trwydded mewnforio",
+      "link_href": "https://apply-for-an-import-licence.service.gov.uk/workbasket/"
     }
   },
   "build": {
@@ -751,6 +769,12 @@
       "description": "Ad-dalu unrhyw arian sy'n ddyledus gennych i'r Adran Gwaith a Phensiynau (DWP).",
       "link_text": "Ewch i Ad-dalu a rheoli arian budd-dal sy’n ddyledus gennych",
       "link_href": "http://localhost:8000/landing?source=your-services"
+    },
+    "dbtApplyForAnImportLicense": {
+      "header": "Gwneud cais am drwydded fewnforio",
+      "description": "Gwneud cais am drwydded fewnforio ar gyfer ffrwydryn gwrth-bersonél, offer artaith i'w harddangos, drylliau a bwledi.",
+      "link_text": "Ewch i'ch cyfrif trwydded mewnforio",
+      "link_href": "https://apply-for-an-import-licence.service.gov.uk/workbasket/"
     }
   },
   "demo": {
@@ -933,6 +957,12 @@
       "description": "Ad-dalu unrhyw arian sy'n ddyledus gennych i'r Adran Gwaith a Phensiynau (DWP).",
       "link_text": "Ewch i Ad-dalu a rheoli arian budd-dal sy’n ddyledus gennych",
       "link_href": "http://localhost:8000/landing?source=your-services"
+    },
+    "dbtApplyForAnImportLicense": {
+      "header": "Gwneud cais am drwydded fewnforio",
+      "description": "Gwneud cais am drwydded fewnforio ar gyfer ffrwydryn gwrth-bersonél, offer artaith i'w harddangos, drylliau a bwledi.",
+      "link_text": "Ewch i'ch cyfrif trwydded mewnforio",
+      "link_href": "https://apply-for-an-import-licence.service.gov.uk/workbasket/"
     }
   },
   "dev": {
@@ -1120,6 +1150,12 @@
       "description": "Ad-dalu unrhyw arian sy'n ddyledus gennych i'r Adran Gwaith a Phensiynau (DWP).",
       "link_text": "Ewch i Ad-dalu a rheoli arian budd-dal sy’n ddyledus gennych",
       "link_href": "http://localhost:8000/landing?source=your-services"
+    },
+    "dbtApplyForAnImportLicense": {
+      "header": "Gwneud cais am drwydded fewnforio",
+      "description": "Gwneud cais am drwydded fewnforio ar gyfer ffrwydryn gwrth-bersonél, offer artaith i'w harddangos, drylliau a bwledi.",
+      "link_text": "Ewch i'ch cyfrif trwydded mewnforio",
+      "link_href": "https://apply-for-an-import-licence.service.gov.uk/workbasket/"
     }
   },
   "local": {
@@ -1307,6 +1343,12 @@
       "description": "Ad-dalu unrhyw arian sy'n ddyledus gennych i'r Adran Gwaith a Phensiynau (DWP).",
       "link_text": "Ewch i Ad-dalu a rheoli arian budd-dal sy’n ddyledus gennych",
       "link_href": "http://localhost:8000/landing?source=your-services"
+    },
+    "dbtApplyForAnImportLicense": {
+      "header": "Gwneud cais am drwydded fewnforio",
+      "description": "Gwneud cais am drwydded fewnforio ar gyfer ffrwydryn gwrth-bersonél, offer artaith i'w harddangos, drylliau a bwledi.",
+      "link_text": "Ewch i'ch cyfrif trwydded mewnforio",
+      "link_href": "https://apply-for-an-import-licence.service.gov.uk/workbasket/"
     }
   }
 }

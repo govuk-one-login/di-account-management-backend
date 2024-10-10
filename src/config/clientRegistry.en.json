@@ -179,6 +179,12 @@
       "link_text": "Go to Companies House",
       "link_href": "https://find-and-update.company-information.service.gov.uk/"
     },
+    "u6cETcTbDeT5PZaRRvUskHQeZq8": {
+      "header": "Dangerous dogs index",
+      "description": "Search the Dangerous dogs index for dogs or owners to view their details and exemption status.",
+      "link_text": "Go to your Dangerous dogs index account",
+      "link_href": "https://dogsindex.defra.gov.uk"
+    },
     "Xj93G5rMO2CsouiG8DJf36siQRk": {
       "header": "Apply for an export certificate",
       "description": "Apply for a certificate to export cosmetics, aerosols, pesticides or other goods.",
@@ -396,6 +402,12 @@
       "link_text": "Go to your Repay and manage benefit money you owe account",
       "link_href": "https://repay-my-debt.services.aks-test-ext.np.az.dwpcloud.uk/oidv-sign-in"
     },
+    "u6cETcTbDeT5PZaRRvUskHQeZq8": {
+      "header": "Dangerous dogs index",
+      "description": "Search the Dangerous dogs index for dogs or owners to view their details and exemption status.",
+      "link_text": "Go to your Dangerous dogs index account",
+      "link_href": "https://dogsindex.defra.gov.uk"
+    },
     "Xj93G5rMO2CsouiG8DJf36siQRk": {
       "header": "Apply for an export certificate",
       "description": "Apply for a certificate to export cosmetics, aerosols, pesticides or other goods.",
@@ -594,6 +606,12 @@
       "description": "Use this service if you need to repay money to the Department for Work and Pensions (DWP).",
       "link_text": "Go to your Repay and manage benefit money you owe account",
       "link_href": "http://localhost:8000/landing?source=your-services"
+    },
+    "defraDangerousDogsIndex": {
+      "header": "Dangerous dogs index",
+      "description": "Search the Dangerous dogs index for dogs or owners to view their details and exemption status.",
+      "link_text": "Go to your Dangerous dogs index account",
+      "link_href": "https://dogsindex.defra.gov.uk"
     },
     "dbtApplyForAnExportCertificate": {
       "header": "Apply for an export certificate",
@@ -794,6 +812,12 @@
       "link_text": "Go to your Repay and manage benefit money you owe account",
       "link_href": "http://localhost:8000/landing?source=your-services"
     },
+    "defraDangerousDogsIndex": {
+      "header": "Dangerous dogs index",
+      "description": "Search the Dangerous dogs index for dogs or owners to view their details and exemption status.",
+      "link_text": "Go to your Dangerous dogs index account",
+      "link_href": "https://dogsindex.defra.gov.uk"
+    },
     "dbtApplyForAnExportCertificate": {
       "header": "Apply for an export certificate",
       "description": "Apply for a certificate to export cosmetics, aerosols, pesticides or other goods.",
@@ -987,6 +1011,12 @@
       "description": "Use this service if you need to repay money to the Department for Work and Pensions (DWP).",
       "link_text": "Go to your Repay and manage benefit money you owe account",
       "link_href": "http://localhost:8000/landing?source=your-services"
+    },
+    "defraDangerousDogsIndex": {
+      "header": "Dangerous dogs index",
+      "description": "Search the Dangerous dogs index for dogs or owners to view their details and exemption status.",
+      "link_text": "Go to your Dangerous dogs index account",
+      "link_href": "https://dogsindex.defra.gov.uk"
     },
     "dbtApplyForAnExportCertificate": {
       "header": "Apply for an export certificate",
@@ -1187,6 +1217,12 @@
       "link_text": "Go to your Repay and manage benefit money you owe account",
       "link_href": "http://localhost:8000/landing?source=your-services"
     },
+    "defraDangerousDogsIndex": {
+      "header": "Dangerous dogs index",
+      "description": "Search the Dangerous dogs index for dogs or owners to view their details and exemption status.",
+      "link_text": "Go to your Dangerous dogs index account",
+      "link_href": "https://dogsindex.defra.gov.uk"
+    },
     "dbtApplyForAnExportCertificate": {
       "header": "Apply for an export certificate",
       "description": "Apply for a certificate to export cosmetics, aerosols, pesticides or other goods.",
@@ -1385,6 +1421,12 @@
       "description": "Use this service if you need to repay money to the Department for Work and Pensions (DWP).",
       "link_text": "Go to your Repay and manage benefit money you owe account",
       "link_href": "http://localhost:8000/landing?source=your-services"
+    },
+    "defraDangerousDogsIndex": {
+      "header": "Dangerous dogs index",
+      "description": "Search the Dangerous dogs index for dogs or owners to view their details and exemption status.",
+      "link_text": "Go to your Dangerous dogs index account",
+      "link_href": "https://dogsindex.defra.gov.uk"
     },
     "dbtApplyForAnExportCertificate": {
       "header": "Apply for an export certificate",

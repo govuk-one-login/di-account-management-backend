@@ -173,6 +173,12 @@
       "link_text": "Ewch i Dŷ'r Cwmnïau",
       "link_href": "https://find-and-update.company-information.service.gov.uk/"
     },
+    "Xj93G5rMO2CsouiG8DJf36siQRk": {
+      "header": "Gwneud cais am dystysgrif allforio",
+      "description": "Gwneud cais am dystysgrif i allforio colur, erosolau, plaladdwyr neu nwyddau eraill.",
+      "link_text": "Ewch i'ch cyfrif tystysgrif allforio",
+      "link_href": "https://apply-for-an-export-certificate.service.gov.uk/workbasket/"
+    },
     "gSKx5snZtYsQWSQZRoKI2oV-7lQ": {
       "header": "Gwneud cais am drwydded fewnforio",
       "description": "Gwneud cais am drwydded fewnforio ar gyfer ffrwydryn gwrth-bersonél, offer artaith i'w harddangos, drylliau a bwledi.",
@@ -384,6 +390,12 @@
       "link_text": "Ewch i Ad-dalu a rheoli arian budd-dal sy’n ddyledus gennych",
       "link_href": "https://repay-my-debt.services.aks-test-ext.np.az.dwpcloud.uk/oidv-sign-in"
     },
+    "Xj93G5rMO2CsouiG8DJf36siQRk": {
+      "header": "Gwneud cais am dystysgrif allforio",
+      "description": "Gwneud cais am dystysgrif i allforio colur, erosolau, plaladdwyr neu nwyddau eraill.",
+      "link_text": "Ewch i'ch cyfrif tystysgrif allforio",
+      "link_href": "https://apply-for-an-export-certificate.service.gov.uk/workbasket/"
+    },
     "gSKx5snZtYsQWSQZRoKI2oV-7lQ": {
       "header": "Gwneud cais am drwydded fewnforio",
       "description": "Gwneud cais am drwydded fewnforio ar gyfer ffrwydryn gwrth-bersonél, offer artaith i'w harddangos, drylliau a bwledi.",
@@ -576,6 +588,12 @@
       "description": "Ad-dalu unrhyw arian sy'n ddyledus gennych i'r Adran Gwaith a Phensiynau (DWP).",
       "link_text": "Ewch i Ad-dalu a rheoli arian budd-dal sy’n ddyledus gennych",
       "link_href": "http://localhost:8000/landing?source=your-services"
+    },
+    "dbtApplyForAnExportCertificate": {
+      "header": "Gwneud cais am dystysgrif allforio",
+      "description": "Gwneud cais am dystysgrif i allforio colur, erosolau, plaladdwyr neu nwyddau eraill.",
+      "link_text": "Ewch i'ch cyfrif tystysgrif allforio",
+      "link_href": "https://apply-for-an-export-certificate.service.gov.uk/workbasket/"
     },
     "dbtApplyForAnImportLicense": {
       "header": "Gwneud cais am drwydded fewnforio",
@@ -770,6 +788,12 @@
       "link_text": "Ewch i Ad-dalu a rheoli arian budd-dal sy’n ddyledus gennych",
       "link_href": "http://localhost:8000/landing?source=your-services"
     },
+    "dbtApplyForAnExportCertificate": {
+      "header": "Gwneud cais am dystysgrif allforio",
+      "description": "Gwneud cais am dystysgrif i allforio colur, erosolau, plaladdwyr neu nwyddau eraill.",
+      "link_text": "Ewch i'ch cyfrif tystysgrif allforio",
+      "link_href": "https://apply-for-an-export-certificate.service.gov.uk/workbasket/"
+    },
     "dbtApplyForAnImportLicense": {
       "header": "Gwneud cais am drwydded fewnforio",
       "description": "Gwneud cais am drwydded fewnforio ar gyfer ffrwydryn gwrth-bersonél, offer artaith i'w harddangos, drylliau a bwledi.",
@@ -957,6 +981,12 @@
       "description": "Ad-dalu unrhyw arian sy'n ddyledus gennych i'r Adran Gwaith a Phensiynau (DWP).",
       "link_text": "Ewch i Ad-dalu a rheoli arian budd-dal sy’n ddyledus gennych",
       "link_href": "http://localhost:8000/landing?source=your-services"
+    },
+    "dbtApplyForAnExportCertificate": {
+      "header": "Gwneud cais am dystysgrif allforio",
+      "description": "Gwneud cais am dystysgrif i allforio colur, erosolau, plaladdwyr neu nwyddau eraill.",
+      "link_text": "Ewch i'ch cyfrif tystysgrif allforio",
+      "link_href": "https://apply-for-an-export-certificate.service.gov.uk/workbasket/"
     },
     "dbtApplyForAnImportLicense": {
       "header": "Gwneud cais am drwydded fewnforio",
@@ -1151,6 +1181,12 @@
       "link_text": "Ewch i Ad-dalu a rheoli arian budd-dal sy’n ddyledus gennych",
       "link_href": "http://localhost:8000/landing?source=your-services"
     },
+    "dbtApplyForAnExportCertificate": {
+      "header": "Gwneud cais am dystysgrif allforio",
+      "description": "Gwneud cais am dystysgrif i allforio colur, erosolau, plaladdwyr neu nwyddau eraill.",
+      "link_text": "Ewch i'ch cyfrif tystysgrif allforio",
+      "link_href": "https://apply-for-an-export-certificate.service.gov.uk/workbasket/"
+    },
     "dbtApplyForAnImportLicense": {
       "header": "Gwneud cais am drwydded fewnforio",
       "description": "Gwneud cais am drwydded fewnforio ar gyfer ffrwydryn gwrth-bersonél, offer artaith i'w harddangos, drylliau a bwledi.",
@@ -1343,6 +1379,12 @@
       "description": "Ad-dalu unrhyw arian sy'n ddyledus gennych i'r Adran Gwaith a Phensiynau (DWP).",
       "link_text": "Ewch i Ad-dalu a rheoli arian budd-dal sy’n ddyledus gennych",
       "link_href": "http://localhost:8000/landing?source=your-services"
+    },
+    "dbtApplyForAnExportCertificate": {
+      "header": "Gwneud cais am dystysgrif allforio",
+      "description": "Gwneud cais am dystysgrif i allforio colur, erosolau, plaladdwyr neu nwyddau eraill.",
+      "link_text": "Ewch i'ch cyfrif tystysgrif allforio",
+      "link_href": "https://apply-for-an-export-certificate.service.gov.uk/workbasket/"
     },
     "dbtApplyForAnImportLicense": {
       "header": "Gwneud cais am drwydded fewnforio",

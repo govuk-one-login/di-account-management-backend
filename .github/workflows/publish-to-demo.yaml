@@ -119,7 +119,8 @@ jobs:
         uses: govuk-one-login/github-actions/sam/check-stack-updated@b00f9eeccebbc72083d8ffca4f0a2448fb14bda5 #bau-new-cloudformation-polling-action
         with:
           stack-name: home-backend
-          gh-polling-role: ${{ secrets.DEMO_UPDATE_POLLING_ROLE }}
+          gh-polling-role: ${{ secrets.DEMO_UPDATE_POLLING_ROLE }} # this is manually applied in cloudformation from:
+          #https://github.com/govuk-one-login/devplatform-deploy/blob/main/pre-merge-role/template.yaml
 
       - name: Set up AWS creds
         uses: aws-actions/configure-aws-credentials@e1e17a757e536f70e52b5a12b2e8d1d1c60e04ef # pin@v1-node16

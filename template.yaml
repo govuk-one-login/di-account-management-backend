@@ -735,7 +735,7 @@ Resources:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-save-raw-events
       CodeUri: src
       PackageType: Zip
-      MemorySize: 170
+      MemorySize: 220
       Events:
         InputQueue:
           Type: SQS
@@ -749,6 +749,9 @@ Resources:
         TargetArn: !GetAtt SaveRawEventsDeadLetterQueue.Arn
       Handler: save-raw-events.handler
       Role: !GetAtt SaveRawEventsRole.Arn
+      ReservedConcurrentExecutions: 30
+      ProvisionedConcurrencyConfig:
+        ProvisionedConcurrentExecutions: 30
       Environment:
         Variables:
           TABLE_NAME: !Ref RawEventsStoreTableName
@@ -960,7 +963,7 @@ Resources:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-query-user-services
       CodeUri: src
       PackageType: Zip
-      MemorySize: 200
+      MemorySize: 250
       Events:
         DynamoStream:
           Type: DynamoDB
@@ -980,6 +983,9 @@ Resources:
         TargetArn: !GetAtt QueryUserServicesDeadLetterQueue.Arn
       Handler: query-user-services.handler
       Role: !GetAtt QueryUserServicesRole.Arn
+      ReservedConcurrentExecutions: 30
+      ProvisionedConcurrencyConfig:
+        ProvisionedConcurrentExecutions: 30
       Environment:
         Variables:
           TABLE_NAME: !Ref UserServicesStoreTableName
@@ -1228,7 +1234,7 @@ Resources:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-format-user-services
       CodeUri: src
       PackageType: Zip
-      MemorySize: 195
+      MemorySize: 245
       Events:
         UserServicesToFormatQueue:
           Type: SQS
@@ -1239,6 +1245,9 @@ Resources:
         TargetArn: !GetAtt FormatUserServicesDeadLetterQueue.Arn
       Handler: format-user-services.handler
       Role: !GetAtt FormatUserServicesRole.Arn
+      ReservedConcurrentExecutions: 30
+      ProvisionedConcurrencyConfig:
+        ProvisionedConcurrentExecutions: 30
       Environment:
         Variables:
           OUTPUT_QUEUE_URL: !Ref UserServicesToWriteQueue
@@ -1468,7 +1477,7 @@ Resources:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-write-user-services
       CodeUri: src
       PackageType: Zip
-      MemorySize: 170
+      MemorySize: 220
       Events:
         UserServicesToWriteQueue:
           Type: SQS
@@ -2359,7 +2368,7 @@ Resources:
       CodeUri: src
       PackageType: Zip
       Timeout: 30
-      MemorySize: 205
+      MemorySize: 250
       Events:
         ActivityLogToWriteQueue:
           Type: SQS
@@ -2370,6 +2379,9 @@ Resources:
         TargetArn: !GetAtt WriteActivityLogDeadLetterQueue.Arn
       Handler: write-activity-log.handler
       Role: !GetAtt WriteActivityRecordRole.Arn
+      ReservedConcurrentExecutions: 30
+      ProvisionedConcurrencyConfig:
+        ProvisionedConcurrentExecutions: 30
       Environment:
         Variables:
           TABLE_NAME: !Ref ActivityLogsStoreTableName
@@ -2595,7 +2607,7 @@ Resources:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-format-activity-log
       CodeUri: src
       PackageType: Zip
-      MemorySize: 180
+      MemorySize: 230
       Events:
         DynamoStream:
           Type: DynamoDB
@@ -2615,6 +2627,9 @@ Resources:
         TargetArn: !GetAtt FormatActivityLogDeadLetterQueue.Arn
       Handler: format-activity-log.handler
       Role: !GetAtt FormatActivityLogRole.Arn
+      ReservedConcurrentExecutions: 30
+      ProvisionedConcurrencyConfig:
+        ProvisionedConcurrentExecutions: 30
       Environment:
         Variables:
           OUTPUT_QUEUE_URL: !Ref ActivityLogToWriteQueue

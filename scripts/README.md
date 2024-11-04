@@ -23,15 +23,6 @@ This script simplifies the process of updating translation files for multiple en
 
 #### Setup
 
-1. This script currently doesn’t require external libraries.
-
-2. File Paths: Update the paths in the script if needed:
-
-- FRONTEND_TRANSLATION_FILES: List of translation file paths in the frontend repository.
-- BACKEND_TRANSLATION_FILES: List of translation file paths in the backend repository.
-
-#### Setup
-
 1. **No External Libraries Needed**: This script currently doesn’t require any external libraries.
 
 2. **File Paths**: Update the paths in the script if needed:
@@ -51,11 +42,14 @@ This script simplifies the process of updating translation files for multiple en
 
      - **Branch Name**: Enter the name of the new branch where the updates will be committed.
      - **Production and Non-Production IDs**: Specify unique IDs for translation keys in production and non-production environments.
-     - **Translation Details**: You’ll be prompted to enter English and Welsh translations for:
-       - Header text
-       - Description text
-       - Link text
-       - Link href (URL)
+
+   - **RP constant**: Specify unique constant name for the config.ts allowed list.
+   - **Translation Details**: You’ll be prompted to enter English and Welsh translations for:
+
+     - Header text
+     - Description text
+     - Link text
+     - Link href (URL)
 
    - **Verify Output**: After completion, check both the frontend and backend repositories to confirm that:
      - Translation files were updated as expected.

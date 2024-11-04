@@ -208,6 +208,12 @@
       "description": "Check and confirm your apprenticeship details.",
       "link_text": "Go to your account to confirm your apprenticeship",
       "link_href": "https://confirm.my.apprenticeships.education.gov.uk/"
+    },
+    "CVZjwDf4DJROtdPH2vStPXUALrM": {
+      "header": "Teaching vacancies in England",
+      "description": "Search and apply for teaching, leadership and education support vacancies.",
+      "link_text": "Go to your Teaching vacancies account",
+      "link_href": "https://teaching-vacancies.service.gov.uk/jobseekers/account"
     }
   },
   "integration": {
@@ -431,6 +437,12 @@
       "description": "Apply for an import licence for anti-personnel mines, torture equipment for display, firearms and ammunition.",
       "link_text": "Go to your import licence account",
       "link_href": "https://apply-for-an-import-licence.service.gov.uk/workbasket/"
+    },
+    "CVZjwDf4DJROtdPH2vStPXUALrM": {
+      "header": "Teaching vacancies in England",
+      "description": "Search and apply for teaching, leadership and education support vacancies.",
+      "link_text": "Go to your Teaching vacancies account",
+      "link_href": "https://teaching-vacancies.service.gov.uk/jobseekers/account"
     }
   },
   "staging": {
@@ -642,6 +654,12 @@
       "description": "Apply for an import licence for anti-personnel mines, torture equipment for display, firearms and ammunition.",
       "link_text": "Go to your import licence account",
       "link_href": "https://apply-for-an-import-licence.service.gov.uk/workbasket/"
+    },
+    "dfeTeacherVacancies": {
+      "header": "Teaching vacancies in England",
+      "description": "Search and apply for teaching, leadership and education support vacancies.",
+      "link_text": "Go to your Teaching vacancies account",
+      "link_href": "https://teaching-vacancies.service.gov.uk/jobseekers/account"
     }
   },
   "build": {
@@ -853,6 +871,12 @@
       "description": "Apply for an import licence for anti-personnel mines, torture equipment for display, firearms and ammunition.",
       "link_text": "Go to your import licence account",
       "link_href": "https://apply-for-an-import-licence.service.gov.uk/workbasket/"
+    },
+    "dfeTeacherVacancies": {
+      "header": "Teaching vacancies in England",
+      "description": "Search and apply for teaching, leadership and education support vacancies.",
+      "link_text": "Go to your Teaching vacancies account",
+      "link_href": "https://teaching-vacancies.service.gov.uk/jobseekers/account"
     }
   },
   "demo": {
@@ -1059,6 +1083,12 @@
       "description": "Apply for an import licence for anti-personnel mines, torture equipment for display, firearms and ammunition.",
       "link_text": "Go to your import licence account",
       "link_href": "https://apply-for-an-import-licence.service.gov.uk/workbasket/"
+    },
+    "dfeTeacherVacancies": {
+      "header": "Teaching vacancies in England",
+      "description": "Search and apply for teaching, leadership and education support vacancies.",
+      "link_text": "Go to your Teaching vacancies account",
+      "link_href": "https://teaching-vacancies.service.gov.uk/jobseekers/account"
     }
   },
   "dev": {
@@ -1270,6 +1300,12 @@
       "description": "Apply for an import licence for anti-personnel mines, torture equipment for display, firearms and ammunition.",
       "link_text": "Go to your import licence account",
       "link_href": "https://apply-for-an-import-licence.service.gov.uk/workbasket/"
+    },
+    "dfeTeacherVacancies": {
+      "header": "Teaching vacancies in England",
+      "description": "Search and apply for teaching, leadership and education support vacancies.",
+      "link_text": "Go to your Teaching vacancies account",
+      "link_href": "https://teaching-vacancies.service.gov.uk/jobseekers/account"
     }
   },
   "local": {
@@ -1481,6 +1517,12 @@
       "description": "Apply for an import licence for anti-personnel mines, torture equipment for display, firearms and ammunition.",
       "link_text": "Go to your import licence account",
       "link_href": "https://apply-for-an-import-licence.service.gov.uk/workbasket/"
+    },
+    "dfeTeacherVacancies": {
+      "header": "Teaching vacancies in England",
+      "description": "Search and apply for teaching, leadership and education support vacancies.",
+      "link_text": "Go to your Teaching vacancies account",
+      "link_href": "https://teaching-vacancies.service.gov.uk/jobseekers/account"
     }
   }
 }

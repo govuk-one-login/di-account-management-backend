@@ -9,7 +9,7 @@ on:
         default: ${{ github.ref }}
   workflow_dispatch:
   pull_request:
-      types: [opened, synchronize, reopened]
+    types: [opened, synchronize, reopened]
   push:
     branches:
       - main
@@ -36,7 +36,7 @@ jobs:
       - name: Set up AWS creds
         uses: aws-actions/configure-aws-credentials@e1e17a757e536f70e52b5a12b2e8d1d1c60e04ef # pin@v1-node16
         with:
-          role-to-assume: ${{ secrets.CloudFormationStackTestingGitHubActionsRole }}
+          role-to-assume: ${{ secrets.CloudFormationStackTestingGitHubActionsRole}}
           aws-region: eu-west-2
 
   test:

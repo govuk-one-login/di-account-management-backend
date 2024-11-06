@@ -124,7 +124,6 @@ export const handler = async (
     const notifyApiKey = await getSecret(NOTIFY_API_KEY, {
       maxAge: 900,
     });
-
     assert(notifyApiKey, `${NOTIFY_API_KEY} secret not retrieved`);
     const response = await sendConfMail(
       notifyApiKey as string,

@@ -179,6 +179,12 @@
       "link_text": "Go to Companies House",
       "link_href": "https://find-and-update.company-information.service.gov.uk/"
     },
+    "kvGpTatgWm3YqXHbG41eOdDf91k": {
+      "header": "Repay and manage benefit money you owe",
+      "description": "Repay any money you owe to the Department for Work and Pensions (DWP).",
+      "link_text": "Go to your Repay and manage benefit money you owe account",
+      "link_href": "https://www.repay-manage-benefit-owed.service.gov.uk/oidv-sign-in"
+    },
     "l6GFmD8ndn7afVcm6SqAHlM8IVM": {
       "header": "Cancel a lost or stolen passport",
       "description": "Report a passport as lost or stolen or apply for a replacement.",
@@ -404,9 +410,9 @@
     },
     "RtE7mP5yzCrdthst1kuVHS1SsSw": {
       "header": "Repay and manage benefit money you owe",
-      "description": "Use this service if you need to repay money to the Department for Work and Pensions (DWP).",
+      "description": "Repay any money you owe to the Department for Work and Pensions (DWP).",
       "link_text": "Go to your Repay and manage benefit money you owe account",
-      "link_href": "https://repay-my-debt.services.aks-test-ext.np.az.dwpcloud.uk/oidv-sign-in"
+      "link_href": "https://www.repay-manage-benefit-owed.service.gov.uk/oidv-sign-in"
     },
     "l6GFmD8ndn7afVcm6SqAHlM8IVM": {
       "header": "Cancel a lost or stolen passport",
@@ -615,9 +621,9 @@
     },
     "dwpBenefitOwed": {
       "header": "Repay and manage benefit money you owe",
-      "description": "Use this service if you need to repay money to the Department for Work and Pensions (DWP).",
+      "description": "Repay any money you owe to the Department for Work and Pensions (DWP).",
       "link_text": "Go to your Repay and manage benefit money you owe account",
-      "link_href": "http://localhost:8000/landing?source=your-services"
+      "link_href": "https://www.repay-manage-benefit-owed.service.gov.uk/oidv-sign-in"
     },
     "hmpoCancelPassport": {
       "header": "Cancel a lost or stolen passport",
@@ -826,9 +832,9 @@
     },
     "dwpBenefitOwed": {
       "header": "Repay and manage benefit money you owe",
-      "description": "Use this service if you need to repay money to the Department for Work and Pensions (DWP).",
+      "description": "Repay any money you owe to the Department for Work and Pensions (DWP).",
       "link_text": "Go to your Repay and manage benefit money you owe account",
-      "link_href": "http://localhost:8000/landing?source=your-services"
+      "link_href": "https://www.repay-manage-benefit-owed.service.gov.uk/oidv-sign-in"
     },
     "hmpoCancelPassport": {
       "header": "Cancel a lost or stolen passport",
@@ -1032,9 +1038,9 @@
     },
     "dwpBenefitOwed": {
       "header": "Repay and manage benefit money you owe",
-      "description": "Use this service if you need to repay money to the Department for Work and Pensions (DWP).",
+      "description": "Repay any money you owe to the Department for Work and Pensions (DWP).",
       "link_text": "Go to your Repay and manage benefit money you owe account",
-      "link_href": "http://localhost:8000/landing?source=your-services"
+      "link_href": "https://www.repay-manage-benefit-owed.service.gov.uk/oidv-sign-in"
     },
     "hmpoCancelPassport": {
       "header": "Cancel a lost or stolen passport",
@@ -1243,9 +1249,9 @@
     },
     "dwpBenefitOwed": {
       "header": "Repay and manage benefit money you owe",
-      "description": "Use this service if you need to repay money to the Department for Work and Pensions (DWP).",
+      "description": "Repay any money you owe to the Department for Work and Pensions (DWP).",
       "link_text": "Go to your Repay and manage benefit money you owe account",
-      "link_href": "http://localhost:8000/landing?source=your-services"
+      "link_href": "https://www.repay-manage-benefit-owed.service.gov.uk/oidv-sign-in"
     },
     "hmpoCancelPassport": {
       "header": "Cancel a lost or stolen passport",
@@ -1454,9 +1460,9 @@
     },
     "dwpBenefitOwed": {
       "header": "Repay and manage benefit money you owe",
-      "description": "Use this service if you need to repay money to the Department for Work and Pensions (DWP).",
+      "description": "Repay any money you owe to the Department for Work and Pensions (DWP).",
       "link_text": "Go to your Repay and manage benefit money you owe account",
-      "link_href": "http://localhost:8000/landing?source=your-services"
+      "link_href": "https://www.repay-manage-benefit-owed.service.gov.uk/oidv-sign-in"
     },
     "hmpoCancelPassport": {
       "header": "Cancel a lost or stolen passport",

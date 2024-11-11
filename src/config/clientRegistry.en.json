@@ -220,6 +220,12 @@
       "description": "Search and apply for teaching, leadership and education support vacancies.",
       "link_text": "Go to your Teaching vacancies account",
       "link_href": "https://teaching-vacancies.service.gov.uk/jobseekers/account"
+    },
+    "eywumu-XiJCz7RHyw4Zv8iTgsuc": {
+      "header": "Local authority flexible register",
+      "description": "Upload declaration notification templates to Ofgem and manage your users' accounts.",
+      "link_text": "Go to your flexible register account",
+      "link_href": "https://laf.ofgem.gov.uk/"
     }
   },
   "integration": {
@@ -449,6 +455,12 @@
       "description": "Search and apply for teaching, leadership and education support vacancies.",
       "link_text": "Go to your Teaching vacancies account",
       "link_href": "https://teaching-vacancies.service.gov.uk/jobseekers/account"
+    },
+    "eywumu-XiJCz7RHyw4Zv8iTgsuc": {
+      "header": "Local authority flexible register",
+      "description": "Upload declaration notification templates to Ofgem and manage your users' accounts.",
+      "link_text": "Go to your flexible register account",
+      "link_href": "https://laf.ofgem.gov.uk/"
     }
   },
   "staging": {
@@ -666,6 +678,12 @@
       "description": "Search and apply for teaching, leadership and education support vacancies.",
       "link_text": "Go to your Teaching vacancies account",
       "link_href": "https://teaching-vacancies.service.gov.uk/jobseekers/account"
+    },
+    "ofgemLafReg": {
+      "header": "Local authority flexible register",
+      "description": "Upload declaration notification templates to Ofgem and manage your users' accounts.",
+      "link_text": "Go to your flexible register account",
+      "link_href": "https://laf.ofgem.gov.uk/"
     }
   },
   "build": {
@@ -883,6 +901,12 @@
       "description": "Search and apply for teaching, leadership and education support vacancies.",
       "link_text": "Go to your Teaching vacancies account",
       "link_href": "https://teaching-vacancies.service.gov.uk/jobseekers/account"
+    },
+    "ofgemLafReg": {
+      "header": "Local authority flexible register",
+      "description": "Upload declaration notification templates to Ofgem and manage your users' accounts.",
+      "link_text": "Go to your flexible register account",
+      "link_href": "https://laf.ofgem.gov.uk/"
     }
   },
   "demo": {
@@ -1095,6 +1119,12 @@
       "description": "Search and apply for teaching, leadership and education support vacancies.",
       "link_text": "Go to your Teaching vacancies account",
       "link_href": "https://teaching-vacancies.service.gov.uk/jobseekers/account"
+    },
+    "ofgemLafReg": {
+      "header": "Local authority flexible register",
+      "description": "Upload declaration notification templates to Ofgem and manage your users' accounts.",
+      "link_text": "Go to your flexible register account",
+      "link_href": "https://laf.ofgem.gov.uk/"
     }
   },
   "dev": {
@@ -1312,6 +1342,12 @@
       "description": "Search and apply for teaching, leadership and education support vacancies.",
       "link_text": "Go to your Teaching vacancies account",
       "link_href": "https://teaching-vacancies.service.gov.uk/jobseekers/account"
+    },
+    "ofgemLafReg": {
+      "header": "Local authority flexible register",
+      "description": "Upload declaration notification templates to Ofgem and manage your users' accounts.",
+      "link_text": "Go to your flexible register account",
+      "link_href": "https://laf.ofgem.gov.uk/"
     }
   },
   "local": {
@@ -1529,6 +1565,12 @@
       "description": "Search and apply for teaching, leadership and education support vacancies.",
       "link_text": "Go to your Teaching vacancies account",
       "link_href": "https://teaching-vacancies.service.gov.uk/jobseekers/account"
+    },
+    "ofgemLafReg": {
+      "header": "Local authority flexible register",
+      "description": "Upload declaration notification templates to Ofgem and manage your users' accounts.",
+      "link_text": "Go to your flexible register account",
+      "link_href": "https://laf.ofgem.gov.uk/"
     }
   }
 }

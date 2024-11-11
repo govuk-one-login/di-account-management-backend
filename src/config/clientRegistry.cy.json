@@ -214,6 +214,12 @@
       "description": "Chwilio am a gwneud cais am swyddi dysgu, arweinyddiaeth a chymorth addysg.",
       "link_text": "Ewch i'ch cyfrif Swyddi dysgu",
       "link_href": "https://teaching-vacancies.service.gov.uk/jobseekers/account"
+    },
+    "eywumu-XiJCz7RHyw4Zv8iTgsuc": {
+      "header": "Cofrestr hyblyg awdurdod Lleol",
+      "description": "Llwytho templedi hysbysu datganiad i Ofgem a rheoli eich cyfrifon defnyddwyr.",
+      "link_text": "Ewch i'ch cyfrif cofrestr hyblyg",
+      "link_href": "https://laf.ofgem.gov.uk/"
     }
   },
   "integration": {
@@ -443,6 +449,12 @@
       "description": "Chwilio am a gwneud cais am swyddi dysgu, arweinyddiaeth a chymorth addysg.",
       "link_text": "Ewch i'ch cyfrif Swyddi dysgu",
       "link_href": "https://teaching-vacancies.service.gov.uk/jobseekers/account"
+    },
+    "eywumu-XiJCz7RHyw4Zv8iTgsuc": {
+      "header": "Cofrestr hyblyg awdurdod Lleol",
+      "description": "Llwytho templedi hysbysu datganiad i Ofgem a rheoli eich cyfrifon defnyddwyr.",
+      "link_text": "Ewch i'ch cyfrif cofrestr hyblyg",
+      "link_href": "https://laf.ofgem.gov.uk/"
     }
   },
   "staging": {
@@ -660,6 +672,12 @@
       "description": "Chwilio am a gwneud cais am swyddi dysgu, arweinyddiaeth a chymorth addysg.",
       "link_text": "Ewch i'ch cyfrif Swyddi dysgu",
       "link_href": "https://teaching-vacancies.service.gov.uk/jobseekers/account"
+    },
+    "ofgemLafReg": {
+      "header": "Cofrestr hyblyg awdurdod Lleol",
+      "description": "Llwytho templedi hysbysu datganiad i Ofgem a rheoli eich cyfrifon defnyddwyr.",
+      "link_text": "Ewch i'ch cyfrif cofrestr hyblyg",
+      "link_href": "https://laf.ofgem.gov.uk/"
     }
   },
   "build": {
@@ -877,6 +895,12 @@
       "description": "Chwilio am a gwneud cais am swyddi dysgu, arweinyddiaeth a chymorth addysg.",
       "link_text": "Ewch i'ch cyfrif Swyddi dysgu",
       "link_href": "https://teaching-vacancies.service.gov.uk/jobseekers/account"
+    },
+    "ofgemLafReg": {
+      "header": "Cofrestr hyblyg awdurdod Lleol",
+      "description": "Llwytho templedi hysbysu datganiad i Ofgem a rheoli eich cyfrifon defnyddwyr.",
+      "link_text": "Ewch i'ch cyfrif cofrestr hyblyg",
+      "link_href": "https://laf.ofgem.gov.uk/"
     }
   },
   "demo": {
@@ -1089,6 +1113,12 @@
       "description": "Chwilio am a gwneud cais am swyddi dysgu, arweinyddiaeth a chymorth addysg.",
       "link_text": "Ewch i'ch cyfrif Swyddi dysgu",
       "link_href": "https://teaching-vacancies.service.gov.uk/jobseekers/account"
+    },
+    "ofgemLafReg": {
+      "header": "Cofrestr hyblyg awdurdod Lleol",
+      "description": "Llwytho templedi hysbysu datganiad i Ofgem a rheoli eich cyfrifon defnyddwyr.",
+      "link_text": "Ewch i'ch cyfrif cofrestr hyblyg",
+      "link_href": "https://laf.ofgem.gov.uk/"
     }
   },
   "dev": {
@@ -1306,6 +1336,12 @@
       "description": "Chwilio am a gwneud cais am swyddi dysgu, arweinyddiaeth a chymorth addysg.",
       "link_text": "Ewch i'ch cyfrif Swyddi dysgu",
       "link_href": "https://teaching-vacancies.service.gov.uk/jobseekers/account"
+    },
+    "ofgemLafReg": {
+      "header": "Cofrestr hyblyg awdurdod Lleol",
+      "description": "Llwytho templedi hysbysu datganiad i Ofgem a rheoli eich cyfrifon defnyddwyr.",
+      "link_text": "Ewch i'ch cyfrif cofrestr hyblyg",
+      "link_href": "https://laf.ofgem.gov.uk/"
     }
   },
   "local": {
@@ -1523,6 +1559,12 @@
       "description": "Chwilio am a gwneud cais am swyddi dysgu, arweinyddiaeth a chymorth addysg.",
       "link_text": "Ewch i'ch cyfrif Swyddi dysgu",
       "link_href": "https://teaching-vacancies.service.gov.uk/jobseekers/account"
+    },
+    "ofgemLafReg": {
+      "header": "Cofrestr hyblyg awdurdod Lleol",
+      "description": "Llwytho templedi hysbysu datganiad i Ofgem a rheoli eich cyfrifon defnyddwyr.",
+      "link_text": "Ewch i'ch cyfrif cofrestr hyblyg",
+      "link_href": "https://laf.ofgem.gov.uk/"
     }
   }
 }

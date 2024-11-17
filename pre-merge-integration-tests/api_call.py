@@ -8,6 +8,7 @@ client = boto3.client('cloudformation')
 stack_name = 'platform-alerting'  # Replace with actual stack name
 
 def call_describe_stack_events(stack_name):
+    print("Describing call stack event")
     try:
         response = client.describe_stack_events(StackName=stack_name)
         return response
@@ -16,6 +17,7 @@ def call_describe_stack_events(stack_name):
         return None
 
 def check_stack_status(events):
+    print("Checking stack status")
     create_in_progress = False
     update_complete = False
     create_complete = False
@@ -50,10 +52,10 @@ def wait_for_stack_status(stack_name, max_attempts=10):
             if create_in_progress:
                 print("Stack is in CREATE_IN_PROGRESS status.")
             if update_complete:
-                print("Stack update complete.")
+                print(f"Stack update complete for stack {stack_name}.")
                 return
             if create_complete:
-                print("Stack creation complete.")
+                print(f"Stack creation complete for stack {stack_name}.")
                 return
         
         attempts += 1

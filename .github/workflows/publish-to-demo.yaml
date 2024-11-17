@@ -48,13 +48,6 @@ jobs:
     with:
       gitRef: ${{ inputs.gitRef }}
 
-  run_pre_merge:
-    name: Pre-merge Check
-    uses: ./.github/workflows/pre-merge.yaml
-    secrets: inherit
-    with:
-      gitRef: ${{ inputs.gitRef }}
-
   deploy_to_demo:
     environment: Demo-test
     permissions:

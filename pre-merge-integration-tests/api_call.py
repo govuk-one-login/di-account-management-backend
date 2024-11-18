@@ -138,5 +138,5 @@ def main(args):
 
 if __name__ == "__main__":
     main(sys.argv)
-    check_activity_log_created('75093b9c-728d-4c7f-aad2-7e5892a30be1', 'user_id')
+    check_activity_log_created('75093b9c-728d-4c7f-aad2-7e5892a30be0', 'user_id')
     print("Script execution completed.")

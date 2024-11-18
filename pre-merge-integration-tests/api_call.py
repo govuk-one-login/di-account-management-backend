@@ -1,6 +1,7 @@
 import boto3
 import time
 import sys
+from botocore.exceptions import ClientError
 
 # Initialize a session using CloudFormation
 client = boto3.client('cloudformation')

@@ -70,4 +70,4 @@ jobs:
           aws-region: eu-west-2
 
       - name: Run testing script
-        run: python3 $GITHUB_WORKSPACE/pre-merge-integration-tests/api_call.py
+        run: python3 $GITHUB_WORKSPACE/pre-merge-integration-tests/api_call.py ${{ secrets.RawEventsQueue }}

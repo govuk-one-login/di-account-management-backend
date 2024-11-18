@@ -5,12 +5,13 @@ import time
 client = boto3.client('cloudformation')
 
 # Name of the CloudFormation stack
-stack_name = 'platform-alerting'  # Replace with actual stack name
+stack_name = 'account-mgmt-backend'  # Replace with actual stack name
 
 def call_describe_stack_events(stack_name):
     print("Describing call stack event")
     try:
         response = client.describe_stack_events(StackName=stack_name)
+        print(f"Stack event response is: {response}")
         return response
     except Exception as e:
         print(f"Error fetching stack events: {e}")

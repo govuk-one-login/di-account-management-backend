@@ -8,9 +8,8 @@ client = boto3.client('cloudformation')
 sqs = boto3.client('sqs')
 
 # Name of the CloudFormation stack
-stack_name = 'home-backend'  # Replace with actual stack name
-queue_url = "https://sqs.<region>.amazonaws.com/<account_id>/<queue_name>"
-message_body = "{ \"event_name\" : { \"S\" : \"AUTH_AUTH_CODE_ISSUED\" }, \"event_id\" : { \"S\" : \"65093b9c-728d-4c7f-aad2-7e5892a30be0\" }, \"user\" : { \"M\" : { \"user_id\" : { \"S\" : \"pre_merge_user_id\" }, \"session_id\" : { \"S\" : \"7340477f-74da-46d4-9400-d22ae518da3a\" } } }, \"client_id\" : { \"S\" : \"vehicleOperatorLicense\" }, \"timestamp\" : { \"N\" : \"1730800548523\" } }"
+stack_name = 'home-backend'
+message_body = "{ \"event_name\" : \"AUTH_AUTH_CODE_ISSUED\", \"event_id\" : \"75093b9c-728d-4c7f-aad2-7e5892a30be0\", \"user\" : { \"user_id\" : \"user_id\", \"session_id\" : \"7340477f-74da-46d4-9400-d22ae518da3a\" }, \"client_id\" : \"vehicleOperatorLicense\" , \"timestamp\" : \"1730800548523\" }"
 
 def send_message_to_queue(queue_url, message_body, message_attributes=None):
 
@@ -84,6 +83,37 @@ def wait_for_stack_status(stack_name, max_attempts=10):
         print(f"Attempt {attempts}/{max_attempts}: Waiting for stack to reach desired status...")
         time.sleep(2)
     
+    print("Max attempts reached or desired status not found within the attempts limit.")
+
+def check_activity_log_created(event_id, max_attempts=10):
+    print(f"Checking activity log created with event_id {event_id}")
+    attempts = 0
+    while attempts < max_attempts:
+        response = call_get_activity_log(event_id)
+        if not response:
+            print("No response received.")
+            break
+
+        events = response['StackEvents']
+        num_events = len(events)
+
+        for i in range(0, num_events, 10):
+            batch_events = events[i:i + 10]
+            create_in_progress, update_complete, create_complete = check_stack_status(batch_events)
+
+            if create_in_progress:
+                print("Stack is in CREATE_IN_PROGRESS status.")
+            if update_complete:
+                print(f"Stack update complete for stack {stack_name}.")
+                return
+            if create_complete:
+                print(f"Stack creation complete for stack {stack_name}.")
+                return
+
+        attempts += 1
+        print(f"Attempt {attempts}/{max_attempts}: Waiting for stack to reach desired status...")
+        time.sleep(2)
+
     print("Max attempts reached or desired status not found within the attempts limit.")
 
 def main(args):

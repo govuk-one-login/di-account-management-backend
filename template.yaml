@@ -2570,7 +2570,7 @@ Resources:
               MetricName: Errors
               Dimensions:
                 - Name: FunctionName
-                  Value: !Ref DeleteEmailSubscriptionsFunction
+                  Value: !Ref WriteActivityLogFunction
             Period: 300
             Stat: Sum
           ReturnData: false
@@ -2581,7 +2581,7 @@ Resources:
               MetricName: Invocations
               Dimensions:
                 - Name: FunctionName
-                  Value: !Ref DeleteEmailSubscriptionsFunction
+                  Value: !Ref WriteActivityLogFunction
             Period: 300
             Stat: Sum
           ReturnData: false

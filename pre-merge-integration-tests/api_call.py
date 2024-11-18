@@ -10,7 +10,7 @@ sqs = boto3.client('sqs')
 # Name of the CloudFormation stack
 stack_name = 'home-backend'  # Replace with actual stack name
 queue_url = "https://sqs.<region>.amazonaws.com/<account_id>/<queue_name>"
-message_body = "{ \"event_name\" : { \"S\" : \"AUTH_AUTH_CODE_ISSUED\" }, \"event_id\" : { \"S\" : \"65093b9c-728d-4c7f-aad2-7e5892a30be0\" }, \"user\" : { \"M\" : { \"user_id\" : { \"S\" : \"user_id\" }, \"session_id\" : { \"S\" : \"7340477f-74da-46d4-9400-d22ae518da3a\" } } }, \"client_id\" : { \"S\" : \"vehicleOperatorLicense\" }, \"timestamp\" : { \"N\" : \"1730800548523\" } }"
+message_body = "{ \"event_name\" : { \"S\" : \"AUTH_AUTH_CODE_ISSUED\" }, \"event_id\" : { \"S\" : \"65093b9c-728d-4c7f-aad2-7e5892a30be0\" }, \"user\" : { \"M\" : { \"user_id\" : { \"S\" : \"pre_merge_user_id\" }, \"session_id\" : { \"S\" : \"7340477f-74da-46d4-9400-d22ae518da3a\" } } }, \"client_id\" : { \"S\" : \"vehicleOperatorLicense\" }, \"timestamp\" : { \"N\" : \"1730800548523\" } }"
 
 def send_message_to_queue(queue_url, message_body, message_attributes=None):
 

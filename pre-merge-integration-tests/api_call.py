@@ -105,13 +105,14 @@ def check_activity_log_created(event_id, max_attempts=10):
     print("Max attempts reached or get activity log within the attempts limit.")
     return None
 
-def call_get_activity_log(event_id):
+def call_get_activity_log(event_id, user_id):
     print(f"Attempting to get activity log for event_id {event_id}")
     table_name = 'activity_log'
     table = dynamodb.Table(table_name)
     try:
         response = table.query(
-            KeyConditionExpression=boto3.dynamodb.conditions.Key('event_id').eq(event_id)
+            KeyConditionExpression=boto3.dynamodb.conditions.Key('user_id').eq(user_id) &
+            boto3.dynamodb.conditions.Key('event_id').begins_with(event_id)
         )
         # Get the items
         items = response.get('Items', [])
@@ -134,5 +135,5 @@ def main(args):
 if __name__ == "__main__":
     wait_for_stack_status(stack_name)
     main(sys.argv)
-    check_activity_log_created('75093b9c-728d-4c7f-aad2-7e5892a30be0')
+    check_activity_log_created('75093b9c-728d-4c7f-aad2-7e5892a30be0', 'user_id')
     print("Script execution completed.")

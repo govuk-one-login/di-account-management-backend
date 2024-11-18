@@ -38,6 +38,7 @@ const getDeleteUrl = (
 };
 
 export const deleteEmailSubscription = async (userData: UserData) => {
+  // We are storing the api token in the environment variables to avoid repeated calls to secrets manager possibly limiting lambda start times and it is infrequently changed.
   const GOV_ACCOUNTS_PUBLISHING_API_TOKEN = getEnvironmentVariable(
     "GOV_ACCOUNTS_PUBLISHING_API_TOKEN"
   );

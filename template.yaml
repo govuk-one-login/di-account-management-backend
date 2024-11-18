@@ -256,22 +256,29 @@ Mappings:
   EnvironmentVariables:
     ### These environment variables are referenced further down the file.
     ### Please ensure that any variables defined for an environment are defined for _all_ environments.
+    ### We are passing the version ID of AWS secrets as cloudformation does not retrieve updated secrets unless there is a change in the template file related to it.
     demo:
+      PUBLISHINGAPIKEYVERSIONID: "2c654686-68a5-459d-005a-39689b8b6937"
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.integration.publishing.service.gov.uk"
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "2b3170b5-159e-457f-a282-f30f6006dc32"
     dev:
+      PUBLISHINGAPIKEYVERSIONID: "1795b84e-bda5-449e-b7de-172aeded65de"
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.integration.publishing.service.gov.uk"
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "2b3170b5-159e-457f-a282-f30f6006dc32"
     build:
+      PUBLISHINGAPIKEYVERSIONID: "b6b498c9-64d7-4655-a6cc-828aa82f0136"
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.staging.publishing.service.gov.uk"
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "2b3170b5-159e-457f-a282-f30f6006dc32"
     staging:
+      PUBLISHINGAPIKEYVERSIONID: "1fec2ee5-a02c-41e5-9227-185ac11bc1eb"
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.staging.publishing.service.gov.uk"
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "2b3170b5-159e-457f-a282-f30f6006dc32"
     integration:
+      PUBLISHINGAPIKEYVERSIONID: "279a0631-b5c2-4224-94bf-b8d94bda588b"
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.integration.publishing.service.gov.uk"
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "0674c6e3-219c-4e3a-b04c-3786bac7f228"
     production:
+      PUBLISHINGAPIKEYVERSIONID: "a95cff2e-397a-4103-a032-864e0727e618"
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.publishing.service.gov.uk"
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "0674c6e3-219c-4e3a-b04c-3786bac7f228"
 
@@ -2139,7 +2146,7 @@ Resources:
         TargetArn: !GetAtt DeleteEmailSubscriptionsDeadLetterQueue.Arn
       Environment:
         Variables:
-          GOV_ACCOUNTS_PUBLISHING_API_TOKEN: !Sub "{{resolve:secretsmanager:/${AccountManagementFrontendStackName}/Config/Publishing/API/Key}}"
+          GOV_ACCOUNTS_PUBLISHING_API_TOKEN: !Sub "{{resolve:secretsmanager:/${AccountManagementFrontendStackName}/Config/Publishing/API/Key::VersionId:${!FindInMap [EnvironmentVariables, !Ref Environment, PUBLISHINGAPIKEYVERSIONID]}}}"
           GOV_ACCOUNTS_PUBLISHING_API_URL:
             !FindInMap [
               EnvironmentVariables,

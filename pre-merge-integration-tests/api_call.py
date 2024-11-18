@@ -1,5 +1,6 @@
 import boto3
 import time
+import sys
 
 # Initialize a session using CloudFormation
 client = boto3.client('cloudformation')

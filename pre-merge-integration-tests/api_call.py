@@ -98,7 +98,7 @@ def check_activity_log_created(event_id, user_id, max_attempts=10):
             print(f"Successfully retrieved event: {response}")
             return response
         print(f"Failed to retrieve item. Retrying in {delay} seconds...")
-        time.sleep(2)
+        time.sleep(1)
         attempts += 1
         print(f"Attempt {attempts}/{max_attempts}: Waiting for get activity log...")
 
@@ -106,7 +106,7 @@ def check_activity_log_created(event_id, user_id, max_attempts=10):
     return None
 
 def call_get_activity_log(event_id, user_id):
-    print(f"Attempting to get activity log for event_id {event_id}")
+    print(f"Attempting to get activity log for event_id {event_id} and user_id {user_id}")
     table_name = 'activity_log'
     table = dynamodb.Table(table_name)
     try:
@@ -135,5 +135,5 @@ def main(args):
 if __name__ == "__main__":
     wait_for_stack_status(stack_name)
     main(sys.argv)
-    check_activity_log_created('75093b9c-728d-4c7f-aad2-7e5892a30be0', 'user_id')
+    check_activity_log_created('75093b9c-728d-4c7f-aad2-7e5892a30be1', 'user_id')
     print("Script execution completed.")

@@ -90,15 +90,15 @@ def wait_for_stack_status(stack_name, max_attempts=10):
     print("Max attempts reached or desired status not found within the attempts limit.")
 
 def check_activity_log_created(event_id, user_id, max_attempts=10):
-    print(f"Checking activity log created with event_id {event_id}")
     attempts = 0
+    delay = 1
     while attempts < max_attempts:
         response = call_get_activity_log(event_id, user_id)
         if response is not None:
             print(f"Successfully retrieved event: {response}")
             return response
         print(f"Failed to retrieve item. Retrying in {delay} seconds...")
-        time.sleep(1)
+        time.sleep(delay)
         attempts += 1
         print(f"Attempt {attempts}/{max_attempts}: Waiting for get activity log...")
 

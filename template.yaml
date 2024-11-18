@@ -256,6 +256,7 @@ Mappings:
   EnvironmentVariables:
     ### These environment variables are referenced further down the file.
     ### Please ensure that any variables defined for an environment are defined for _all_ environments.
+    ### We are passing the version ID of AWS secrets as cloudformation does not retrieve updated secrets unless there is a change in the template file related to it.
     demo:
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.integration.publishing.service.gov.uk"
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "2b3170b5-159e-457f-a282-f30f6006dc32"
@@ -327,6 +328,8 @@ Mappings:
       zendeskApiUrlSecretArn: arn:aws:secretsmanager:eu-west-2:654654326096:secret:/account-mgmt-backend/zendesk-api-url-key-0SJMs3
       zendeskTicketFormIdSecretArn: arn:aws:secretsmanager:eu-west-2:654654326096:secret:/account-mgmt-backend/zendesk-ticket-form-id-key-KtEVtO
       notifyApiKeySecretArn: arn:aws:secretsmanager:eu-west-2:654654326096:secret:/account-mgmt-backend/notify-api-key-rUzQp4
+      publishingApiKeyArn: arn:aws:secretsmanager:eu-west-2:654654326096:secret:/account-mgmt-frontend/Config/Publishing/API/Key-BVQ1hM
+      publishingApiKeyVersionId: "2c654686-68a5-459d-005a-39689b8b6937"
     dev:
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
       zendeskGroupIdSecretArn: arn:aws:secretsmanager:eu-west-2:985326104449:secret:/account-mgmt-backend/zendesk-group-id-token-1O5AvL
@@ -336,6 +339,8 @@ Mappings:
       zendeskApiUrlSecretArn: arn:aws:secretsmanager:eu-west-2:985326104449:secret:/account-mgmt-backend/zendesk-api-url-key-nhK90l
       zendeskTicketFormIdSecretArn: arn:aws:secretsmanager:eu-west-2:985326104449:secret:/account-mgmt-backend/zendesk-ticket-form-id-key-QsdIP7
       notifyApiKeySecretArn: arn:aws:secretsmanager:eu-west-2:985326104449:secret:/account-mgmt-backend/notify-api-key-4P84y7
+      publishingApiKeyArn: arn:aws:secretsmanager:eu-west-2:985326104449:secret:/account-mgmt-frontend/Config/Publishing/API/Key-FecC4U
+      publishingApiKeyVersionId: "1795b84e-bda5-449e-b7de-172aeded65de"
     build:
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
       zendeskGroupIdSecretArn: arn:aws:secretsmanager:eu-west-2:301577035144:secret:/account-mgmt-backend/zendesk-group-id-token-Ve5ojs
@@ -345,6 +350,8 @@ Mappings:
       zendeskApiUrlSecretArn: arn:aws:secretsmanager:eu-west-2:301577035144:secret:/account-mgmt-backend/zendesk-api-url-key-UpWdv7
       zendeskTicketFormIdSecretArn: arn:aws:secretsmanager:eu-west-2:301577035144:secret:/account-mgmt-backend/zendesk-ticket-form-id-key-XYDm7B
       notifyApiKeySecretArn: arn:aws:secretsmanager:eu-west-2:301577035144:secret:/account-mgmt-backend/notify-api-key-8vHJMb
+      publishingApiKeyArn: arn:aws:secretsmanager:eu-west-2:301577035144:secret:/account-mgmt-frontend/Config/Publishing/API/Key-BnpEHJ
+      publishingApiKeyVersionId: "b6b498c9-64d7-4655-a6cc-828aa82f0136"
     staging:
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
       zendeskGroupIdSecretArn: arn:aws:secretsmanager:eu-west-2:539729775994:secret:/account-mgmt-backend/zendesk-group-id-token-HE0BjN
@@ -354,6 +361,8 @@ Mappings:
       zendeskApiUrlSecretArn: arn:aws:secretsmanager:eu-west-2:539729775994:secret:/account-mgmt-backend/zendesk-api-url-key-wGN16k
       zendeskTicketFormIdSecretArn: arn:aws:secretsmanager:eu-west-2:539729775994:secret:/account-mgmt-backend/zendesk-ticket-form-id-key-e9yPTR
       notifyApiKeySecretArn: arn:aws:secretsmanager:eu-west-2:539729775994:secret:/account-mgmt-backend/notify-api-key-lSCNeM
+      publishingApiKeyArn: arn:aws:secretsmanager:eu-west-2:539729775994:secret:/account-mgmt-frontend/Config/Publishing/API/Key-ubkHIz
+      publishingApiKeyVersionId: "1fec2ee5-a02c-41e5-9227-185ac11bc1eb"
     integration:
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
       zendeskGroupIdSecretArn: arn:aws:secretsmanager:eu-west-2:666500506359:secret:/account-mgmt-backend/zendesk-group-id-token-djJbv6
@@ -363,6 +372,8 @@ Mappings:
       zendeskApiUrlSecretArn: arn:aws:secretsmanager:eu-west-2:666500506359:secret:/account-mgmt-backend/zendesk-api-url-key-b5ToSY
       zendeskTicketFormIdSecretArn: arn:aws:secretsmanager:eu-west-2:666500506359:secret:/account-mgmt-backend/zendesk-ticket-form-id-key-2iXqu6
       notifyApiKeySecretArn: arn:aws:secretsmanager:eu-west-2:666500506359:secret:/account-mgmt-backend/notify-api-key-nvDui4
+      publishingApiKeyArn: arn:aws:secretsmanager:eu-west-2:666500506359:secret:/account-mgmt-frontend/Config/Publishing/API/Key-qWrhy3
+      publishingApiKeyVersionId: "279a0631-b5c2-4224-94bf-b8d94bda588b"
     production:
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceProductionVariables
       zendeskGroupIdSecretArn: arn:aws:secretsmanager:eu-west-2:026991849909:secret:/account-mgmt-backend/zendesk-group-id-token-mE55Wr
@@ -372,6 +383,8 @@ Mappings:
       zendeskApiUrlSecretArn: arn:aws:secretsmanager:eu-west-2:026991849909:secret:/account-mgmt-backend/zendesk-api-url-key-WNGekL
       zendeskTicketFormIdSecretArn: arn:aws:secretsmanager:eu-west-2:026991849909:secret:/account-mgmt-backend/zendesk-ticket-form-id-key-cAmu3i
       notifyApiKeySecretArn: arn:aws:secretsmanager:eu-west-2:026991849909:secret:/account-mgmt-backend/notify-api-key-Ve4Yk1
+      publishingApiKeyArn: arn:aws:secretsmanager:eu-west-2:026991849909:secret:/account-mgmt-frontend/Config/Publishing/API/Key-3ZxzC4
+      publishingApiKeyVersionId: "a95cff2e-397a-4103-a032-864e0727e618"
 
 Resources:
   ######################################
@@ -2139,7 +2152,20 @@ Resources:
         TargetArn: !GetAtt DeleteEmailSubscriptionsDeadLetterQueue.Arn
       Environment:
         Variables:
-          GOV_ACCOUNTS_PUBLISHING_API_TOKEN: !Sub "{{resolve:secretsmanager:/${AccountManagementFrontendStackName}/Config/Publishing/API/Key}}"
+          GOV_ACCOUNTS_PUBLISHING_API_TOKEN: !Sub
+            - "{{resolve:secretsmanager:${SecretArn}:SecretString:::${SecretId}}}"
+            - SecretArn:
+                !FindInMap [
+                  EnvironmentConfiguration,
+                  !Ref Environment,
+                  publishingApiKeyArn,
+                ]
+              SecretId:
+                !FindInMap [
+                  EnvironmentConfiguration,
+                  !Ref Environment,
+                  publishingApiKeyVersionId,
+                ]
           GOV_ACCOUNTS_PUBLISHING_API_URL:
             !FindInMap [
               EnvironmentVariables,

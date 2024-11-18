@@ -89,11 +89,11 @@ def wait_for_stack_status(stack_name, max_attempts=10):
 
     print("Max attempts reached or desired status not found within the attempts limit.")
 
-def check_activity_log_created(event_id, max_attempts=10):
+def check_activity_log_created(event_id, user_id, max_attempts=10):
     print(f"Checking activity log created with event_id {event_id}")
     attempts = 0
     while attempts < max_attempts:
-        response = call_get_activity_log(event_id)
+        response = call_get_activity_log(event_id, user_id)
         if response is not None:
             print(f"Successfully retrieved event: {response}")
             return response
@@ -112,7 +112,7 @@ def call_get_activity_log(event_id, user_id):
     try:
         response = table.query(
             KeyConditionExpression=boto3.dynamodb.conditions.Key('user_id').eq(user_id) &
-            boto3.dynamodb.conditions.Key('event_id').begins_with(event_id)
+            boto3.dynamodb.conditions.Key('event_id').eq(event_id)
         )
         # Get the items
         items = response.get('Items', [])

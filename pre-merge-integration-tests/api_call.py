@@ -133,7 +133,6 @@ def main(args):
     send_message_to_queue(queue_url, message_body)
 
 if __name__ == "__main__":
-    wait_for_stack_status(stack_name)
     main(sys.argv)
     check_activity_log_created('75093b9c-728d-4c7f-aad2-7e5892a30be1', 'user_id')
     print("Script execution completed.")

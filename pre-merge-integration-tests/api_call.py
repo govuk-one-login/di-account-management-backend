@@ -95,7 +95,7 @@ def check_activity_log_created(event_id, user_id, max_attempts=10):
 
     for attempt in range(1, retries + 1):
         print(f"Attempt {attempt}...")
-         response = call_get_activity_log(event_id, user_id)
+        response = call_get_activity_log(event_id, user_id)
         if response is not None:
             print(f"Successfully retrieved event: {response}")
             return response

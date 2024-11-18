@@ -1,6 +1,6 @@
-import boto3
 import time
 import sys
+import boto3
 from botocore.exceptions import ClientError
 
 # Initialize a session using CloudFormation
@@ -46,7 +46,7 @@ def check_stack_status(events):
     create_in_progress = False
     update_complete = False
     create_complete = False
-    
+
     for event in events:
         resource_status = event['ResourceStatus']
         if resource_status == 'CREATE_IN_PROGRESS':
@@ -89,7 +89,7 @@ def wait_for_stack_status(stack_name, max_attempts=10):
 
     print("Max attempts reached or desired status not found within the attempts limit.")
 
-def check_activity_log_created(event_id, user_id, max_attempts=10):
+def check_activity_log_created(event_id, user_id):
     delay = 1
     retries=10
 
@@ -118,10 +118,13 @@ def call_get_activity_log(event_id, user_id):
         # Get the items
         items = response.get('Items', [])
         print(f"Found {len(items)} items:")
-        return items[0]
+        if items:
+            return items[0]
+        return None
 
     except ClientError as e:
-        print(f"Error fetching item: {e.response['Error']['Message']}")
+        print(f"Error querying activity log: {e.response['Error']['Message']}")
+
 
 def main(args):
     if len(args) < 2:

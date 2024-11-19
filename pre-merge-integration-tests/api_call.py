@@ -103,7 +103,7 @@ def check_activity_log_created(event_id, user_id):
         time.sleep(delay)
 
     print("Max attempts reached or get activity log within the attempts limit.")
-    raise Exception("Max attempts reached or get activity log within the attempts limit.") 
+    raise Exception("Max attempts reached or get activity log within the attempts limit.")
 
 
 def call_get_activity_log(event_id, user_id):
@@ -139,6 +139,6 @@ def main(args):
 if __name__ == "__main__":
     main(sys.argv)
     # setup
-    check_activity_log_created('75093b9c-728d-4c7f-aad2-7e5892a30be0', 'user_id')
+    check_activity_log_created('75093b9c-728d-4c7f-aad2-7e5892a30be1', 'user_id')
     print("Script execution completed.")
     # teardown

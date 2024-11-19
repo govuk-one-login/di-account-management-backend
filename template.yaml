@@ -72,7 +72,7 @@ Parameters:
   LambdaDeploymentPreference:
     Description: "Specifies the configuration to enable gradual Lambda deployments"
     Type: String
-    Default: "AllAtOnce"
+    Default: "Linear10PercentEvery1Minute"
     AllowedValues:
       - AllAtOnce
       - Linear10PercentEvery1Minute

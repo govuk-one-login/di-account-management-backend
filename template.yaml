@@ -122,10 +122,6 @@ Conditions:
           - !Ref TestRoleArn
           - "none"
 
-  UseCanaryDeployment: !Or
-    - !Equals [!Ref Environment, production]
-    - !Equals [!Ref Environment, integration]
-
 Globals:
   Function:
     Environment:

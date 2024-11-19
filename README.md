@@ -6,7 +6,7 @@ This is a serverless application for AWS. It's built and deployed using the [SAM
 
 ## Prerequisites
 
-We recommend using [`nvm`](https://github.com/nvm-sh/nvm) to install and manage Node.js versions. Run
+We recommend using [`nvm`](https://github.com/nvm-sh/nvm) to install and manage Node.js versions. Run:
 
 ```
 nvm install

@@ -340,7 +340,7 @@ Mappings:
       zendeskTicketFormIdSecretArn: arn:aws:secretsmanager:eu-west-2:985326104449:secret:/account-mgmt-backend/zendesk-ticket-form-id-key-QsdIP7
       notifyApiKeySecretArn: arn:aws:secretsmanager:eu-west-2:985326104449:secret:/account-mgmt-backend/notify-api-key-4P84y7
       publishingApiKeyArn: arn:aws:secretsmanager:eu-west-2:985326104449:secret:/account-mgmt-frontend/Config/Publishing/API/Key-FecC4U
-      publishingApiKeyVersionId: "1795b84e-bda5-449e-b7de-172aeded65de"
+      publishingApiKeyVersionId: "8fb7dd25-15d7-435d-8045-2ec3b79d238a"
     build:
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
       zendeskGroupIdSecretArn: arn:aws:secretsmanager:eu-west-2:301577035144:secret:/account-mgmt-backend/zendesk-group-id-token-Ve5ojs

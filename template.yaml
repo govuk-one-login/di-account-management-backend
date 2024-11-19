@@ -69,6 +69,13 @@ Parameters:
     Description: Value for the System Tag
     Type: String
     Default: Accounts
+  LambdaDeploymentPreference:
+    Description: "Specifies the configuration to enable gradual Lambda deployments"
+    Type: String
+    Default: "AllAtOnce"
+    AllowedValues:
+      - AllAtOnce
+      - Linear10PercentEvery1Minute
 
 Conditions:
   UseCodeSigning:
@@ -196,12 +203,7 @@ Globals:
             ]
     AutoPublishAlias: live
     DeploymentPreference:
-      Enabled: true
-      Type:
-        Fn::If:
-          - UseCanaryDeployment
-          - Linear10PercentEvery1Minute
-          - AllAtOnce
+      Type: !Ref LambdaDeploymentPreference
       Role: !GetAtt CodeDeployServiceRole.Arn
 
 Mappings:

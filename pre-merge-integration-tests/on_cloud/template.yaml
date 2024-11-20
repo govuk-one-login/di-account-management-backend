@@ -118,6 +118,7 @@ Resources:
               - "sqs:*"
               - "dynamodb:*"
               - "kms:*"
+              - "cloudformation:*"
             Resource:
               - "*"
 

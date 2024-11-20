@@ -120,10 +120,12 @@ export const formatRecord = (record: UserRecordEvent) => {
 
 export const handler = async (event: SQSEvent): Promise<void> => {
   const { Records } = event;
+  console.log(`SQS event is: ${JSON.stringify(event)}`);
   const OUTPUT_QUEUE_URL = getEnvironmentVariable("OUTPUT_QUEUE_URL");
   await Promise.all(
     Records.map(async (record) => {
       try {
+        console.log(`Record is: ${JSON.stringify(record)}`);
         console.log(`started processing message with ID: ${record.messageId}`);
         const formattedRecord = formatRecord(validateAndParseSQSRecord(record));
         const { MessageId: messageId } = await sendSqsMessage(

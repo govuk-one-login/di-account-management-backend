@@ -17,7 +17,7 @@ on:
 permissions: read-all
 
 jobs:
-  deploy_to_demo:
+  deploy-to-demo:
     environment: Demo-test
     permissions:
       contents: read
@@ -74,6 +74,24 @@ jobs:
           signing-profile-name: ${{ secrets.DEMO_SIGNING_PROFILE_NAME }}
           template-file: .aws-sam/build/template.yaml
 
+  check-stack-ready:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    timeout-minutes: 60
+    name: "Check stack is ready for pre-merge test"
+    permissions:
+      id-token: write
+      contents: read
+    needs: deploy-to-demo
+    steps:
+      - name: Poll for deployment finished
+        uses: govuk-one-login/github-actions/sam/check-stack-updated@b00f9eeccebbc72083d8ffca4f0a2448fb14bda5
+        with:
+          stack-name: home-backend
+          gh-polling-role: ${{ secrets.DEMO_TESTING_ROLE_ARN }}
+
   test:
     runs-on: ubuntu-latest
     defaults:
@@ -84,7 +102,7 @@ jobs:
     permissions:
       id-token: write
       contents: read
-    needs: deploy_to_demo
+    needs: check-stack-ready
     steps:
       - name: Checkout repo
         uses: actions/checkout@8f4b7f84864484a7bf31766abe9204da3cbe65b3 # pin@v3

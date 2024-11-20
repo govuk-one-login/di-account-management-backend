@@ -70,11 +70,31 @@ def call_get_activity_log():
         print(f"Error querying activity log: {e.response['Error']['Message']}")
 
 
+def delete_activity_log():
+    print(f"Attempting to delete activity log for event_id {event_id} and user_id {user_id}")
+    table = dynamodb.Table(table_name)
+    try:
+        response = table.delete_item(
+            Key={
+                'event_id': event_id,
+                'user_id': user_id
+            }
+        )
+        print(f"Deleted item with event_id={event_id} and user_id={user_id}")
+        return response
+
+    except ClientError as e:
+        print(f"Error deleting activity log: {e.response['Error']['Message']}")
+        raise
+
+
 def teardown():
+    delete_activity_log()
     return
 
 
 def setup():
+    delete_activity_log()
     return
 
 

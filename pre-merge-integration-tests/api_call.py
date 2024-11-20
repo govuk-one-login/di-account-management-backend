@@ -108,7 +108,7 @@ def check_activity_log_created():
         time.sleep(delay)
 
     print("Max attempts reached or get activity log within the attempts limit.")
-    raise Exception("Max attempts reached or get activity log within the attempts limit.")
+    raise Exception(" Max attempts reached or get activity log within the attempts limit.")
 
 
 def call_get_activity_log():

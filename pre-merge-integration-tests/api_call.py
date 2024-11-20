@@ -8,20 +8,23 @@ sqs = boto3.client('sqs')
 dynamodb = boto3.resource('dynamodb')
 
 stack_name = 'home-backend'
+table_name = 'activity_log'
+event_id = '75093b9c-728d-4c7f-aad2-7e5892a30be0'
+user_id = 'user_id'
 message_body = ("{ \"event_name\" : \"AUTH_AUTH_CODE_ISSUED\", \"event_id\" : "
                 "\"75093b9c-728d-4c7f-aad2-7e5892a30be0\", \"user\" : { \"user_id\" : \"user_id\", \"session_id\" : "
                 "\"7340477f-74da-46d4-9400-d22ae518da3a\" }, \"client_id\" : \"vehicleOperatorLicense\" , "
                 "\"timestamp\" : \"1730800548523\" }")
-table_name = 'activity_log'
 queue_name = os.getenv('SQS_QUEUE_ARN')
 
 
-def send_message_to_queue(queue_url, message_attributes=None):
+def send_message_to_queue(message_attributes=None):
+    print(f"Queue ARN is: {queue_name}")
     print(f"Message body is: {message_body}")
     try:
         # Send message to SQS queue
         response = sqs.send_message(
-            QueueUrl=queue_url,
+            QueueUrl=queue_name,
             MessageBody=message_body,
             MessageAttributes=message_attributes or {}
         )
@@ -31,13 +34,13 @@ def send_message_to_queue(queue_url, message_attributes=None):
         print("Error sending message:", str(e))
 
 
-def check_activity_log_created(event_id, user_id):
+def check_activity_log_created():
     delay = 1
     retries = 10
 
     for attempt in range(1, retries + 1):
         print(f"Attempt {attempt}...")
-        response = call_get_activity_log(event_id, user_id)
+        response = call_get_activity_log()
         if response is not None:
             print(f"Successfully retrieved event: {response}")
             return response
@@ -48,7 +51,7 @@ def check_activity_log_created(event_id, user_id):
     raise Exception("Max attempts reached or get activity log within the attempts limit.")
 
 
-def call_get_activity_log(event_id, user_id):
+def call_get_activity_log():
     print(f"Attempting to get activity log for event_id {event_id} and user_id {user_id}")
     table = dynamodb.Table(table_name)
     try:
@@ -76,9 +79,9 @@ def setup():
 
 
 if __name__ == "__main__":
-    send_message_to_queue(queue_name)
+    send_message_to_queue()
     setup()
-    check_activity_log_created('75093b9c-728d-4c7f-aad2-7e5892a30be1', 'user_id')
+    check_activity_log_created()
     print("Script execution completed.")
     teardown()
     # teardown

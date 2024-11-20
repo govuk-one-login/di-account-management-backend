@@ -2150,7 +2150,20 @@ Resources:
         TargetArn: !GetAtt DeleteEmailSubscriptionsDeadLetterQueue.Arn
       Environment:
         Variables:
-          GOV_ACCOUNTS_PUBLISHING_API_TOKEN: "force cf update"
+          GOV_ACCOUNTS_PUBLISHING_API_TOKEN: !Sub
+            - "{{resolve:secretsmanager:${SecretArn}:SecretString:::${SecretId}}}"
+            - SecretArn:
+                !FindInMap [
+                  EnvironmentConfiguration,
+                  !Ref Environment,
+                  publishingApiKeyArn,
+                ]
+              SecretId:
+                !FindInMap [
+                  EnvironmentConfiguration,
+                  !Ref Environment,
+                  publishingApiKeyVersionId,
+                ]
           GOV_ACCOUNTS_PUBLISHING_API_URL:
             !FindInMap [
               EnvironmentVariables,

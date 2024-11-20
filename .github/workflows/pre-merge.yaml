@@ -17,27 +17,65 @@ on:
 permissions: read-all
 
 jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash
-        working-directory: pre-merge-integration-tests
-    timeout-minutes: 7
+  deploy_to_demo:
+    environment: Demo-test
     permissions:
-      id-token: write
       contents: read
+      id-token: write
+    name: "Deploy to Demo"
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    needs:
+      - lint_infrastructure
+      - test_application
     steps:
       - name: Checkout repo
         uses: actions/checkout@8f4b7f84864484a7bf31766abe9204da3cbe65b3 # pin@v3
         with:
           fetch-depth: 0
 
+      - name: Fill in backup wrapping key
+        run: .github/workflows/find-and-replace-backup-wrapping-key.sh
+        env:
+          WRAPPING_KEY_ARN: ${{ secrets.WRAPPING_KEY_ARN }}
+
+      - name: Install Node.js
+        uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # pin@v3
+        with:
+          node-version-file: ".nvmrc"
+
+      - name: Install ESbuild
+        run: npm install -g esbuild@0.23
+
+      - name: Set up Python 3.9
+        uses: actions/setup-python@d27e3f3d7c64b4bbf8e4abfb9b63b83e846e0435 # pin@v4
+        with:
+          python-version: "3.9"
+
+      - name: Set up SAM cli
+        uses: aws-actions/setup-sam@b42eb7a54dac4039080975e32860b1b30935c9af # pin@v2
+
+      - name: sam fix https://github.com/aws/aws-sam-cli/issues/4527
+        run: $(dirname $(readlink $(which sam)))/pip install --force-reinstall "cryptography==38.0.4"
+
       - name: Set up AWS creds
         uses: aws-actions/configure-aws-credentials@e1e17a757e536f70e52b5a12b2e8d1d1c60e04ef # pin@v1-node16
         with:
-          role-to-assume: ${{ secrets.CloudFormationStackTestingGitHubActionsRole }}
+          role-to-assume: ${{ secrets.DEMO_GH_ACTIONS_ROLE_ARN }}
           aws-region: eu-west-2
+
+      - name: SAM validate
+        run: sam validate
+
+      - name: SAM build
+        run: sam build --manifest package.json
+
+      - name: Deploy SAM app
+        uses: govuk-one-login/devplatform-upload-action@dc8158079d3976d613515180e543930cdbe73f5f # pin@v3
+        with:
+          artifact-bucket-name: ${{ secrets.DEMO_ARTIFACT_BUCKET_NAME }}
+          signing-profile-name: ${{ secrets.DEMO_SIGNING_PROFILE_NAME }}
+          template-file: .aws-sam/build/template.yaml
 
   test:
     runs-on: ubuntu-latest
@@ -49,7 +87,7 @@ jobs:
     permissions:
       id-token: write
       contents: read
-    needs: deploy
+    needs: deploy_to_demo
     steps:
       - name: Checkout repo
         uses: actions/checkout@8f4b7f84864484a7bf31766abe9204da3cbe65b3 # pin@v3

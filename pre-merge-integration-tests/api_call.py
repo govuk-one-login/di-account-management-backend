@@ -14,7 +14,7 @@ user_id = 'user_id'
 message_body = ("{ \"event_name\" : \"AUTH_AUTH_CODE_ISSUED\", \"event_id\" : "
                 "\"75093b9c-728d-4c7f-aad2-7e5892a30be0\", \"user\" : { \"user_id\" : \"user_id\", \"session_id\" : "
                 "\"7340477f-74da-46d4-9400-d22ae518da3a\" }, \"client_id\" : \"vehicleOperatorLicense\" , "
-                "\"timestamp\" : \"1730800548523\" }")
+                "\"timestamp\" : 1730800548523 }")
 queue_name = os.getenv('SQS_QUEUE_ARN')
 
 

@@ -109,6 +109,7 @@ jobs:
           template-file: .aws-sam/build/template.yaml
 
   run_pre_merge:
+    needs: deploy_to_demo
     name: Pre-merge Check
     uses: ./.github/workflows/pre-merge.yaml
     secrets: inherit

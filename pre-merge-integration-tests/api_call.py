@@ -159,7 +159,7 @@ def setup():
 
 
 if __name__ == "__main__":
-    wait_for_stack_status(stack_name)
+    wait_for_stack_status()
     send_message_to_queue()
     setup()
     check_activity_log_created()

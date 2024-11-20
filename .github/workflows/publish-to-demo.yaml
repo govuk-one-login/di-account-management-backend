@@ -48,13 +48,6 @@ jobs:
     with:
       gitRef: ${{ inputs.gitRef }}
 
-  run_pre_merge:
-    name: Pre-merge Check
-    uses: ./.github/workflows/pre-merge.yaml
-    secrets: inherit
-    with:
-      gitRef: ${{ inputs.gitRef }}
-
   deploy_to_demo:
     environment: Demo-test
     permissions:
@@ -114,3 +107,10 @@ jobs:
           artifact-bucket-name: ${{ secrets.DEMO_ARTIFACT_BUCKET_NAME }}
           signing-profile-name: ${{ secrets.DEMO_SIGNING_PROFILE_NAME }}
           template-file: .aws-sam/build/template.yaml
+
+  run_pre_merge:
+    name: Pre-merge Check
+    uses: ./.github/workflows/pre-merge.yaml
+    secrets: inherit
+    with:
+      gitRef: ${{ inputs.gitRef }}

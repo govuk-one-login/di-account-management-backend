@@ -11,13 +11,6 @@ defaults:
     shell: bash
 
 jobs:
-  publish_to_demo_and_run_pre_merge_test:
-    name: Publish to demo and run pre merge tests
-    uses: ./.github/workflows/publish-to-demo.yaml
-    secrets: inherit
-    with:
-      gitRef: ${{ inputs.gitRef }}
-
   deploy:
     runs-on: ubuntu-latest
     timeout-minutes: 60

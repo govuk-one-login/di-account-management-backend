@@ -79,6 +79,7 @@ jobs:
     defaults:
       run:
         shell: bash
+        working-directory: ./pre-merge-integration-tests
     timeout-minutes: 60
     name: "Check stack is ready for pre-merge test"
     permissions:

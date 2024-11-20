@@ -70,4 +70,4 @@ jobs:
           aws-region: eu-west-2
 
       - name: Run testing script
-        run: python3  SQS_QUEUE_ARN=${{ secrets.RawEventsQueue }} $GITHUB_WORKSPACE/pre-merge-integration-tests/api_call.py
+        run: SQS_QUEUE_ARN=${{ secrets.RawEventsQueue }} python3 $GITHUB_WORKSPACE/pre-merge-integration-tests/api_call.py

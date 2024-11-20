@@ -13,7 +13,7 @@ message_body = ("{ \"event_name\" : \"AUTH_AUTH_CODE_ISSUED\", \"event_id\" : "
                 "\"7340477f-74da-46d4-9400-d22ae518da3a\" }, \"client_id\" : \"vehicleOperatorLicense\" , "
                 "\"timestamp\" : \"1730800548523\" }")
 table_name = 'activity_log'
-queue_name = os.environ('SQS_QUEUE_ARN')
+queue_name = os.getenv('SQS_QUEUE_ARN')
 
 
 def send_message_to_queue(queue_url, message_attributes=None):

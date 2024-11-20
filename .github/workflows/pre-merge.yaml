@@ -19,7 +19,7 @@ permissions: read-all
 jobs:
   deploy:
     name: Publish to Demo
-    uses: ./.github/workflows/publish_to_demo.yaml
+    uses: ./.github/workflows/publish-to-demo.yaml
     secrets: inherit
     with:
       gitRef: ${{ inputs.gitRef }}

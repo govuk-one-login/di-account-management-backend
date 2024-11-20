@@ -87,6 +87,10 @@ jobs:
       contents: read
     needs: deploy-to-demo
     steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
       - name: Poll for deployment finished
         uses: govuk-one-login/github-actions/sam/check-stack-updated@b00f9eeccebbc72083d8ffca4f0a2448fb14bda5
         with:

@@ -1,4 +1,9 @@
-name: pre-merge check
+name: Pre Merge Check
+
+on:
+  pull_request_target:
+    branches:
+      - OLH-2228
 
 permissions: read-all
 

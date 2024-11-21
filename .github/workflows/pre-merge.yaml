@@ -1,9 +1,9 @@
 name: Pre Merge Check
 
 on:
-  pull_request_target:
+  push:
     branches:
-      - OLH-2228
+      - OLH-2228 # Trigger only on pushes to `OLH-2228`
 
 permissions: read-all
 
@@ -95,6 +95,7 @@ jobs:
         shell: bash
         working-directory: ./pre-merge-integration-tests
     timeout-minutes: 60
+    name: "Run Pre Merge Test"
     permissions:
       id-token: write
       contents: read

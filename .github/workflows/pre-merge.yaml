@@ -1,21 +1,12 @@
 name: pre-merge check
 
 on:
-  workflow_call:
-    inputs:
-      gitRef:
-        required: false
-        type: string
-        default: ${{ github.ref }}
   pull_request:
     branches:
       - OLH-2228
   pull_request_target:
     branches:
       - OLH-2228
-  push:
-    branches:
-      - main
 
 permissions: read-all
 

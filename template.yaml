@@ -2419,7 +2419,7 @@ Resources:
   RedriveDeleteEmailSubscriptionEventSourceMapping:
     Type: AWS::Lambda::EventSourceMapping
     Properties:
-      Enabled: true
+      Enabled: false
       BatchSize: 1
       EventSourceArn: !GetAtt DeleteEmailSubscriptionsDeadLetterQueue.Arn
       FunctionName: !Ref RedriveDeleteEmailSubscriptionsFunction

@@ -3,7 +3,7 @@ name: Pre Merge Check
 on:
   push:
     branches:
-      - OLH-2228 # Trigger only on pushes to `OLH-2228`
+      - OLH-2228
 
 permissions: read-all
 

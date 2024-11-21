@@ -8,8 +8,11 @@ on:
         type: string
         default: ${{ github.ref }}
   workflow_dispatch:
-  pull_request:
-    types: [opened, synchronize, reopened]
+  branches:
+    - OLH-2228
+  pull_request_target:
+    branches:
+      - OLH-2228
   push:
     branches:
       - main

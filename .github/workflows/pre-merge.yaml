@@ -22,6 +22,14 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Verify merge queue source
+        run: |
+          echo "Commit message: ${{ github.event.head_commit.message }}"
+          if [[ "${{ github.event.head_commit.message }}" != *"Merge pull request"* ]]; then
+            echo "This was not a merge queue commit. Exiting."
+            exit 0
+          fi
+
       - name: Fill in backup wrapping key
         run: .github/workflows/find-and-replace-backup-wrapping-key.sh
         env:
@@ -82,6 +90,15 @@ jobs:
         uses: actions/checkout@8f4b7f84864484a7bf31766abe9204da3cbe65b3 # pin@v3
         with:
           fetch-depth: 0
+
+      - name: Verify merge queue source
+        run: |
+          echo "Commit message: ${{ github.event.head_commit.message }}"
+          if [[ "${{ github.event.head_commit.message }}" != *"Merge pull request"* ]]; then
+            echo "This was not a merge queue commit. Exiting."
+            exit 0
+          fi
+
       - name: Poll for deployment finished
         uses: govuk-one-login/github-actions/sam/check-stack-updated@b00f9eeccebbc72083d8ffca4f0a2448fb14bda5
         with:

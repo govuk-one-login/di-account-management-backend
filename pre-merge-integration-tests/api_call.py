@@ -90,12 +90,10 @@ def delete_activity_log():
 
 def teardown():
     delete_activity_log()
-    return
 
 
 def setup():
     delete_activity_log()
-    return
 
 
 if __name__ == "__main__":

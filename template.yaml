@@ -2386,7 +2386,7 @@ Resources:
   RedriveDeleteEmailSubscriptionsFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub ${Environment}-${AWS::StackName}-redrive-delete-email-subscriptions
+      FunctionName: !Sub ${Environment}-${AWS::StackName}-redrive-delete-email-sub
       CodeUri: src
       PackageType: Zip
       Handler: redrive-delete-email-subscriptions.handler

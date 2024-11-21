@@ -7,9 +7,9 @@ on:
         required: false
         type: string
         default: ${{ github.ref }}
-  workflow_dispatch:
-  branches:
-    - OLH-2228
+  pull_request:
+    branches:
+      - OLH-2228
   pull_request_target:
     branches:
       - OLH-2228

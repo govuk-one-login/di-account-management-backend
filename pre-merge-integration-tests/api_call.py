@@ -20,7 +20,7 @@ queue_name = os.getenv('SQS_QUEUE_ARN')
 
 def send_message_to_queue(message_attributes=None):
     print(f"Queue ARN is: {queue_name}")
-    print(f"Message body is: {message_body}")
+    print(f"Message body  is: {message_body}")
     try:
         # Send message to SQS queue
         response = sqs.send_message(

@@ -4,6 +4,13 @@ on:
   push:
     branches:
       - OLH-2228
+  workflow_call:
+    inputs:
+      gitRef:
+        required: false
+        type: string
+        default: ${{ github.ref }}
+  workflow_dispatch:
 
 permissions: read-all
 

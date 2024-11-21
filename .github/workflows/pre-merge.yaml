@@ -1,13 +1,5 @@
 name: pre-merge check
 
-on:
-  pull_request:
-    branches:
-      - OLH-2228
-  pull_request_target:
-    branches:
-      - OLH-2228
-
 permissions: read-all
 
 jobs:

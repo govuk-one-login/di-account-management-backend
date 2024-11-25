@@ -14,7 +14,7 @@ Parameters:
       numbers and hyphens
 
 Outputs:
-  GitHubActionRoleArn:
+  GitHubActionTestingRoleArn:
     Description: "The resource used by GitHub Actions for testing cloudformation stack."
     Value: !Ref CloudFormationStackTestingGitHubActionsRole
     Export:
@@ -112,12 +112,23 @@ Resources:
       PolicyDocument:
         Version: "2012-10-17"
         Statement:
-          - Sid: "TestStackAPI"
-            Effect: "Allow"
+          - Sid: "TestStackSQSandDynamoDB"
+            Effect: Allow
             Action:
-              - "cloudformation:DescribeStackEvents"
+              - sqs:SendMessage
+              - dynamodb:Query
+              - dynamodb:GetItem
+              - dynamodb:DeleteItem
+              - dynamodb:PutItem
+              - cloudformation:DescribeStackEvents
+              - kms:Decrypt
+              - kms:GenerateDataKey*
+              - kms:ReEncrypt*
             Resource:
-              - !Sub 'arn:${AWS::Partition}:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/*'
+              - !Sub "arn:${AWS::Partition}:sqs:${AWS::Region}:${AWS::AccountId}:*"
+              - !Sub "arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/*"
+              - !Sub "arn:${AWS::Partition}:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/*"
+              - !Sub "arn:${AWS::Partition}:kms:${AWS::Region}:${AWS::AccountId}:key/*"
 
   CloudFormationStackTestingGitHubActionsRole:
     Type: AWS::IAM::Role

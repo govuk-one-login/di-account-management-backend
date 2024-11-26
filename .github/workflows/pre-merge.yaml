@@ -10,12 +10,16 @@ on:
         required: false
         type: string
         default: ${{ github.ref }}
+  pull_request:
+  merge_group:
+    types: [checks_requested]
   workflow_dispatch:
 
 permissions: read-all
 
 jobs:
   deploy-to-demo:
+    if: github.event_name != 'pull_request' || github.event.action == 'enqueued'
     environment: Demo-test
     permissions:
       contents: read
@@ -81,6 +85,7 @@ jobs:
           template-file: .aws-sam/build/template.yaml
 
   check-stack-ready:
+    if: github.event_name != 'pull_request' || github.event.action == 'enqueued'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -113,6 +118,7 @@ jobs:
           gh-polling-role: ${{ secrets.DEMO_TESTING_ROLE_ARN }}
 
   test:
+    if: github.event_name != 'pull_request' || github.event.action == 'enqueued'
     runs-on: ubuntu-latest
     defaults:
       run:

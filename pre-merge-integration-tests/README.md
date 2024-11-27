@@ -4,7 +4,7 @@
 
 Github action role for testing CloudFormation stack status.
 
-### Parameters
+### Parameter
 
 The list of parameters for this template:
 

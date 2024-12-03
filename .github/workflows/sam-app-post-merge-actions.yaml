@@ -78,3 +78,18 @@ jobs:
           artifact-bucket-name: ${{ secrets.ARTIFACT_BUCKET_NAME }}
           signing-profile-name: ${{ secrets.SIGNING_PROFILE_NAME }}
           template-file: .aws-sam/build/template.yaml
+
+      - name: Notify on failure
+        if: ${{ failure() && endsWith(github.ref, 'main') }}
+        id: slack
+        uses: slackapi/slack-github-action@v2.0.0
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: webhook-trigger
+          payload: |
+            {
+              "channel_id": "${{ secrets.NOTIFICATION_CHANNEL_ID }}",
+              "github_repo": "${{ github.repository }}",
+              "github_actor": "${{ github.actor }}",
+              "github_workflow": "${{ github.workflow }}"
+            }

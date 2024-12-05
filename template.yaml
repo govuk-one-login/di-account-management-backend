@@ -746,7 +746,7 @@ Resources:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-save-raw-events
       CodeUri: src
       PackageType: Zip
-      MemorySize: 220
+      MemorySize: -220
       Events:
         InputQueue:
           Type: SQS

@@ -232,6 +232,17 @@
       "description": "Eligible teachers who trained outside of England can apply for QTS.",
       "link_text": "Go to your apply for qualified teacher status account",
       "link_href": "https://apply-for-qts-in-england.education.gov.uk/teacher/application"
+    },
+    "CKHfr_Kz84LYFnsP7m6YJBXqBzw": {
+      "header": "Check a family’s eligibility for free school meals",
+      "link_text": "Check a family’s eligibility for free school meals",
+      "link_href": "https://check-free-school-meals.education.gov.uk/"
+    },
+    "L8SSq5Iz8DstkBgno0Hx5aujelE": {
+      "header": "Find a tender",
+      "description": "Publish opportunities so that suppliers can search and apply for them.",
+      "link_text": "Go to your Find a tender account",
+      "link_href": "https://supplier-information.private-beta.find-tender.service.gov.uk/"
     }
   },
   "integration": {
@@ -473,6 +484,17 @@
       "description": "Eligible teachers who trained outside of England can apply for QTS.",
       "link_text": "Go to your apply for qualified teacher status account",
       "link_href": "https://apply-for-qts-in-england.education.gov.uk/teacher/application"
+    },
+    "CKHfr_Kz84LYFnsP7m6YJBXqBzw": {
+      "header": "Check a family’s eligibility for free school meals",
+      "link_text": "Check a family’s eligibility for free school meals",
+      "link_href": "https://check-free-school-meals.education.gov.uk/"
+    },
+    "L8SSq5Iz8DstkBgno0Hx5aujelE": {
+      "header": "Find a tender",
+      "description": "Publish opportunities so that suppliers can search and apply for them.",
+      "link_text": "Go to your Find a tender account",
+      "link_href": "https://supplier-information.private-beta.find-tender.service.gov.uk/"
     }
   },
   "staging": {
@@ -702,6 +724,17 @@
       "description": "Eligible teachers who trained outside of England can apply for QTS.",
       "link_text": "Go to your apply for qualified teacher status account",
       "link_href": "https://apply-for-qts-in-england.education.gov.uk/teacher/application"
+    },
+    "checkFamilyEligibility": {
+      "header": "Check a family’s eligibility for free school meals",
+      "link_text": "Check a family’s eligibility for free school meals",
+      "link_href": "https://check-free-school-meals.education.gov.uk/"
+    },
+    "findATender": {
+      "header": "Find a tender",
+      "description": "Publish opportunities so that suppliers can search and apply for them.",
+      "link_text": "Go to your Find a tender account",
+      "link_href": "https://supplier-information.private-beta.find-tender.service.gov.uk/"
     }
   },
   "build": {
@@ -931,6 +964,17 @@
       "description": "Eligible teachers who trained outside of England can apply for QTS.",
       "link_text": "Go to your apply for qualified teacher status account",
       "link_href": "https://apply-for-qts-in-england.education.gov.uk/teacher/application"
+    },
+    "checkFamilyEligibility": {
+      "header": "Check a family’s eligibility for free school meals",
+      "link_text": "Check a family’s eligibility for free school meals",
+      "link_href": "https://check-free-school-meals.education.gov.uk/"
+    },
+    "findATender": {
+      "header": "Find a tender",
+      "description": "Publish opportunities so that suppliers can search and apply for them.",
+      "link_text": "Go to your Find a tender account",
+      "link_href": "https://supplier-information.private-beta.find-tender.service.gov.uk/"
     }
   },
   "demo": {
@@ -1155,6 +1199,17 @@
       "description": "Eligible teachers who trained outside of England can apply for QTS.",
       "link_text": "Go to your apply for qualified teacher status account",
       "link_href": "https://apply-for-qts-in-england.education.gov.uk/teacher/application"
+    },
+    "checkFamilyEligibility": {
+      "header": "Check a family’s eligibility for free school meals",
+      "link_text": "Check a family’s eligibility for free school meals",
+      "link_href": "https://check-free-school-meals.education.gov.uk/"
+    },
+    "findATender": {
+      "header": "Find a tender",
+      "description": "Publish opportunities so that suppliers can search and apply for them.",
+      "link_text": "Go to your Find a tender account",
+      "link_href": "https://supplier-information.private-beta.find-tender.service.gov.uk/"
     }
   },
   "dev": {
@@ -1384,6 +1439,17 @@
       "description": "Eligible teachers who trained outside of England can apply for QTS.",
       "link_text": "Go to your apply for qualified teacher status account",
       "link_href": "https://apply-for-qts-in-england.education.gov.uk/teacher/application"
+    },
+    "checkFamilyEligibility": {
+      "header": "Check a family’s eligibility for free school meals",
+      "link_text": "Check a family’s eligibility for free school meals",
+      "link_href": "https://check-free-school-meals.education.gov.uk/"
+    },
+    "findATender": {
+      "header": "Find a tender",
+      "description": "Publish opportunities so that suppliers can search and apply for them.",
+      "link_text": "Go to your Find a tender account",
+      "link_href": "https://supplier-information.private-beta.find-tender.service.gov.uk/"
     }
   },
   "local": {
@@ -1613,6 +1679,17 @@
       "description": "Eligible teachers who trained outside of England can apply for QTS.",
       "link_text": "Go to your apply for qualified teacher status account",
       "link_href": "https://apply-for-qts-in-england.education.gov.uk/teacher/application"
+    },
+    "checkFamilyEligibility": {
+      "header": "Check a family’s eligibility for free school meals",
+      "link_text": "Check a family’s eligibility for free school meals",
+      "link_href": "https://check-free-school-meals.education.gov.uk/"
+    },
+    "findATender": {
+      "header": "Find a tender",
+      "description": "Publish opportunities so that suppliers can search and apply for them.",
+      "link_text": "Go to your Find a tender account",
+      "link_href": "https://supplier-information.private-beta.find-tender.service.gov.uk/"
     }
   }
 }

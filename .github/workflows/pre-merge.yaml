@@ -41,6 +41,17 @@ jobs:
             exit 0
           fi
 
+      - name: Verify skipPreMerge is not in the last 3 commit message
+        run: |
+          WORD="skipPreMerge"
+          echo "Checking the last 3 commit messages for the word '${WORD}':"
+          git log -3 --pretty=format:"%h %s" | while read COMMIT_HASH COMMIT_MSG; do
+            if [[ "$COMMIT_MSG" == *"$WORD"* ]]; then
+              echo "Found '${WORD}' in commit: $COMMIT_MSG (commit hash: $COMMIT_HASH)"
+              exit 0
+            fi
+          done
+
       - name: Fill in backup wrapping key
         run: .github/workflows/find-and-replace-backup-wrapping-key.sh
         env:

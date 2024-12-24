@@ -44,6 +44,7 @@ jobs:
       - name: Verify skipPreMerge is not in the last 3 commit message
         run: |
           WORD="skipPreMerge"
+          git fetch --prune --unshallow
           echo "Checking the last 10 commit messages for the word '${WORD}':"
           SKIP_FOUND=false
           git log -10 --pretty=format:"%h %s" | while read COMMIT_HASH COMMIT_MSG; do

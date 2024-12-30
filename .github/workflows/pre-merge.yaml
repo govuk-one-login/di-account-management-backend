@@ -54,7 +54,7 @@ jobs:
             fi
           done
 
-          if [ "$SKIP_FOUND" == "true" ]; then
+          if [ "$SKIP_FOUND" == "true" ]; then 
             echo "Skipping all steps because the commit message contains '${WORD}'."
             exit 0
           else

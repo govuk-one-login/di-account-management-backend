@@ -3,7 +3,7 @@ name: Pre Merge Check
 on:
   push:
     branches:
-      - OLH-2228
+      - OLH-2303
   workflow_call:
     inputs:
       gitRef:
@@ -18,9 +18,51 @@ on:
 permissions: read-all
 
 jobs:
-  deploy-to-demo:
+  check-if-skipping-pre-merge:
     if: github.event_name != 'pull_request' || github.event.action == 'enqueued'
+    runs-on: ubuntu-latest
+    outputs:
+      skip_found: ${{ steps.verify_skip_merge.outputs.skip_found }}
+    defaults:
+      run:
+        shell: bash
+        working-directory: ./pre-merge-integration-tests
+    timeout-minutes: 60
+    name: "Check if pre-merge step should be skipped "
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@8f4b7f84864484a7bf31766abe9204da3cbe65b3 # pin@v3
+        with:
+          fetch-depth: 0
+
+      - name: Verify skipPreMerge is not in the last 3 commit message
+        id: verify_skip_merge
+        run: |
+          WORD="skipPreMerge"
+          echo "Checking the last 3 commit messages for the word '${WORD}':"
+          SKIP_FOUND="false"
+          for COMMIT_MSG in $(git log -3 --pretty=format:"%s"); do
+            if [[ "$COMMIT_MSG" == *"$WORD"* ]]; then
+              echo "Found '${WORD}' in commit: $COMMIT_MSG"
+              SKIP_FOUND="true"
+              break
+            fi
+          done
+          if [ "$SKIP_FOUND" == "true" ]; then 
+            echo "Skipping all steps because the commit message contains '${WORD}'."
+            echo "skip_found=$SKIP_FOUND" >> $GITHUB_ENV
+            echo "::set-output name=skip_found::$SKIP_FOUND"
+            exit 0
+          else
+            echo "No commit message with '${WORD}' found. Proceeding with workflow."
+          fi
+  deploy-to-demo:
+    if: ${{ needs.verify_skip_merge.outputs.skip_action == 'true' }}
     environment: Demo-test
+    needs: check-if-skipping-pre-merge
     permissions:
       contents: read
       id-token: write
@@ -41,28 +83,10 @@ jobs:
             exit 0
           fi
 
-      - name: Verify skipPreMerge is not in the last 3 commit message
-        run: |
-          WORD="skipPreMerge"
-          echo "Checking the last 10 commit messages for the word '${WORD}':"
-          SKIP_FOUND="false"
-          for COMMIT_MSG in $(git log -10 --pretty=format:"%s"); do
-            if [[ "$COMMIT_MSG" == *"$WORD"* ]]; then
-              echo "Found '${WORD}' in commit: $COMMIT_MSG"
-              SKIP_FOUND="true"
-              break
-            fi
-          done
-          if [ "$SKIP_FOUND" == "true" ]; then 
-            echo "Skipping all steps because the commit message contains '${WORD}'."
-            exit 0
-          else
-            echo "No commit message with '${WORD}' found. Proceeding with workflow."
-          fi
-          echo "SKIP_FOUND is '${SKIP_FOUND}'"
-
       - name: Fill in backup wrapping key
-        run: .github/workflows/find-and-replace-backup-wrapping-key.sh
+        if: ${{ !contains(env.skip_found, 'true') }}
+        run: |
+          .github/workflows/find-and-replace-backup-wrapping-key.sh
         env:
           WRAPPING_KEY_ARN: ${{ secrets.WRAPPING_KEY_ARN }}
 
@@ -105,7 +129,7 @@ jobs:
           template-file: .aws-sam/build/template.yaml
 
   check-stack-ready:
-    if: github.event_name != 'pull_request' || github.event.action == 'enqueued'
+    if: ${{ needs.verify_skip_merge.outputs.skip_action == 'true' }}
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -138,7 +162,7 @@ jobs:
           gh-polling-role: ${{ secrets.DEMO_TESTING_ROLE_ARN }}
 
   test:
-    if: github.event_name != 'pull_request' || github.event.action == 'enqueued'
+    if: ${{ needs.verify_skip_merge.outputs.skip_action == 'true' }}
     runs-on: ubuntu-latest
     defaults:
       run:

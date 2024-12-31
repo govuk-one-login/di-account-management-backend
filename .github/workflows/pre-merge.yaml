@@ -28,7 +28,7 @@ jobs:
         shell: bash
         working-directory: ./pre-merge-integration-tests
     timeout-minutes: 60
-    name: "Check if pre-merge step should be skipped "
+    name: "Check if pre-merge step should be skipped"
     permissions:
       id-token: write
       contents: read

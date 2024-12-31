@@ -60,7 +60,7 @@ jobs:
             echo "No commit message with '${WORD}' found. Proceeding with workflow."
           fi
   deploy-to-demo:
-    if: ${{ needs.verify_skip_merge.outputs.skip_action == 'true' }}
+    if: ${{ needs.verify_skip_merge.outputs.skip_action == 'false' }}
     environment: Demo-test
     needs: check-if-skipping-pre-merge
     permissions:
@@ -129,7 +129,7 @@ jobs:
           template-file: .aws-sam/build/template.yaml
 
   check-stack-ready:
-    if: ${{ needs.verify_skip_merge.outputs.skip_action == 'true' }}
+    if: ${{ needs.verify_skip_merge.outputs.skip_action == 'false' }}
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -162,7 +162,7 @@ jobs:
           gh-polling-role: ${{ secrets.DEMO_TESTING_ROLE_ARN }}
 
   test:
-    if: ${{ needs.verify_skip_merge.outputs.skip_action == 'true' }}
+    if: ${{ needs.verify_skip_merge.outputs.skip_action == 'false' }}
     runs-on: ubuntu-latest
     defaults:
       run:

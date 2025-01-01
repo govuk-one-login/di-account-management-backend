@@ -51,18 +51,18 @@ jobs:
               break
             fi
           done
+          echo "Skip found is '${SKIP_FOUND}'"
           if [ "$SKIP_FOUND" == "true" ]; then 
             echo "Skipping all steps because the commit message contains '${WORD}'."
-            echo "skip_found=$SKIP_FOUND" >> $GITHUB_ENV
-            echo "::set-output name=skip_found::$SKIP_FOUND"
-            exit 0
+            echo "skip_found=$SKIP_FOUND" >> $GITHUB_OUTPUT
           else
             echo "No commit message with '${WORD}' found. Proceeding with workflow."
+            echo "skip_found=$SKIP_FOUND" >> $GITHUB_OUTPUT
           fi
   deploy-to-demo:
-    if: ${{ needs.verify_skip_merge.outputs.skip_action == 'false' }}
     environment: Demo-test
     needs: check-if-skipping-pre-merge
+    if: ${{ needs.check-if-skipping-pre-merge.outputs.skip_found == 'false' }}
     permissions:
       contents: read
       id-token: write
@@ -77,6 +77,7 @@ jobs:
 
       - name: Verify merge queue source
         run: |
+          echo "Value of skip_found in deploy to demo step is: ${{ needs.check-if-skipping-pre-merge.outputs.skip_found }}"
           echo "Commit message: ${{ github.event.head_commit.message }}"
           if [[ "${{ github.event.head_commit.message }}" != *"Merge pull request"* ]]; then
             echo "This was not a merge queue commit. Exiting."
@@ -129,7 +130,7 @@ jobs:
           template-file: .aws-sam/build/template.yaml
 
   check-stack-ready:
-    if: ${{ needs.verify_skip_merge.outputs.skip_action == 'false' }}
+    if: ${{ needs.check-if-skipping-pre-merge.outputs.skip_found == 'false' }}
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -162,7 +163,7 @@ jobs:
           gh-polling-role: ${{ secrets.DEMO_TESTING_ROLE_ARN }}
 
   test:
-    if: ${{ needs.verify_skip_merge.outputs.skip_action == 'false' }}
+    if: ${{ needs.check-if-skipping-pre-merge.outputs.skip_found == 'false' }}
     runs-on: ubuntu-latest
     defaults:
       run:

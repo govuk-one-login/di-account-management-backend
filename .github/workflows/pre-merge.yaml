@@ -85,9 +85,7 @@ jobs:
           fi
 
       - name: Fill in backup wrapping key
-        if: ${{ !contains(env.skip_found, 'true') }}
-        run: |
-          .github/workflows/find-and-replace-backup-wrapping-key.sh
+        run: .github/workflows/find-and-replace-backup-wrapping-key.sh
         env:
           WRAPPING_KEY_ARN: ${{ secrets.WRAPPING_KEY_ARN }}
 

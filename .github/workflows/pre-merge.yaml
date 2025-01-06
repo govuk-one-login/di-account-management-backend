@@ -1,9 +1,6 @@
 name: Pre Merge Check
 
 on:
-  push:
-    branches:
-      - main
   workflow_call:
     inputs:
       gitRef:
@@ -38,13 +35,14 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Verify skipPreMerge is not in the last 3 commit message
+      - name: Verify skipPreMerge is not in the last commit message
         id: verify_skip_merge
         run: |
+          echo "Github event action is ${{ github.event.action }}"
           WORD="skipPreMerge"
-          echo "Checking the last 3 commit messages for the word '${WORD}':"
+          echo "Checking the last commit messages for the word '${WORD}':"
           SKIP_FOUND="false"
-          for COMMIT_MSG in $(git log -3 --pretty=format:"%s"); do
+          for COMMIT_MSG in $(git log -1 --pretty=format:"%s"); do
             if [[ "$COMMIT_MSG" == *"$WORD"* ]]; then
               echo "Found '${WORD}' in commit: $COMMIT_MSG"
               SKIP_FOUND="true"

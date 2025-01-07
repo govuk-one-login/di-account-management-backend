@@ -1,22 +1,66 @@
 name: Pre Merge Check
 
 on:
-  push:
-    branches:
-      - OLH-2228
   workflow_call:
     inputs:
       gitRef:
         required: false
         type: string
         default: ${{ github.ref }}
+  pull_request:
+  merge_group:
+    types: [checks_requested]
   workflow_dispatch:
 
 permissions: read-all
 
 jobs:
+  check-if-skipping-pre-merge:
+    if: github.event_name != 'pull_request' || github.event.action == 'enqueued'
+    runs-on: ubuntu-latest
+    outputs:
+      skip_found: ${{ steps.verify_skip_merge.outputs.skip_found }}
+    defaults:
+      run:
+        shell: bash
+        working-directory: ./pre-merge-integration-tests
+    timeout-minutes: 60
+    name: "Check if pre-merge step should be skipped"
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@8f4b7f84864484a7bf31766abe9204da3cbe65b3 # pin@v3
+        with:
+          fetch-depth: 0
+
+      - name: Verify skipPreMerge is not in the last commit message
+        id: verify_skip_merge
+        run: |
+          echo "Github event action is ${{ github.event.action }}"
+          WORD="skipPreMerge"
+          echo "Checking the last commit messages for the word '${WORD}':"
+          SKIP_FOUND="false"
+          for COMMIT_MSG in $(git log -1 --pretty=format:"%s"); do
+            if [[ "$COMMIT_MSG" == *"$WORD"* ]]; then
+              echo "Found '${WORD}' in commit: $COMMIT_MSG"
+              SKIP_FOUND="true"
+              break
+            fi
+          done
+          echo "Skip found is '${SKIP_FOUND}'"
+          if [ "$SKIP_FOUND" == "true" ]; then 
+            echo "Skipping all steps because the commit message contains '${WORD}'."
+            echo "skip_found=$SKIP_FOUND" >> $GITHUB_OUTPUT
+          else
+            echo "No commit message with '${WORD}' found. Proceeding with workflow."
+            echo "skip_found=$SKIP_FOUND" >> $GITHUB_OUTPUT
+          fi
   deploy-to-demo:
     environment: Demo-test
+    needs: check-if-skipping-pre-merge
+    if: ${{ needs.check-if-skipping-pre-merge.outputs.skip_found == 'false' }}
     permissions:
       contents: read
       id-token: write
@@ -29,16 +73,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Verify merge queue source
-        run: |
-          echo "Commit message: ${{ github.event.head_commit.message }}"
-          if [[ "${{ github.event.head_commit.message }}" != *"Merge pull request"* ]]; then
-            echo "This was not a merge queue commit. Exiting."
-            exit 0
-          fi
-
       - name: Fill in backup wrapping key
-        run: .github/workflows/find-and-replace-backup-wrapping-key.sh
+        if: ${{ !contains(env.skip_found, 'true') }}
+        run: |
+          .github/workflows/find-and-replace-backup-wrapping-key.sh
         env:
           WRAPPING_KEY_ARN: ${{ secrets.WRAPPING_KEY_ARN }}
 
@@ -81,6 +119,7 @@ jobs:
           template-file: .aws-sam/build/template.yaml
 
   check-stack-ready:
+    if: ${{ needs.check-if-skipping-pre-merge.outputs.skip_found == 'false' }}
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -98,14 +137,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Verify merge queue source
-        run: |
-          echo "Commit message: ${{ github.event.head_commit.message }}"
-          if [[ "${{ github.event.head_commit.message }}" != *"Merge pull request"* ]]; then
-            echo "This was not a merge queue commit. Exiting."
-            exit 0
-          fi
-
       - name: Poll for deployment finished
         uses: govuk-one-login/github-actions/sam/check-stack-updated@b00f9eeccebbc72083d8ffca4f0a2448fb14bda5
         with:
@@ -113,6 +144,7 @@ jobs:
           gh-polling-role: ${{ secrets.DEMO_TESTING_ROLE_ARN }}
 
   test:
+    if: ${{ needs.check-if-skipping-pre-merge.outputs.skip_found == 'false' }}
     runs-on: ubuntu-latest
     defaults:
       run:

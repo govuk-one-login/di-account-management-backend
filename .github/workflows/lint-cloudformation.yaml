@@ -10,6 +10,8 @@ on:
   pull_request:
     paths:
       - "template.yaml"
+  merge_group:
+    types: [checks_requested]
 
 jobs:
   lint_cloudformation:

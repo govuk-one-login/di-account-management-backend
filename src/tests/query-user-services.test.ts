@@ -1,7 +1,15 @@
+import dotenv from "dotenv";
+dotenv.config({ path: ".env.test" });
 import { SendMessageCommand, SQSClient } from "@aws-sdk/client-sqs";
 import { DynamoDBDocumentClient, GetCommand } from "@aws-sdk/lib-dynamodb";
 import { mockClient } from "aws-sdk-client-mock";
-import { Service, UserRecordEvent, UserServices } from "../common/model";
+import {
+  Service,
+  TxmaEvent,
+  UserData,
+  UserRecordEvent,
+  UserServices,
+} from "../common/model";
 import "aws-sdk-client-mock-jest";
 import {
   handler,
@@ -10,7 +18,6 @@ import {
   queryUserServices,
 } from "../query-user-services";
 import { DynamoDBStreamEvent, DynamoDBRecord } from "aws-lambda";
-import { TxmaEvent, UserData } from "../common/model";
 import { sendSqsMessage } from "../common/sqs";
 
 export const userId = "user_id";
@@ -18,7 +25,7 @@ export const clientId = "client_id";
 export const date = new Date();
 export const tableName = "TableName";
 export const messageId = "MyMessageId";
-export const queueUrl = "http://my_queue_url";
+export const queueUrl = process.env.OUTPUT_QUEUE_URL;
 export const dlqUrl = "DlqUrl";
 const timestamp = date.valueOf();
 
@@ -122,15 +129,16 @@ const userServices: UserServices = {
 };
 
 describe("queryUserServices", () => {
+  const OLD_ENV = process.env;
+
   beforeEach(() => {
+    process.env = { ...OLD_ENV };
     dynamoMock.reset();
-
-    process.env.TABLE_NAME = tableName;
-
     dynamoMock.on(GetCommand).resolves({ Item: userServices });
   });
 
   afterEach(() => {
+    process.env = OLD_ENV;
     jest.clearAllMocks();
   });
 
@@ -169,7 +177,7 @@ describe("validateTxmaEventBody", () => {
     );
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrowError();
+    }).toThrow();
   });
   test("throws error when timestamp is missing", () => {
     const txmaEvent = JSON.parse(
@@ -187,7 +195,7 @@ describe("validateTxmaEventBody", () => {
     );
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrowError();
+    }).toThrow();
   });
   test("throws error when event name is missing", () => {
     const txmaEvent = JSON.parse(
@@ -205,7 +213,7 @@ describe("validateTxmaEventBody", () => {
     );
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrowError();
+    }).toThrow();
   });
   test(" throws error when user is missing", () => {
     const txmaEvent = JSON.parse(
@@ -221,7 +229,7 @@ describe("validateTxmaEventBody", () => {
     );
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrowError();
+    }).toThrow();
   });
   test("throws error when user_id  is missing", () => {
     const txmaEvent = JSON.parse(
@@ -238,7 +246,7 @@ describe("validateTxmaEventBody", () => {
     );
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrowError();
+    }).toThrow();
   });
 });
 
@@ -247,7 +255,7 @@ describe("validateUser", () => {
     const inValidUser = JSON.parse(JSON.stringify({}));
     expect(() => {
       validateUser(inValidUser);
-    }).toThrowError();
+    }).toThrow();
   });
 });
 

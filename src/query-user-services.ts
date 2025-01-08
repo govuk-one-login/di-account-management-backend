@@ -13,19 +13,16 @@ import {
 import { sendSqsMessage } from "./common/sqs";
 import { getEnvironmentVariable } from "./common/utils";
 
-const marshallOptions = {
-  convertClassInstanceToMap: true,
-};
-const translateConfig = { marshallOptions };
+const TABLE_NAME = getEnvironmentVariable("TABLE_NAME");
+const OUTPUT_QUEUE_URL = getEnvironmentVariable("OUTPUT_QUEUE_URL");
 
-const dynamoClient = new DynamoDBClient({});
-const dynamoDocClient = DynamoDBDocumentClient.from(
-  dynamoClient,
-  translateConfig
-);
+const dynamoDocClient = DynamoDBDocumentClient.from(new DynamoDBClient({}), {
+  marshallOptions: {
+    convertClassInstanceToMap: true,
+  },
+});
 
 export const queryUserServices = async (userId: string): Promise<Service[]> => {
-  const TABLE_NAME = getEnvironmentVariable("TABLE_NAME");
   const command = new GetCommand({
     TableName: TABLE_NAME,
     Key: {
@@ -58,38 +55,26 @@ export const validateTxmaEventBody = (txmaEvent: TxmaEvent): void => {
 const createUserRecordEvent = (
   txmaEvent: TxmaEvent,
   results: Service[]
-): UserRecordEvent => {
-  const userRecordEvent: UserRecordEvent = {
-    TxmaEvent: txmaEvent,
-    ServiceList: results,
-  };
-  return userRecordEvent;
-};
+): UserRecordEvent => ({
+  TxmaEvent: txmaEvent,
+  ServiceList: results,
+});
 
 export const handler = async (event: DynamoDBStreamEvent): Promise<void> => {
-  const { Records } = event;
-  const OUTPUT_QUEUE_URL = getEnvironmentVariable("OUTPUT_QUEUE_URL");
   await Promise.all(
-    Records.map(async (record) => {
+    event.Records.map(async (record) => {
       try {
-        console.log(`started processing event with ID: ${record.eventID}`);
         const txmaEvent = unmarshall(
           record.dynamodb?.NewImage?.event.M as Record<string, AttributeValue>
         ) as TxmaEvent;
         if (txmaEvent.event_name === "AUTH_AUTH_CODE_ISSUED") {
           validateTxmaEventBody(txmaEvent);
           const results = await queryUserServices(txmaEvent.user.user_id);
-          const { MessageId: messageId } = await sendSqsMessage(
+          await sendSqsMessage(
             JSON.stringify(createUserRecordEvent(txmaEvent, results)),
             OUTPUT_QUEUE_URL
           );
-          console.log(`[Message sent to QUEUE] with message id = ${messageId}`);
-        } else {
-          console.log(
-            `DB stream sent a ${txmaEvent.event_name} event. Irrelevant for service card so ignoring`
-          );
         }
-        console.log(`finished processing event with ID: ${record.eventID}`);
       } catch (error) {
         throw new Error(
           `Unable to query user services for message with ID: ${record.eventID}, ${

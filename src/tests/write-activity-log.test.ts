@@ -37,7 +37,7 @@ describe("ValidateActivityLogEntries", () => {
   test("throws an error when user_id is missing", () => {
     expect(() => {
       validateActivityLogEntry(ACTIVITY_LOG_ENTRY_NO_USER_ID);
-    }).toThrowError(
+    }).toThrow(
       new Error(
         `Activity log entry validation failed for event_id: ab12345a-a12b-3ced-ef12-12a3b4cd5678`
       )
@@ -47,7 +47,7 @@ describe("ValidateActivityLogEntries", () => {
   test("throws an error when timestamp is missing", () => {
     expect(() => {
       validateActivityLogEntry(ACTIVITY_LOG_ENTRY_NO_TIMESTAMP);
-    }).toThrowError(
+    }).toThrow(
       new Error(
         `Activity log entry validation failed for event_id: ab12345a-a12b-3ced-ef12-12a3b4cd5678`
       )

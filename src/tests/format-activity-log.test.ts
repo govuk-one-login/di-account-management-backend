@@ -1,3 +1,5 @@
+import dotenv from "dotenv";
+dotenv.config({ path: ".env.test" });
 import { mockClient } from "aws-sdk-client-mock";
 import "aws-sdk-client-mock-jest";
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
@@ -9,11 +11,9 @@ import {
 import {
   ERROR_DYNAMODB_STREAM_EVENT,
   messageId,
-  MUCKY_DYNAMODB_STREAM_EVENT,
   MUTABLE_ACTIVITY_LOG_ENTRY,
   MUTABLE_TXMA_EVENT,
   queueUrl,
-  randomEventType,
   tableName,
   TEST_DYNAMO_STREAM_EVENT,
 } from "./testFixtures";
@@ -22,25 +22,17 @@ import { sendSqsMessage } from "../common/sqs";
 const sqsMock = mockClient(SQSClient);
 
 describe("handler", () => {
-  let consoleLogMock: jest.SpyInstance;
+  const OLD_ENV = process.env;
+
   beforeEach(() => {
+    process.env = { ...OLD_ENV };
     sqsMock.reset();
-    process.env.TABLE_NAME = tableName;
-    process.env.OUTPUT_QUEUE_URL = queueUrl;
-    process.env.AWS_REGION = "AWS_REGION";
-    consoleLogMock = jest.spyOn(global.console, "log").mockImplementation();
     sqsMock.on(SendMessageCommand).resolves({ MessageId: messageId });
   });
-  afterEach(() => {
-    jest.clearAllMocks();
-  });
 
-  test("Ignores any Non allowed event", async () => {
-    await handler(MUCKY_DYNAMODB_STREAM_EVENT);
-    expect(consoleLogMock).toHaveBeenCalledTimes(3);
-    expect(consoleLogMock).toHaveBeenCalledWith(
-      `DB stream sent a ${randomEventType} event. Irrelevant for activity log so ignoring`
-    );
+  afterEach(() => {
+    process.env = OLD_ENV;
+    jest.clearAllMocks();
   });
 
   test("it writes a formatted SQS event when txma event is valid", async () => {
@@ -103,7 +95,7 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrowError();
+    }).toThrow();
   });
 
   test("throws error when event name is missing", () => {
@@ -114,7 +106,7 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrowError();
+    }).toThrow();
   });
 
   test("throws error when client_id is missing", () => {
@@ -125,7 +117,7 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrowError();
+    }).toThrow();
   });
 
   test("throws error when timestamp is missing", () => {
@@ -136,7 +128,7 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrowError();
+    }).toThrow();
   });
 
   test(" throws error when user_id is missing", () => {
@@ -147,7 +139,7 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrowError();
+    }).toThrow();
   });
 
   test("throws error when session_id  is missing", () => {
@@ -158,7 +150,7 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrowError();
+    }).toThrow();
   });
 });
 

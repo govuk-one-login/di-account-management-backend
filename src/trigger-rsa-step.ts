@@ -23,17 +23,11 @@ export const handler = async (event: SNSEvent): Promise<void> => {
   await Promise.all(
     event.Records.map(async (record) => {
       try {
-        console.log(
-          `Started processing message with ID: ${record.Sns.MessageId}`
+        const receivedEvent: ReportSuspiciousActivityStepInput = JSON.parse(
+          record.Sns.Message
         );
-        const messageBody = record.Sns.Message;
-        const receivedEvent: ReportSuspiciousActivityStepInput =
-          JSON.parse(messageBody);
         validateReceivedEvent(receivedEvent);
         await callAsyncStepFunction(STATE_MACHINE_ARN, receivedEvent);
-        console.log(
-          `Finished processing message with ID: ${record.Sns.MessageId}`
-        );
       } catch (error) {
         throw new Error(
           `Unable to trigger rsa step for message with ID: ${record.Sns.MessageId}, ${

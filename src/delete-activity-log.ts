@@ -8,16 +8,12 @@ import { DynamoDBDocumentClient, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { ActivityLogEntry, UserData } from "./common/model";
 import { getEnvironmentVariable } from "./common/utils";
 
-const marshallOptions = {
-  convertClassInstanceToMap: true,
-};
-const translateConfig = { marshallOptions };
+const TABLE_NAME = getEnvironmentVariable("TABLE_NAME");
 
 const dynamoClient = new DynamoDBClient({});
-const dynamoDocClient = DynamoDBDocumentClient.from(
-  dynamoClient,
-  translateConfig
-);
+const dynamoDocClient = DynamoDBDocumentClient.from(dynamoClient, {
+  marshallOptions: { convertClassInstanceToMap: true },
+});
 
 export const validateUserData = (userData: UserData): UserData => {
   if (userData.user_id) {
@@ -27,30 +23,26 @@ export const validateUserData = (userData: UserData): UserData => {
 };
 
 export const getAllActivityLogEntriesForUser = async (
-  tableName: string,
   userData: UserData
 ): Promise<ActivityLogEntry[] | undefined> => {
   const queryResult: ActivityLogEntry[] = [];
   let lastEvaluatedKey: Record<string, unknown> | undefined;
-  const command = {
-    TableName: tableName,
-    KeyConditionExpression: "user_id = :user_id",
-    ExpressionAttributeValues: {
-      ":user_id": userData.user_id,
-    },
-    ScanIndexForward: true,
-    ExclusiveStartKey: lastEvaluatedKey,
-  };
   do {
-    const response = await dynamoDocClient.send(new QueryCommand(command));
+    const command = new QueryCommand({
+      TableName: TABLE_NAME,
+      KeyConditionExpression: "user_id = :user_id",
+      ExpressionAttributeValues: {
+        ":user_id": userData.user_id,
+      },
+      ScanIndexForward: true,
+      ExclusiveStartKey: lastEvaluatedKey,
+    });
 
+    const response = await dynamoDocClient.send(command);
     if (response.Items) {
       queryResult.push(...(response.Items as ActivityLogEntry[]));
     }
-
-    lastEvaluatedKey = response.LastEvaluatedKey
-      ? response.LastEvaluatedKey
-      : undefined;
+    lastEvaluatedKey = response.LastEvaluatedKey;
   } while (lastEvaluatedKey);
 
   return queryResult.length > 0 ? queryResult : undefined;
@@ -86,19 +78,19 @@ export const buildBatchDeletionRequestArray = (
 };
 
 export const batchDeleteActivityLog = async (
-  tableName: string,
   activityLogEntries: ActivityLogEntry[]
 ) => {
-  const batchArray = buildBatchDeletionRequestArray(activityLogEntries);
-  Promise.all(
-    batchArray.map(async (arrayOf25orFewerItems) => {
+  const batches = buildBatchDeletionRequestArray(activityLogEntries);
+
+  await Promise.all(
+    batches.map(async (batch) => {
       try {
-        const batchcommand = new BatchWriteItemCommand({
+        const batchCommand = new BatchWriteItemCommand({
           RequestItems: {
-            [tableName]: arrayOf25orFewerItems,
+            [TABLE_NAME]: batch,
           },
         });
-        await dynamoDocClient.send(batchcommand);
+        await dynamoDocClient.send(batchCommand);
       } catch (error) {
         console.error("Error occurred during batch delete:", error);
         throw error;
@@ -108,23 +100,16 @@ export const batchDeleteActivityLog = async (
 };
 
 export const handler = async (event: SNSEvent): Promise<void> => {
-  const TABLE_NAME = getEnvironmentVariable("TABLE_NAME");
   await Promise.all(
     event.Records.map(async (record) => {
       try {
-        console.log(
-          `started processing message with ID: ${record.Sns.MessageId}`
-        );
         const userData: UserData = JSON.parse(record.Sns.Message);
         validateUserData(userData);
-        const activityLogEntries: ActivityLogEntry[] | undefined =
-          await getAllActivityLogEntriesForUser(TABLE_NAME, userData);
+        const activityLogEntries =
+          await getAllActivityLogEntriesForUser(userData);
         if (activityLogEntries) {
-          await batchDeleteActivityLog(TABLE_NAME, activityLogEntries);
+          await batchDeleteActivityLog(activityLogEntries);
         }
-        console.log(
-          `finished processing message with ID: ${record.Sns.MessageId}`
-        );
       } catch (error) {
         throw new Error(
           `Unable to delete activity log for message with ID: ${record.Sns.MessageId}, ${

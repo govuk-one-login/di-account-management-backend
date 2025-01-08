@@ -1,3 +1,5 @@
+import dotenv from "dotenv";
+dotenv.config({ path: ".env.test" });
 import "aws-sdk-client-mock-jest";
 import crypto from "crypto";
 import { SendMessageCommand, SQSClient } from "@aws-sdk/client-sqs";
@@ -55,7 +57,10 @@ const UUID = "12345";
 const TIMESTAMP = 1668505677;
 
 describe("writeRawTxmaEvent", () => {
+  const OLD_ENV = process.env;
+
   beforeEach(() => {
+    process.env = { ...OLD_ENV };
     dynamoMock.reset();
     process.env.TABLE_NAME = TABLE_NAME;
     jest.spyOn(Date, "now").mockImplementation(() => TIMESTAMP);
@@ -65,6 +70,7 @@ describe("writeRawTxmaEvent", () => {
   });
 
   afterEach(() => {
+    process.env = OLD_ENV;
     jest.clearAllMocks();
     jest.spyOn(Date, "now").mockRestore();
     jest.spyOn(crypto, "randomUUID").mockRestore();
@@ -90,7 +96,7 @@ describe("validateUser", () => {
     const inValidUser = JSON.parse(JSON.stringify({}));
     expect(() => {
       validateUser(inValidUser);
-    }).toThrowError(new Error(`Could not validate User`));
+    }).toThrow(new Error(`Could not validate User`));
   });
 
   test("throws error when user_id key is missing", () => {
@@ -102,7 +108,7 @@ describe("validateUser", () => {
     );
     expect(() => {
       validateUser(inValidUser);
-    }).toThrowError(new Error(`Could not validate User`));
+    }).toThrow(new Error(`Could not validate User`));
   });
 
   test("throws error when session_id key is missing", () => {
@@ -114,7 +120,7 @@ describe("validateUser", () => {
     );
     expect(() => {
       validateUser(inValidUser);
-    }).toThrowError(new Error(`Could not validate User`));
+    }).toThrow(new Error(`Could not validate User`));
   });
 
   test("throws error when session_id value is null", () => {
@@ -126,7 +132,7 @@ describe("validateUser", () => {
     );
     expect(() => {
       validateUser(inValidUser);
-    }).toThrowError(new Error(`Could not validate User`));
+    }).toThrow(new Error(`Could not validate User`));
   });
 });
 
@@ -143,7 +149,7 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrowError(new Error(`Could not validate TxmaEvent`));
+    }).toThrow(new Error(`Could not validate TxmaEvent`));
   });
 
   test("throws error when client_id value is null", () => {
@@ -154,7 +160,7 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrowError(new Error(`Could not validate TxmaEvent`));
+    }).toThrow(new Error(`Could not validate TxmaEvent`));
   });
 
   test("throws error when timestamp key is missing", () => {
@@ -165,7 +171,7 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrowError(new Error(`Could not validate TxmaEvent`));
+    }).toThrow(new Error(`Could not validate TxmaEvent`));
   });
 
   test("throws error when timestamp value is null", () => {
@@ -176,7 +182,7 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrowError(new Error(`Could not validate TxmaEvent`));
+    }).toThrow(new Error(`Could not validate TxmaEvent`));
   });
 
   test("throws error when event_name key is missing", () => {
@@ -187,7 +193,7 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrowError(new Error(`Could not validate TxmaEvent`));
+    }).toThrow(new Error(`Could not validate TxmaEvent`));
   });
 
   test("throws error when event name value is null", () => {
@@ -198,7 +204,7 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrowError(new Error(`Could not validate TxmaEvent`));
+    }).toThrow(new Error(`Could not validate TxmaEvent`));
   });
 
   test("throws error when user key is missing", () => {
@@ -209,7 +215,7 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrowError(new Error(`Could not validate TxmaEvent`));
+    }).toThrow(new Error(`Could not validate TxmaEvent`));
   });
 
   test("throws error when user_id key is missing", () => {
@@ -220,7 +226,7 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrowError(new Error(`Could not validate User`));
+    }).toThrow(new Error(`Could not validate User`));
   });
 
   test("throws error when user_id value is null", () => {
@@ -231,7 +237,7 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrowError(new Error(`Could not validate User`));
+    }).toThrow(new Error(`Could not validate User`));
   });
 });
 

@@ -1,17 +1,20 @@
-import {
-  handler,
-  getRequestConfig,
-  validateUserData,
-} from "../delete-email-subscriptions";
+import dotenv from "dotenv";
+dotenv.config({ path: ".env.test" });
+import { handler, validateUserData } from "../delete-email-subscriptions";
 import { TEST_SNS_EVENT, TEST_USER_DATA } from "./testFixtures";
 
+global.fetch = jest.fn();
+
 describe("handler", () => {
+  const OLD_ENV = process.env;
+
   beforeEach(() => {
-    jest.restoreAllMocks();
-    process.env.AWS_REGION = "AWS_REGION";
+    process.env = { ...OLD_ENV };
+    (fetch as jest.Mock).mockClear();
   });
 
   afterEach(() => {
+    process.env = OLD_ENV;
     jest.clearAllMocks();
   });
 
@@ -25,20 +28,11 @@ describe("handler", () => {
       .spyOn(module, "deleteEmailSubscription")
       .mockReturnValue("deleteEmailSubscription-mock");
 
-    await expect(handler(TEST_SNS_EVENT)).resolves.not.toThrowError();
+    await expect(handler(TEST_SNS_EVENT)).resolves.not.toThrow();
     expect(validateUserDataMock).toHaveBeenCalledTimes(1);
     expect(validateUserDataMock).toHaveBeenCalledWith(TEST_USER_DATA);
     expect(deleteEmailSubscriptionMock).toHaveBeenCalledTimes(1);
     expect(deleteEmailSubscriptionMock).toHaveBeenCalledWith(TEST_USER_DATA);
-  });
-});
-
-describe("getRequestConfig", () => {
-  test("that it returns the request config in the correct format", () => {
-    expect(getRequestConfig("TOKEN")).toEqual({
-      headers: { Authorization: "Bearer TOKEN" },
-      method: "DELETE",
-    });
   });
 });
 
@@ -61,7 +55,7 @@ describe("validateUserData", () => {
     );
     expect(() => {
       validateUserData(userData);
-    }).toThrowError(`userData is not valid`);
+    }).toThrow(`userData is not valid`);
   });
 
   test("that it does not throw an error if the SNS message is missing the non-required attribute legacy_subject_id", () => {

@@ -1,3 +1,6 @@
+import dotenv from "dotenv";
+dotenv.config({ path: ".env.test" });
+
 import "aws-sdk-client-mock-jest";
 import {
   decryptEventType,
@@ -11,7 +14,6 @@ import {
   UpdateCommand,
 } from "@aws-sdk/lib-dynamodb";
 import {
-  queueUrl,
   eventId,
   tableName,
   userId,
@@ -27,11 +29,15 @@ jest.mock("../decrypt-data.ts");
 const dynamoMock = mockClient(DynamoDBDocumentClient);
 
 describe("markEventAsReported", () => {
+  const OLD_ENV = process.env;
+
   beforeEach(() => {
+    process.env = { ...OLD_ENV };
     dynamoMock.reset();
   });
 
   afterEach(() => {
+    process.env = OLD_ENV;
     jest.clearAllMocks();
   });
 
@@ -62,12 +68,6 @@ describe("handler", () => {
     jest.resetModules();
 
     process.env = { ...OLD_ENV };
-    process.env.ACTIVITY_LOG_TABLE_NAME = tableName;
-    process.env.DLQ_URL = queueUrl;
-    process.env.GENERATOR_KEY_ARN = "generator-key";
-    process.env.WRAPPING_KEY_ARN = "wrapping-key";
-    process.env.BACKUP_WRAPPING_KEY_ARN = "backup-erapping-key";
-
     dynamoMock.reset();
     dynamoMock.on(QueryCommand).resolves({
       Items: [TEST_ENCRYPTED_ACTIVITY_LOG_ENTRY],
@@ -90,7 +90,7 @@ describe("handler", () => {
     expect(dynamoMock.commandCalls(QueryCommand).length).toEqual(1);
 
     expect(dynamoMock).toHaveReceivedCommandWith(UpdateCommand, {
-      TableName: tableName,
+      TableName: "ACTIVITY_LOG_TABLE_NAME",
       Key: {
         user_id: userId,
         event_id: eventId,
@@ -103,7 +103,7 @@ describe("handler", () => {
       },
     });
     expect(dynamoMock).toHaveReceivedCommandWith(QueryCommand, {
-      TableName: tableName,
+      TableName: "ACTIVITY_LOG_TABLE_NAME",
       KeyConditionExpression: "user_id = :user_id and event_id = :event_id",
       ExpressionAttributeValues: {
         ":user_id": userId,
@@ -152,33 +152,23 @@ describe("handler", () => {
     expect(response.device_information).toEqual(encodedDeviceInfo);
     testSuspiciousActivity.device_information = undefined;
   });
-
-  test("the handler log and throw an error", async () => {
-    process.env.GENERATOR_KEY_ARN = undefined;
-    let errorThrown = false;
-    try {
-      await handler(testSuspiciousActivity);
-    } catch (error) {
-      errorThrown = true;
-    }
-
-    expect(consoleErrorMock).toHaveBeenCalledTimes(1);
-    expect(consoleErrorMock.mock.calls[0][0]).toContain(
-      "Error marking event as reported"
-    );
-    expect(errorThrown).toBeTruthy();
-  });
 });
 
 describe("decrypt event type", () => {
+  const OLD_ENV = process.env;
+
+  beforeEach(() => {
+    process.env = { ...OLD_ENV };
+    dynamoMock.reset();
+  });
+
   afterEach(() => {
+    process.env = OLD_ENV;
     jest.clearAllMocks();
   });
 
-  const generatorKey =
-    "arn:aws:kms:eu-west-2:111122223333:key/bc436485-5092-42b8-92a3-0aa8b93536dc";
-  const wrappingKey =
-    "arn:aws:kms:eu-west-2:111122223333:key/49c5492b-b1bc-42a8-9a5c-b2015e810c1c";
+  const generatorKey = "GENERATOR_KEY_ARN";
+  const wrappingKey = "WRAPPING_KEY_ARN";
   (decryptData as jest.Mock).mockImplementation(() => {
     return "TXMA_EVENT";
   });

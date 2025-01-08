@@ -1,3 +1,5 @@
+import dotenv from "dotenv";
+dotenv.config({ path: ".env.test" });
 import "aws-sdk-client-mock-jest";
 import { DynamoDBDocumentClient, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
@@ -59,10 +61,10 @@ const deleteRequest = {
 };
 
 describe("deleteUserData", () => {
+  const OLD_ENV = process.env;
   beforeEach(() => {
+    process.env = { ...OLD_ENV };
     dynamoMock.reset();
-    process.env.TABLE_NAME = "TABLE_NAME";
-    process.env.DQL_URL = "DQL_URL";
     // The mock will return activityLogEntry1 & 2 for the first set of requests
     // and further requests will return activityLogEntry3 & 4
     dynamoMock
@@ -78,6 +80,7 @@ describe("deleteUserData", () => {
   });
 
   afterEach(() => {
+    process.env = OLD_ENV;
     jest.clearAllMocks();
   });
 
@@ -89,7 +92,7 @@ describe("deleteUserData", () => {
       user_id: userId,
     };
     const activityRecords: ActivityLogEntry[] | undefined =
-      await getAllActivityLogEntriesForUser("TABLE_NAME", userData);
+      await getAllActivityLogEntriesForUser(userData);
     expect(activityRecords?.[0]).toEqual(activityLogEntry1);
     expect(activityRecords?.[1]).toEqual(activityLogEntry2);
     expect(activityRecords?.[2]).toEqual(activityLogEntry3);
@@ -119,7 +122,7 @@ describe("deleteUserData", () => {
   test("test batch deletion request when 65 items to delete", () => {
     const arrayOf56Activities: ActivityLogEntry[] =
       Array(56).fill(activityLogEntry);
-    batchDeleteActivityLog("TABLE_NAME", arrayOf56Activities);
+    batchDeleteActivityLog(arrayOf56Activities);
     expect(dynamoMock.commandCalls(BatchWriteItemCommand).length).toEqual(3);
   });
 });
@@ -198,7 +201,7 @@ describe("validateUserData", () => {
       );
       expect(() => {
         validateUserData(userData);
-      }).toThrowError();
+      }).toThrow();
     });
   });
 });

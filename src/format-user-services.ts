@@ -8,6 +8,8 @@ import type {
 import { sendSqsMessage } from "./common/sqs";
 import { getEnvironmentVariable } from "./common/utils";
 
+const OUTPUT_QUEUE_URL = getEnvironmentVariable("OUTPUT_QUEUE_URL");
+
 const validateUserService = (service: Service): void => {
   if (
     !(
@@ -23,18 +25,15 @@ const validateUserService = (service: Service): void => {
 };
 
 const validateUserServices = (services: Service[]): void => {
-  const serviceClientIds: string[] = services.map((service: Service) => {
+  const serviceClientIds = new Set<string>();
+  for (const service of services) {
     validateUserService(service);
-    return service.client_id;
-  });
-  if (serviceClientIds.length !== new Set(serviceClientIds).size) {
-    const filteredServices = Array.from(new Set(serviceClientIds));
-    const duplicateServices = filteredServices.filter((service) =>
-      filteredServices.includes(service)
-    );
-    throw new Error(
-      `Duplicate service client_ids found: ${JSON.stringify(duplicateServices)}`
-    );
+    if (serviceClientIds.has(service.client_id)) {
+      throw new Error(
+        `Duplicate service client_id found: ${service.client_id}`
+      );
+    }
+    serviceClientIds.add(service.client_id);
   }
 };
 
@@ -94,11 +93,10 @@ export const existingServicePresenter = (
 export const conditionallyUpsertServiceList = (
   matchingService: Service | undefined,
   TxmaEvent: TxmaEvent
-): Service => ({
-  ...(!matchingService
+): Service =>
+  !matchingService
     ? newServicePresenter(TxmaEvent)
-    : existingServicePresenter(matchingService, TxmaEvent.timestamp)),
-});
+    : existingServicePresenter(matchingService, TxmaEvent.timestamp);
 
 export const formatRecord = (record: UserRecordEvent) => {
   const { TxmaEvent, ServiceList } = record;
@@ -119,19 +117,11 @@ export const formatRecord = (record: UserRecordEvent) => {
 };
 
 export const handler = async (event: SQSEvent): Promise<void> => {
-  const { Records } = event;
-  const OUTPUT_QUEUE_URL = getEnvironmentVariable("OUTPUT_QUEUE_URL");
   await Promise.all(
-    Records.map(async (record) => {
+    event.Records.map(async (record) => {
       try {
-        console.log(`started processing message with ID: ${record.messageId}`);
         const formattedRecord = formatRecord(validateAndParseSQSRecord(record));
-        const { MessageId: messageId } = await sendSqsMessage(
-          JSON.stringify(formattedRecord),
-          OUTPUT_QUEUE_URL
-        );
-        console.log(`[Message sent to QUEUE] with message id = ${messageId}`);
-        console.log(`finished processing message with ID: ${record.messageId}`);
+        await sendSqsMessage(JSON.stringify(formattedRecord), OUTPUT_QUEUE_URL);
       } catch (error) {
         throw new Error(
           `Unable to format user services for message with ID: ${record.messageId}, ${

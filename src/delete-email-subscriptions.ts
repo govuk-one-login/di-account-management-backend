@@ -2,14 +2,18 @@ import { SNSEvent } from "aws-lambda";
 import { UserData } from "./common/model";
 import { getEnvironmentVariable } from "./common/utils";
 
-export const getRequestConfig = (token: string | undefined) => {
-  const config = {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    method: "DELETE",
-  };
-  return config;
+const GOV_ACCOUNTS_PUBLISHING_API_TOKEN = getEnvironmentVariable(
+  "GOV_ACCOUNTS_PUBLISHING_API_TOKEN"
+);
+const GOV_ACCOUNTS_PUBLISHING_API_URL = getEnvironmentVariable(
+  "GOV_ACCOUNTS_PUBLISHING_API_URL"
+);
+
+const requestConfig: RequestInit = {
+  headers: {
+    Authorization: `Bearer ${GOV_ACCOUNTS_PUBLISHING_API_TOKEN}`,
+  },
+  method: "DELETE",
 };
 
 export const validateUserData = (userData: UserData): UserData => {
@@ -30,31 +34,19 @@ const getPath = (userData: UserData) => {
   return `/api/oidc-users/${userData.public_subject_id}`;
 };
 
-const getDeleteUrl = (
-  publishingUrl: string | undefined,
-  userData: UserData
-) => {
-  return publishingUrl + getPath(userData);
+const getDeleteUrl = (userData: UserData) => {
+  return `${GOV_ACCOUNTS_PUBLISHING_API_URL}${getPath(userData)}`;
 };
 
-export const deleteEmailSubscription = async (userData: UserData) => {
-  // We are storing the api token in the environment variables to avoid repeated calls to secrets manager possibly limiting lambda start times and it is infrequently changed.
-  const GOV_ACCOUNTS_PUBLISHING_API_TOKEN = getEnvironmentVariable(
-    "GOV_ACCOUNTS_PUBLISHING_API_TOKEN"
-  );
-  const GOV_ACCOUNTS_PUBLISHING_API_URL = getEnvironmentVariable(
-    "GOV_ACCOUNTS_PUBLISHING_API_URL"
-  );
-  const deleteUrl = getDeleteUrl(GOV_ACCOUNTS_PUBLISHING_API_URL, userData);
-  const config = getRequestConfig(GOV_ACCOUNTS_PUBLISHING_API_TOKEN);
-
-  const response = await fetch(deleteUrl, config);
-  if (response.status === 404) {
-    // We are logging a 404 as is an appropriate reponse when the user does not have an email subscription .
-    console.log(`Received a 404 response from GOV.UK API for URL`);
-  } else if (!response.ok) {
-    const message = `Unable to send DELETE request to GOV.UK API. Status code : ${response.status}`;
-    throw new Error(message);
+export const deleteEmailSubscription = async (
+  userData: UserData
+): Promise<void> => {
+  const deleteUrl = getDeleteUrl(userData);
+  const response = await fetch(deleteUrl, requestConfig);
+  if (response.status !== 404 && !response.ok) {
+    throw new Error(
+      `Unable to send DELETE request to GOV.UK API. Status code: ${response.status}`
+    );
   }
 };
 
@@ -62,15 +54,9 @@ export const handler = async (event: SNSEvent): Promise<void> => {
   await Promise.all(
     event.Records.map(async (record) => {
       try {
-        console.log(
-          `started processing message with ID: ${record.Sns.MessageId}`
-        );
         const userData: UserData = JSON.parse(record.Sns.Message);
         validateUserData(userData);
         await deleteEmailSubscription(userData);
-        console.log(
-          `finished processing message with ID: ${record.Sns.MessageId}`
-        );
       } catch (error) {
         throw new Error(
           `Unable to delete activity log for message with ID: ${record.Sns.MessageId}, ${

@@ -6,30 +6,26 @@ import {
   StartExecutionOutput,
 } from "@aws-sdk/client-sfn";
 
+export const stepFunctionsClient = new SFNClient({
+  region: process.env.AWS_REGION,
+  maxAttempts: 1000000,
+});
+
 export async function callAsyncStepFunction(
   stateMachineArn: string,
   input: ReportSuspiciousActivityStepInput
 ): Promise<string> {
-  let response: StartExecutionOutput;
   try {
-    console.log("Starting state machine execution.");
-    response = await startASyncStepFunction(stateMachineArn, input);
+    const response = await startASyncStepFunction(stateMachineArn, input);
+    return JSON.stringify(response);
   } catch (error: unknown) {
-    console.error("Failed to start Report Suspicious Activity state machine.", {
+    console.error("Failed to start Report Suspicious Activity state machine:", {
       stepFunctionArn: stateMachineArn,
+      error,
     });
-    console.error("Reason Detail: ", (error as Error).message);
     throw error;
   }
-
-  return JSON.stringify(response);
 }
-
-const { AWS_REGION } = process.env;
-export const stepFunctionsClient = new SFNClient({
-  region: AWS_REGION,
-  maxAttempts: 1000000,
-});
 
 async function startASyncStepFunction(
   stepFunctionARN: string,
@@ -39,6 +35,5 @@ async function startASyncStepFunction(
     stateMachineArn: stepFunctionARN,
     input: JSON.stringify(input),
   };
-
-  return await stepFunctionsClient.send(new StartExecutionCommand(parameters));
+  return stepFunctionsClient.send(new StartExecutionCommand(parameters));
 }

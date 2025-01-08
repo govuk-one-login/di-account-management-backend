@@ -8,16 +8,12 @@ import {
 import { UserData } from "./common/model";
 import { getEnvironmentVariable } from "./common/utils";
 
-const marshallOptions = {
-  convertClassInstanceToMap: true,
-};
-const translateConfig = { marshallOptions };
+const TABLE_NAME = getEnvironmentVariable("TABLE_NAME");
 
 const dynamoClient = new DynamoDBClient({});
-const dynamoDocClient = DynamoDBDocumentClient.from(
-  dynamoClient,
-  translateConfig
-);
+const dynamoDocClient = DynamoDBDocumentClient.from(dynamoClient, {
+  marshallOptions: { convertClassInstanceToMap: true },
+});
 
 export const validateUserData = (userData: UserData): UserData => {
   if (userData.user_id) {
@@ -31,7 +27,6 @@ export const validateUserData = (userData: UserData): UserData => {
 export const deleteUserData = async (
   userData: UserData
 ): Promise<DeleteCommandOutput> => {
-  const TABLE_NAME = getEnvironmentVariable("TABLE_NAME");
   const command = new DeleteCommand({
     TableName: TABLE_NAME,
     Key: { user_id: userData.user_id },
@@ -43,15 +38,9 @@ export const handler = async (event: SNSEvent): Promise<void> => {
   await Promise.all(
     event.Records.map(async (record) => {
       try {
-        console.log(
-          `started processing message with ID: ${record.Sns.MessageId}`
-        );
         const userData: UserData = JSON.parse(record.Sns.Message);
         validateUserData(userData);
         await deleteUserData(userData);
-        console.log(
-          `finished processing message with ID: ${record.Sns.MessageId}`
-        );
       } catch (error) {
         throw new Error(
           `Unable to delete user services for message with ID: ${record.Sns.MessageId}, ${

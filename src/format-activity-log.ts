@@ -9,18 +9,7 @@ import {
 import { sendSqsMessage } from "./common/sqs";
 import { getEnvironmentVariable } from "./common/utils";
 
-const createNewActivityLogEntryFromTxmaEvent = (
-  txmaEvent: TxmaEvent
-): ActivityLogEntry =>
-  ({
-    event_id: txmaEvent.event_id,
-    event_type: txmaEvent.event_name,
-    session_id: txmaEvent.user?.session_id,
-    user_id: txmaEvent.user?.user_id,
-    client_id: txmaEvent.client_id,
-    timestamp: txmaEvent.timestamp,
-    reported_suspicious: REPORT_SUSPICIOUS_ACTIVITY_DEFAULT,
-  }) as ActivityLogEntry;
+const OUTPUT_QUEUE_URL = getEnvironmentVariable("OUTPUT_QUEUE_URL");
 
 export const validateTxmaEventBody = (txmaEvent: TxmaEvent): void => {
   if (
@@ -37,34 +26,32 @@ export const validateTxmaEventBody = (txmaEvent: TxmaEvent): void => {
 
 export const formatIntoActivityLogEntry = (
   txmaEvent: TxmaEvent
-): ActivityLogEntry => {
-  return createNewActivityLogEntryFromTxmaEvent(txmaEvent);
-};
+): ActivityLogEntry =>
+  ({
+    event_id: txmaEvent.event_id,
+    event_type: txmaEvent.event_name,
+    session_id: txmaEvent.user?.session_id,
+    user_id: txmaEvent.user?.user_id,
+    client_id: txmaEvent.client_id,
+    timestamp: txmaEvent.timestamp,
+    reported_suspicious: REPORT_SUSPICIOUS_ACTIVITY_DEFAULT,
+  }) as ActivityLogEntry;
 
 export const handler = async (event: DynamoDBStreamEvent): Promise<void> => {
-  const { Records } = event;
-  const OUTPUT_QUEUE_URL = getEnvironmentVariable("OUTPUT_QUEUE_URL");
   await Promise.all(
-    Records.map(async (record) => {
+    event.Records.map(async (record) => {
       try {
-        console.log(`started processing event with ID: ${record.eventID}`);
         const txmaEvent = unmarshall(
           record.dynamodb?.NewImage?.event.M as Record<string, AttributeValue>
         ) as TxmaEvent;
         if (allowedTxmaEvents.includes(txmaEvent.event_name)) {
           validateTxmaEventBody(txmaEvent);
           const formattedRecord = formatIntoActivityLogEntry(txmaEvent);
-          const { MessageId: messageId } = await sendSqsMessage(
+          await sendSqsMessage(
             JSON.stringify(formattedRecord),
             OUTPUT_QUEUE_URL
           );
-          console.log(`[Message sent to QUEUE] with message id = ${messageId}`);
-        } else {
-          console.log(
-            `DB stream sent a ${txmaEvent.event_name} event. Irrelevant for activity log so ignoring`
-          );
         }
-        console.log(`finished processing event with ID: ${record.eventID}`);
       } catch (error) {
         throw new Error(
           `Unable to format activity log for event with ID: ${record.eventID}, ${

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import redact from "../common/redact";
+import redact from "../../common/redact";
 
 describe("Redact tests", (): void => {
   it("Redacts a field from a JSON document.", (): void => {

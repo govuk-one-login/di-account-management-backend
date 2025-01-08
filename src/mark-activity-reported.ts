@@ -18,6 +18,12 @@ import redact from "./common/redact";
 const dynamoClient = new DynamoDBClient({});
 const dynamoDocClient = DynamoDBDocumentClient.from(dynamoClient);
 
+const ACTIVITY_LOG_TABLE_NAME = getEnvironmentVariable(
+  "ACTIVITY_LOG_TABLE_NAME"
+);
+const GENERATOR_KEY_ARN = getEnvironmentVariable("GENERATOR_KEY_ARN");
+const WRAPPING_KEY_ARN = getEnvironmentVariable("WRAPPING_KEY_ARN");
+
 export const markEventAsReported = async (
   tableName: string,
   user_id: string,
@@ -63,9 +69,6 @@ export const queryActivityLog = async (
   eventId: string
 ): Promise<ActivityLogEntry | undefined> => {
   try {
-    const ACTIVITY_LOG_TABLE_NAME = getEnvironmentVariable(
-      "ACTIVITY_LOG_TABLE_NAME"
-    );
     const command = {
       TableName: ACTIVITY_LOG_TABLE_NAME,
       KeyConditionExpression: "user_id = :user_id and event_id = :event_id",
@@ -87,18 +90,12 @@ export const queryActivityLog = async (
 export const handler = async (
   input: ReportSuspiciousActivityStepInput
 ): Promise<ReportSuspiciousActivityEvent> => {
-  console.log(`started processing event with ID: ${input.event_id}`);
   const activityLog = await queryActivityLog(input.user_id, input.event_id);
   const event_id = `${crypto.randomUUID()}`;
   const timestamps = getCurrentTimestamp();
+
   if (activityLog) {
     try {
-      const ACTIVITY_LOG_TABLE_NAME = getEnvironmentVariable(
-        "ACTIVITY_LOG_TABLE_NAME"
-      );
-      const GENERATOR_KEY_ARN = getEnvironmentVariable("GENERATOR_KEY_ARN");
-      const WRAPPING_KEY_ARN = getEnvironmentVariable("WRAPPING_KEY_ARN");
-
       await markEventAsReported(
         ACTIVITY_LOG_TABLE_NAME,
         activityLog.user_id,
@@ -145,6 +142,5 @@ export const handler = async (
   if (input.device_information) {
     reportedEvent.device_information = input.device_information;
   }
-  console.log(`finished processing event with ID: ${input.event_id}`);
   return reportedEvent;
 };

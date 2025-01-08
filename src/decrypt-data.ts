@@ -7,6 +7,11 @@ import buildKmsKeyring from "./common/kms-keyring-builder";
 import getHashedAccessCheckValue from "./common/get-access-check-value";
 import { getEnvironmentVariable } from "./common/utils";
 
+const AWS_REGION = getEnvironmentVariable("AWS_REGION");
+const ACCOUNT_ID = getEnvironmentVariable("ACCOUNT_ID");
+const ENVIRONMENT = getEnvironmentVariable("ENVIRONMENT");
+const VERIFY_ACCESS_VALUE = getEnvironmentVariable("VERIFY_ACCESS_VALUE");
+
 const MAX_ENCRYPTED_DATA_KEY = 5;
 const DECODING = "utf8";
 const ENCODING = "base64";
@@ -19,10 +24,6 @@ let keyring: KmsKeyringNode;
 export async function generateExpectedContext(
   userId: string
 ): Promise<EncryptionContext> {
-  const AWS_REGION = getEnvironmentVariable("AWS_REGION");
-  const ACCOUNT_ID = getEnvironmentVariable("ACCOUNT_ID");
-  const ENVIRONMENT = getEnvironmentVariable("ENVIRONMENT");
-  const VERIFY_ACCESS_VALUE = getEnvironmentVariable("VERIFY_ACCESS_VALUE");
   let accessCheckValue;
   try {
     accessCheckValue = await getHashedAccessCheckValue(VERIFY_ACCESS_VALUE);

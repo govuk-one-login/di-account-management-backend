@@ -53,11 +53,9 @@ export const handler = async (event: SQSEvent): Promise<void> => {
   await Promise.all(
     event.Records.map(async (record) => {
       try {
-        console.log(`Started processing message with ID: ${record.messageId}`);
         const userServices: UserServices = JSON.parse(record.body);
         validateUserServices(userServices);
         await writeUserServices(userServices);
-        console.log(`Finished processing message with ID: ${record.messageId}`);
       } catch (error) {
         throw new Error(
           `Unable to write user sercjces for message with ID: ${record.messageId}, ${

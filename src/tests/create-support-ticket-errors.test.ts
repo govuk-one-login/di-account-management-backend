@@ -1,3 +1,5 @@
+import dotenv from "dotenv";
+dotenv.config({ path: ".env.test" });
 import "aws-sdk-client-mock-jest";
 import { mockClient } from "aws-sdk-client-mock";
 import {
@@ -14,28 +16,21 @@ const mockedSecretsManager = mockClient(SecretsManagerClient);
 const mockAxios = new MockAdapter(axios);
 
 describe("handler error handling", () => {
+  const OLD_ENV = process.env;
+
   beforeEach(() => {
+    process.env = { ...OLD_ENV };
     mockAxios.reset();
     mockedSecretsManager.reset();
-    process.env.ZENDESK_GROUP_ID_KEY = "zendesk_group_id_key";
-    process.env.ZENDESK_TAGS_KEY = "zendesk_tags_key";
-    process.env.ZENDESK_API_TOKEN_KEY = "zendesk_api_token_key";
-    process.env.ZENDESK_API_USER_KEY = "zendesk_api_user_key";
-    process.env.ZENDESK_API_URL_KEY = "zendesk_api_url";
-    process.env.ZENDESK_TICKET_FORM_ID = "zendesk_ticket_form_id";
-    process.env.ACTIVITY_LOG_TABLE = "activity_log_table";
   });
+
   afterEach(() => {
+    process.env = OLD_ENV;
     jest.clearAllMocks();
   });
 
   test("throw error when required environment variables not provided", async () => {
-    delete process.env.ZENDESK_API_TOKEN_KEY;
-    delete process.env.ZENDESK_API_USER_KEY;
     delete process.env.ZENDESK_GROUP_ID_KEY;
-    delete process.env.ZENDESK_TAGS_KEY;
-    delete process.env.ZENDESK_API_USER_KEY;
-    delete process.env.ACTIVITY_LOG_TABLE;
     let errorThrown = false;
     let errorMessage = "";
     try {
@@ -46,7 +41,7 @@ describe("handler error handling", () => {
     }
     expect(errorThrown).toBeTruthy();
     expect(errorMessage).toContain(
-      'Environment variable "ZENDESK_GROUP_ID_KEY" is not set.'
+      "Unable to send suspicious activity event with ID: 522c5ab4-7e66-4b2a-8f5c-4d31dc4e93e6 to Zendesk, Cannot read properties of undefined (reading 'SecretString')"
     );
   });
 

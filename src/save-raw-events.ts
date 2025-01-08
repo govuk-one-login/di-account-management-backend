@@ -9,21 +9,14 @@ import {
 import { TxmaEvent, UserData } from "./common/model";
 import { getEnvironmentVariable } from "./common/utils";
 
-const marshallOptions = {
-  convertClassInstanceToMap: true,
-};
-
-const translateConfig = { marshallOptions };
+const TABLE_NAME = getEnvironmentVariable("TABLE_NAME");
 
 const dynamoClient = new DynamoDBClient({});
-const dynamoDocClient = DynamoDBDocumentClient.from(
-  dynamoClient,
-  translateConfig
-);
-
-const getEventId = (): string => {
-  return crypto.randomUUID();
-};
+const dynamoDocClient = DynamoDBDocumentClient.from(dynamoClient, {
+  marshallOptions: {
+    convertClassInstanceToMap: true,
+  },
+});
 
 const getTTLDate = (): number => {
   const secondsInADay = 60 * 60 * 24;
@@ -54,17 +47,15 @@ export const validateTxmaEventBody = (txmaEvent: TxmaEvent): void => {
 export const writeRawTxmaEvent = async (
   txmaEvent: TxmaEvent
 ): Promise<PutCommandOutput> => {
-  const TABLE_NAME = getEnvironmentVariable("TABLE_NAME");
   const command = new PutCommand({
     TableName: TABLE_NAME,
     Item: {
-      id: getEventId(),
+      id: crypto.randomUUID(),
       timestamp: Date.now(),
       event: txmaEvent,
       remove_at: getTTLDate(),
     },
   });
-
   return dynamoDocClient.send(command);
 };
 
@@ -72,11 +63,9 @@ export const handler = async (event: SQSEvent): Promise<void> => {
   await Promise.all(
     event.Records.map(async (record) => {
       try {
-        console.log(`Started processing message with ID: ${record.messageId}`);
         const txmaEvent: TxmaEvent = JSON.parse(record.body);
         validateTxmaEventBody(txmaEvent);
         await writeRawTxmaEvent(txmaEvent);
-        console.log(`Finished processing message with ID: ${record.messageId}`);
       } catch (error) {
         throw new Error(
           `Unable to save raw events for message with ID: ${record.messageId}, ${

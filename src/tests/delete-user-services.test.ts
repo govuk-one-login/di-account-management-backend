@@ -1,3 +1,5 @@
+import dotenv from "dotenv";
+dotenv.config({ path: ".env.test" });
 import "aws-sdk-client-mock-jest";
 import { DynamoDBDocumentClient, DeleteCommand } from "@aws-sdk/lib-dynamodb";
 import { SendMessageCommand, SQSClient } from "@aws-sdk/client-sqs";
@@ -17,13 +19,15 @@ const dynamoMock = mockClient(DynamoDBDocumentClient);
 const sqsMock = mockClient(SQSClient);
 
 describe("deleteUserData", () => {
-  beforeEach(() => {
-    dynamoMock.reset();
+  const OLD_ENV = process.env;
 
-    process.env.TABLE_NAME = "TABLE_NAME";
+  beforeEach(() => {
+    process.env = { ...OLD_ENV };
+    dynamoMock.reset();
   });
 
   afterEach(() => {
+    process.env = OLD_ENV;
     jest.clearAllMocks();
   });
 
@@ -88,7 +92,7 @@ describe("validateUserData", () => {
       );
       expect(() => {
         validateUserData(userData);
-      }).toThrowError();
+      }).toThrow();
     });
   });
 });

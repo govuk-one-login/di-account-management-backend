@@ -1,3 +1,5 @@
+import dotenv from "dotenv";
+dotenv.config({ path: ".env.test" });
 import {
   ActivityLogEntry,
   EncryptedActivityLogEntry,
@@ -27,7 +29,7 @@ export const reportedSuspicious = false;
 export const txmaEventId = "event_id";
 export const authCodeIssuedEventType = "AUTH_AUTH_CODE_ISSUED";
 export const randomEventType = "AUTH_OTHER_RANDOM_EVENT";
-export const queueUrl = "http://my_queue_url";
+export const queueUrl = process.env.OUTPUT_QUEUE_URL;
 export const messageId = "MyMessageId";
 export const tableName = "tableName";
 export const indexName = "indexName";

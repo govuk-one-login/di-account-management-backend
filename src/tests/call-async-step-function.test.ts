@@ -19,7 +19,6 @@ describe("start report suspicious activities step function", () => {
   const input = testSuspiciousActivity;
   let consoleErrorMock: jest.SpyInstance;
   beforeEach(() => {
-    process.env.AWS_REGION = "AWS_REGION";
     consoleErrorMock = jest.spyOn(global.console, "error").mockImplementation();
     mockStepFunctionClient.on(StartExecutionCommand).resolves({
       executionArn: "dummy-executionArn",
@@ -49,9 +48,9 @@ describe("start report suspicious activities step function", () => {
     await expect(
       async () => await callAsyncStepFunction(testStepFunctionARN, input)
     ).rejects.toThrow("SomeStepFunctionException");
-    expect(consoleErrorMock).toHaveBeenCalledTimes(2);
+    expect(consoleErrorMock).toHaveBeenCalledTimes(1);
     expect(consoleErrorMock.mock.calls[0][0]).toContain(
-      "Failed to start Report Suspicious Activity state machine."
+      "Failed to start Report Suspicious Activity state machine:"
     );
   });
 

@@ -13,8 +13,15 @@ import { DynamoDBDocumentClient, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { getEnvironmentVariable } from "./common/utils";
 
-const dynamoClient = new DynamoDBClient({});
-const dynamoDocClient = DynamoDBDocumentClient.from(dynamoClient);
+const ZENDESK_GROUP_ID_KEY = getEnvironmentVariable("ZENDESK_GROUP_ID_KEY");
+const ZENDESK_API_TOKEN_KEY = getEnvironmentVariable("ZENDESK_API_TOKEN_KEY");
+const ZENDESK_API_USER_KEY = getEnvironmentVariable("ZENDESK_API_USER_KEY");
+const ZENDESK_API_URL_KEY = getEnvironmentVariable("ZENDESK_API_URL_KEY");
+const ZENDESK_TICKET_FORM_ID = getEnvironmentVariable("ZENDESK_TICKET_FORM_ID");
+const ACTIVITY_LOG_TABLE = getEnvironmentVariable("ACTIVITY_LOG_TABLE");
+const ZENDESK_TAGS_KEY = getEnvironmentVariable("ZENDESK_TAGS_KEY");
+
+const dynamoDocClient = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 
 export const formatCommentBody = (
   event: ReportSuspiciousActivityEvent
@@ -108,43 +115,23 @@ export const handler = async (
   let eventIdentifier: string | undefined = undefined;
   try {
     eventIdentifier = input.event_id;
-    const ZENDESK_GROUP_ID_KEY = getEnvironmentVariable("ZENDESK_GROUP_ID_KEY");
-    const ZENDESK_API_TOKEN_KEY = getEnvironmentVariable(
-      "ZENDESK_API_TOKEN_KEY"
-    );
-    const ZENDESK_API_USER_KEY = getEnvironmentVariable("ZENDESK_API_USER_KEY");
-    const ZENDESK_API_URL_KEY = getEnvironmentVariable("ZENDESK_API_URL_KEY");
-    const ZENDESK_TICKET_FORM_ID = getEnvironmentVariable(
-      "ZENDESK_TICKET_FORM_ID"
-    );
-    const ACTIVITY_LOG_TABLE = getEnvironmentVariable("ACTIVITY_LOG_TABLE");
-    console.log(`started processing event with ID: ${eventIdentifier}`);
     validateSuspiciousActivity(input);
-    const zendeskUserName = await getSecret(ZENDESK_API_USER_KEY, {
-      maxAge: 900,
-    });
-    const zendeskUserPassword = await getSecret(ZENDESK_API_TOKEN_KEY, {
-      maxAge: 900,
-    });
-    const zendeskGroupId = await getSecret(ZENDESK_GROUP_ID_KEY, {
-      maxAge: 900,
-    });
-    const zendeskURL = await getSecret(ZENDESK_API_URL_KEY, {
-      maxAge: 900,
-    });
-    const zendeskTicketFormId = await getSecret(ZENDESK_TICKET_FORM_ID, {
-      maxAge: 900,
-    });
 
-    let zendeskTicketTags: string | undefined;
-    try {
-      const ZENDESK_TAGS_KEY = getEnvironmentVariable("ZENDESK_TAGS_KEY");
-      zendeskTicketTags = await getSecret(ZENDESK_TAGS_KEY, {
-        maxAge: 900,
-      });
-    } catch (error) {
-      zendeskTicketTags = undefined;
-    }
+    const [
+      zendeskUserName,
+      zendeskUserPassword,
+      zendeskGroupId,
+      zendeskURL,
+      zendeskTicketFormId,
+      zendeskTicketTags,
+    ] = await Promise.all([
+      getSecret(ZENDESK_API_USER_KEY, { maxAge: 900 }),
+      getSecret(ZENDESK_API_TOKEN_KEY, { maxAge: 900 }),
+      getSecret(ZENDESK_GROUP_ID_KEY, { maxAge: 900 }),
+      getSecret(ZENDESK_API_URL_KEY, { maxAge: 900 }),
+      getSecret(ZENDESK_TICKET_FORM_ID, { maxAge: 900 }),
+      getSecret(ZENDESK_TAGS_KEY, { maxAge: 900 }).catch(() => undefined),
+    ]);
 
     if (
       !zendeskUserName ||
@@ -186,7 +173,6 @@ export const handler = async (
         );
       }
     }
-    console.log(`finished processing event with ID: ${eventIdentifier}`);
     return input;
   } catch (error) {
     throw new Error(

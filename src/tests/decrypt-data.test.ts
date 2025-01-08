@@ -1,3 +1,5 @@
+import dotenv from "dotenv";
+dotenv.config({ path: ".env.test" });
 import {
   EncryptionContext,
   MessageHeader,
@@ -21,25 +23,20 @@ jest.mock("@aws-crypto/client-node", () => ({
   })),
 }));
 
-const awsRegion = "aws-region";
-const accountId = "account-id";
-const environment = "environment";
+const awsRegion = "AWS_REGION";
+const accountId = "ACCOUNT_ID";
+const environment = "ENVIRONMENT";
 const accessCheckValue = "accessCheckValue";
 const userId = "user-id";
 
 describe("generateExpectedContext", () => {
+  const OLD_ENV = process.env;
   beforeEach(() => {
-    process.env.AWS_REGION = awsRegion;
-    process.env.ACCOUNT_ID = accountId;
-    process.env.ENVIRONMENT = environment;
-    process.env.VERIFY_ACCESS_VALUE = accessCheckValue;
+    process.env = { ...OLD_ENV };
   });
 
   afterEach(() => {
-    delete process.env.AWS_REGION;
-    delete process.env.ACCOUNT_ID;
-    delete process.env.ENVIRONMENT;
-    delete process.env.VERIFY_ACCESS_VALUE;
+    process.env = OLD_ENV;
   });
 
   test("throws an error when AWS_REGION is not defined", async () => {
@@ -94,7 +91,7 @@ describe("generateExpectedContext", () => {
       stage: environment,
       userId,
       accessCheckValue:
-        "a6ece7f2c1c292f31e1cdba0bdeeb4653c25d03e3482394cdfe4e73ae0e42b66",
+        "0d42d7078f5394fa73ff13549299c6c808f39af10e2110d469ce9dc898870996",
     };
     expect(result).toEqual(expected);
   });
@@ -112,7 +109,7 @@ describe("validateEncryptionContext", () => {
     const expected: EncryptionContext = await generateExpectedContext(userId);
     expect(() => {
       validateEncryptionContext({}, expected);
-    }).toThrowError("Encryption context is empty or undefined");
+    }).toThrow("Encryption context is empty or undefined");
   });
 
   test("throws an error when there is a mismatch", async () => {
@@ -126,7 +123,7 @@ describe("validateEncryptionContext", () => {
     const expected: EncryptionContext = await generateExpectedContext(userId);
     expect(() => {
       validateEncryptionContext(wrongContext, expected);
-    }).toThrowError("Encryption context mismatch: userId");
+    }).toThrow("Encryption context mismatch: userId");
   });
 
   test("doesn't throw an error when context matches", async () => {
@@ -156,7 +153,7 @@ describe("decryptActivities", () => {
           stage: environment,
           userId,
           accessCheckValue:
-            "a6ece7f2c1c292f31e1cdba0bdeeb4653c25d03e3482394cdfe4e73ae0e42b66",
+            "0d42d7078f5394fa73ff13549299c6c808f39af10e2110d469ce9dc898870996",
         } as EncryptionContext,
       } as MessageHeader,
     });

@@ -44,15 +44,17 @@ export const handler = async (event: SQSEvent): Promise<void> => {
   await Promise.all(
     event.Records.map(async (record) => {
       try {
-        console.log(`Started processing message with ID: ${record.messageId}`);
         const activityLogEntry: ActivityLogEntry = JSON.parse(record.body);
         validateActivityLogEntry(activityLogEntry);
+
+        const encryptedEventType = await encryptData(
+          activityLogEntry.event_type,
+          activityLogEntry.user_id
+        );
+
         const encryptedActivityLog: EncryptedActivityLogEntry = {
           event_id: activityLogEntry.event_id,
-          event_type: await encryptData(
-            activityLogEntry.event_type,
-            activityLogEntry.user_id
-          ),
+          event_type: encryptedEventType,
           session_id: activityLogEntry.session_id,
           user_id: activityLogEntry.user_id,
           timestamp: activityLogEntry.timestamp,
@@ -60,7 +62,6 @@ export const handler = async (event: SQSEvent): Promise<void> => {
           reported_suspicious: activityLogEntry.reported_suspicious,
         };
         await writeActivityLogEntry(encryptedActivityLog);
-        console.log(`Finished processing message with ID: ${record.messageId}`);
       } catch (error) {
         throw new Error(
           `Unable to write activity log for message with ID: ${record.messageId}, ${

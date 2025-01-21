@@ -18,7 +18,6 @@ BACKEND_TRANSLATION_FILES = [
 ]
 
 FRONTEND_ENVIRONMENTS = ["local", "dev", "build", "staging", "integration", "production"]
-BACKEND_ENVIRONMENTS = ["local", "dev", "demo", "build", "staging", "integration", "production"]
 
 # --- Helper Functions ---
 def run_command(command):
@@ -158,12 +157,9 @@ def main():
 
     # Update Backend Repo
     os.chdir(BACKEND_REPO_PATH)
-    for translation_file in BACKEND_TRANSLATION_FILES:
-        if translation_file.exists():
-            if 'cy' in translation_file.name:
-                update_json_file(translation_file, BACKEND_ENVIRONMENTS, cy_translation_object, production_id, non_production_id)
-            else:
-                update_json_file(translation_file, BACKEND_ENVIRONMENTS, en_translation_object, production_id, non_production_id)
+    run_command('cat ../di-account-management-frontend/src/locales/cy/translation.json| jq ".clientRegistry" > src/config/clientRegistry.cy.json')
+    run_command('cat ../di-account-management-frontend/src/locales/en/translation.json| jq ".clientRegistry" > src/config/clientRegistry.en.json')
+
     commit_and_push_changes(BACKEND_REPO_PATH, rp_const_name)
 
     print("Translation files updated and pushed to new branches.")

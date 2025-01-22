@@ -238,7 +238,7 @@
     "GQzNgSkj3QpmHlPO1kIfbMW1PAw": {
       "header": "Gwneud cais am statws athro cymwysedig (SAC)",
       "description": "Gall athrawon cymwys a hyfforddwyd y tu allan i Loegr wneud cais am SAC.",
-      "link_text": "Ewch i'ch cyfrif gwneud cais am statws athro cymwysedig",
+      "link_text": "Ewch i'r gwasanaeth gwneud cais am statws athro cymwysedig (SAC)",
       "link_href": "https://apply-for-qts-in-england.education.gov.uk/teacher/application"
     },
     "CKHfr_Kz84LYFnsP7m6YJBXqBzw": {
@@ -263,6 +263,12 @@
       "description": "Mae hyn yn cynnwys 'Diogelwch' a 'Eich gwasanaethau'",
       "link_text": "",
       "link_href": "https://home.account.gov.uk"
+    },
+    "PVTFrS4kgHYHFDqEb5IFanlIfcM": {
+      "header": "Gofyn am wiriad DBS safonol neu uwch",
+      "description": "Gwneud cais am wiriadau DBS safonol ac uwch",
+      "link_text": "Ewch i'ch cyfrif gwirio DBS safonol ac uwch",
+      "link_href": "https://www.request-standard-enchanced-dbs-check.gov.uk/"
     }
   },
   "integration": {
@@ -510,7 +516,7 @@
     "GQzNgSkj3QpmHlPO1kIfbMW1PAw": {
       "header": "Gwneud cais am statws athro cymwysedig (SAC)",
       "description": "Gall athrawon cymwys a hyfforddwyd y tu allan i Loegr wneud cais am SAC.",
-      "link_text": "Ewch i'ch cyfrif gwneud cais am statws athro cymwysedig",
+      "link_text": "Ewch i'r gwasanaeth gwneud cais am statws athro cymwysedig (SAC)",
       "link_href": "https://apply-for-qts-in-england.education.gov.uk/teacher/application"
     },
     "CKHfr_Kz84LYFnsP7m6YJBXqBzw": {
@@ -535,6 +541,12 @@
       "description": "Mae hyn yn cynnwys 'Diogelwch' a 'Eich gwasanaethau'",
       "link_text": "",
       "link_href": "https://home.integration.account.gov.uk"
+    },
+    "PVTFrS4kgHYHFDqEb5IFanlIfcM": {
+      "header": "Gofyn am wiriad DBS safonol neu uwch",
+      "description": "Gwneud cais am wiriadau DBS safonol ac uwch",
+      "link_text": "Ewch i'ch cyfrif gwirio DBS safonol ac uwch",
+      "link_href": "https://www.request-standard-enchanced-dbs-check.gov.uk/"
     }
   },
   "staging": {
@@ -770,7 +782,7 @@
     "dfeQualifiedTeacherStatus": {
       "header": "Gwneud cais am statws athro cymwysedig (SAC)",
       "description": "Gall athrawon cymwys a hyfforddwyd y tu allan i Loegr wneud cais am SAC.",
-      "link_text": "Ewch i'ch cyfrif gwneud cais am statws athro cymwysedig",
+      "link_text": "Ewch i'r gwasanaeth gwneud cais am statws athro cymwysedig (SAC)",
       "link_href": "https://apply-for-qts-in-england.education.gov.uk/teacher/application"
     },
     "checkFamilyEligibility": {
@@ -795,6 +807,12 @@
       "description": "Mae hyn yn cynnwys 'Diogelwch' a 'Eich gwasanaethau'",
       "link_text": "",
       "link_href": "https://home.staging.account.gov.uk"
+    },
+    "homeOfficeSEAS": {
+      "header": "Gofyn am wiriad DBS safonol neu uwch",
+      "description": "Gwneud cais am wiriadau DBS safonol ac uwch",
+      "link_text": "Ewch i'ch cyfrif gwirio DBS safonol ac uwch",
+      "link_href": "https://www.request-standard-enchanced-dbs-check.gov.uk/"
     }
   },
   "build": {
@@ -1030,7 +1048,7 @@
     "dfeQualifiedTeacherStatus": {
       "header": "Gwneud cais am statws athro cymwysedig (SAC)",
       "description": "Gall athrawon cymwys a hyfforddwyd y tu allan i Loegr wneud cais am SAC.",
-      "link_text": "Ewch i'ch cyfrif gwneud cais am statws athro cymwysedig",
+      "link_text": "Ewch i'r gwasanaeth gwneud cais am statws athro cymwysedig (SAC)",
       "link_href": "https://apply-for-qts-in-england.education.gov.uk/teacher/application"
     },
     "checkFamilyEligibility": {
@@ -1055,6 +1073,12 @@
       "description": "Mae hyn yn cynnwys 'Diogelwch' a 'Eich gwasanaethau'",
       "link_text": "",
       "link_href": "https://home.build.account.gov.uk"
+    },
+    "homeOfficeSEAS": {
+      "header": "Gofyn am wiriad DBS safonol neu uwch",
+      "description": "Gwneud cais am wiriadau DBS safonol ac uwch",
+      "link_text": "Ewch i'ch cyfrif gwirio DBS safonol ac uwch",
+      "link_href": "https://www.request-standard-enchanced-dbs-check.gov.uk/"
     }
   },
   "dev": {
@@ -1290,7 +1314,7 @@
     "dfeQualifiedTeacherStatus": {
       "header": "Gwneud cais am statws athro cymwysedig (SAC)",
       "description": "Gall athrawon cymwys a hyfforddwyd y tu allan i Loegr wneud cais am SAC.",
-      "link_text": "Ewch i'ch cyfrif gwneud cais am statws athro cymwysedig",
+      "link_text": "Ewch i'r gwasanaeth gwneud cais am statws athro cymwysedig (SAC)",
       "link_href": "https://apply-for-qts-in-england.education.gov.uk/teacher/application"
     },
     "checkFamilyEligibility": {
@@ -1315,6 +1339,12 @@
       "description": "Mae hyn yn cynnwys 'Diogelwch' a 'Eich gwasanaethau'",
       "link_text": "",
       "link_href": "https://home.dev.account.gov.uk"
+    },
+    "homeOfficeSEAS": {
+      "header": "Gofyn am wiriad DBS safonol neu uwch",
+      "description": "Gwneud cais am wiriadau DBS safonol ac uwch",
+      "link_text": "Ewch i'ch cyfrif gwirio DBS safonol ac uwch",
+      "link_href": "https://www.request-standard-enchanced-dbs-check.gov.uk/"
     }
   },
   "local": {
@@ -1550,7 +1580,7 @@
     "dfeQualifiedTeacherStatus": {
       "header": "Gwneud cais am statws athro cymwysedig (SAC)",
       "description": "Gall athrawon cymwys a hyfforddwyd y tu allan i Loegr wneud cais am SAC.",
-      "link_text": "Ewch i'ch cyfrif gwneud cais am statws athro cymwysedig",
+      "link_text": "Ewch i'r gwasanaeth gwneud cais am statws athro cymwysedig (SAC)",
       "link_href": "https://apply-for-qts-in-england.education.gov.uk/teacher/application"
     },
     "checkFamilyEligibility": {
@@ -1575,6 +1605,12 @@
       "description": "Mae hyn yn cynnwys 'Diogelwch' a 'Eich gwasanaethau'",
       "link_text": "",
       "link_href": "https://home.dev.account.gov.uk"
+    },
+    "homeOfficeSEAS": {
+      "header": "Gofyn am wiriad DBS safonol neu uwch",
+      "description": "Gwneud cais am wiriadau DBS safonol ac uwch",
+      "link_text": "Ewch i'ch cyfrif gwirio DBS safonol ac uwch",
+      "link_href": "https://www.request-standard-enchanced-dbs-check.gov.uk/"
     }
   }
 }

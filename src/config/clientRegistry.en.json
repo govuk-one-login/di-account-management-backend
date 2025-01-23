@@ -238,7 +238,7 @@
     "GQzNgSkj3QpmHlPO1kIfbMW1PAw": {
       "header": "Apply for qualified teacher status (QTS)",
       "description": "Eligible teachers who trained outside of England can apply for QTS.",
-      "link_text": "Go to your apply for qualified teacher status account",
+      "link_text": "Go to the apply for qualified teacher status (QTS) service",
       "link_href": "https://apply-for-qts-in-england.education.gov.uk/teacher/application"
     },
     "CKHfr_Kz84LYFnsP7m6YJBXqBzw": {
@@ -263,6 +263,12 @@
       "description": "This includes ‘Security’ and ‘Your services’",
       "link_text": "",
       "link_href": "https://home.account.gov.uk"
+    },
+    "PVTFrS4kgHYHFDqEb5IFanlIfcM": {
+      "header": "Request a standard or enhanced DBS check",
+      "description": "Apply for standard and enhanced DBS checks",
+      "link_text": "Go to your standard and enhanced DBS checks account",
+      "link_href": "https://www.request-standard-enchanced-dbs-check.gov.uk/"
     }
   },
   "integration": {
@@ -516,7 +522,7 @@
     "GQzNgSkj3QpmHlPO1kIfbMW1PAw": {
       "header": "Apply for qualified teacher status (QTS)",
       "description": "Eligible teachers who trained outside of England can apply for QTS.",
-      "link_text": "Go to your apply for qualified teacher status account",
+      "link_text": "Go to the apply for qualified teacher status (QTS) service",
       "link_href": "https://apply-for-qts-in-england.education.gov.uk/teacher/application"
     },
     "CKHfr_Kz84LYFnsP7m6YJBXqBzw": {
@@ -541,6 +547,12 @@
       "description": "This includes ‘Security’ and ‘Your services’",
       "link_text": "",
       "link_href": "https://home.integration.account.gov.uk"
+    },
+    "PVTFrS4kgHYHFDqEb5IFanlIfcM": {
+      "header": "Request a standard or enhanced DBS check",
+      "description": "Apply for standard and enhanced DBS checks",
+      "link_text": "Go to your standard and enhanced DBS checks account",
+      "link_href": "https://www.request-standard-enchanced-dbs-check.gov.uk/"
     }
   },
   "staging": {
@@ -782,7 +794,7 @@
     "dfeQualifiedTeacherStatus": {
       "header": "Apply for qualified teacher status (QTS)",
       "description": "Eligible teachers who trained outside of England can apply for QTS.",
-      "link_text": "Go to your apply for qualified teacher status account",
+      "link_text": "Go to the apply for qualified teacher status (QTS) service",
       "link_href": "https://apply-for-qts-in-england.education.gov.uk/teacher/application"
     },
     "checkFamilyEligibility": {
@@ -807,6 +819,12 @@
       "description": "This includes ‘Security’ and ‘Your services’",
       "link_text": "",
       "link_href": "https://home.staging.account.gov.uk"
+    },
+    "homeOfficeSEAS": {
+      "header": "Request a standard or enhanced DBS check",
+      "description": "Apply for standard and enhanced DBS checks",
+      "link_text": "Go to your standard and enhanced DBS checks account",
+      "link_href": "https://www.request-standard-enchanced-dbs-check.gov.uk/"
     }
   },
   "build": {
@@ -1048,7 +1066,7 @@
     "dfeQualifiedTeacherStatus": {
       "header": "Apply for qualified teacher status (QTS)",
       "description": "Eligible teachers who trained outside of England can apply for QTS.",
-      "link_text": "Go to your apply for qualified teacher status account",
+      "link_text": "Go to the apply for qualified teacher status (QTS) service",
       "link_href": "https://apply-for-qts-in-england.education.gov.uk/teacher/application"
     },
     "checkFamilyEligibility": {
@@ -1073,6 +1091,12 @@
       "description": "This includes ‘Security’ and ‘Your services’",
       "link_text": "",
       "link_href": "https://home.build.account.gov.uk"
+    },
+    "homeOfficeSEAS": {
+      "header": "Request a standard or enhanced DBS check",
+      "description": "Apply for standard and enhanced DBS checks",
+      "link_text": "Go to your standard and enhanced DBS checks account",
+      "link_href": "https://www.request-standard-enchanced-dbs-check.gov.uk/"
     }
   },
   "dev": {
@@ -1314,7 +1338,7 @@
     "dfeQualifiedTeacherStatus": {
       "header": "Apply for qualified teacher status (QTS)",
       "description": "Eligible teachers who trained outside of England can apply for QTS.",
-      "link_text": "Go to your apply for qualified teacher status account",
+      "link_text": "Go to the apply for qualified teacher status (QTS) service",
       "link_href": "https://apply-for-qts-in-england.education.gov.uk/teacher/application"
     },
     "checkFamilyEligibility": {
@@ -1339,6 +1363,12 @@
       "description": "This includes ‘Security’ and ‘Your services’",
       "link_text": "",
       "link_href": "https://home.dev.account.gov.uk"
+    },
+    "homeOfficeSEAS": {
+      "header": "Request a standard or enhanced DBS check",
+      "description": "Apply for standard and enhanced DBS checks",
+      "link_text": "Go to your standard and enhanced DBS checks account",
+      "link_href": "https://www.request-standard-enchanced-dbs-check.gov.uk/"
     }
   },
   "local": {
@@ -1580,7 +1610,7 @@
     "dfeQualifiedTeacherStatus": {
       "header": "Apply for qualified teacher status (QTS)",
       "description": "Eligible teachers who trained outside of England can apply for QTS.",
-      "link_text": "Go to your apply for qualified teacher status account",
+      "link_text": "Go to the apply for qualified teacher status (QTS) service",
       "link_href": "https://apply-for-qts-in-england.education.gov.uk/teacher/application"
     },
     "checkFamilyEligibility": {
@@ -1605,6 +1635,12 @@
       "description": "This includes ‘Security’ and ‘Your services’",
       "link_text": "",
       "link_href": "https://home.dev.account.gov.uk"
+    },
+    "homeOfficeSEAS": {
+      "header": "Request a standard or enhanced DBS check",
+      "description": "Apply for standard and enhanced DBS checks",
+      "link_text": "Go to your standard and enhanced DBS checks account",
+      "link_href": "https://www.request-standard-enchanced-dbs-check.gov.uk/"
     }
   }
 }

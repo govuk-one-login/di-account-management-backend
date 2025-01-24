@@ -4411,6 +4411,16 @@ Resources:
               - !Sub
                 - "${Arn}/*"
                 - Arn: !GetAtt UserServicesStore.Arn
+          - Effect: Allow
+            Action:
+              - kms:Decrypt
+              - kms:GenerateDataKey*
+              - kms:ReEncrypt*
+            Resource:
+              - !GetAtt QueueKmsKey.Arn
+              - !GetAtt DatabaseKmsKey.Arn
+              - !GetAtt LoggingKmsKey.Arn
+              - !GetAtt LambdaKMSKey.Arn
 
   RemoveHMRCEventsFunctionLogGroup:
     Type: AWS::Logs::LogGroup

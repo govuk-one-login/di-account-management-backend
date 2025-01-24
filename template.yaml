@@ -4357,9 +4357,6 @@ Resources:
       CodeUri: src
       PackageType: Zip
       MemorySize: 128
-      DeadLetterQueue:
-        Type: SQS
-        TargetArn: !GetAtt RemoveHMRCEventsDeadLetterQueue.Arn
       Handler: remove-hmrc-events.handler
       Role: !GetAtt RemoveHMRCEventsRole.Arn
     Metadata:
@@ -4376,14 +4373,6 @@ Resources:
         Banner:
           - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
 
-  RemoveHMRCEventsDeadLetterQueue:
-    Type: AWS::SQS::Queue
-    DeletionPolicy: Delete
-    UpdateReplacePolicy: Delete
-    Properties:
-      MessageRetentionPeriod: 1209600
-      KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
-
   RemoveHMRCEventsRole:
     Type: AWS::IAM::Role
     Properties:
@@ -4394,7 +4383,7 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
-        - !Ref QueryUserServicesPolicy
+        - !Ref RemoveHMRCEventsPolicy
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -4411,10 +4400,6 @@ Resources:
       PolicyDocument:
         Version: "2012-10-17"
         Statement:
-          - Effect: Allow
-            Action:
-              - sqs:SendMessage
-            Resource: !GetAtt RemoveHMRCEventsDeadLetterQueue.Arn
           - Effect: Allow
             Action:
               - dynamodb:Query

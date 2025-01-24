@@ -8,6 +8,13 @@ import type {
 import { sendSqsMessage } from "./common/sqs";
 import { getEnvironmentVariable } from "./common/utils";
 
+class DroppedEventError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "DroppedEventError";
+  }
+}
+
 const validateUserService = (service: Service): void => {
   if (
     !(
@@ -45,6 +52,10 @@ const validateUser = (user: UserData): void => {
 };
 
 const validateTxmaEvent = (txmaEvent: TxmaEvent): void => {
+  if (txmaEvent.client_id === "7y-bchtHDfucVR5kcAe8KaM80wg") {
+    throw new DroppedEventError(`Event dropped due to non-OLH login via HMRC.`);
+  }
+
   if (
     txmaEvent.timestamp !== undefined &&
     txmaEvent.event_name !== undefined &&
@@ -133,11 +144,15 @@ export const handler = async (event: SQSEvent): Promise<void> => {
         console.log(`[Message sent to QUEUE] with message id = ${messageId}`);
         console.log(`finished processing message with ID: ${record.messageId}`);
       } catch (error) {
-        throw new Error(
-          `Unable to format user services for message with ID: ${record.messageId}, ${
-            (error as Error).message
-          }`
-        );
+        if (error instanceof DroppedEventError) {
+          console.log("Dropped Event encountered and ignored.");
+        } else {
+          throw new Error(
+            `Unable to format user services for message with ID: ${record.messageId}, ${
+              (error as Error).message
+            }`
+          );
+        }
       }
     })
   );

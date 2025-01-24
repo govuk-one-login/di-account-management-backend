@@ -30,7 +30,7 @@ describe("newServicePresenter", () => {
     expect(newServicePresenter(TXMA_EVENT)).toEqual({
       client_id: "clientID1234",
       count_successful_logins: 1,
-      last_accessed: 1670850655485,
+      last_accessed: 1670850655,
       last_accessed_pretty: "12 December 2022",
     });
   });
@@ -40,12 +40,12 @@ describe("existingServicePresenter", () => {
   const existingServiceRecord = makeServiceRecord(
     "clientID1234",
     4,
-    1670850655485
+    1670850655
   );
-  const lastAccessed = 1670850655485;
+  const lastAccessed = 1670850655;
   const formattedDate = new Intl.DateTimeFormat("en-GB", {
     dateStyle: "long",
-  }).format(new Date(lastAccessed));
+  }).format(new Date(lastAccessed * 1000));
 
   test("modifies existing Service record", () => {
     expect(
@@ -233,7 +233,8 @@ describe("sendSqsMessage", () => {
 describe("prettifyDate", () => {
   test("It takes a date Epoch as a number and returns a pretty formatted date", async () => {
     const date = new Date(2022, 0, 1);
-    expect(prettifyDate(date.valueOf())).toEqual("1 January 2022");
+    const epochTimestamp = date.getTime() / 1000;
+    expect(prettifyDate(epochTimestamp)).toEqual("1 January 2022");
   });
 });
 
@@ -266,7 +267,7 @@ describe("handler", () => {
     ]);
     const outputSQSEventMessageBodies: UserServices = {
       user_id: userId,
-      services: [makeServiceRecord(serviceClientID, 1, 1670850655485)],
+      services: [makeServiceRecord(serviceClientID, 1, 1670850655)],
     };
     await handler({ Records: inputSQSEvent });
     expect(sqsMock).toHaveReceivedCommandWith(SendMessageCommand, {
@@ -277,7 +278,7 @@ describe("handler", () => {
 
   test("it writes a formatted SQS event when TxMA event matched a stored user service", async () => {
     const serviceListWithExistingService = [
-      makeServiceRecord(serviceClientID, 10, 1670850655485),
+      makeServiceRecord(serviceClientID, 10, 1670850655),
     ] as Service[];
     const inputSQSEvent = makeSQSInputFixture([
       {
@@ -287,7 +288,7 @@ describe("handler", () => {
     ]);
     const outputSQSEventMessageBodies: UserServices = {
       user_id: userId,
-      services: [makeServiceRecord(serviceClientID, 11, 1670850655485)],
+      services: [makeServiceRecord(serviceClientID, 11, 1670850655)],
     };
     await handler({ Records: inputSQSEvent });
     expect(sqsMock).toHaveReceivedCommandWith(SendMessageCommand, {
@@ -312,7 +313,7 @@ describe("handler", () => {
     const outputSQSEventMessageBodies: UserServices = {
       user_id: userId,
       services: [
-        makeServiceRecord(serviceClientID, 1, 1670850655485),
+        makeServiceRecord(serviceClientID, 1, 1670850655),
         anotherService,
       ],
     };

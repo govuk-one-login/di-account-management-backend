@@ -69,9 +69,11 @@ const validateTxmaEvent = (txmaEvent: TxmaEvent): void => {
 };
 
 export const prettifyDate = (dateEpoch: number): string => {
-  return new Intl.DateTimeFormat("en-GB", { dateStyle: "long" }).format(
-    new Date(dateEpoch * 1000)
-  );
+  const date =
+    dateEpoch <= Date.now() / 1000
+      ? new Date(dateEpoch * 1000)
+      : new Date(dateEpoch);
+  return new Intl.DateTimeFormat("en-GB", { dateStyle: "long" }).format(date);
 };
 
 export const validateAndParseSQSRecord = (

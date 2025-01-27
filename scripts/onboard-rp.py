@@ -121,8 +121,8 @@ def main():
         return
 
     branch_name = input("Enter the new branch name: ")
-    setup_repo(FRONTEND_REPO_PATH, branch_name)
-    setup_repo(BACKEND_REPO_PATH, branch_name)
+    # setup_repo(FRONTEND_REPO_PATH, branch_name)
+    # setup_repo(BACKEND_REPO_PATH, branch_name)
     production_id = input("Enter the production environment ID: ")
     non_production_id = input("Enter the non-production environment ID (e.g., dfeQualifiedTeacherStatus): ")
     rp_const_name = input("Enter the name for the RP constant (e.g., DFE_TEACHER_VACANCIES): ").upper()

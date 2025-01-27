@@ -266,9 +266,15 @@
     },
     "PVTFrS4kgHYHFDqEb5IFanlIfcM": {
       "header": "Gofyn am wiriad DBS safonol neu uwch",
-      "description": "Gwneud cais am wiriadau DBS safonol ac uwch",
+      "description": "Gwneud cais am wiriadau DBS safonol ac uwch.",
       "link_text": "Ewch i'ch cyfrif gwirio DBS safonol ac uwch",
       "link_href": "https://www.request-standard-enchanced-dbs-check.gov.uk/"
+    },
+    "wo1OYi8Z2fCQEX-9B8IPS2-F-ZE": {
+      "header": "Apply for teacher training",
+      "description": "Apply for a teacher training course to teach in England.",
+      "link_text": "Go to your Apply for teacher training account",
+      "link_href": "https://www.apply-for-teacher-training.service.gov.uk/candidate/"
     }
   },
   "integration": {
@@ -544,9 +550,15 @@
     },
     "PVTFrS4kgHYHFDqEb5IFanlIfcM": {
       "header": "Gofyn am wiriad DBS safonol neu uwch",
-      "description": "Gwneud cais am wiriadau DBS safonol ac uwch",
+      "description": "Gwneud cais am wiriadau DBS safonol ac uwch.",
       "link_text": "Ewch i'ch cyfrif gwirio DBS safonol ac uwch",
       "link_href": "https://www.request-standard-enchanced-dbs-check.gov.uk/"
+    },
+    "wo1OYi8Z2fCQEX-9B8IPS2-F-ZE": {
+      "header": "Apply for teacher training",
+      "description": "Apply for a teacher training course to teach in England.",
+      "link_text": "Go to your Apply for teacher training account",
+      "link_href": "https://www.apply-for-teacher-training.service.gov.uk/candidate/"
     }
   },
   "staging": {
@@ -810,9 +822,15 @@
     },
     "homeOfficeSEAS": {
       "header": "Gofyn am wiriad DBS safonol neu uwch",
-      "description": "Gwneud cais am wiriadau DBS safonol ac uwch",
+      "description": "Gwneud cais am wiriadau DBS safonol ac uwch.",
       "link_text": "Ewch i'ch cyfrif gwirio DBS safonol ac uwch",
       "link_href": "https://www.request-standard-enchanced-dbs-check.gov.uk/"
+    },
+    "dfeApplyForTeacherTraining": {
+      "header": "Apply for teacher training",
+      "description": "Apply for a teacher training course to teach in England.",
+      "link_text": "Go to your Apply for teacher training account",
+      "link_href": "https://www.apply-for-teacher-training.service.gov.uk/candidate/"
     }
   },
   "build": {
@@ -1076,9 +1094,15 @@
     },
     "homeOfficeSEAS": {
       "header": "Gofyn am wiriad DBS safonol neu uwch",
-      "description": "Gwneud cais am wiriadau DBS safonol ac uwch",
+      "description": "Gwneud cais am wiriadau DBS safonol ac uwch.",
       "link_text": "Ewch i'ch cyfrif gwirio DBS safonol ac uwch",
       "link_href": "https://www.request-standard-enchanced-dbs-check.gov.uk/"
+    },
+    "dfeApplyForTeacherTraining": {
+      "header": "Apply for teacher training",
+      "description": "Apply for a teacher training course to teach in England.",
+      "link_text": "Go to your Apply for teacher training account",
+      "link_href": "https://www.apply-for-teacher-training.service.gov.uk/candidate/"
     }
   },
   "dev": {
@@ -1342,9 +1366,15 @@
     },
     "homeOfficeSEAS": {
       "header": "Gofyn am wiriad DBS safonol neu uwch",
-      "description": "Gwneud cais am wiriadau DBS safonol ac uwch",
+      "description": "Gwneud cais am wiriadau DBS safonol ac uwch.",
       "link_text": "Ewch i'ch cyfrif gwirio DBS safonol ac uwch",
       "link_href": "https://www.request-standard-enchanced-dbs-check.gov.uk/"
+    },
+    "dfeApplyForTeacherTraining": {
+      "header": "Apply for teacher training",
+      "description": "Apply for a teacher training course to teach in England.",
+      "link_text": "Go to your Apply for teacher training account",
+      "link_href": "https://www.apply-for-teacher-training.service.gov.uk/candidate/"
     }
   },
   "local": {
@@ -1608,9 +1638,15 @@
     },
     "homeOfficeSEAS": {
       "header": "Gofyn am wiriad DBS safonol neu uwch",
-      "description": "Gwneud cais am wiriadau DBS safonol ac uwch",
+      "description": "Gwneud cais am wiriadau DBS safonol ac uwch.",
       "link_text": "Ewch i'ch cyfrif gwirio DBS safonol ac uwch",
       "link_href": "https://www.request-standard-enchanced-dbs-check.gov.uk/"
+    },
+    "dfeApplyForTeacherTraining": {
+      "header": "Apply for teacher training",
+      "description": "Apply for a teacher training course to teach in England.",
+      "link_text": "Go to your Apply for teacher training account",
+      "link_href": "https://www.apply-for-teacher-training.service.gov.uk/candidate/"
     }
   }
 }

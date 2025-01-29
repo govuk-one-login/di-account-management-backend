@@ -286,7 +286,7 @@
       "header": "Rheoli eiddo deallusol",
       "description": "Rheoli patentau a cheisiadau rydych yn berchen arnynt neu'n eu cynrychioli gyda'r Swyddfa Eiddo Deallusol.",
       "link_text": "Ewch i reoli eich eiddo deallusol",
-      "link_href": "https://www.manage-intellectual-property.service.gov.uk/"
+      "link_href": "https://www.manage-intellectual-property.service.gov.uk/cy"
     }
   },
   "integration": {
@@ -588,7 +588,7 @@
       "header": "Rheoli eiddo deallusol",
       "description": "Rheoli patentau a cheisiadau rydych yn berchen arnynt neu'n eu cynrychioli gyda'r Swyddfa Eiddo Deallusol.",
       "link_text": "Ewch i reoli eich eiddo deallusol",
-      "link_href": "https://www.manage-intellectual-property.service.gov.uk/"
+      "link_href": "https://www.manage-intellectual-property.service.gov.uk/cy"
     }
   },
   "staging": {
@@ -878,7 +878,7 @@
       "header": "Rheoli eiddo deallusol",
       "description": "Rheoli patentau a cheisiadau rydych yn berchen arnynt neu'n eu cynrychioli gyda'r Swyddfa Eiddo Deallusol.",
       "link_text": "Ewch i reoli eich eiddo deallusol",
-      "link_href": "https://www.manage-intellectual-property.service.gov.uk/"
+      "link_href": "https://www.manage-intellectual-property.service.gov.uk/cy"
     }
   },
   "build": {
@@ -1168,7 +1168,7 @@
       "header": "Rheoli eiddo deallusol",
       "description": "Rheoli patentau a cheisiadau rydych yn berchen arnynt neu'n eu cynrychioli gyda'r Swyddfa Eiddo Deallusol.",
       "link_text": "Ewch i reoli eich eiddo deallusol",
-      "link_href": "https://www.manage-intellectual-property.service.gov.uk/"
+      "link_href": "https://www.manage-intellectual-property.service.gov.uk/cy"
     }
   },
   "demo": {
@@ -1458,7 +1458,7 @@
       "header": "Rheoli eiddo deallusol",
       "description": "Rheoli patentau a cheisiadau rydych yn berchen arnynt neu'n eu cynrychioli gyda'r Swyddfa Eiddo Deallusol.",
       "link_text": "Ewch i reoli eich eiddo deallusol",
-      "link_href": "https://www.manage-intellectual-property.service.gov.uk/"
+      "link_href": "https://www.manage-intellectual-property.service.gov.uk/cy"
     }
   },
   "dev": {
@@ -1748,7 +1748,7 @@
       "header": "Rheoli eiddo deallusol",
       "description": "Rheoli patentau a cheisiadau rydych yn berchen arnynt neu'n eu cynrychioli gyda'r Swyddfa Eiddo Deallusol.",
       "link_text": "Ewch i reoli eich eiddo deallusol",
-      "link_href": "https://www.manage-intellectual-property.service.gov.uk/"
+      "link_href": "https://www.manage-intellectual-property.service.gov.uk/cy"
     }
   },
   "local": {
@@ -2038,7 +2038,7 @@
       "header": "Rheoli eiddo deallusol",
       "description": "Rheoli patentau a cheisiadau rydych yn berchen arnynt neu'n eu cynrychioli gyda'r Swyddfa Eiddo Deallusol.",
       "link_text": "Ewch i reoli eich eiddo deallusol",
-      "link_href": "https://www.manage-intellectual-property.service.gov.uk/"
+      "link_href": "https://www.manage-intellectual-property.service.gov.uk/cy"
     }
   }
 }

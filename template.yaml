@@ -4359,6 +4359,9 @@ Resources:
       MemorySize: 128
       Handler: remove-hmrc-events.handler
       Role: !GetAtt RemoveHMRCEventsRole.Arn
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref UserServicesStoreTableName
     Metadata:
       BuildMethod: esbuild
       BuildProperties:

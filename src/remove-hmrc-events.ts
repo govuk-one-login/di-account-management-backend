@@ -4,13 +4,13 @@ import {
   ScanCommand,
   BatchWriteCommand,
 } from "@aws-sdk/lib-dynamodb";
+import { getEnvironmentVariable } from "./common/utils";
 
 const client = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(client);
 
-const TABLE_NAME = "user_services";
-
 export const handler = async (): Promise<unknown> => {
+  const TABLE_NAME = getEnvironmentVariable("TABLE_NAME");
   try {
     const scanParams = {
       TableName: TABLE_NAME,

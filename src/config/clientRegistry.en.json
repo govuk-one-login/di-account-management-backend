@@ -52,7 +52,7 @@
     },
     "tya4DoMpw_B7FK5YvuMAj3asc0A": {
       "header": "Find and apply for a grant",
-      "description": "Search and apply for government grant funding",
+      "description": "Search and apply for government grant funding.",
       "link_text": "Go to your grants account",
       "link_href": "https://find-government-grants.service.cabinetoffice.gov.uk/apply/applicant"
     },
@@ -281,6 +281,12 @@
       "description": "Start or continue a licence application to provide sanctioned trade services.",
       "link_text": "Go to your sanctioned trade services account",
       "link_href": "https://apply-sanctioned-services-licence.trade.gov.uk/apply"
+    },
+    "Mh3SUEDHB74A2SIB_1VAXZKG_iw": {
+      "header": "Manage intellectual property",
+      "description": "Manage patents and applications you own or represent with the Intellectual Property Office.",
+      "link_text": "Go to manage your intellectual property",
+      "link_href": "https://www.manage-intellectual-property.service.gov.uk/"
     }
   },
   "integration": {
@@ -336,7 +342,7 @@
     },
     "tya4DoMpw_B7FK5YvuMAj3asc0A": {
       "header": "Find and apply for a grant",
-      "description": "Search and apply for government grant funding",
+      "description": "Search and apply for government grant funding.",
       "link_text": "Go to your grants account",
       "link_href": "https://find-government-grants.service.cabinetoffice.gov.uk/apply/applicant"
     },
@@ -577,6 +583,12 @@
       "description": "Start or continue a licence application to provide sanctioned trade services.",
       "link_text": "Go to your sanctioned trade services account",
       "link_href": "https://apply-sanctioned-services-licence.trade.gov.uk/apply"
+    },
+    "Mh3SUEDHB74A2SIB_1VAXZKG_iw": {
+      "header": "Manage intellectual property",
+      "description": "Manage patents and applications you own or represent with the Intellectual Property Office.",
+      "link_text": "Go to manage your intellectual property",
+      "link_href": "https://www.manage-intellectual-property.service.gov.uk/"
     }
   },
   "staging": {
@@ -632,7 +644,7 @@
     },
     "findAndApplyForAGrant": {
       "header": "Find and apply for a grant",
-      "description": "Search and apply for government grant funding",
+      "description": "Search and apply for government grant funding.",
       "link_text": "Go to your grants account",
       "link_href": "https://find-government-grants.service.cabinetoffice.gov.uk/apply/applicant"
     },
@@ -861,6 +873,12 @@
       "description": "Start or continue a licence application to provide sanctioned trade services.",
       "link_text": "Go to your sanctioned trade services account",
       "link_href": "https://apply-sanctioned-services-licence.trade.gov.uk/apply"
+    },
+    "intellectualPropertyOffice": {
+      "header": "Manage intellectual property",
+      "description": "Manage patents and applications you own or represent with the Intellectual Property Office.",
+      "link_text": "Go to manage your intellectual property",
+      "link_href": "https://www.manage-intellectual-property.service.gov.uk/"
     }
   },
   "build": {
@@ -916,7 +934,7 @@
     },
     "findAndApplyForAGrant": {
       "header": "Find and apply for a grant",
-      "description": "Search and apply for government grant funding",
+      "description": "Search and apply for government grant funding.",
       "link_text": "Go to your grants account",
       "link_href": "https://find-government-grants.service.cabinetoffice.gov.uk/apply/applicant"
     },
@@ -1145,6 +1163,12 @@
       "description": "Start or continue a licence application to provide sanctioned trade services.",
       "link_text": "Go to your sanctioned trade services account",
       "link_href": "https://apply-sanctioned-services-licence.trade.gov.uk/apply"
+    },
+    "intellectualPropertyOffice": {
+      "header": "Manage intellectual property",
+      "description": "Manage patents and applications you own or represent with the Intellectual Property Office.",
+      "link_text": "Go to manage your intellectual property",
+      "link_href": "https://www.manage-intellectual-property.service.gov.uk/"
     }
   },
   "demo": {
@@ -1200,7 +1224,7 @@
     },
     "findAndApplyForAGrant": {
       "header": "Find and apply for a grant",
-      "description": "Search and apply for government grant funding",
+      "description": "Search and apply for government grant funding.",
       "link_text": "Go to your grants account",
       "link_href": "https://find-government-grants.service.cabinetoffice.gov.uk/apply/applicant"
     },
@@ -1429,6 +1453,12 @@
       "description": "Start or continue a licence application to provide sanctioned trade services.",
       "link_text": "Go to your sanctioned trade services account",
       "link_href": "https://apply-sanctioned-services-licence.trade.gov.uk/apply"
+    },
+    "intellectualPropertyOffice": {
+      "header": "Manage intellectual property",
+      "description": "Manage patents and applications you own or represent with the Intellectual Property Office.",
+      "link_text": "Go to manage your intellectual property",
+      "link_href": "https://www.manage-intellectual-property.service.gov.uk/"
     }
   },
   "dev": {
@@ -1484,7 +1514,7 @@
     },
     "findAndApplyForAGrant": {
       "header": "Find and apply for a grant",
-      "description": "Search and apply for government grant funding",
+      "description": "Search and apply for government grant funding.",
       "link_text": "Go to your grants account",
       "link_href": "https://find-government-grants.service.cabinetoffice.gov.uk/apply/applicant"
     },
@@ -1713,6 +1743,12 @@
       "description": "Start or continue a licence application to provide sanctioned trade services.",
       "link_text": "Go to your sanctioned trade services account",
       "link_href": "https://apply-sanctioned-services-licence.trade.gov.uk/apply"
+    },
+    "intellectualPropertyOffice": {
+      "header": "Manage intellectual property",
+      "description": "Manage patents and applications you own or represent with the Intellectual Property Office.",
+      "link_text": "Go to manage your intellectual property",
+      "link_href": "https://www.manage-intellectual-property.service.gov.uk/"
     }
   },
   "local": {
@@ -1768,7 +1804,7 @@
     },
     "findAndApplyForAGrant": {
       "header": "Find and apply for a grant",
-      "description": "Search and apply for government grant funding",
+      "description": "Search and apply for government grant funding.",
       "link_text": "Go to your grants account",
       "link_href": "https://find-government-grants.service.cabinetoffice.gov.uk/apply/applicant"
     },
@@ -1997,6 +2033,12 @@
       "description": "Start or continue a licence application to provide sanctioned trade services.",
       "link_text": "Go to your sanctioned trade services account",
       "link_href": "https://apply-sanctioned-services-licence.trade.gov.uk/apply"
+    },
+    "intellectualPropertyOffice": {
+      "header": "Manage intellectual property",
+      "description": "Manage patents and applications you own or represent with the Intellectual Property Office.",
+      "link_text": "Go to manage your intellectual property",
+      "link_href": "https://www.manage-intellectual-property.service.gov.uk/"
     }
   }
 }

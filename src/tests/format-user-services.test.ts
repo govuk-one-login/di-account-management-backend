@@ -11,6 +11,7 @@ import {
   formatRecord,
   prettifyDate,
   handler,
+  DroppedEventError,
 } from "../format-user-services";
 
 import { Service, UserServices } from "../common/model";
@@ -236,6 +237,12 @@ describe("prettifyDate", () => {
     const epochTimestamp = date.getTime() / 1000;
     expect(prettifyDate(epochTimestamp)).toEqual("1 January 2022");
   });
+
+  test("It takes a date Epoch later than now as a number and returns a pretty formatted date", async () => {
+    const date = new Date(2024, 0, 1);
+    const epochTimestamp = date.getTime();
+    expect(prettifyDate(epochTimestamp)).toEqual("1 January 2024");
+  });
 });
 
 describe("handler", () => {
@@ -323,6 +330,23 @@ describe("handler", () => {
       MessageBody: JSON.stringify(outputSQSEventMessageBodies),
     });
   });
+
+  test("drops hmrc events", async () => {
+    const emptyServiceList = [] as Service[];
+    const hmrc_client_id = "7y-bchtHDfucVR5kcAe8KaM80wg";
+    const inputSQSEvent = makeSQSInputFixture([
+      {
+        TxmaEvent: makeTxmaEvent(hmrc_client_id, userId),
+        ServiceList: emptyServiceList,
+      },
+    ]);
+
+    console.log = jest.fn();
+    await handler({ Records: inputSQSEvent });
+    expect(console.log).toHaveBeenCalledWith(
+      "Dropped Event encountered and ignored."
+    );
+  });
 });
 
 describe("handler error handling ", () => {
@@ -372,5 +396,15 @@ describe("handler error handling ", () => {
     expect(errorMessage).toContain(
       "Unable to format user services for message with ID: 19dd0b57-b21e-4ac1-bd88-01bbb068cb78, Could not validate txmaEvent"
     );
+  });
+});
+
+describe("DroppedEventError", () => {
+  it("should create an error with the correct name", () => {
+    const errorMessage = "This is a test error message";
+    const error = new DroppedEventError(errorMessage);
+
+    expect(error.name).toBe("DroppedEventError");
+    expect(error.message).toBe(errorMessage);
   });
 });

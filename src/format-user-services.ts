@@ -8,7 +8,7 @@ import type {
 import { sendSqsMessage } from "./common/sqs";
 import { getEnvironmentVariable } from "./common/utils";
 
-class DroppedEventError extends Error {
+export class DroppedEventError extends Error {
   constructor(message: string) {
     super(message);
     this.name = "DroppedEventError";

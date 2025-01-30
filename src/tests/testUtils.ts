@@ -15,7 +15,7 @@ export const makeServiceRecord = (
   const fallbackDate = new Date(2022, 0, 1).valueOf();
   const formattedDate = new Intl.DateTimeFormat("en-GB", {
     dateStyle: "long",
-  }).format(new Date(date || fallbackDate));
+  }).format(new Date((date || fallbackDate) * 1000));
   return {
     client_id: clientId,
     count_successful_logins: count,
@@ -51,7 +51,7 @@ export const makeTxmaEvent = (
 ): TxmaEvent => ({
   event_name: eventName ?? "event_1",
   event_id: "event_id",
-  timestamp: date ?? 1670850655485,
+  timestamp: date ?? 1670850655,
   timestamp_formatted: "",
   client_id: localclientId ?? clientId,
   user: {

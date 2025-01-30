@@ -8,6 +8,13 @@ import type {
 import { sendSqsMessage } from "./common/sqs";
 import { getEnvironmentVariable } from "./common/utils";
 
+export class DroppedEventError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "DroppedEventError";
+  }
+}
+
 const validateUserService = (service: Service): void => {
   if (
     !(
@@ -44,7 +51,13 @@ const validateUser = (user: UserData): void => {
   }
 };
 
+const HMRC_CLIENT_ID = "7y-bchtHDfucVR5kcAe8KaM80wg";
+
 const validateTxmaEvent = (txmaEvent: TxmaEvent): void => {
+  if (txmaEvent.client_id === HMRC_CLIENT_ID) {
+    throw new DroppedEventError(`Event dropped due to non-OLH login via HMRC.`);
+  }
+
   if (
     txmaEvent.timestamp !== undefined &&
     txmaEvent.event_name !== undefined &&
@@ -58,9 +71,11 @@ const validateTxmaEvent = (txmaEvent: TxmaEvent): void => {
 };
 
 export const prettifyDate = (dateEpoch: number): string => {
-  return new Intl.DateTimeFormat("en-GB", { dateStyle: "long" }).format(
-    new Date(dateEpoch)
-  );
+  const date =
+    dateEpoch <= Date.now() / 1000
+      ? new Date(dateEpoch * 1000)
+      : new Date(dateEpoch);
+  return new Intl.DateTimeFormat("en-GB", { dateStyle: "long" }).format(date);
 };
 
 export const validateAndParseSQSRecord = (
@@ -133,11 +148,15 @@ export const handler = async (event: SQSEvent): Promise<void> => {
         console.log(`[Message sent to QUEUE] with message id = ${messageId}`);
         console.log(`finished processing message with ID: ${record.messageId}`);
       } catch (error) {
-        throw new Error(
-          `Unable to format user services for message with ID: ${record.messageId}, ${
-            (error as Error).message
-          }`
-        );
+        if (error instanceof DroppedEventError) {
+          console.log("Dropped Event encountered and ignored.");
+        } else {
+          throw new Error(
+            `Unable to format user services for message with ID: ${record.messageId}, ${
+              (error as Error).message
+            }`
+          );
+        }
       }
     })
   );

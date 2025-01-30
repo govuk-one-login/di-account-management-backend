@@ -11,6 +11,7 @@ import {
   formatRecord,
   prettifyDate,
   handler,
+  DroppedEventError,
 } from "../format-user-services";
 
 import { Service, UserServices } from "../common/model";
@@ -30,7 +31,7 @@ describe("newServicePresenter", () => {
     expect(newServicePresenter(TXMA_EVENT)).toEqual({
       client_id: "clientID1234",
       count_successful_logins: 1,
-      last_accessed: 1670850655485,
+      last_accessed: 1670850655,
       last_accessed_pretty: "12 December 2022",
     });
   });
@@ -40,12 +41,12 @@ describe("existingServicePresenter", () => {
   const existingServiceRecord = makeServiceRecord(
     "clientID1234",
     4,
-    1670850655485
+    1670850655
   );
-  const lastAccessed = 1670850655485;
+  const lastAccessed = 1670850655;
   const formattedDate = new Intl.DateTimeFormat("en-GB", {
     dateStyle: "long",
-  }).format(new Date(lastAccessed));
+  }).format(new Date(lastAccessed * 1000));
 
   test("modifies existing Service record", () => {
     expect(
@@ -233,7 +234,14 @@ describe("sendSqsMessage", () => {
 describe("prettifyDate", () => {
   test("It takes a date Epoch as a number and returns a pretty formatted date", async () => {
     const date = new Date(2022, 0, 1);
-    expect(prettifyDate(date.valueOf())).toEqual("1 January 2022");
+    const epochTimestamp = date.getTime() / 1000;
+    expect(prettifyDate(epochTimestamp)).toEqual("1 January 2022");
+  });
+
+  test("It takes a date Epoch later than now as a number and returns a pretty formatted date", async () => {
+    const date = new Date(2024, 0, 1);
+    const epochTimestamp = date.getTime();
+    expect(prettifyDate(epochTimestamp)).toEqual("1 January 2024");
   });
 });
 
@@ -266,7 +274,7 @@ describe("handler", () => {
     ]);
     const outputSQSEventMessageBodies: UserServices = {
       user_id: userId,
-      services: [makeServiceRecord(serviceClientID, 1, 1670850655485)],
+      services: [makeServiceRecord(serviceClientID, 1, 1670850655)],
     };
     await handler({ Records: inputSQSEvent });
     expect(sqsMock).toHaveReceivedCommandWith(SendMessageCommand, {
@@ -277,7 +285,7 @@ describe("handler", () => {
 
   test("it writes a formatted SQS event when TxMA event matched a stored user service", async () => {
     const serviceListWithExistingService = [
-      makeServiceRecord(serviceClientID, 10, 1670850655485),
+      makeServiceRecord(serviceClientID, 10, 1670850655),
     ] as Service[];
     const inputSQSEvent = makeSQSInputFixture([
       {
@@ -287,7 +295,7 @@ describe("handler", () => {
     ]);
     const outputSQSEventMessageBodies: UserServices = {
       user_id: userId,
-      services: [makeServiceRecord(serviceClientID, 11, 1670850655485)],
+      services: [makeServiceRecord(serviceClientID, 11, 1670850655)],
     };
     await handler({ Records: inputSQSEvent });
     expect(sqsMock).toHaveReceivedCommandWith(SendMessageCommand, {
@@ -312,7 +320,7 @@ describe("handler", () => {
     const outputSQSEventMessageBodies: UserServices = {
       user_id: userId,
       services: [
-        makeServiceRecord(serviceClientID, 1, 1670850655485),
+        makeServiceRecord(serviceClientID, 1, 1670850655),
         anotherService,
       ],
     };
@@ -321,6 +329,23 @@ describe("handler", () => {
       QueueUrl: queueURL,
       MessageBody: JSON.stringify(outputSQSEventMessageBodies),
     });
+  });
+
+  test("drops hmrc events", async () => {
+    const emptyServiceList = [] as Service[];
+    const hmrc_client_id = "7y-bchtHDfucVR5kcAe8KaM80wg";
+    const inputSQSEvent = makeSQSInputFixture([
+      {
+        TxmaEvent: makeTxmaEvent(hmrc_client_id, userId),
+        ServiceList: emptyServiceList,
+      },
+    ]);
+
+    console.log = jest.fn();
+    await handler({ Records: inputSQSEvent });
+    expect(console.log).toHaveBeenCalledWith(
+      "Dropped Event encountered and ignored."
+    );
   });
 });
 
@@ -371,5 +396,15 @@ describe("handler error handling ", () => {
     expect(errorMessage).toContain(
       "Unable to format user services for message with ID: 19dd0b57-b21e-4ac1-bd88-01bbb068cb78, Could not validate txmaEvent"
     );
+  });
+});
+
+describe("DroppedEventError", () => {
+  it("should create an error with the correct name", () => {
+    const errorMessage = "This is a test error message";
+    const error = new DroppedEventError(errorMessage);
+
+    expect(error.name).toBe("DroppedEventError");
+    expect(error.message).toBe(errorMessage);
   });
 });

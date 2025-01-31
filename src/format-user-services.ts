@@ -51,8 +51,10 @@ const validateUser = (user: UserData): void => {
   }
 };
 
+const HMRC_CLIENT_ID = "7y-bchtHDfucVR5kcAe8KaM80wg";
+
 const validateTxmaEvent = (txmaEvent: TxmaEvent): void => {
-  if (txmaEvent.client_id === "7y-bchtHDfucVR5kcAe8KaM80wg") {
+  if (txmaEvent.client_id === HMRC_CLIENT_ID) {
     throw new DroppedEventError(`Event dropped due to non-OLH login via HMRC.`);
   }
 

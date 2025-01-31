@@ -4416,6 +4416,17 @@ Resources:
                 - Arn: !GetAtt UserServicesStore.Arn
           - Effect: Allow
             Action:
+              - dynamodb:Query
+              - dynamodb:GetItem
+              - dynamodb:Scan
+              - dynamodb:BatchWriteItem
+            Resource:
+              - !GetAtt UserActivityLogsStore.Arn
+              - !Sub
+                - "${Arn}/*"
+                - Arn: !GetAtt UserActivityLogsStore.Arn
+          - Effect: Allow
+            Action:
               - kms:Decrypt
               - kms:GenerateDataKey*
               - kms:ReEncrypt*

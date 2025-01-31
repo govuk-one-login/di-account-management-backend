@@ -33,7 +33,6 @@ describe("handler", () => {
         ":urn": "urn:",
       },
     });
-
     expect(dynamoMock).toHaveReceivedCommandWith(BatchWriteCommand, {
       RequestItems: {
         TABLE_NAME: expect.arrayContaining(
@@ -51,9 +50,7 @@ describe("handler", () => {
 
   it("should handle cases where no items match the filter", async () => {
     dynamoMock.on(ScanCommand).resolves({ Items: [] });
-
     await handler();
-
     expect(dynamoMock).toHaveReceivedCommandWith(ScanCommand, {
       TableName: process.env.TABLE_NAME,
       FilterExpression: "NOT begins_with(user_id, :urn)",
@@ -67,9 +64,7 @@ describe("handler", () => {
   it("should handle errors gracefully", async () => {
     const mockError = new Error("DynamoDB error");
     dynamoMock.on(ScanCommand).rejects(mockError);
-
     const result = await handler();
-
     expect(dynamoMock).toHaveReceivedCommandWith(ScanCommand, {
       TableName: process.env.TABLE_NAME,
       FilterExpression: "NOT begins_with(user_id, :urn)",
@@ -91,9 +86,7 @@ describe("handler", () => {
     ];
     dynamoMock.on(ScanCommand).resolves({ Items: mockItems });
     dynamoMock.on(BatchWriteCommand).resolves({});
-
     await handler();
-
     expect(dynamoMock).toHaveReceivedCommandWith(ScanCommand, {
       TableName: process.env.TABLE_NAME,
       FilterExpression: "NOT begins_with(user_id, :urn)",
@@ -101,7 +94,6 @@ describe("handler", () => {
         ":urn": "urn:",
       },
     });
-
     expect(dynamoMock).toHaveReceivedCommandWith(BatchWriteCommand, {
       RequestItems: {
         TABLE_NAME: expect.arrayContaining([
@@ -115,5 +107,54 @@ describe("handler", () => {
         ]),
       },
     });
+  });
+
+  it("should handle pagination and delete all items matching the filter", async () => {
+    const mockItemsToDelete = [
+      { user_id: "user1" },
+      { user_id: "user2" },
+      { user_id: "user3" },
+      { user_id: "user4" },
+      { user_id: "user5" },
+    ];
+    const batchSize = 25;
+    const numBatches = Math.ceil(mockItemsToDelete.length / batchSize);
+
+    for (let i = 0; i < numBatches; i++) {
+      const start = i * batchSize;
+      const end = Math.min(start + batchSize, mockItemsToDelete.length);
+      dynamoMock.on(ScanCommand).resolvesOnce({
+        Items: mockItemsToDelete.slice(start, end),
+        LastEvaluatedKey:
+          end < mockItemsToDelete.length
+            ? { user_id: mockItemsToDelete[end].user_id }
+            : undefined,
+      });
+    }
+
+    dynamoMock.on(BatchWriteCommand).resolves({});
+
+    await handler();
+
+    expect(dynamoMock.commandCalls(ScanCommand).length).toBe(numBatches);
+    expect(dynamoMock.commandCalls(BatchWriteCommand).length).toBe(numBatches);
+
+    for (let i = 0; i < numBatches; i++) {
+      const start = i * batchSize;
+      const end = Math.min(start + batchSize, mockItemsToDelete.length);
+      expect(dynamoMock).toHaveReceivedCommandWith(BatchWriteCommand, {
+        RequestItems: {
+          TABLE_NAME: expect.arrayContaining(
+            mockItemsToDelete.slice(start, end).map((item) => ({
+              DeleteRequest: {
+                Key: {
+                  user_id: item.user_id,
+                },
+              },
+            }))
+          ),
+        },
+      });
+    }
   });
 });

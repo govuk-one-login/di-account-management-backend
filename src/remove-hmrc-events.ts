@@ -22,10 +22,12 @@ export const handler = async (): Promise<unknown> => {
         ExpressionAttributeValues: {
           ":urn": "urn:",
         },
-        ExclusiveStartKey: lastEvaluatedKey, // Start from the last key
+        ExclusiveStartKey: lastEvaluatedKey,
       };
 
       const scanResults = await docClient.send(new ScanCommand(scanParams));
+      console.log("Scan complete");
+
       const itemsToDelete = scanResults.Items || [];
 
       if (itemsToDelete.length > 0) {

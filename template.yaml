@@ -4356,7 +4356,8 @@ Resources:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-remove-hmrc-events
       CodeUri: src
       PackageType: Zip
-      MemorySize: 128
+      MemorySize: 1024
+      Timeout: 600
       Handler: remove-hmrc-events.handler
       Role: !GetAtt RemoveHMRCEventsRole.Arn
       Environment:

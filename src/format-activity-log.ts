@@ -9,6 +9,13 @@ import {
 import { sendSqsMessage } from "./common/sqs";
 import { getEnvironmentVariable } from "./common/utils";
 
+export class DroppedEventError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "DroppedEventError";
+  }
+}
+
 const createNewActivityLogEntryFromTxmaEvent = (
   txmaEvent: TxmaEvent
 ): ActivityLogEntry =>
@@ -22,7 +29,12 @@ const createNewActivityLogEntryFromTxmaEvent = (
     reported_suspicious: REPORT_SUSPICIOUS_ACTIVITY_DEFAULT,
   }) as ActivityLogEntry;
 
+const HMRC_CLIENT_ID = "7y-bchtHDfucVR5kcAe8KaM80wg";
+
 export const validateTxmaEventBody = (txmaEvent: TxmaEvent): void => {
+  if (txmaEvent.client_id === HMRC_CLIENT_ID) {
+    throw new DroppedEventError(`Event dropped due to non-OLH login via HMRC.`);
+  }
   if (
     txmaEvent.event_id === undefined ||
     txmaEvent.event_name === undefined ||
@@ -66,11 +78,15 @@ export const handler = async (event: DynamoDBStreamEvent): Promise<void> => {
         }
         console.log(`finished processing event with ID: ${record.eventID}`);
       } catch (error) {
-        throw new Error(
-          `Unable to format activity log for event with ID: ${record.eventID}, ${
-            (error as Error).message
-          }`
-        );
+        if (error instanceof DroppedEventError) {
+          console.log("Dropped Event encountered and ignored.");
+        } else {
+          throw new Error(
+            `Unable to format activity log for event with ID: ${record.eventID}, ${
+              (error as Error).message
+            }`
+          );
+        }
       }
     })
   );

@@ -185,6 +185,7 @@ export const MUTABLE_ACTIVITY_LOG_ENTRY: ActivityLogEntry = {
 
 // TODO: This would be better placed in testUtils but fails to be imported as a function when moved there.
 export const generateDynamoSteamRecord = (
+  customClientId?: string,
   txmaEventName = "AUTH_AUTH_CODE_ISSUED"
 ): DynamoDBRecord => ({
   eventID: "1234567",
@@ -207,7 +208,7 @@ export const generateDynamoSteamRecord = (
               session_id: { S: sessionId },
             },
           },
-          client_id: { S: clientId },
+          client_id: { S: customClientId ?? clientId },
           txma: { M: { configVersion: { S: "2.2.1" } } },
           timestamp: { N: `${timestamp}` },
         },
@@ -221,7 +222,7 @@ export const TEST_DYNAMO_STREAM_EVENT: DynamoDBStreamEvent = {
 };
 
 export const MUCKY_DYNAMODB_STREAM_EVENT: DynamoDBStreamEvent = {
-  Records: [generateDynamoSteamRecord(randomEventType)],
+  Records: [generateDynamoSteamRecord(undefined, randomEventType)],
 };
 
 export const ERROR_DYNAMODB_STREAM_EVENT: DynamoDBStreamEvent = {

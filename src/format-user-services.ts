@@ -1,19 +1,13 @@
 import { SQSEvent, SQSRecord } from "aws-lambda";
-import type {
-  UserData,
-  UserRecordEvent,
-  Service,
-  TxmaEvent,
+import {
+  type UserData,
+  type UserRecordEvent,
+  type Service,
+  type TxmaEvent,
+  DroppedEventError,
 } from "./common/model";
 import { sendSqsMessage } from "./common/sqs";
 import { getEnvironmentVariable } from "./common/utils";
-
-export class DroppedEventError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "DroppedEventError";
-  }
-}
 
 const validateUserService = (service: Service): void => {
   if (

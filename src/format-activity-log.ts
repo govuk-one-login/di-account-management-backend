@@ -1,20 +1,13 @@
 import { DynamoDBStreamEvent } from "aws-lambda";
 import { AttributeValue } from "@aws-sdk/client-dynamodb";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
-import { ActivityLogEntry, TxmaEvent } from "./common/model";
+import { ActivityLogEntry, DroppedEventError, TxmaEvent } from "./common/model";
 import {
   allowedTxmaEvents,
   REPORT_SUSPICIOUS_ACTIVITY_DEFAULT,
 } from "./common/constants";
 import { sendSqsMessage } from "./common/sqs";
 import { getEnvironmentVariable } from "./common/utils";
-
-export class DroppedEventError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "DroppedEventError";
-  }
-}
 
 const createNewActivityLogEntryFromTxmaEvent = (
   txmaEvent: TxmaEvent

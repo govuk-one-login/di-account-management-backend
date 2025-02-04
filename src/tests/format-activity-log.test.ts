@@ -8,6 +8,7 @@ import {
 } from "../format-activity-log";
 import {
   ERROR_DYNAMODB_STREAM_EVENT,
+  generateDynamoSteamRecord,
   messageId,
   MUCKY_DYNAMODB_STREAM_EVENT,
   MUTABLE_ACTIVITY_LOG_ENTRY,
@@ -18,6 +19,8 @@ import {
   TEST_DYNAMO_STREAM_EVENT,
 } from "./testFixtures";
 import { sendSqsMessage } from "../common/sqs";
+import { DynamoDBStreamEvent } from "aws-lambda/trigger/dynamodb-stream";
+import { DroppedEventError } from "../common/model";
 
 const sqsMock = mockClient(SQSClient);
 
@@ -79,6 +82,33 @@ describe("handler", () => {
         "Unable to format activity log for event with ID: 1234567, No value defined: {}"
       );
     });
+
+    test("drops hmrc events", async () => {
+      const hmrc_client_id = "7y-bchtHDfucVR5kcAe8KaM80wg";
+
+      const TEST_HMRC_EVENT: DynamoDBStreamEvent = {
+        Records: [
+          generateDynamoSteamRecord(hmrc_client_id),
+          generateDynamoSteamRecord(hmrc_client_id),
+        ],
+      };
+      console.log = jest.fn();
+      await handler(TEST_HMRC_EVENT);
+      expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(0);
+      expect(console.log).toHaveBeenCalledWith(
+        "Dropped Event encountered and ignored."
+      );
+    });
+  });
+});
+
+describe("DroppedEventError", () => {
+  it("should create an error with the correct name", () => {
+    const errorMessage = "This is a test error message";
+    const error = new DroppedEventError(errorMessage);
+
+    expect(error.name).toBe("DroppedEventError");
+    expect(error.message).toBe(errorMessage);
   });
 });
 

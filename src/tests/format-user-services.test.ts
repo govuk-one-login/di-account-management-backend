@@ -11,10 +11,9 @@ import {
   formatRecord,
   prettifyDate,
   handler,
-  DroppedEventError,
 } from "../format-user-services";
 
-import { Service, UserServices } from "../common/model";
+import { DroppedEventError, Service, UserServices } from "../common/model";
 import {
   makeServiceRecord,
   makeSQSInputFixture,

@@ -217,3 +217,10 @@ export interface Personalisation {
   timeEn: string;
   timeCy: string;
 }
+
+export class DroppedEventError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "DroppedEventError";
+  }
+}

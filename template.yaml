@@ -4356,7 +4356,8 @@ Resources:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-remove-hmrc-events
       CodeUri: src
       PackageType: Zip
-      MemorySize: 128
+      MemorySize: 1024
+      Timeout: 600
       Handler: remove-hmrc-events.handler
       Role: !GetAtt RemoveHMRCEventsRole.Arn
       Environment:
@@ -4414,6 +4415,17 @@ Resources:
               - !Sub
                 - "${Arn}/*"
                 - Arn: !GetAtt UserServicesStore.Arn
+          - Effect: Allow
+            Action:
+              - dynamodb:Query
+              - dynamodb:GetItem
+              - dynamodb:Scan
+              - dynamodb:BatchWriteItem
+            Resource:
+              - !GetAtt UserActivityLogsStore.Arn
+              - !Sub
+                - "${Arn}/*"
+                - Arn: !GetAtt UserActivityLogsStore.Arn
           - Effect: Allow
             Action:
               - kms:Decrypt

@@ -28,6 +28,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Install client registry
+        run: npm i di-account-management-client-registry
+
       - name: Lint
         run: npm run lint
 

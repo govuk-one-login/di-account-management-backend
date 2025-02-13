@@ -165,12 +165,6 @@ interface RequesterAnonymous {
   name?: string;
   email?: string;
 }
-export interface RPClient {
-  header: string;
-  description?: string;
-  link_text: string;
-  link_href: string;
-}
 export type Environment =
   | "production"
   | "integration"
@@ -178,8 +172,6 @@ export type Environment =
   | "build"
   | "dev"
   | "local";
-type ClientRegistryEnvronment = Record<string, RPClient>;
-export type ClientRegistry = Record<Environment, ClientRegistryEnvronment>;
 
 export interface ReportSuspiciousActivityStepInput {
   user_id: string;

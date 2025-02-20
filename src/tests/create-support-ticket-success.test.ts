@@ -22,7 +22,7 @@ const dynamoMock = mockClient(DynamoDBDocumentClient);
 describe("Generate zendesk ticket Body", () => {
   test("should generate ticket body successfully using the suspicious activity event", async () => {
     const expected =
-      "<p><strong>Requester</strong>: email</p><p><strong>Event Name</strong>: TXMA_EVENT</p><p><strong>Event ID</strong>: ab12345a-a12b-3ced-ef12-12a3b4cd5678</p><p><strong>Reported Date and Time</strong>: Thu, 29 Nov 1973 21:33:09 GMT</p><p><strong>Client ID</strong>: gov-uk</p><p><strong>User ID</strong>: qwerty</p><p><strong>Session ID</strong>: 123456789</p>";
+      "<p><strong>Requester</strong>: email</p><p><strong>Event Name</strong>: TXMA_EVENT</p><p><strong>Event ID</strong>: ab12345a-a12b-3ced-ef12-12a3b4cd5678</p><p><strong>Reported Date and Time</strong>: Thu, 29 Nov 1973 21:33:09 GMT</p><p><strong>Client ID</strong>: govuk</p><p><strong>User ID</strong>: qwerty</p><p><strong>Session ID</strong>: 123456789</p>";
     const result = formatCommentBody(testSuspiciousActivityInput);
     expect(result).toEqual(expected);
   });
@@ -57,7 +57,7 @@ describe("handler", () => {
         subject: "One Login Home - Report Suspicious Activity",
         comment: {
           html_body:
-            "<p><strong>Requester</strong>: email</p><p><strong>Event Name</strong>: TXMA_EVENT</p><p><strong>Event ID</strong>: ab12345a-a12b-3ced-ef12-12a3b4cd5678</p><p><strong>Reported Date and Time</strong>: Fri, 02 Jan 1970 10:17:36 GMT</p><p><strong>Client ID</strong>: gov-uk</p><p><strong>User ID</strong>: qwerty</p><p><strong>Session ID</strong>: 123456789</p>",
+            "<p><strong>Requester</strong>: email</p><p><strong>Event Name</strong>: TXMA_EVENT</p><p><strong>Event ID</strong>: ab12345a-a12b-3ced-ef12-12a3b4cd5678</p><p><strong>Reported Date and Time</strong>: Fri, 02 Jan 1970 10:17:36 GMT</p><p><strong>Client ID</strong>: govuk</p><p><strong>User ID</strong>: qwerty</p><p><strong>Session ID</strong>: 123456789</p>",
         },
         group_id: 1111111,
         tags: ["1111111"],
@@ -99,7 +99,7 @@ describe("handler", () => {
         session_id: "123456789",
         user_id: "qwerty",
         timestamp: 123456789,
-        client_id: "gov-uk",
+        client_id: "govuk",
         event_id: "ab12345a-a12b-3ced-ef12-12a3b4cd5678",
         reported_suspicious: true,
       },
@@ -118,7 +118,7 @@ describe("handler", () => {
         subject: "One Login Home - Report Suspicious Activity",
         comment: {
           html_body:
-            "<p><strong>Requester</strong>: email</p><p><strong>Event Name</strong>: TXMA_EVENT</p><p><strong>Event ID</strong>: ab12345a-a12b-3ced-ef12-12a3b4cd5678</p><p><strong>Reported Date and Time</strong>: Fri, 02 Jan 1970 10:17:36 GMT</p><p><strong>Client ID</strong>: gov-uk</p><p><strong>User ID</strong>: qwerty</p><p><strong>Session ID</strong>: 123456789</p>",
+            "<p><strong>Requester</strong>: email</p><p><strong>Event Name</strong>: TXMA_EVENT</p><p><strong>Event ID</strong>: ab12345a-a12b-3ced-ef12-12a3b4cd5678</p><p><strong>Reported Date and Time</strong>: Fri, 02 Jan 1970 10:17:36 GMT</p><p><strong>Client ID</strong>: govuk</p><p><strong>User ID</strong>: qwerty</p><p><strong>Session ID</strong>: 123456789</p>",
         },
         group_id: 1111111,
         ticket_form_id: 1111111,

@@ -1,34 +1,24 @@
-import {
-  ClientRegistry,
-  Environment,
-  ReportSuspiciousActivityEvent,
-  RPClient,
-} from "./common/model";
+import { Environment, ReportSuspiciousActivityEvent } from "./common/model";
 import { homeClientIds } from "./common/constants";
 import assert from "node:assert/strict";
 import { NotifyClient } from "notifications-node-client";
 import { getSecret } from "@aws-lambda-powertools/parameters/secrets";
-import clientRegistryEn from "./config/clientRegistry.en.json";
-import clientRegistryCy from "./config/clientRegistry.cy.json";
 import { getEnvironmentVariable } from "./common/utils";
+import {
+  getTranslations,
+  Translation,
+  TranslationsObject,
+} from "di-account-management-client-registry";
 
 export const getClientInfo = (
-  clientRegistry: ClientRegistry,
+  registry: TranslationsObject,
   environment: Environment,
   id: string
-): RPClient => {
-  assert(
-    clientRegistry[environment],
-    `${environment} does not exist in client registry`
-  );
-
-  const registry = clientRegistry[environment];
-
+): Translation => {
   assert(
     registry[id],
     `${id} does not exist in ${environment} client registry]`
   );
-
   return registry[id];
 };
 
@@ -58,12 +48,12 @@ export const formatActivityObjectForEmail = (
   );
 
   const clientEn = getClientInfo(
-    clientRegistryEn,
+    getTranslations(ENVIRONMENT_NAME, "en"),
     ENVIRONMENT_NAME,
     event.suspicious_activity.client_id
   );
   const clientCy = getClientInfo(
-    clientRegistryCy,
+    getTranslations(ENVIRONMENT_NAME, "cy"),
     ENVIRONMENT_NAME,
     event.suspicious_activity.client_id
   );

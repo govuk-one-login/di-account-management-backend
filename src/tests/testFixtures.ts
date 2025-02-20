@@ -300,7 +300,7 @@ export const testSuspiciousActivityInput: ReportSuspiciousActivityEvent = {
     session_id: "123456789",
     user_id: "qwerty",
     timestamp: 123456789,
-    client_id: "gov-uk",
+    client_id: "govuk",
     event_id: "ab12345a-a12b-3ced-ef12-12a3b4cd5678",
     reported_suspicious: true,
   },

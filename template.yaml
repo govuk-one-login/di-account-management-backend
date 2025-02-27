@@ -761,8 +761,6 @@ Resources:
       Handler: save-raw-events.handler
       Role: !GetAtt SaveRawEventsRole.Arn
       ReservedConcurrentExecutions: 30
-      ProvisionedConcurrencyConfig:
-        ProvisionedConcurrentExecutions: 30
       Environment:
         Variables:
           TABLE_NAME: !Ref RawEventsStoreTableName
@@ -995,8 +993,6 @@ Resources:
       Handler: query-user-services.handler
       Role: !GetAtt QueryUserServicesRole.Arn
       ReservedConcurrentExecutions: 30
-      ProvisionedConcurrencyConfig:
-        ProvisionedConcurrentExecutions: 30
       Environment:
         Variables:
           TABLE_NAME: !Ref UserServicesStoreTableName
@@ -1257,8 +1253,6 @@ Resources:
       Handler: format-user-services.handler
       Role: !GetAtt FormatUserServicesRole.Arn
       ReservedConcurrentExecutions: 30
-      ProvisionedConcurrencyConfig:
-        ProvisionedConcurrentExecutions: 30
       Environment:
         Variables:
           OUTPUT_QUEUE_URL: !Ref UserServicesToWriteQueue
@@ -2449,8 +2443,6 @@ Resources:
       Handler: write-activity-log.handler
       Role: !GetAtt WriteActivityRecordRole.Arn
       ReservedConcurrentExecutions: 30
-      ProvisionedConcurrencyConfig:
-        ProvisionedConcurrentExecutions: 30
       Environment:
         Variables:
           TABLE_NAME: !Ref ActivityLogsStoreTableName
@@ -2697,8 +2689,6 @@ Resources:
       Handler: format-activity-log.handler
       Role: !GetAtt FormatActivityLogRole.Arn
       ReservedConcurrentExecutions: 30
-      ProvisionedConcurrencyConfig:
-        ProvisionedConcurrentExecutions: 30
       Environment:
         Variables:
           OUTPUT_QUEUE_URL: !Ref ActivityLogToWriteQueue

@@ -8,7 +8,7 @@ import {
   getTranslations,
   Translation,
   TranslationsObject,
-} from "di-account-management-client-registry";
+} from "di-account-management-rp-registry";
 
 export const getClientInfo = (
   registry: TranslationsObject,

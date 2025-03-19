@@ -5,7 +5,6 @@ import {
 } from "../send-conf-email";
 import { NotifyClient } from "notifications-node-client";
 import { ReportSuspiciousActivityEvent } from "../common/model";
-import { HOME_CLIENT_ID_TEST } from "../common/constants";
 import { getSecret } from "@aws-lambda-powertools/parameters/secrets";
 
 jest.mock("notifications-node-client");

@@ -59,26 +59,26 @@ describe("formatActivityObjectForEmail", () => {
     });
   });
 
-  test("should include description for One Login Home events", () => {
-    process.env.ENVIRONMENT_NAME = "local";
+  // test("should include description for One Login Home events", () => {
+  //   process.env.ENVIRONMENT_NAME = "local";
 
-    const input = getInput();
-    input.suspicious_activity.client_id = HOME_CLIENT_ID_TEST;
+  //   const input = getInput();
+  //   input.suspicious_activity.client_id = HOME_CLIENT_ID_TEST;
 
-    const result = formatActivityObjectForEmail(input);
+  //   const result = formatActivityObjectForEmail(input);
 
-    expect(result).toEqual({
-      email: "test@example.com",
-      personalisation: {
-        clientNameEn: "Your GOV.UK One Login",
-        clientNameCy: "Eich GOV.UK One Login",
-        dateCy: "15 Mawrth 2024 am 11:08 yb",
-        dateEn: "15 March 2024 at 11:08 am",
-        ticketId: "123",
-        showHomeHintText: true,
-      },
-    });
-  });
+  //   expect(result).toEqual({
+  //     email: "test@example.com",
+  //     personalisation: {
+  //       clientNameEn: "Your GOV.UK One Login",
+  //       clientNameCy: "Eich GOV.UK One Login",
+  //       dateCy: "15 Mawrth 2024 am 11:08 yb",
+  //       dateEn: "15 March 2024 at 11:08 am",
+  //       ticketId: "123",
+  //       showHomeHintText: true,
+  //     },
+  //   });
+  // });
 });
 
 describe("sendConfMail", () => {

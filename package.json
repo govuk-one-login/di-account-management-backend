@@ -59,7 +59,7 @@
     "@aws-sdk/util-dynamodb": "^3.602.0",
     "@types/aws-lambda": "^8.10.147",
     "axios": "^1.8.2",
-    "di-account-management-client-registry": "github:govuk-one-login/di-account-management-client-registry#main",
+    "di-account-management-rp-registry": "github:govuk-one-login/di-account-management-rp-registry#main",
     "esbuild": "0.23.0",
     "jest-when": "^3.7.0",
     "notifications-node-client": "^8.2.1"

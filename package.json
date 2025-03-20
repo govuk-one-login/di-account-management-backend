@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Account Home Backend",
   "engines": {
-    "node": ">=18"
+    "node": ">=22"
   },
   "scripts": {
     "clean": "rm -rf dist node_modules logs.json",

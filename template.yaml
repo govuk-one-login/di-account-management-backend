@@ -260,20 +260,6 @@ Mappings:
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.publishing.service.gov.uk"
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "0674c6e3-219c-4e3a-b04c-3786bac7f228"
 
-  CredentialStoreAccounts:
-    demo:
-      AccountNumber: "013758878511"
-    dev:
-      AccountNumber: "013758878511"
-    build:
-      AccountNumber: "688341086169"
-    staging:
-      AccountNumber: "922902741880"
-    integration:
-      AccountNumber: "406416508755"
-    production:
-      AccountNumber: "499563136613"
-
   AccountInterventionsService:
     demo:
       AccountNumber: "484907510598"
@@ -1694,21 +1680,6 @@ Resources:
         - !Ref UserAccountDeletionTopic
       PolicyDocument:
         Statement:
-          - Sid: "Allow Credential store"
-            Effect: Allow
-            Principal:
-              AWS: !Join
-                - ""
-                - - "arn:aws:iam::"
-                  - !FindInMap [
-                      CredentialStoreAccounts,
-                      !Ref Environment,
-                      "AccountNumber",
-                    ]
-                  - ":root"
-            Action: sns:Subscribe
-            Resource:
-              - !Ref UserAccountDeletionTopic
           - Sid: "Allow Account Interventions Service"
             Effect: Allow
             Principal:
@@ -4590,23 +4561,6 @@ Resources:
             Action: kms:*
             Resource:
               - "*"
-          - !If
-            - "IsNotDevelopmentOrDemo"
-            - Effect: Allow
-              Principal:
-                AWS: !Join
-                  - ""
-                  - - "arn:aws:iam::"
-                    - !FindInMap [
-                        CredentialStoreAccounts,
-                        !Ref Environment,
-                        "AccountNumber",
-                      ]
-                    - ":root"
-              Action: kms:Decrypt
-              Resource:
-                - "*"
-            - !Ref AWS::NoValue
           - !If
             - "IsNotDevelopmentOrDemo"
             - Effect: Allow

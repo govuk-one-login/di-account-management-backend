@@ -172,7 +172,7 @@ Globals:
     MemorySize: 128
     KmsKeyArn: !GetAtt LambdaKMSKey.Arn
     ReservedConcurrentExecutions: 10
-    Runtime: nodejs18.x
+    Runtime: nodejs22.x
     Timeout: 5
     VpcConfig:
       SubnetIds:

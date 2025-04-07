@@ -6,14 +6,41 @@ import {
 import { NotifyClient } from "notifications-node-client";
 import { ReportSuspiciousActivityEvent } from "../common/model";
 import { getSecret } from "@aws-lambda-powertools/parameters/secrets";
+import * as rpRegistry from "di-account-management-rp-registry";
 
 jest.mock("notifications-node-client");
 jest.mock("@aws-lambda-powertools/parameters/secrets", () => ({
   getSecret: jest.fn(),
 }));
+
+const RP_IDENTIFIER = "govuk";
+
 describe("formatActivityObjectForEmail", () => {
+  let getTranslationsMock: jest.SpyInstance;
+
+  beforeEach(() => {
+    getTranslationsMock = jest
+      .spyOn(rpRegistry, "getTranslations")
+      .mockImplementation((environment: string, language: "en" | "cy") => {
+        const data = {
+          en: {
+            header: "GOV.UK email subscriptions",
+            link_text: "Go to your GOV.UK email subscriptions",
+            link_href: "https://www.gov.uk/email/manage?from=your-services",
+          },
+          cy: {
+            header: "Tanysgrifiadau e-byst GOV.UK",
+            link_text: "Go to your GOV.UK email subscriptions",
+            link_href: "https://www.gov.uk/email/manage?from=your-services",
+          },
+        };
+
+        return { [RP_IDENTIFIER]: data[language] };
+      });
+  });
   afterEach(() => {
     process.env.ENVIRONMENT_NAME = undefined;
+    jest.clearAllMocks();
   });
 
   const getInput = () => {
@@ -32,7 +59,7 @@ describe("formatActivityObjectForEmail", () => {
         session_id: "123456789",
         user_id: "abc",
         timestamp: 1710500905,
-        client_id: "gov-uk",
+        client_id: RP_IDENTIFIER,
         event_id: "123",
         reported_suspicious: true,
       },
@@ -56,6 +83,8 @@ describe("formatActivityObjectForEmail", () => {
         showHomeHintText: false,
       },
     });
+
+    expect(getTranslationsMock).toHaveBeenCalled;
   });
 
   // test("should include description for One Login Home events", () => {
@@ -81,6 +110,33 @@ describe("formatActivityObjectForEmail", () => {
 });
 
 describe("sendConfMail", () => {
+  let getTranslationsMock: jest.SpyInstance;
+
+  beforeEach(() => {
+    getTranslationsMock = jest
+      .spyOn(rpRegistry, "getTranslations")
+      .mockImplementation((environment: string, language: "en" | "cy") => {
+        const data = {
+          en: {
+            header: "GOV.UK email subscriptions",
+            link_text: "Go to your GOV.UK email subscriptions",
+            link_href: "https://www.gov.uk/email/manage?from=your-services",
+          },
+          cy: {
+            header: "Tanysgrifiadau e-byst GOV.UK",
+            link_text: "Go to your GOV.UK email subscriptions",
+            link_href: "https://www.gov.uk/email/manage?from=your-services",
+          },
+        };
+
+        return { [RP_IDENTIFIER]: data[language] };
+      });
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
   test("should send confirmation email", async () => {
     process.env.ENVIRONMENT_NAME = "local";
     const apiKey = "API_KEY";
@@ -109,7 +165,7 @@ describe("sendConfMail", () => {
         session_id: "123456789",
         user_id: "abc",
         timestamp: 1710500905,
-        client_id: "gov-uk",
+        client_id: RP_IDENTIFIER,
         event_id: "123",
         reported_suspicious: true,
       },
@@ -118,6 +174,7 @@ describe("sendConfMail", () => {
 
     await sendConfMail(apiKey, templateId, input);
 
+    expect(getTranslationsMock).toHaveBeenCalled;
     expect(notifyClientMock.sendEmail).toHaveBeenCalledWith(
       templateId,
       "test@example.com",
@@ -136,6 +193,7 @@ describe("sendConfMail", () => {
   });
 });
 describe("handler", () => {
+  let getTranslationsMock: jest.SpyInstance;
   const mockGetSecret = getSecret as jest.MockedFunction<typeof getSecret>;
   const input: ReportSuspiciousActivityEvent = {
     event_id: "522c5ab4-7e66-4b2a-8f5c-4d31dc4e93e6",
@@ -152,7 +210,7 @@ describe("handler", () => {
       session_id: "123456789",
       user_id: "abc",
       timestamp: 1710500905,
-      client_id: "gov-uk",
+      client_id: RP_IDENTIFIER,
       event_id: "123",
       reported_suspicious: true,
     },
@@ -163,10 +221,28 @@ describe("handler", () => {
     process.env.NOTIFY_API_KEY = "mock-api-key";
     process.env.TEMPLATE_ID = "mock-template-id";
     mockGetSecret.mockResolvedValue("your-mock-value");
-    jest.restoreAllMocks();
+    getTranslationsMock = jest
+      .spyOn(rpRegistry, "getTranslations")
+      .mockImplementation((environment: string, language: "en" | "cy") => {
+        const data = {
+          en: {
+            header: "GOV.UK email subscriptions",
+            link_text: "Go to your GOV.UK email subscriptions",
+            link_href: "https://www.gov.uk/email/manage?from=your-services",
+          },
+          cy: {
+            header: "Tanysgrifiadau e-byst GOV.UK",
+            link_text: "Go to your GOV.UK email subscriptions",
+            link_href: "https://www.gov.uk/email/manage?from=your-services",
+          },
+        };
+
+        return { [RP_IDENTIFIER]: data[language] };
+      });
   });
 
   afterEach(() => {
+    getTranslationsMock.mockClear;
     jest.clearAllMocks();
   });
 

@@ -23,7 +23,7 @@
     "@babel/core": "^7.26.10",
     "@babel/preset-env": "^7.26.8",
     "@babel/preset-typescript": "^7.27.0",
-    "@eslint/js": "^9.23.0",
+    "@eslint/js": "^9.24.0",
     "@types/aws-lambda": "^8.10.148",
     "@types/jest": "^29.5.14",
     "@types/jest-when": "^3.5.2",
@@ -34,7 +34,7 @@
     "aws-sdk-client-mock-jest": "^4.1.0",
     "axios-mock-adapter": "2.1.0",
     "babel-jest": "^29.1.2",
-    "eslint": "^9.23.0",
+    "eslint": "^9.24.0",
     "eslint-config-prettier": "^10.1.1",
     "eslint-plugin-prettier": "^5.2.6",
     "globals": "^16.0.0",
@@ -44,7 +44,7 @@
     "prettier": "^3.5.3",
     "ts-jest": "^29.3.1",
     "ts-node": "^10.9.1",
-    "typescript": "^5.8.2",
+    "typescript": "^5.8.3",
     "typescript-eslint": "^8.29.0"
   },
   "dependencies": {

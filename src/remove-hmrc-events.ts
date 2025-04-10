@@ -23,6 +23,7 @@ export const handler = async (): Promise<unknown> => {
           ":urn": "urn:",
         },
         ExclusiveStartKey: lastEvaluatedKey,
+        ProjectionExpression: "user_id, event_id",
       };
 
       const scanResults = await docClient.send(new ScanCommand(scanParams));
@@ -37,7 +38,8 @@ export const handler = async (): Promise<unknown> => {
             .map((item) => ({
               DeleteRequest: {
                 Key: {
-                  user_id: item["user_id"],
+                  user_id: item.user_id,
+                  event_id: item.event_id,
                 },
               },
             }));

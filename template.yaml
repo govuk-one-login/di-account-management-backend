@@ -4289,12 +4289,12 @@ Resources:
       CodeUri: src
       PackageType: Zip
       MemorySize: 1024
-      Timeout: 600
+      Timeout: 900
       Handler: remove-hmrc-events.handler
       Role: !GetAtt RemoveHMRCEventsRole.Arn
       Environment:
         Variables:
-          TABLE_NAME: !Ref UserServicesStoreTableName
+          TABLE_NAME: !Ref ActivityLogsStoreTableName
     Metadata:
       BuildMethod: esbuild
       BuildProperties:

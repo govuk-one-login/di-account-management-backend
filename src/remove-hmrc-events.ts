@@ -12,11 +12,18 @@ const docClient = DynamoDBDocumentClient.from(client);
 
 export const handler = async (): Promise<unknown> => {
   const TABLE_NAME = getEnvironmentVariable("TABLE_NAME");
-  let lastEvaluatedKey: Record<string, unknown> | undefined =
-    (JSON.parse(getEnvironmentVariable("LAST_EVALUATED_KEY")) as Record<
-      string,
-      unknown
-    >) ?? undefined;
+  let lastEvaluatedKey: Record<string, unknown> | undefined = undefined;
+  const envLastKey = getEnvironmentVariable("LAST_EVALUATED_KEY");
+  if (envLastKey) {
+    try {
+      lastEvaluatedKey = JSON.parse(envLastKey) as Record<string, unknown>;
+    } catch (error) {
+      console.error(
+        "Error parsing LAST_EVALUATED_KEY from environment variables:",
+        error
+      );
+    }
+  }
 
   try {
     do {

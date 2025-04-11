@@ -12,7 +12,11 @@ const docClient = DynamoDBDocumentClient.from(client);
 
 export const handler = async (): Promise<unknown> => {
   const TABLE_NAME = getEnvironmentVariable("TABLE_NAME");
-  let lastEvaluatedKey: Record<string, unknown> | undefined = undefined;
+  let lastEvaluatedKey: Record<string, unknown> | undefined =
+    (JSON.parse(getEnvironmentVariable("LAST_EVALUATED_KEY")) as Record<
+      string,
+      unknown
+    >) ?? undefined;
 
   try {
     do {
@@ -56,7 +60,7 @@ export const handler = async (): Promise<unknown> => {
           );
         }
       }
-
+      console.log(lastEvaluatedKey);
       lastEvaluatedKey = scanResults.LastEvaluatedKey;
     } while (lastEvaluatedKey);
 

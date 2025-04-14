@@ -14,6 +14,16 @@ export const handler = async (): Promise<unknown> => {
   const TABLE_NAME = getEnvironmentVariable("TABLE_NAME");
   let lastEvaluatedKey: Record<string, unknown> | undefined = undefined;
 
+  const lastEvaluatedKeyEnvVar = getEnvironmentVariable("LAST_EVALUATED_KEY");
+
+  if (lastEvaluatedKeyEnvVar && lastEvaluatedKeyEnvVar != "undefined") {
+    const split = lastEvaluatedKeyEnvVar.split(",");
+    lastEvaluatedKey = {
+      event_id: split[0].trim(),
+      user_id: split[1].trim(),
+    } as Record<string, unknown>;
+  }
+
   try {
     do {
       const scanParams: ScanCommandInput = {
@@ -56,7 +66,7 @@ export const handler = async (): Promise<unknown> => {
           );
         }
       }
-
+      console.log(lastEvaluatedKey);
       lastEvaluatedKey = scanResults.LastEvaluatedKey;
     } while (lastEvaluatedKey);
 

@@ -13,6 +13,8 @@ describe("handler", () => {
   beforeEach(() => {
     dynamoMock.reset();
     process.env.TABLE_NAME = "TABLE_NAME";
+    process.env.LAST_EVALUATED_KEY =
+      "5d100f41-66bc-48e8-a7f9-33b82dccffdd,user_id";
   });
 
   afterEach(() => {

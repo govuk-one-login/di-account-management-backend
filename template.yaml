@@ -4295,6 +4295,7 @@ Resources:
       Environment:
         Variables:
           TABLE_NAME: !Ref ActivityLogsStoreTableName
+          LAST_EVALUATED_KEY: "undefined"
     Metadata:
       BuildMethod: esbuild
       BuildProperties:

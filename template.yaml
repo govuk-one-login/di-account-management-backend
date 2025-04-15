@@ -1446,7 +1446,7 @@ Resources:
   FormatUserServicesConsoleWarningsFilter:
     Type: AWS::Logs::MetricFilter
     Properties:
-      FilterPattern: "[w=WARN]"
+      FilterPattern: "WARN"
       LogGroupName: !Ref FormatUserServicesFunctionLogGroup
       MetricTransformations:
         - MetricName: FormatUserServicesWarningsCount
@@ -2915,7 +2915,7 @@ Resources:
   FormatActivityLogConsoleWarningsFilter:
     Type: AWS::Logs::MetricFilter
     Properties:
-      FilterPattern: "[w=WARN]"
+      FilterPattern: "WARN"
       LogGroupName: !Ref FormatActivityLogFunctionLogGroup
       MetricTransformations:
         - MetricName: FormatActivityLogWarningsCount

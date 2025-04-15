@@ -1443,6 +1443,42 @@ Resources:
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
 
+  FormatUserServicesConsoleWarningsFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      FilterPattern: "[w=WARN]"
+      LogGroupName: !Ref FormatUserServicesFunctionLogGroup
+      MetricTransformations:
+        - MetricName: FormatUserServicesWarningsCount
+          MetricNamespace: !Ref SystemTagValue
+          MetricValue: 1
+          Unit: Count
+
+  FormatUserServicesConsoleWarningsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            FormatUserServicesConsoleWarningsAlarm,
+          ],
+        ]
+      AlarmDescription: Triggers when the Lambda function logs console warnings.
+      MetricName: FormatUserServicesWarningsCount
+      Namespace: !Ref SystemTagValue
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      ActionsEnabled: true
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+
   #########################
   # Write the User Services
   #########################
@@ -2873,6 +2909,42 @@ Resources:
       Threshold: 0.95
       ComparisonOperator: LessThanThreshold
       EvaluationPeriods: 1
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+
+  FormatActivityLogConsoleWarningsFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      FilterPattern: "[w=WARN]"
+      LogGroupName: !Ref FormatActivityLogFunctionLogGroup
+      MetricTransformations:
+        - MetricName: FormatActivityLogWarningsCount
+          MetricNamespace: !Ref SystemTagValue
+          MetricValue: 1
+          Unit: Count
+
+  FormatActivityLogConsoleWarningsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            FormatActivityLogConsoleWarningsAlarm,
+          ],
+        ]
+      AlarmDescription: Triggers when the Lambda function logs console warnings.
+      MetricName: FormatActivityLogWarningsCount
+      Namespace: !Ref SystemTagValue
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      ActionsEnabled: true
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
 

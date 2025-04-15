@@ -355,6 +355,38 @@ describe("handler", () => {
       "Dropped Event encountered and ignored."
     );
   });
+
+  test("no warning message logged as client id is expected", async () => {
+    const emptyServiceList = [] as Service[];
+    const hmrc_client_id = "EMGmY82k-92QSakDl_9keKDFmZY"; //home non prod ID
+    const inputSQSEvent = makeSQSInputFixture([
+      {
+        TxmaEvent: makeTxmaEvent(hmrc_client_id, userId),
+        ServiceList: emptyServiceList,
+      },
+    ]);
+
+    console.warn = jest.fn();
+    await handler({ Records: inputSQSEvent });
+    expect(console.warn).toHaveLength(0);
+  });
+
+  test("logs a warning when client id doesn't match rp registry", async () => {
+    const emptyServiceList = [] as Service[];
+    const hmrc_client_id = "UNKNOWN";
+    const inputSQSEvent = makeSQSInputFixture([
+      {
+        TxmaEvent: makeTxmaEvent(hmrc_client_id, userId),
+        ServiceList: emptyServiceList,
+      },
+    ]);
+
+    console.warn = jest.fn();
+    await handler({ Records: inputSQSEvent });
+    expect(console.warn).toHaveBeenCalledWith(
+      'The client: "UNKNOWN" is not in the RP registry.'
+    );
+  });
 });
 
 describe("handler error handling ", () => {

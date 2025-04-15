@@ -60,6 +60,30 @@ describe("handler", () => {
     });
   });
 
+  test("checks rp registry and logs no warnings", async () => {
+    const client_id = "EMGmY82k-92QSakDl_9keKDFmZY"; //home non prod ID
+
+    const TEST_HMRC_EVENT: DynamoDBStreamEvent = {
+      Records: [generateDynamoSteamRecord(client_id)],
+    };
+    console.warn = jest.fn();
+    await handler(TEST_HMRC_EVENT);
+    expect(console.warn).toHaveLength(0);
+  });
+
+  test("warn if client_id doesn't match rp registry", async () => {
+    const client_id = "UNKNOWN";
+
+    const TEST_HMRC_EVENT: DynamoDBStreamEvent = {
+      Records: [generateDynamoSteamRecord(client_id)],
+    };
+    console.warn = jest.fn();
+    await handler(TEST_HMRC_EVENT);
+    expect(console.warn).toHaveBeenCalledWith(
+      'The client: "UNKNOWN" is not in the RP registry.'
+    );
+  });
+
   describe("error handing ", () => {
     beforeEach(() => {
       sqsMock.reset();

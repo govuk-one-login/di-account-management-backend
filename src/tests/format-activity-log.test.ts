@@ -31,6 +31,7 @@ describe("handler", () => {
     process.env.TABLE_NAME = tableName;
     process.env.OUTPUT_QUEUE_URL = queueUrl;
     process.env.AWS_REGION = "AWS_REGION";
+    process.env.ENVIRONMENT = "test";
     consoleLogMock = jest.spyOn(global.console, "log").mockImplementation();
     sqsMock.on(SendMessageCommand).resolves({ MessageId: messageId });
   });
@@ -64,6 +65,7 @@ describe("handler", () => {
       sqsMock.reset();
       process.env.TABLE_NAME = tableName;
       process.env.OUTPUT_QUEUE_URL = queueUrl;
+      process.env.ENVIRONMENT = "test";
       sqsMock.on(SendMessageCommand).resolves({ MessageId: messageId });
     });
 

@@ -24,6 +24,15 @@ import { sendSqsMessage } from "../common/sqs";
 const sqsMock = mockClient(SQSClient);
 
 describe("newServicePresenter", () => {
+  beforeEach(() => {
+    process.env.AWS_REGION = "AWS_REGION";
+    process.env.ENVIRONMENT = "test";
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
   const TXMA_EVENT = makeTxmaEvent("clientID1234", "userID1234");
 
   test("presents TxmaEvent data as a Service", () => {

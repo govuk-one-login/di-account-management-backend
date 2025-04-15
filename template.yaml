@@ -1229,6 +1229,7 @@ Resources:
         Variables:
           OUTPUT_QUEUE_URL: !Ref UserServicesToWriteQueue
           NODE_OPTIONS: --enable-source-maps
+          ENVIRONMENT: !Ref Environment
       DeploymentPreference:
         Alarms:
           - !Ref FormatUserServicesFunctionSuccessRate

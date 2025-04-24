@@ -265,6 +265,7 @@ describe("handler", () => {
     process.env.OUTPUT_SQS_NAME = sqsQueueName;
     process.env.OUTPUT_QUEUE_URL = queueURL;
     process.env.AWS_REGION = "AwsRegion";
+    process.env.ENVIRONMENT = "test";
     sqsMock.on(SendMessageCommand).resolves({ MessageId: messageID });
   });
 
@@ -341,7 +342,7 @@ describe("handler", () => {
 
   test("drops hmrc events", async () => {
     const emptyServiceList = [] as Service[];
-    const hmrc_client_id = "7y-bchtHDfucVR5kcAe8KaM80wg";
+    const hmrc_client_id = "hmrcGovernmentGateway";
     const inputSQSEvent = makeSQSInputFixture([
       {
         TxmaEvent: makeTxmaEvent(hmrc_client_id, userId),

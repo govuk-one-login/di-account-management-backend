@@ -122,6 +122,8 @@ Conditions:
           - !Ref TestRoleArn
           - "none"
 
+  IsProduction: !Equals [!Ref Environment, production]
+
 Globals:
   Function:
     Environment:
@@ -1456,6 +1458,7 @@ Resources:
 
   FormatUserServicesConsoleWarningsAlarm:
     Type: AWS::CloudWatch::Alarm
+    Condition: IsProduction
     Properties:
       AlarmName:
         !Join [
@@ -2880,6 +2883,7 @@ Resources:
 
   FormatActivityLogConsoleWarningsAlarm:
     Type: AWS::CloudWatch::Alarm
+    Condition: IsProduction
     Properties:
       AlarmName:
         !Join [

@@ -8,7 +8,7 @@ import {
 } from "./common/model";
 import { sendSqsMessage } from "./common/sqs";
 import { getEnvironmentVariable } from "./common/utils";
-import { getClientIDs } from "di-account-management-rp-registry";
+import { filterClients, getClientIDs } from "di-account-management-rp-registry";
 
 const validateUserService = (service: Service): void => {
   if (
@@ -46,16 +46,17 @@ const validateUser = (user: UserData): void => {
   }
 };
 
-const HMRC_CLIENT_ID = "7y-bchtHDfucVR5kcAe8KaM80wg";
-
 const validateTxmaEvent = (txmaEvent: TxmaEvent): void => {
   const txmaClientId = txmaEvent.client_id;
-
-  if (txmaClientId === HMRC_CLIENT_ID) {
-    throw new DroppedEventError(`Event dropped due to non-OLH login via HMRC.`);
-  }
-
   const ENVIRONMENT = getEnvironmentVariable("ENVIRONMENT");
+
+  if (
+    filterClients(ENVIRONMENT, { clientType: "internal" }).some(
+      (client) => client.clientId === txmaClientId
+    )
+  ) {
+    throw new DroppedEventError(`Event dropped due to internal RP.`);
+  }
 
   if (txmaClientId && !getClientIDs(ENVIRONMENT).includes(txmaClientId)) {
     console.warn(`The client: "${txmaClientId}" is not in the RP registry.`);

@@ -110,7 +110,7 @@ describe("handler", () => {
     });
 
     test("drops hmrc events", async () => {
-      const hmrc_client_id = "7y-bchtHDfucVR5kcAe8KaM80wg";
+      const hmrc_client_id = "hmrcGovernmentGateway";
 
       const TEST_HMRC_EVENT: DynamoDBStreamEvent = {
         Records: [

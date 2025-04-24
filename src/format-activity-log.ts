@@ -8,7 +8,7 @@ import {
 } from "./common/constants";
 import { sendSqsMessage } from "./common/sqs";
 import { getEnvironmentVariable } from "./common/utils";
-import { getClientIDs } from "di-account-management-rp-registry";
+import { filterClients, getClientIDs } from "di-account-management-rp-registry";
 
 const createNewActivityLogEntryFromTxmaEvent = (
   txmaEvent: TxmaEvent
@@ -23,16 +23,17 @@ const createNewActivityLogEntryFromTxmaEvent = (
     reported_suspicious: REPORT_SUSPICIOUS_ACTIVITY_DEFAULT,
   }) as ActivityLogEntry;
 
-const HMRC_CLIENT_ID = "7y-bchtHDfucVR5kcAe8KaM80wg";
-
 export const validateTxmaEventBody = (txmaEvent: TxmaEvent): void => {
   const txmaClientId = txmaEvent.client_id;
-
-  if (txmaClientId === HMRC_CLIENT_ID) {
-    throw new DroppedEventError(`Event dropped due to non-OLH login via HMRC.`);
-  }
-
   const ENVIRONMENT = getEnvironmentVariable("ENVIRONMENT");
+
+  if (
+    filterClients(ENVIRONMENT, { clientType: "internal" }).some(
+      (client) => client.clientId === txmaClientId
+    )
+  ) {
+    throw new DroppedEventError(`Event dropped due to internal RP.`);
+  }
 
   if (txmaClientId && !getClientIDs(ENVIRONMENT).includes(txmaClientId)) {
     console.warn(`The client: "${txmaClientId}" is not in the RP registry.`);

@@ -1769,7 +1769,7 @@ Resources:
   DeleteUserServicesSubscription:
     Type: AWS::SNS::Subscription
     Properties:
-      Endpoint: !GetAtt DeleteUserServicesFunction.Arn
+      Endpoint: !Join [":", [!GetAtt DeleteUserServicesFunction.Arn, live]]
       Protocol: lambda
       RedrivePolicy:
         deadLetterTargetArn: !GetAtt UserAccountDeletionTopicDeadLetterQueue.Arn
@@ -1782,7 +1782,7 @@ Resources:
       Principal: sns.amazonaws.com
       SourceArn:
         Ref: UserAccountDeletionTopic
-      FunctionName: !GetAtt DeleteUserServicesFunction.Arn
+      FunctionName: !Join [":", [!GetAtt DeleteUserServicesFunction.Arn, live]]
 
   DeleteUserServicesFunction:
     DependsOn:
@@ -2067,7 +2067,8 @@ Resources:
   DeleteEmailSubscriptionsSubscription:
     Type: AWS::SNS::Subscription
     Properties:
-      Endpoint: !GetAtt DeleteEmailSubscriptionsFunction.Arn
+      Endpoint:
+        !Join [":", [!GetAtt DeleteEmailSubscriptionsFunction.Arn, live]]
       Protocol: lambda
       RedrivePolicy:
         deadLetterTargetArn: !GetAtt UserAccountDeletionTopicSubscriptionDeleteEmailSubscriptionsDeadLetterQueue.Arn
@@ -2104,7 +2105,8 @@ Resources:
       Principal: sns.amazonaws.com
       SourceArn:
         Ref: UserAccountDeletionTopic
-      FunctionName: !GetAtt DeleteEmailSubscriptionsFunction.Arn
+      FunctionName:
+        !Join [":", [!GetAtt DeleteEmailSubscriptionsFunction.Arn, live]]
 
   DeleteEmailSubscriptionsFunction:
     Type: AWS::Serverless::Function
@@ -2914,7 +2916,7 @@ Resources:
   DeleteActivityLogSubscription:
     Type: AWS::SNS::Subscription
     Properties:
-      Endpoint: !GetAtt DeleteActivityLogFunction.Arn
+      Endpoint: !Join [":", [!GetAtt DeleteActivityLogFunction.Arn, live]]
       Protocol: lambda
       RedrivePolicy:
         deadLetterTargetArn: !GetAtt DeleteActivityLogSubscriptionDeadLetterQueue.Arn
@@ -3065,7 +3067,7 @@ Resources:
       Principal: sns.amazonaws.com
       SourceArn:
         Ref: UserAccountDeletionTopic
-      FunctionName: !GetAtt DeleteActivityLogFunction.Arn
+      FunctionName: !Join [":", [!GetAtt DeleteActivityLogFunction.Arn, live]]
 
   DeleteActivityLogFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -3320,7 +3322,8 @@ Resources:
       Principal: sns.amazonaws.com
       SourceArn:
         Ref: SuspiciousActivityTopic
-      FunctionName: !GetAtt MarkActivityReportedFunction.Arn
+      FunctionName:
+        !Join [":", [!GetAtt MarkActivityReportedFunction.Arn, live]]
 
   MarkActivityReportedLogGroup:
     Type: AWS::Logs::LogGroup
@@ -3459,7 +3462,8 @@ Resources:
       Principal: sns.amazonaws.com
       SourceArn:
         Ref: SuspiciousActivityTopic
-      FunctionName: !GetAtt SendSuspiciousActivityFunction.Arn
+      FunctionName:
+        !Join [":", [!GetAtt SendSuspiciousActivityFunction.Arn, live]]
 
   SendSuspiciousActivityFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -3612,7 +3616,7 @@ Resources:
       Principal: sns.amazonaws.com
       SourceArn:
         Ref: SuspiciousActivityTopic
-      FunctionName: !GetAtt SendConfEmailFunction.Arn
+      FunctionName: !Join [":", [!GetAtt SendConfEmailFunction.Arn, live]]
 
   SendConfEmailFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -3809,7 +3813,7 @@ Resources:
       Principal: sns.amazonaws.com
       SourceArn:
         Ref: SuspiciousActivityTopic
-      FunctionName: !GetAtt CreateSupportTicketFunction.Arn
+      FunctionName: !Join [":", [!GetAtt CreateSupportTicketFunction.Arn, live]]
 
   CreateSupportTicketFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -3878,7 +3882,8 @@ Resources:
   TriggerSuspiciousActivityStepSubscription:
     Type: AWS::SNS::Subscription
     Properties:
-      Endpoint: !GetAtt TriggerSuspiciousActivityStepFunction.Arn
+      Endpoint:
+        !Join [":", [!GetAtt TriggerSuspiciousActivityStepFunction.Arn, live]]
       Protocol: lambda
       RedrivePolicy:
         deadLetterTargetArn: !GetAtt TriggerSuspiciousActivityStepDeadLetterQueue.Arn
@@ -4023,7 +4028,8 @@ Resources:
       Principal: sns.amazonaws.com
       SourceArn:
         Ref: SuspiciousActivityTopic
-      FunctionName: !GetAtt TriggerSuspiciousActivityStepFunction.Arn
+      FunctionName:
+        !Join [":", [!GetAtt TriggerSuspiciousActivityStepFunction.Arn, live]]
 
   TriggerSuspiciousActivityStepFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -4342,7 +4348,7 @@ Resources:
     Type: AWS::Lambda::Permission
     Properties:
       Action: lambda:InvokeFunction
-      FunctionName: !Ref WriteActivityLogFunction
+      FunctionName: !Join [":", [!Ref WriteActivityLogFunction, live]]
       Principal: !Ref TestRoleArn
 
   DeleteActivityLogFunctionTestPolicy:
@@ -4350,7 +4356,7 @@ Resources:
     Type: AWS::Lambda::Permission
     Properties:
       Action: lambda:InvokeFunction
-      FunctionName: !Ref DeleteActivityLogFunction
+      FunctionName: !Join [":", [!Ref DeleteActivityLogFunction, live]]
       Principal: !Ref TestRoleArn
 
   #######################

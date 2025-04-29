@@ -58,7 +58,7 @@ describe("markEventAsReported", () => {
 
 describe("handler", () => {
   const OLD_ENV = process.env;
-  let consoleErrorMock: jest.SpyInstance;
+  let loggerErrorMock: jest.SpyInstance;
 
   beforeEach(() => {
     jest.resetModules();
@@ -74,7 +74,7 @@ describe("handler", () => {
     dynamoMock.on(QueryCommand).resolves({
       Items: [TEST_ENCRYPTED_ACTIVITY_LOG_ENTRY],
     });
-    consoleErrorMock = jest
+    loggerErrorMock = jest
       .spyOn(Logger.prototype, "error")
       .mockImplementation();
     (decryptData as jest.Mock).mockImplementation(() => {
@@ -83,7 +83,7 @@ describe("handler", () => {
   });
 
   afterEach(() => {
-    consoleErrorMock.mockRestore();
+    loggerErrorMock.mockRestore();
     jest.clearAllMocks();
     process.env = OLD_ENV;
   });
@@ -166,8 +166,8 @@ describe("handler", () => {
       errorThrown = true;
     }
 
-    expect(consoleErrorMock).toHaveBeenCalledTimes(1);
-    expect(consoleErrorMock.mock.calls[0][0]).toContain(
+    expect(loggerErrorMock).toHaveBeenCalledTimes(1);
+    expect(loggerErrorMock.mock.calls[0][0]).toContain(
       "Error marking event as reported"
     );
     expect(errorThrown).toBeTruthy();

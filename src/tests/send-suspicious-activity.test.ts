@@ -23,7 +23,7 @@ describe("sendAuditEventToTxMA", () => {
   });
 
   test("send audit event successfully", async () => {
-    const consoleLog = jest
+    const loggerInfo = jest
       .spyOn(Logger.prototype, "info")
       .mockImplementation();
     const txMAEvent: TxMAAuditEvent = {
@@ -57,13 +57,13 @@ describe("sendAuditEventToTxMA", () => {
       QueueUrl: "TXMA_QUEUE_URL",
       MessageBody: JSON.stringify(txMAEvent),
     });
-    expect(consoleLog).toHaveBeenCalledWith(
+    expect(loggerInfo).toHaveBeenCalledWith(
       "[Message sent to QUEUE] with message id = MessageId"
     );
   });
 
   test("send audit event fails and handles error correctly", async () => {
-    const consoleError = jest
+    const loggerError = jest
       .spyOn(Logger.prototype, "error")
       .mockImplementation();
     const txMAEvent: TxMAAuditEvent = {
@@ -102,7 +102,7 @@ describe("sendAuditEventToTxMA", () => {
       QueueUrl: "TXMA_QUEUE_URL",
       MessageBody: JSON.stringify(txMAEvent),
     });
-    expect(consoleError).toHaveBeenCalledWith(
+    expect(loggerError).toHaveBeenCalledWith(
       "Error occurred trying to send the audit event to the TxMA queue: SomeSQSError"
     );
   });
@@ -170,7 +170,7 @@ describe("handler", () => {
   });
 
   test("handler successfully sends audit event to txma", async () => {
-    const consoleLog = jest
+    const loggerInfo = jest
       .spyOn(Logger.prototype, "info")
       .mockImplementation();
     const BASE64_ENCODED_DEVICE_INFO =
@@ -233,13 +233,13 @@ describe("handler", () => {
         },
       }),
     });
-    expect(consoleLog).toHaveBeenCalledWith(
+    expect(loggerInfo).toHaveBeenCalledWith(
       "[Message sent to QUEUE] with message id = MessageId"
     );
   });
 
   test("handler successfully sends audit event to txma when no device information provided", async () => {
-    const consoleLog = jest
+    const loggerInfo = jest
       .spyOn(Logger.prototype, "info")
       .mockImplementation();
     const input: ReportSuspiciousActivityEvent = {
@@ -294,7 +294,7 @@ describe("handler", () => {
         },
       }),
     });
-    expect(consoleLog).toHaveBeenCalledWith(
+    expect(loggerInfo).toHaveBeenCalledWith(
       "[Message sent to QUEUE] with message id = MessageId"
     );
   });

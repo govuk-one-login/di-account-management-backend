@@ -27,14 +27,14 @@ import { Logger } from "@aws-lambda-powertools/logger";
 const sqsMock = mockClient(SQSClient);
 
 describe("handler", () => {
-  let consoleLogMock: jest.SpyInstance;
+  let loggerInfoMock: jest.SpyInstance;
   beforeEach(() => {
     sqsMock.reset();
     process.env.TABLE_NAME = tableName;
     process.env.OUTPUT_QUEUE_URL = queueUrl;
     process.env.AWS_REGION = "AWS_REGION";
     process.env.ENVIRONMENT = "test";
-    consoleLogMock = jest.spyOn(Logger.prototype, "info").mockImplementation();
+    loggerInfoMock = jest.spyOn(Logger.prototype, "info").mockImplementation();
     sqsMock.on(SendMessageCommand).resolves({ MessageId: messageId });
   });
   afterEach(() => {
@@ -43,8 +43,8 @@ describe("handler", () => {
 
   test("Ignores any Non allowed event", async () => {
     await handler(MUCKY_DYNAMODB_STREAM_EVENT, {} as Context);
-    expect(consoleLogMock).toHaveBeenCalledTimes(3);
-    expect(consoleLogMock).toHaveBeenCalledWith(
+    expect(loggerInfoMock).toHaveBeenCalledTimes(3);
+    expect(loggerInfoMock).toHaveBeenCalledWith(
       `DB stream sent a ${randomEventType} event. Irrelevant for activity log so ignoring`
     );
   });

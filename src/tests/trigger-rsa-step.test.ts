@@ -8,6 +8,7 @@ import {
 import { callAsyncStepFunction } from "../common/call-async-step-function";
 import { mockClient } from "aws-sdk-client-mock";
 import { SendMessageCommand, SQSClient } from "@aws-sdk/client-sqs";
+import { Context } from "aws-lambda";
 
 jest.mock("../common/call-async-step-function.ts");
 const sqsMock = mockClient(SQSClient);
@@ -31,14 +32,14 @@ describe("handler", () => {
   });
 
   test("the handler triggers the report suspicious activity step function successfully", async () => {
-    await handler(createSnsEvent(testSuspiciousActivity));
+    await handler(createSnsEvent(testSuspiciousActivity), {} as Context);
     expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(0);
   });
 
   test("the handler log and send message to SQS when error occurs", async () => {
     let errorMessage;
     try {
-      await handler(createSnsEvent({}));
+      await handler(createSnsEvent({}), {} as Context);
     } catch (error) {
       errorMessage = (error as Error).message;
     }

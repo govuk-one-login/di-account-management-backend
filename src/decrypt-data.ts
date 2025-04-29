@@ -6,6 +6,9 @@ import {
 import buildKmsKeyring from "./common/kms-keyring-builder";
 import getHashedAccessCheckValue from "./common/get-access-check-value";
 import { getEnvironmentVariable } from "./common/utils";
+import { Logger } from "@aws-lambda-powertools/logger";
+
+const logger = new Logger();
 
 const MAX_ENCRYPTED_DATA_KEY = 5;
 const DECODING = "utf8";
@@ -27,7 +30,7 @@ export async function generateExpectedContext(
   try {
     accessCheckValue = await getHashedAccessCheckValue(VERIFY_ACCESS_VALUE);
   } catch (error) {
-    console.error("Unable to obtain Access Verification value.");
+    logger.error("Unable to obtain Access Verification value.");
     throw error;
   }
 
@@ -74,7 +77,7 @@ export async function decryptData(
     );
     return result.plaintext.toString(DECODING);
   } catch (error) {
-    console.error("Failed to decrypt data.", { error });
+    logger.error("Failed to decrypt data.", { error });
     throw error;
   }
 }

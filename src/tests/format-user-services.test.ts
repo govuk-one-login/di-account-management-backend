@@ -1,4 +1,4 @@
-import { SQSRecord } from "aws-lambda";
+import { Context, SQSRecord } from "aws-lambda";
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 import "aws-sdk-client-mock-jest";
 
@@ -20,6 +20,7 @@ import {
   makeTxmaEvent,
 } from "./testUtils";
 import { sendSqsMessage } from "../common/sqs";
+import { Logger } from "@aws-lambda-powertools/logger";
 
 const sqsMock = mockClient(SQSClient);
 
@@ -91,7 +92,7 @@ describe("validateAndParseSQSRecord", () => {
       invalidUserRecord,
     ])[0];
 
-    expect(() => validateAndParseSQSRecord(invalidSQSFixture)).toThrowError(
+    expect(() => validateAndParseSQSRecord(invalidSQSFixture)).toThrow(
       `Could not validate txmaEvent`
     );
   });
@@ -111,7 +112,7 @@ describe("validateAndParseSQSRecord", () => {
       invalidUserRecord,
     ])[0];
 
-    expect(() => validateAndParseSQSRecord(invalidSQSFixture)).toThrowError(
+    expect(() => validateAndParseSQSRecord(invalidSQSFixture)).toThrow(
       `Could not validate User`
     );
   });
@@ -128,7 +129,7 @@ describe("validateAndParseSQSRecord", () => {
       invalidUserRecord,
     ])[0];
 
-    expect(() => validateAndParseSQSRecord(invalidSQSFixture)).toThrowError(
+    expect(() => validateAndParseSQSRecord(invalidSQSFixture)).toThrow(
       `Duplicate service client_ids found: ["clientID1234"]`
     );
   });
@@ -148,7 +149,7 @@ describe("validateAndParseSQSRecord", () => {
       invalidUserRecord,
     ])[0];
 
-    expect(() => validateAndParseSQSRecord(invalidSQSFixture)).toThrowError(
+    expect(() => validateAndParseSQSRecord(invalidSQSFixture)).toThrow(
       `Could not validate Service ${JSON.stringify(
         invalidUserRecord.ServiceList[0]
       )}`
@@ -285,7 +286,7 @@ describe("handler", () => {
       user_id: userId,
       services: [makeServiceRecord(serviceClientID, 1, 1670850655)],
     };
-    await handler({ Records: inputSQSEvent });
+    await handler({ Records: inputSQSEvent }, {} as Context);
     expect(sqsMock).toHaveReceivedCommandWith(SendMessageCommand, {
       QueueUrl: queueURL,
       MessageBody: JSON.stringify(outputSQSEventMessageBodies),
@@ -306,7 +307,7 @@ describe("handler", () => {
       user_id: userId,
       services: [makeServiceRecord(serviceClientID, 11, 1670850655)],
     };
-    await handler({ Records: inputSQSEvent });
+    await handler({ Records: inputSQSEvent }, {} as Context);
     expect(sqsMock).toHaveReceivedCommandWith(SendMessageCommand, {
       QueueUrl: queueURL,
       MessageBody: JSON.stringify(outputSQSEventMessageBodies),
@@ -333,7 +334,7 @@ describe("handler", () => {
         anotherService,
       ],
     };
-    await handler({ Records: inputSQSEvent });
+    await handler({ Records: inputSQSEvent }, {} as Context);
     expect(sqsMock).toHaveReceivedCommandWith(SendMessageCommand, {
       QueueUrl: queueURL,
       MessageBody: JSON.stringify(outputSQSEventMessageBodies),
@@ -350,9 +351,9 @@ describe("handler", () => {
       },
     ]);
 
-    console.log = jest.fn();
-    await handler({ Records: inputSQSEvent });
-    expect(console.log).toHaveBeenCalledWith(
+    Logger.prototype.info = jest.fn();
+    await handler({ Records: inputSQSEvent }, {} as Context);
+    expect(Logger.prototype.info).toHaveBeenCalledWith(
       "Dropped Event encountered and ignored."
     );
   });
@@ -367,9 +368,9 @@ describe("handler", () => {
       },
     ]);
 
-    console.warn = jest.fn();
-    await handler({ Records: inputSQSEvent });
-    expect(console.warn).toHaveLength(0);
+    Logger.prototype.warn = jest.fn();
+    await handler({ Records: inputSQSEvent }, {} as Context);
+    expect(Logger.prototype.warn).toHaveLength(0);
   });
 
   test("logs a warning when client id doesn't match rp registry", async () => {
@@ -382,9 +383,9 @@ describe("handler", () => {
       },
     ]);
 
-    console.warn = jest.fn();
-    await handler({ Records: inputSQSEvent });
-    expect(console.warn).toHaveBeenCalledWith(
+    Logger.prototype.warn = jest.fn();
+    await handler({ Records: inputSQSEvent }, {} as Context);
+    expect(Logger.prototype.warn).toHaveBeenCalledWith(
       'The client: "UNKNOWN" is not in the RP registry.'
     );
   });
@@ -430,7 +431,7 @@ describe("handler error handling ", () => {
 
     let errorMessage;
     try {
-      await handler({ Records: inputSQSEvent });
+      await handler({ Records: inputSQSEvent }, {} as Context);
     } catch (error) {
       errorMessage = (error as Error).message;
     }

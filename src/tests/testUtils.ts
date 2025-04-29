@@ -15,11 +15,11 @@ export const makeServiceRecord = (
   const fallbackDate = new Date(2022, 0, 1).valueOf();
   const formattedDate = new Intl.DateTimeFormat("en-GB", {
     dateStyle: "long",
-  }).format(new Date((date || fallbackDate) * 1000));
+  }).format(new Date((date ?? fallbackDate) * 1000));
   return {
     client_id: clientId,
     count_successful_logins: count,
-    last_accessed: date || fallbackDate,
+    last_accessed: date ?? fallbackDate,
     last_accessed_pretty: formattedDate,
   };
 };

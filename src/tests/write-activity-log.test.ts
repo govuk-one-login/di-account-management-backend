@@ -14,6 +14,7 @@ import {
   TEST_ENCRYPTED_ACTIVITY_LOG_ENTRY,
   TEST_SQS_EVENT,
 } from "./testFixtures";
+import { Context } from "aws-lambda";
 
 jest.mock(`../common/encrypt-data`, () => ({
   __esModule: true,
@@ -37,7 +38,7 @@ describe("ValidateActivityLogEntries", () => {
   test("throws an error when user_id is missing", () => {
     expect(() => {
       validateActivityLogEntry(ACTIVITY_LOG_ENTRY_NO_USER_ID);
-    }).toThrowError(
+    }).toThrow(
       new Error(
         `Activity log entry validation failed for event_id: ab12345a-a12b-3ced-ef12-12a3b4cd5678`
       )
@@ -47,7 +48,7 @@ describe("ValidateActivityLogEntries", () => {
   test("throws an error when timestamp is missing", () => {
     expect(() => {
       validateActivityLogEntry(ACTIVITY_LOG_ENTRY_NO_TIMESTAMP);
-    }).toThrowError(
+    }).toThrow(
       new Error(
         `Activity log entry validation failed for event_id: ab12345a-a12b-3ced-ef12-12a3b4cd5678`
       )
@@ -88,7 +89,7 @@ describe("lambdaHandler", () => {
   });
 
   test("it iterates over each record in the batch", async () => {
-    await handler(TEST_SQS_EVENT);
+    await handler(TEST_SQS_EVENT, {} as Context);
     expect(dynamoMock.commandCalls(PutCommand).length).toEqual(2);
   });
 
@@ -104,7 +105,7 @@ describe("lambdaHandler", () => {
     test("logs the error message", async () => {
       let errorMessage;
       try {
-        await handler(TEST_SQS_EVENT);
+        await handler(TEST_SQS_EVENT, {} as Context);
       } catch (error) {
         errorMessage = (error as Error).message;
       }

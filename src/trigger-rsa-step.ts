@@ -1,7 +1,10 @@
-import { SNSEvent } from "aws-lambda";
+import { Context, SNSEvent } from "aws-lambda";
 import { ReportSuspiciousActivityStepInput } from "./common/model";
 import { callAsyncStepFunction } from "./common/call-async-step-function";
 import { getEnvironmentVariable } from "./common/utils";
+import { Logger } from "@aws-lambda-powertools/logger";
+
+const logger = new Logger();
 
 const validateReceivedEvent = (
   event: ReportSuspiciousActivityStepInput
@@ -18,12 +21,16 @@ const validateReceivedEvent = (
   }
 };
 
-export const handler = async (event: SNSEvent): Promise<void> => {
+export const handler = async (
+  event: SNSEvent,
+  context: Context
+): Promise<void> => {
+  logger.addContext(context);
   const STATE_MACHINE_ARN = getEnvironmentVariable("STATE_MACHINE_ARN");
   await Promise.all(
     event.Records.map(async (record) => {
       try {
-        console.log(
+        logger.info(
           `Started processing message with ID: ${record.Sns.MessageId}`
         );
         const messageBody = record.Sns.Message;
@@ -31,7 +38,7 @@ export const handler = async (event: SNSEvent): Promise<void> => {
           JSON.parse(messageBody);
         validateReceivedEvent(receivedEvent);
         await callAsyncStepFunction(STATE_MACHINE_ARN, receivedEvent);
-        console.log(
+        logger.info(
           `Finished processing message with ID: ${record.Sns.MessageId}`
         );
       } catch (error) {

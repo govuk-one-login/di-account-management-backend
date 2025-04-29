@@ -7,6 +7,7 @@ import { NotifyClient } from "notifications-node-client";
 import { ReportSuspiciousActivityEvent } from "../common/model";
 import { getSecret } from "@aws-lambda-powertools/parameters/secrets";
 import * as rpRegistry from "di-account-management-rp-registry";
+import { Context } from "aws-lambda";
 
 jest.mock("notifications-node-client");
 jest.mock("@aws-lambda-powertools/parameters/secrets", () => ({
@@ -242,7 +243,7 @@ describe("handler", () => {
   });
 
   afterEach(() => {
-    getTranslationsMock.mockClear;
+    getTranslationsMock.mockClear();
     jest.clearAllMocks();
   });
 
@@ -268,7 +269,7 @@ describe("handler", () => {
       .spyOn(NotifyClient.prototype, "sendEmail")
       .mockImplementationOnce(notifyClientMock.sendEmail);
 
-    await expect(handler(input)).rejects.toThrow(
+    await expect(handler(input, {} as Context)).rejects.toThrow(
       'Error sending email for event: [{"error":"BadRequestError","message":"Can\'t send to this recipient using a team-only API key"}]'
     );
   });
@@ -295,7 +296,7 @@ describe("handler", () => {
       .spyOn(NotifyClient.prototype, "sendEmail")
       .mockImplementationOnce(notifyClientMock.sendEmail);
 
-    await expect(handler(input)).rejects.toThrow(
+    await expect(handler(input, {} as Context)).rejects.toThrow(
       'Error sending email for event: {"response":{}}'
     );
   });
@@ -322,7 +323,7 @@ describe("handler", () => {
       .spyOn(NotifyClient.prototype, "sendEmail")
       .mockImplementationOnce(notifyClientMock.sendEmail);
 
-    await expect(handler(input)).rejects.toThrow(
+    await expect(handler(input, {} as Context)).rejects.toThrow(
       'Error sending email for event: {"response":{}}'
     );
   });
@@ -347,7 +348,7 @@ describe("handler", () => {
       .spyOn(NotifyClient.prototype, "sendEmail")
       .mockRejectedValueOnce(errorResponse);
 
-    await expect(handler(input)).rejects.toThrow(
+    await expect(handler(input, {} as Context)).rejects.toThrow(
       'Error sending email for event: {"response":{"non-important-data":"hello dev"}}'
     );
   });
@@ -364,7 +365,7 @@ describe("handler", () => {
       .spyOn(NotifyClient.prototype, "sendEmail")
       .mockRejectedValueOnce(errorResponse);
 
-    await expect(handler(input)).rejects.toThrow(
+    await expect(handler(input, {} as Context)).rejects.toThrow(
       "Error sending email for event"
     );
   });

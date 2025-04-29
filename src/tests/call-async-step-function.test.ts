@@ -9,6 +9,7 @@ import {
   callAsyncStepFunction,
   stepFunctionsClient,
 } from "../common/call-async-step-function";
+import { Logger } from "@aws-lambda-powertools/logger";
 
 const mockStepFunctionClient = mockClient(stepFunctionsClient);
 
@@ -20,7 +21,9 @@ describe("start report suspicious activities step function", () => {
   let consoleErrorMock: jest.SpyInstance;
   beforeEach(() => {
     process.env.AWS_REGION = "AWS_REGION";
-    consoleErrorMock = jest.spyOn(global.console, "error").mockImplementation();
+    consoleErrorMock = jest
+      .spyOn(Logger.prototype, "error")
+      .mockImplementation();
     mockStepFunctionClient.on(StartExecutionCommand).resolves({
       executionArn: "dummy-executionArn",
     });

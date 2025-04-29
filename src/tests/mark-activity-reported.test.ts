@@ -21,6 +21,8 @@ import {
 } from "./testFixtures";
 import { COMPONENT_ID, EventNamesEnum } from "../common/constants";
 import { decryptData } from "../decrypt-data";
+import { Context } from "aws-lambda";
+import { Logger } from "@aws-lambda-powertools/logger";
 
 jest.mock("../decrypt-data.ts");
 
@@ -72,7 +74,9 @@ describe("handler", () => {
     dynamoMock.on(QueryCommand).resolves({
       Items: [TEST_ENCRYPTED_ACTIVITY_LOG_ENTRY],
     });
-    consoleErrorMock = jest.spyOn(global.console, "error").mockImplementation();
+    consoleErrorMock = jest
+      .spyOn(Logger.prototype, "error")
+      .mockImplementation();
     (decryptData as jest.Mock).mockImplementation(() => {
       return "TXMA_EVENT";
     });
@@ -85,7 +89,7 @@ describe("handler", () => {
   });
 
   test("the handler makes the correct queries", async () => {
-    await handler(testSuspiciousActivity);
+    await handler(testSuspiciousActivity, {} as Context);
     expect(dynamoMock.commandCalls(UpdateCommand).length).toEqual(1);
     expect(dynamoMock.commandCalls(QueryCommand).length).toEqual(1);
 
@@ -113,7 +117,7 @@ describe("handler", () => {
   });
 
   test("the handler creates correct output for next step function", async () => {
-    const response = await handler(testSuspiciousActivity);
+    const response = await handler(testSuspiciousActivity, {} as Context);
     expect(dynamoMock.commandCalls(UpdateCommand).length).toEqual(1);
     expect(response.event_id).not.toBeNull();
     expect(response.email_address).toEqual(testSuspiciousActivity.email);
@@ -134,7 +138,7 @@ describe("handler", () => {
   test("the handler creates correct output for next step function includes device_info", async () => {
     const encodedDeviceInfo = "dsadddasa";
     testSuspiciousActivity.device_information = encodedDeviceInfo;
-    const response = await handler(testSuspiciousActivity);
+    const response = await handler(testSuspiciousActivity, {} as Context);
     expect(dynamoMock.commandCalls(UpdateCommand).length).toEqual(1);
     expect(response.event_id).not.toBeNull();
     expect(response.email_address).toEqual(testSuspiciousActivity.email);
@@ -157,8 +161,8 @@ describe("handler", () => {
     process.env.GENERATOR_KEY_ARN = undefined;
     let errorThrown = false;
     try {
-      await handler(testSuspiciousActivity);
-    } catch (error) {
+      await handler(testSuspiciousActivity, {} as Context);
+    } catch {
       errorThrown = true;
     }
 

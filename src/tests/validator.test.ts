@@ -66,7 +66,7 @@ describe("validate", () => {
     expect(result).toBe(false);
   });
   test("fails is undefined validator rule is passed", async () => {
-    const result = validateObject(suspiciousActivityEvent, undefined);
+    const result = validateObject(suspiciousActivityEvent);
     expect(result).toBe(false);
   });
 });

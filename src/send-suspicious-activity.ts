@@ -9,6 +9,10 @@ import VALIDATOR_RULES_MAP from "./common/validator-rules";
 import validateObject from "./common/validator";
 import { sendSqsMessage } from "./common/sqs";
 import { getEnvironmentVariable } from "./common/utils";
+import { Logger } from "@aws-lambda-powertools/logger";
+import { Context } from "aws-lambda";
+
+const logger = new Logger();
 
 export const transformToTxMAEvent = (
   event: ReportSuspiciousActivityEvent,
@@ -74,12 +78,12 @@ export async function sendAuditEvent(
 ): Promise<SendMessageCommandOutput> {
   try {
     const result = await sendSqsMessage(JSON.stringify(event), queueUrl);
-    console.log(
+    logger.info(
       `[Message sent to QUEUE] with message id = ${result.MessageId}`
     );
     return result;
   } catch (error: unknown) {
-    console.error(
+    logger.error(
       `Error occurred trying to send the audit event to the TxMA queue: ${
         (error as Error).message
       }`
@@ -89,12 +93,14 @@ export async function sendAuditEvent(
 }
 
 export const handler = async (
-  input: ReportSuspiciousActivityEvent
+  input: ReportSuspiciousActivityEvent,
+  context: Context
 ): Promise<void> => {
+  logger.addContext(context);
   const EVENT_NAME = getEnvironmentVariable("EVENT_NAME");
   const TXMA_QUEUE_URL = getEnvironmentVariable("TXMA_QUEUE_URL");
   try {
-    console.log(`started processing event with ID: ${input.event_id}`);
+    logger.info(`started processing event with ID: ${input.event_id}`);
     if (!validateObject(input, VALIDATOR_RULES_MAP.get(EVENT_NAME))) {
       throw new Error(
         `Received Event: ${JSON.stringify(input)} failed validation.`
@@ -116,7 +122,7 @@ export const handler = async (
       );
     }
     await sendAuditEvent(txMAEvent, TXMA_QUEUE_URL);
-    console.log(`finished processing event with ID: ${input.event_id}`);
+    logger.info(`finished processing event with ID: ${input.event_id}`);
   } catch (err: unknown) {
     throw new Error(
       `Error occurred sending event to TxMA: ${(err as Error).message}`

@@ -5,6 +5,8 @@ import { mockClient } from "aws-sdk-client-mock";
 import { handler, sendAuditEvent } from "../send-suspicious-activity";
 import { ReportSuspiciousActivityEvent, TxMAAuditEvent } from "../common/model";
 import { sendSqsMessage } from "../common/sqs";
+import { Context } from "aws-lambda";
+import { Logger } from "@aws-lambda-powertools/logger";
 
 const sqsMock = mockClient(SQSClient);
 const TXMA_QUEUE_URL = "TXMA_QUEUE_URL";
@@ -21,7 +23,9 @@ describe("sendAuditEventToTxMA", () => {
   });
 
   test("send audit event successfully", async () => {
-    const consoleLog = jest.spyOn(console, "log").mockImplementation();
+    const consoleLog = jest
+      .spyOn(Logger.prototype, "info")
+      .mockImplementation();
     const txMAEvent: TxMAAuditEvent = {
       user: {
         user_id: "qwerty",
@@ -59,7 +63,9 @@ describe("sendAuditEventToTxMA", () => {
   });
 
   test("send audit event fails and handles error correctly", async () => {
-    const consoleError = jest.spyOn(console, "error").mockImplementation();
+    const consoleError = jest
+      .spyOn(Logger.prototype, "error")
+      .mockImplementation();
     const txMAEvent: TxMAAuditEvent = {
       user: {
         user_id: "qwerty",
@@ -164,7 +170,9 @@ describe("handler", () => {
   });
 
   test("handler successfully sends audit event to txma", async () => {
-    const consoleLog = jest.spyOn(console, "log").mockImplementation();
+    const consoleLog = jest
+      .spyOn(Logger.prototype, "info")
+      .mockImplementation();
     const BASE64_ENCODED_DEVICE_INFO =
       "WEwuLXxLeGZPO2Fgcyo2V2R+KUQmUjFcc3V0SU4+L25WIT0+KzNVdkdKLGUnJVZKdzheUmtjblokNEhCLzNvaUB2PTZ3SVhMWDNua1d3a2tlSm1BPk8nVnYlKC9I%";
     const input: ReportSuspiciousActivityEvent = {
@@ -190,7 +198,7 @@ describe("handler", () => {
       notify_message_id: "12345678",
       device_information: BASE64_ENCODED_DEVICE_INFO,
     };
-    await handler(input);
+    await handler(input, {} as Context);
     expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(1);
     expect(sqsMock).toHaveReceivedCommandWith(SendMessageCommand, {
       QueueUrl: "TXMA_QUEUE_URL",
@@ -231,7 +239,9 @@ describe("handler", () => {
   });
 
   test("handler successfully sends audit event to txma when no device information provided", async () => {
-    const consoleLog = jest.spyOn(console, "log").mockImplementation();
+    const consoleLog = jest
+      .spyOn(Logger.prototype, "info")
+      .mockImplementation();
     const input: ReportSuspiciousActivityEvent = {
       event_id: "522c5ab4-7e66-4b2a-8f5c-4d31dc4e93e6",
       event_type: "HOME_REPORT_SUSPICIOUS_ACTIVITY",
@@ -254,7 +264,7 @@ describe("handler", () => {
       zendesk_ticket_id: "12345677",
       notify_message_id: "12345678",
     };
-    await handler(input);
+    await handler(input, {} as Context);
     expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(1);
     expect(sqsMock).toHaveReceivedCommandWith(SendMessageCommand, {
       QueueUrl: "TXMA_QUEUE_URL",
@@ -328,7 +338,7 @@ describe("handler error handling", () => {
     let errorThrown = false;
     let errorMessage = "";
     try {
-      await handler(input);
+      await handler(input, {} as Context);
     } catch (error) {
       errorThrown = true;
       errorMessage = (error as Error).message;

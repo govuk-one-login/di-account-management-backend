@@ -1,4 +1,4 @@
-import { DynamoDBStreamEvent } from "aws-lambda";
+import { Context, DynamoDBStreamEvent } from "aws-lambda";
 import { AttributeValue } from "@aws-sdk/client-dynamodb";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
 import { ActivityLogEntry, DroppedEventError, TxmaEvent } from "./common/model";
@@ -9,6 +9,9 @@ import {
 import { sendSqsMessage } from "./common/sqs";
 import { getEnvironmentVariable } from "./common/utils";
 import { filterClients, getClientIDs } from "di-account-management-rp-registry";
+import { Logger } from "@aws-lambda-powertools/logger";
+
+const logger = new Logger();
 
 const createNewActivityLogEntryFromTxmaEvent = (
   txmaEvent: TxmaEvent
@@ -36,7 +39,7 @@ export const validateTxmaEventBody = (txmaEvent: TxmaEvent): void => {
   }
 
   if (txmaClientId && !getClientIDs(ENVIRONMENT).includes(txmaClientId)) {
-    console.warn(`The client: "${txmaClientId}" is not in the RP registry.`);
+    logger.warn(`The client: "${txmaClientId}" is not in the RP registry.`);
   }
 
   if (
@@ -57,13 +60,17 @@ export const formatIntoActivityLogEntry = (
   return createNewActivityLogEntryFromTxmaEvent(txmaEvent);
 };
 
-export const handler = async (event: DynamoDBStreamEvent): Promise<void> => {
+export const handler = async (
+  event: DynamoDBStreamEvent,
+  context: Context
+): Promise<void> => {
+  logger.addContext(context);
   const { Records } = event;
   const OUTPUT_QUEUE_URL = getEnvironmentVariable("OUTPUT_QUEUE_URL");
   await Promise.all(
     Records.map(async (record) => {
       try {
-        console.log(`started processing event with ID: ${record.eventID}`);
+        logger.info(`started processing event with ID: ${record.eventID}`);
         const txmaEvent = unmarshall(
           record.dynamodb?.NewImage?.event.M as Record<string, AttributeValue>
         ) as TxmaEvent;
@@ -74,16 +81,16 @@ export const handler = async (event: DynamoDBStreamEvent): Promise<void> => {
             JSON.stringify(formattedRecord),
             OUTPUT_QUEUE_URL
           );
-          console.log(`[Message sent to QUEUE] with message id = ${messageId}`);
+          logger.info(`[Message sent to QUEUE] with message id = ${messageId}`);
         } else {
-          console.log(
+          logger.info(
             `DB stream sent a ${txmaEvent.event_name} event. Irrelevant for activity log so ignoring`
           );
         }
-        console.log(`finished processing event with ID: ${record.eventID}`);
+        logger.info(`finished processing event with ID: ${record.eventID}`);
       } catch (error) {
         if (error instanceof DroppedEventError) {
-          console.log("Dropped Event encountered and ignored.");
+          logger.info("Dropped Event encountered and ignored.");
         } else {
           throw new Error(
             `Unable to format activity log for event with ID: ${record.eventID}, ${

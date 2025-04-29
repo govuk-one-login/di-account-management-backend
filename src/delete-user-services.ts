@@ -1,4 +1,4 @@
-import { SNSEvent } from "aws-lambda";
+import { Context, SNSEvent } from "aws-lambda";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import {
   DynamoDBDocumentClient,
@@ -7,6 +7,9 @@ import {
 } from "@aws-sdk/lib-dynamodb";
 import { UserData } from "./common/model";
 import { getEnvironmentVariable } from "./common/utils";
+import { Logger } from "@aws-lambda-powertools/logger";
+
+const logger = new Logger();
 
 const marshallOptions = {
   convertClassInstanceToMap: true,
@@ -39,17 +42,21 @@ export const deleteUserData = async (
   return dynamoDocClient.send(command);
 };
 
-export const handler = async (event: SNSEvent): Promise<void> => {
+export const handler = async (
+  event: SNSEvent,
+  context: Context
+): Promise<void> => {
+  logger.addContext(context);
   await Promise.all(
     event.Records.map(async (record) => {
       try {
-        console.log(
+        logger.info(
           `started processing message with ID: ${record.Sns.MessageId}`
         );
         const userData: UserData = JSON.parse(record.Sns.Message);
         validateUserData(userData);
         await deleteUserData(userData);
-        console.log(
+        logger.info(
           `finished processing message with ID: ${record.Sns.MessageId}`
         );
       } catch (error) {

@@ -1,6 +1,9 @@
-import { SNSEvent } from "aws-lambda";
+import { Context, SNSEvent } from "aws-lambda";
 import { UserData } from "./common/model";
 import { getEnvironmentVariable } from "./common/utils";
+import { Logger } from "@aws-lambda-powertools/logger";
+
+const logger = new Logger();
 
 export const getRequestConfig = (token: string | undefined) => {
   const config = {
@@ -51,24 +54,28 @@ export const deleteEmailSubscription = async (userData: UserData) => {
   const response = await fetch(deleteUrl, config);
   if (response.status === 404) {
     // We are logging a 404 as is an appropriate reponse when the user does not have an email subscription .
-    console.log(`Received a 404 response from GOV.UK API for URL`);
+    logger.info(`Received a 404 response from GOV.UK API for URL`);
   } else if (!response.ok) {
     const message = `Unable to send DELETE request to GOV.UK API. Status code : ${response.status}`;
     throw new Error(message);
   }
 };
 
-export const handler = async (event: SNSEvent): Promise<void> => {
+export const handler = async (
+  event: SNSEvent,
+  context: Context
+): Promise<void> => {
+  logger.addContext(context);
   await Promise.all(
     event.Records.map(async (record) => {
       try {
-        console.log(
+        logger.info(
           `started processing message with ID: ${record.Sns.MessageId}`
         );
         const userData: UserData = JSON.parse(record.Sns.Message);
         validateUserData(userData);
         await deleteEmailSubscription(userData);
-        console.log(
+        logger.info(
           `finished processing message with ID: ${record.Sns.MessageId}`
         );
       } catch (error) {

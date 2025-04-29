@@ -1,4 +1,4 @@
-import { SQSEvent } from "aws-lambda";
+import { Context, SQSEvent } from "aws-lambda";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import {
   DynamoDBDocumentClient,
@@ -8,8 +8,10 @@ import {
 import { ActivityLogEntry, EncryptedActivityLogEntry } from "./common/model";
 import encryptData from "./common/encrypt-data";
 import { getEnvironmentVariable } from "./common/utils";
+import { Logger } from "@aws-lambda-powertools/logger";
 
 const dynamoDocClient = DynamoDBDocumentClient.from(new DynamoDBClient({}));
+const logger = new Logger();
 
 export const validateActivityLogEntry = (
   activityLogEntry: ActivityLogEntry
@@ -40,11 +42,15 @@ export const writeActivityLogEntry = async (
   return dynamoDocClient.send(command);
 };
 
-export const handler = async (event: SQSEvent): Promise<void> => {
+export const handler = async (
+  event: SQSEvent,
+  context: Context
+): Promise<void> => {
+  logger.addContext(context);
   await Promise.all(
     event.Records.map(async (record) => {
       try {
-        console.log(`Started processing message with ID: ${record.messageId}`);
+        logger.info(`Started processing message with ID: ${record.messageId}`);
         const activityLogEntry: ActivityLogEntry = JSON.parse(record.body);
         validateActivityLogEntry(activityLogEntry);
         const encryptedActivityLog: EncryptedActivityLogEntry = {
@@ -60,7 +66,7 @@ export const handler = async (event: SQSEvent): Promise<void> => {
           reported_suspicious: activityLogEntry.reported_suspicious,
         };
         await writeActivityLogEntry(encryptedActivityLog);
-        console.log(`Finished processing message with ID: ${record.messageId}`);
+        logger.info(`Finished processing message with ID: ${record.messageId}`);
       } catch (error) {
         throw new Error(
           `Unable to write activity log for message with ID: ${record.messageId}, ${

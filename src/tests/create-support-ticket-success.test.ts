@@ -14,6 +14,7 @@ import {
   userId,
 } from "./testFixtures";
 import { DynamoDBDocumentClient, UpdateCommand } from "@aws-sdk/lib-dynamodb";
+import { Context } from "aws-lambda";
 
 const mockedSecretsManager = mockClient(SecretsManagerClient);
 const mockAxios = new MockAdapter(axios);
@@ -65,7 +66,7 @@ describe("handler", () => {
       },
     };
     mockAxios.onAny().reply(201, expectedBody);
-    const response = await handler(testSuspiciousActivityInput);
+    const response = await handler(testSuspiciousActivityInput, {} as Context);
     expect(mockAxios.history.post.length).toBe(1);
     const authHeader =
       mockAxios?.history?.post[0]?.headers?.Authorization.split("Basic")[1];
@@ -125,7 +126,7 @@ describe("handler", () => {
       },
     };
     mockAxios.onAny().reply(201, expectedBody);
-    await handler(testSuspiciousActivityInput);
+    await handler(testSuspiciousActivityInput, {} as Context);
     expect(mockAxios.history.post.length).toBe(1);
     expect(dynamoMock.commandCalls(UpdateCommand).length).toEqual(1);
     expect(dynamoMock).toHaveReceivedCommandWith(UpdateCommand, {

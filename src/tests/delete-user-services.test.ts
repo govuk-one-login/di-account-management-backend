@@ -12,6 +12,7 @@ import {
   TEST_SNS_EVENT_WITH_TWO_RECORDS,
   TEST_USER_DATA,
 } from "./testFixtures";
+import { Context } from "aws-lambda";
 
 const dynamoMock = mockClient(DynamoDBDocumentClient);
 const sqsMock = mockClient(SQSClient);
@@ -49,7 +50,7 @@ describe("handler", () => {
   });
 
   test("it iterates over each record in the batch", async () => {
-    await handler(TEST_SNS_EVENT_WITH_TWO_RECORDS);
+    await handler(TEST_SNS_EVENT_WITH_TWO_RECORDS, {} as Context);
     expect(dynamoMock.commandCalls(DeleteCommand).length).toEqual(2);
   });
 
@@ -63,7 +64,7 @@ describe("handler", () => {
     test("logs the error message", async () => {
       let errorMessage;
       try {
-        await handler(TEST_SNS_EVENT_WITH_TWO_RECORDS);
+        await handler(TEST_SNS_EVENT_WITH_TWO_RECORDS, {} as Context);
       } catch (error) {
         errorMessage = (error as Error).message;
       }
@@ -88,7 +89,7 @@ describe("validateUserData", () => {
       );
       expect(() => {
         validateUserData(userData);
-      }).toThrowError();
+      }).toThrow();
     });
   });
 });

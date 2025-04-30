@@ -21,18 +21,20 @@ import {
 import { sendSqsMessage } from "../common/sqs";
 import { DynamoDBStreamEvent } from "aws-lambda/trigger/dynamodb-stream";
 import { DroppedEventError } from "../common/model";
+import { Context } from "aws-lambda";
+import { Logger } from "@aws-lambda-powertools/logger";
 
 const sqsMock = mockClient(SQSClient);
 
 describe("handler", () => {
-  let consoleLogMock: jest.SpyInstance;
+  let loggerInfoMock: jest.SpyInstance;
   beforeEach(() => {
     sqsMock.reset();
     process.env.TABLE_NAME = tableName;
     process.env.OUTPUT_QUEUE_URL = queueUrl;
     process.env.AWS_REGION = "AWS_REGION";
     process.env.ENVIRONMENT = "test";
-    consoleLogMock = jest.spyOn(global.console, "log").mockImplementation();
+    loggerInfoMock = jest.spyOn(Logger.prototype, "info").mockImplementation();
     sqsMock.on(SendMessageCommand).resolves({ MessageId: messageId });
   });
   afterEach(() => {
@@ -40,15 +42,15 @@ describe("handler", () => {
   });
 
   test("Ignores any Non allowed event", async () => {
-    await handler(MUCKY_DYNAMODB_STREAM_EVENT);
-    expect(consoleLogMock).toHaveBeenCalledTimes(3);
-    expect(consoleLogMock).toHaveBeenCalledWith(
+    await handler(MUCKY_DYNAMODB_STREAM_EVENT, {} as Context);
+    expect(loggerInfoMock).toHaveBeenCalledTimes(3);
+    expect(loggerInfoMock).toHaveBeenCalledWith(
       `DB stream sent a ${randomEventType} event. Irrelevant for activity log so ignoring`
     );
   });
 
   test("it writes a formatted SQS event when txma event is valid", async () => {
-    await handler(TEST_DYNAMO_STREAM_EVENT);
+    await handler(TEST_DYNAMO_STREAM_EVENT, {} as Context);
     expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(2);
     expect(sqsMock).toHaveReceivedNthCommandWith(1, SendMessageCommand, {
       QueueUrl: queueUrl,
@@ -66,9 +68,9 @@ describe("handler", () => {
     const TEST_HMRC_EVENT: DynamoDBStreamEvent = {
       Records: [generateDynamoSteamRecord(client_id)],
     };
-    console.warn = jest.fn();
-    await handler(TEST_HMRC_EVENT);
-    expect(console.warn).toHaveLength(0);
+    Logger.prototype.warn = jest.fn();
+    await handler(TEST_HMRC_EVENT, {} as Context);
+    expect(Logger.prototype.warn).toHaveLength(0);
   });
 
   test("warn if client_id doesn't match rp registry", async () => {
@@ -77,9 +79,9 @@ describe("handler", () => {
     const TEST_HMRC_EVENT: DynamoDBStreamEvent = {
       Records: [generateDynamoSteamRecord(client_id)],
     };
-    console.warn = jest.fn();
-    await handler(TEST_HMRC_EVENT);
-    expect(console.warn).toHaveBeenCalledWith(
+    Logger.prototype.warn = jest.fn();
+    await handler(TEST_HMRC_EVENT, {} as Context);
+    expect(Logger.prototype.warn).toHaveBeenCalledWith(
       'The client: "UNKNOWN" is not in the RP registry.'
     );
   });
@@ -100,7 +102,7 @@ describe("handler", () => {
     test("logs the error message", async () => {
       let errorMessage;
       try {
-        await handler(ERROR_DYNAMODB_STREAM_EVENT);
+        await handler(ERROR_DYNAMODB_STREAM_EVENT, {} as Context);
       } catch (error) {
         errorMessage = (error as Error).message;
       }
@@ -118,10 +120,10 @@ describe("handler", () => {
           generateDynamoSteamRecord(hmrc_client_id),
         ],
       };
-      console.log = jest.fn();
-      await handler(TEST_HMRC_EVENT);
+      Logger.prototype.info = jest.fn();
+      await handler(TEST_HMRC_EVENT, {} as Context);
       expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(0);
-      expect(console.log).toHaveBeenCalledWith(
+      expect(Logger.prototype.info).toHaveBeenCalledWith(
         "Dropped Event encountered and ignored."
       );
     });
@@ -159,7 +161,7 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrowError();
+    }).toThrow();
   });
 
   test("throws error when event name is missing", () => {
@@ -170,7 +172,7 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrowError();
+    }).toThrow();
   });
 
   test("throws error when client_id is missing", () => {
@@ -181,7 +183,7 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrowError();
+    }).toThrow();
   });
 
   test("throws error when timestamp is missing", () => {
@@ -192,7 +194,7 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrowError();
+    }).toThrow();
   });
 
   test(" throws error when user_id is missing", () => {
@@ -203,7 +205,7 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrowError();
+    }).toThrow();
   });
 
   test("throws error when session_id  is missing", () => {
@@ -214,7 +216,7 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrowError();
+    }).toThrow();
   });
 });
 

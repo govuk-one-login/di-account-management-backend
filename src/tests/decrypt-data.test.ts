@@ -112,7 +112,7 @@ describe("validateEncryptionContext", () => {
     const expected: EncryptionContext = await generateExpectedContext(userId);
     expect(() => {
       validateEncryptionContext({}, expected);
-    }).toThrowError("Encryption context is empty or undefined");
+    }).toThrow("Encryption context is empty or undefined");
   });
 
   test("throws an error when there is a mismatch", async () => {
@@ -126,7 +126,7 @@ describe("validateEncryptionContext", () => {
     const expected: EncryptionContext = await generateExpectedContext(userId);
     expect(() => {
       validateEncryptionContext(wrongContext, expected);
-    }).toThrowError("Encryption context mismatch: userId");
+    }).toThrow("Encryption context mismatch: userId");
   });
 
   test("doesn't throw an error when context matches", async () => {
@@ -181,6 +181,6 @@ describe("decryptActivities", () => {
     when(buildDecrypt().decrypt).mockRejectedValue(new Error("A KMS error"));
     expect(async () => {
       await decryptData(encryptedActivities, userId, generatorKey, wrappingKey);
-    }).rejects.toThrowError("A KMS error");
+    }).rejects.toThrow("A KMS error");
   });
 });

@@ -14,9 +14,12 @@ import { COMPONENT_ID, EventNamesEnum } from "./common/constants";
 import { getCurrentTimestamp, getEnvironmentVariable } from "./common/utils";
 import { decryptData } from "./decrypt-data";
 import redact from "./common/redact";
+import { Logger } from "@aws-lambda-powertools/logger";
+import { Context } from "aws-lambda";
 
 const dynamoClient = new DynamoDBClient({});
 const dynamoDocClient = DynamoDBDocumentClient.from(dynamoClient);
+const logger = new Logger();
 
 export const markEventAsReported = async (
   tableName: string,
@@ -85,9 +88,11 @@ export const queryActivityLog = async (
 };
 
 export const handler = async (
-  input: ReportSuspiciousActivityStepInput
+  input: ReportSuspiciousActivityStepInput,
+  context: Context
 ): Promise<ReportSuspiciousActivityEvent> => {
-  console.log(`started processing event with ID: ${input.event_id}`);
+  logger.addContext(context);
+  logger.info(`started processing event with ID: ${input.event_id}`);
   const activityLog = await queryActivityLog(input.user_id, input.event_id);
   const event_id = `${crypto.randomUUID()}`;
   const timestamps = getCurrentTimestamp();
@@ -113,7 +118,7 @@ export const handler = async (
         WRAPPING_KEY_ARN
       );
     } catch (err) {
-      console.error(
+      logger.error(
         `Error marking event as reported, error message is: ${
           (err as Error).message
         }`,
@@ -145,6 +150,6 @@ export const handler = async (
   if (input.device_information) {
     reportedEvent.device_information = input.device_information;
   }
-  console.log(`finished processing event with ID: ${input.event_id}`);
+  logger.info(`finished processing event with ID: ${input.event_id}`);
   return reportedEvent;
 };

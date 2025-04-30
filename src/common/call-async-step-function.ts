@@ -1,3 +1,4 @@
+import { Logger } from "@aws-lambda-powertools/logger";
 import type { ReportSuspiciousActivityStepInput } from "./model";
 import {
   SFNClient,
@@ -6,19 +7,21 @@ import {
   StartExecutionOutput,
 } from "@aws-sdk/client-sfn";
 
+const logger = new Logger();
+
 export async function callAsyncStepFunction(
   stateMachineArn: string,
   input: ReportSuspiciousActivityStepInput
 ): Promise<string> {
   let response: StartExecutionOutput;
   try {
-    console.log("Starting state machine execution.");
+    logger.info("Starting state machine execution.");
     response = await startASyncStepFunction(stateMachineArn, input);
   } catch (error: unknown) {
-    console.error("Failed to start Report Suspicious Activity state machine.", {
+    logger.error("Failed to start Report Suspicious Activity state machine.", {
       stepFunctionArn: stateMachineArn,
     });
-    console.error("Reason Detail: ", (error as Error).message);
+    logger.error("Reason Detail: ", (error as Error).message);
     throw error;
   }
 

@@ -1,7 +1,13 @@
 import { SendMessageCommand, SQSClient } from "@aws-sdk/client-sqs";
 import { DynamoDBDocumentClient, GetCommand } from "@aws-sdk/lib-dynamodb";
 import { mockClient } from "aws-sdk-client-mock";
-import { Service, UserRecordEvent, UserServices } from "../common/model";
+import {
+  Service,
+  UserRecordEvent,
+  UserServices,
+  TxmaEvent,
+  UserData,
+} from "../common/model";
 import "aws-sdk-client-mock-jest";
 import {
   handler,
@@ -9,8 +15,7 @@ import {
   validateUser,
   queryUserServices,
 } from "../query-user-services";
-import { DynamoDBStreamEvent, DynamoDBRecord } from "aws-lambda";
-import { TxmaEvent, UserData } from "../common/model";
+import { DynamoDBStreamEvent, DynamoDBRecord, Context } from "aws-lambda";
 import { sendSqsMessage } from "../common/sqs";
 
 export const userId = "user_id";
@@ -169,7 +174,7 @@ describe("validateTxmaEventBody", () => {
     );
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrowError();
+    }).toThrow();
   });
   test("throws error when timestamp is missing", () => {
     const txmaEvent = JSON.parse(
@@ -187,7 +192,7 @@ describe("validateTxmaEventBody", () => {
     );
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrowError();
+    }).toThrow();
   });
   test("throws error when event name is missing", () => {
     const txmaEvent = JSON.parse(
@@ -205,7 +210,7 @@ describe("validateTxmaEventBody", () => {
     );
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrowError();
+    }).toThrow();
   });
   test(" throws error when user is missing", () => {
     const txmaEvent = JSON.parse(
@@ -221,7 +226,7 @@ describe("validateTxmaEventBody", () => {
     );
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrowError();
+    }).toThrow();
   });
   test("throws error when user_id  is missing", () => {
     const txmaEvent = JSON.parse(
@@ -238,7 +243,7 @@ describe("validateTxmaEventBody", () => {
     );
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrowError();
+    }).toThrow();
   });
 });
 
@@ -247,7 +252,7 @@ describe("validateUser", () => {
     const inValidUser = JSON.parse(JSON.stringify({}));
     expect(() => {
       validateUser(inValidUser);
-    }).toThrowError();
+    }).toThrow();
   });
 });
 
@@ -291,7 +296,7 @@ describe("handler", () => {
   });
 
   test("Queries the dynamo db and send an sqs event", async () => {
-    await handler(TEST_DYNAMO_STREAM_EVENT);
+    await handler(TEST_DYNAMO_STREAM_EVENT, {} as Context);
     expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(2);
     expect(dynamoMock.commandCalls(GetCommand).length).toEqual(2);
     expect(sqsMock).toHaveReceivedNthCommandWith(1, SendMessageCommand, {
@@ -305,7 +310,7 @@ describe("handler", () => {
   });
 
   test("Ignores any non-AUTH_AUTH_CODE_ISSUED event", async () => {
-    await handler(MUCKY_DYNAMODB_STREAM_EVENT);
+    await handler(MUCKY_DYNAMODB_STREAM_EVENT, {} as Context);
     expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(1);
     expect(dynamoMock.commandCalls(GetCommand).length).toEqual(1);
     expect(sqsMock).toHaveReceivedNthCommandWith(1, SendMessageCommand, {
@@ -332,7 +337,7 @@ describe("handler error handing ", () => {
   test("logs the error message", async () => {
     let errorMessage;
     try {
-      await handler(TEST_DYNAMO_STREAM_EVENT);
+      await handler(TEST_DYNAMO_STREAM_EVENT, {} as Context);
     } catch (error) {
       errorMessage = (error as Error).message;
     }

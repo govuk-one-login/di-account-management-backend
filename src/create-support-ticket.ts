@@ -12,9 +12,12 @@ import {
 import { DynamoDBDocumentClient, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { getEnvironmentVariable } from "./common/utils";
+import { Logger } from "@aws-lambda-powertools/logger";
+import type { Context } from "aws-lambda";
 
 const dynamoClient = new DynamoDBClient({});
 const dynamoDocClient = DynamoDBDocumentClient.from(dynamoClient);
+const logger = new Logger();
 
 export const formatCommentBody = (
   event: ReportSuspiciousActivityEvent
@@ -103,10 +106,12 @@ export async function createTicket(
 }
 
 export const handler = async (
-  input: ReportSuspiciousActivityEvent
+  input: ReportSuspiciousActivityEvent,
+  context: Context
 ): Promise<ReportSuspiciousActivityEvent> => {
   let eventIdentifier: string | undefined = undefined;
   try {
+    logger.addContext(context);
     eventIdentifier = input.event_id;
     const ZENDESK_GROUP_ID_KEY = getEnvironmentVariable("ZENDESK_GROUP_ID_KEY");
     const ZENDESK_API_TOKEN_KEY = getEnvironmentVariable(
@@ -118,7 +123,7 @@ export const handler = async (
       "ZENDESK_TICKET_FORM_ID"
     );
     const ACTIVITY_LOG_TABLE = getEnvironmentVariable("ACTIVITY_LOG_TABLE");
-    console.log(`started processing event with ID: ${eventIdentifier}`);
+    logger.info(`started processing event with ID: ${eventIdentifier}`);
     validateSuspiciousActivity(input);
     const zendeskUserName = await getSecret(ZENDESK_API_USER_KEY, {
       maxAge: 900,
@@ -142,7 +147,7 @@ export const handler = async (
       zendeskTicketTags = await getSecret(ZENDESK_TAGS_KEY, {
         maxAge: 900,
       });
-    } catch (error) {
+    } catch {
       zendeskTicketTags = undefined;
     }
 
@@ -186,7 +191,7 @@ export const handler = async (
         );
       }
     }
-    console.log(`finished processing event with ID: ${eventIdentifier}`);
+    logger.info(`finished processing event with ID: ${eventIdentifier}`);
     return input;
   } catch (error) {
     throw new Error(

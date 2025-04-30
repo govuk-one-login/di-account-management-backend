@@ -1,4 +1,4 @@
-import { SQSEvent, SQSRecord } from "aws-lambda";
+import { Context, SQSEvent, SQSRecord } from "aws-lambda";
 import {
   type UserData,
   type UserRecordEvent,
@@ -9,6 +9,9 @@ import {
 import { sendSqsMessage } from "./common/sqs";
 import { getEnvironmentVariable } from "./common/utils";
 import { filterClients, getClientIDs } from "di-account-management-rp-registry";
+import { Logger } from "@aws-lambda-powertools/logger";
+
+const logger = new Logger();
 
 const validateUserService = (service: Service): void => {
   if (
@@ -59,7 +62,7 @@ const validateTxmaEvent = (txmaEvent: TxmaEvent): void => {
   }
 
   if (txmaClientId && !getClientIDs(ENVIRONMENT).includes(txmaClientId)) {
-    console.warn(`The client: "${txmaClientId}" is not in the RP registry.`);
+    logger.warn(`The client: "${txmaClientId}" is not in the RP registry.`);
   }
 
   if (
@@ -137,23 +140,27 @@ export const formatRecord = (record: UserRecordEvent) => {
   };
 };
 
-export const handler = async (event: SQSEvent): Promise<void> => {
+export const handler = async (
+  event: SQSEvent,
+  context: Context
+): Promise<void> => {
+  logger.addContext(context);
   const { Records } = event;
   const OUTPUT_QUEUE_URL = getEnvironmentVariable("OUTPUT_QUEUE_URL");
   await Promise.all(
     Records.map(async (record) => {
       try {
-        console.log(`started processing message with ID: ${record.messageId}`);
+        logger.info(`started processing message with ID: ${record.messageId}`);
         const formattedRecord = formatRecord(validateAndParseSQSRecord(record));
         const { MessageId: messageId } = await sendSqsMessage(
           JSON.stringify(formattedRecord),
           OUTPUT_QUEUE_URL
         );
-        console.log(`[Message sent to QUEUE] with message id = ${messageId}`);
-        console.log(`finished processing message with ID: ${record.messageId}`);
+        logger.info(`[Message sent to QUEUE] with message id = ${messageId}`);
+        logger.info(`finished processing message with ID: ${record.messageId}`);
       } catch (error) {
         if (error instanceof DroppedEventError) {
-          console.log("Dropped Event encountered and ignored.");
+          logger.info("Dropped Event encountered and ignored.");
         } else {
           throw new Error(
             `Unable to format user services for message with ID: ${record.messageId}, ${

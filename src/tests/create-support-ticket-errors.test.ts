@@ -9,6 +9,7 @@ import axios from "axios";
 import { handler } from "../create-support-ticket";
 import { testSuspiciousActivityInput } from "./testFixtures";
 import { EventNamesEnum } from "../common/constants";
+import { Context } from "aws-lambda";
 
 const mockedSecretsManager = mockClient(SecretsManagerClient);
 const mockAxios = new MockAdapter(axios);
@@ -39,7 +40,7 @@ describe("handler error handling", () => {
     let errorThrown = false;
     let errorMessage = "";
     try {
-      await handler(testSuspiciousActivityInput);
+      await handler(testSuspiciousActivityInput, {} as Context);
     } catch (error) {
       errorThrown = true;
       errorMessage = (error as Error).message;
@@ -55,7 +56,7 @@ describe("handler error handling", () => {
     let errorThrown = false;
     let errorMessage = "";
     try {
-      await handler(testSuspiciousActivityInput);
+      await handler(testSuspiciousActivityInput, {} as Context);
     } catch (error) {
       errorThrown = true;
       errorMessage = (error as Error).message;
@@ -75,7 +76,7 @@ describe("handler error handling", () => {
     let errorThrown = false;
     let errorMessage = "";
     try {
-      await handler(testSuspiciousActivityInput);
+      await handler(testSuspiciousActivityInput, {} as Context);
     } catch (error) {
       errorThrown = true;
       errorMessage = (error as Error).message;
@@ -93,7 +94,7 @@ describe("handler error handling", () => {
     let errorThrown = false;
     let errorMessage = "";
     try {
-      await handler(testSuspiciousActivityInput);
+      await handler(testSuspiciousActivityInput, {} as Context);
     } catch (error) {
       errorThrown = true;
       errorMessage = (error as Error).message;
@@ -111,7 +112,7 @@ describe("handler error handling", () => {
     let errorThrown = false;
     let errorMessage = "";
     try {
-      await handler(testSuspiciousActivityInput);
+      await handler(testSuspiciousActivityInput, {} as Context);
     } catch (error) {
       errorThrown = true;
       errorMessage = (error as Error).message;

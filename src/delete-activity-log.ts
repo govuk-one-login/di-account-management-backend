@@ -7,6 +7,10 @@ import {
 import { DynamoDBDocumentClient, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { ActivityLogEntry, UserData } from "./common/model";
 import { getEnvironmentVariable } from "./common/utils";
+import { Logger } from "@aws-lambda-powertools/logger";
+import type { Context } from "aws-lambda";
+
+const logger = new Logger();
 
 const marshallOptions = {
   convertClassInstanceToMap: true,
@@ -48,9 +52,7 @@ export const getAllActivityLogEntriesForUser = async (
       queryResult.push(...(response.Items as ActivityLogEntry[]));
     }
 
-    lastEvaluatedKey = response.LastEvaluatedKey
-      ? response.LastEvaluatedKey
-      : undefined;
+    lastEvaluatedKey = response.LastEvaluatedKey ?? undefined;
   } while (lastEvaluatedKey);
 
   return queryResult.length > 0 ? queryResult : undefined;
@@ -100,19 +102,23 @@ export const batchDeleteActivityLog = async (
         });
         await dynamoDocClient.send(batchcommand);
       } catch (error) {
-        console.error("Error occurred during batch delete:", error);
+        logger.error("Error occurred during batch delete:", error as Error);
         throw error;
       }
     })
   );
 };
 
-export const handler = async (event: SNSEvent): Promise<void> => {
+export const handler = async (
+  event: SNSEvent,
+  context: Context
+): Promise<void> => {
+  logger.addContext(context);
   const TABLE_NAME = getEnvironmentVariable("TABLE_NAME");
   await Promise.all(
     event.Records.map(async (record) => {
       try {
-        console.log(
+        logger.info(
           `started processing message with ID: ${record.Sns.MessageId}`
         );
         const userData: UserData = JSON.parse(record.Sns.Message);
@@ -122,7 +128,7 @@ export const handler = async (event: SNSEvent): Promise<void> => {
         if (activityLogEntries) {
           await batchDeleteActivityLog(TABLE_NAME, activityLogEntries);
         }
-        console.log(
+        logger.info(
           `finished processing message with ID: ${record.Sns.MessageId}`
         );
       } catch (error) {

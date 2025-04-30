@@ -1,8 +1,7 @@
-import { DynamoDBStreamEvent } from "aws-lambda";
+import { Context, DynamoDBStreamEvent } from "aws-lambda";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
 import { DynamoDBDocumentClient, GetCommand } from "@aws-sdk/lib-dynamodb";
 import { AttributeValue, DynamoDBClient } from "@aws-sdk/client-dynamodb";
-
 import {
   Service,
   TxmaEvent,
@@ -12,6 +11,9 @@ import {
 } from "./common/model";
 import { sendSqsMessage } from "./common/sqs";
 import { getEnvironmentVariable } from "./common/utils";
+import { Logger } from "@aws-lambda-powertools/logger";
+
+const logger = new Logger();
 
 const marshallOptions = {
   convertClassInstanceToMap: true,
@@ -66,13 +68,17 @@ const createUserRecordEvent = (
   return userRecordEvent;
 };
 
-export const handler = async (event: DynamoDBStreamEvent): Promise<void> => {
+export const handler = async (
+  event: DynamoDBStreamEvent,
+  context: Context
+): Promise<void> => {
+  logger.addContext(context);
   const { Records } = event;
   const OUTPUT_QUEUE_URL = getEnvironmentVariable("OUTPUT_QUEUE_URL");
   await Promise.all(
     Records.map(async (record) => {
       try {
-        console.log(`started processing event with ID: ${record.eventID}`);
+        logger.info(`started processing event with ID: ${record.eventID}`);
         const txmaEvent = unmarshall(
           record.dynamodb?.NewImage?.event.M as Record<string, AttributeValue>
         ) as TxmaEvent;
@@ -83,13 +89,13 @@ export const handler = async (event: DynamoDBStreamEvent): Promise<void> => {
             JSON.stringify(createUserRecordEvent(txmaEvent, results)),
             OUTPUT_QUEUE_URL
           );
-          console.log(`[Message sent to QUEUE] with message id = ${messageId}`);
+          logger.info(`[Message sent to QUEUE] with message id = ${messageId}`);
         } else {
-          console.log(
+          logger.info(
             `DB stream sent a ${txmaEvent.event_name} event. Irrelevant for service card so ignoring`
           );
         }
-        console.log(`finished processing event with ID: ${record.eventID}`);
+        logger.info(`finished processing event with ID: ${record.eventID}`);
       } catch (error) {
         throw new Error(
           `Unable to query user services for message with ID: ${record.eventID}, ${

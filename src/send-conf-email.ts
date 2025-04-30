@@ -9,6 +9,10 @@ import {
   Translation,
   TranslationsObject,
 } from "di-account-management-rp-registry";
+import { Logger } from "@aws-lambda-powertools/logger";
+import { Context } from "aws-lambda";
+
+const logger = new Logger();
 
 export const getClientInfo = (
   registry: TranslationsObject,
@@ -105,12 +109,14 @@ export const sendConfMail = async (
 };
 
 export const handler = async (
-  input: ReportSuspiciousActivityEvent
+  input: ReportSuspiciousActivityEvent,
+  context: Context
 ): Promise<ReportSuspiciousActivityEvent> => {
+  logger.addContext(context);
   const NOTIFY_API_KEY = getEnvironmentVariable("NOTIFY_API_KEY");
   const TEMPLATE_ID = getEnvironmentVariable("TEMPLATE_ID");
   try {
-    console.log(`started processing event with ID: ${input.event_id}`);
+    logger.info(`started processing event with ID: ${input.event_id}`);
     const notifyApiKey = await getSecret(NOTIFY_API_KEY, {
       maxAge: 900,
     });
@@ -123,13 +129,16 @@ export const handler = async (
     if (response?.data?.id) {
       input.notify_message_id = response.data.id;
     }
-    console.log(`finished processing event with ID: ${input.event_id}`);
+    logger.info(`finished processing event with ID: ${input.event_id}`);
     return input;
-  } catch (err) {
-    console.error(`Error processing event with ID: ${input.event_id}`, err);
-    notifyErrorHandler(err as IError, "sending email for event");
+  } catch (error) {
+    logger.error(
+      `Error processing event with ID: ${input.event_id}`,
+      error as Error
+    );
+    notifyErrorHandler(error as IError, "sending email for event");
     // redundant but TS keeps complaining about notifyErrorHandler return
-    throw err;
+    throw error;
   }
 };
 

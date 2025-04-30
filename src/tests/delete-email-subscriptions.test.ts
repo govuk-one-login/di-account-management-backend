@@ -1,3 +1,4 @@
+import { Context } from "aws-lambda";
 import {
   handler,
   getRequestConfig,
@@ -25,7 +26,7 @@ describe("handler", () => {
       .spyOn(module, "deleteEmailSubscription")
       .mockReturnValue("deleteEmailSubscription-mock");
 
-    await expect(handler(TEST_SNS_EVENT)).resolves.not.toThrowError();
+    await expect(handler(TEST_SNS_EVENT, {} as Context)).resolves.not.toThrow();
     expect(validateUserDataMock).toHaveBeenCalledTimes(1);
     expect(validateUserDataMock).toHaveBeenCalledWith(TEST_USER_DATA);
     expect(deleteEmailSubscriptionMock).toHaveBeenCalledTimes(1);
@@ -61,7 +62,7 @@ describe("validateUserData", () => {
     );
     expect(() => {
       validateUserData(userData);
-    }).toThrowError(`userData is not valid`);
+    }).toThrow(`userData is not valid`);
   });
 
   test("that it does not throw an error if the SNS message is missing the non-required attribute legacy_subject_id", () => {

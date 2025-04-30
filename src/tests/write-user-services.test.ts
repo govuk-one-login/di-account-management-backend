@@ -96,7 +96,7 @@ describe("validateUserServices", () => {
       );
       expect(() => {
         validateUserServices(userServices);
-      }).toThrowError();
+      }).toThrow();
     });
 
     test("when services is missing", () => {
@@ -107,7 +107,7 @@ describe("validateUserServices", () => {
       );
       expect(() => {
         validateUserServices(userServices);
-      }).toThrowError();
+      }).toThrow();
     });
 
     test("when services is invalid", () => {
@@ -124,7 +124,7 @@ describe("validateUserServices", () => {
       );
       expect(() => {
         validateUserServices(userServices);
-      }).toThrowError();
+      }).toThrow();
     });
   });
 });
@@ -163,7 +163,7 @@ describe("validateService", () => {
       );
       expect(() => {
         validateService(services);
-      }).toThrowError();
+      }).toThrow();
     });
 
     test("when last_accessed is missing", () => {
@@ -180,7 +180,7 @@ describe("validateService", () => {
       );
       expect(() => {
         validateService(services);
-      }).toThrowError();
+      }).toThrow();
     });
 
     test("when last_accessed_pretty is missing", () => {
@@ -195,7 +195,7 @@ describe("validateService", () => {
       );
       expect(() => {
         validateService(services);
-      }).toThrowError();
+      }).toThrow();
     });
 
     test("when count_successful_logins is missing", () => {
@@ -209,7 +209,7 @@ describe("validateService", () => {
       );
       expect(() => {
         validateService(services);
-      }).toThrowError();
+      }).toThrow();
     });
 
     test("when count_successful_logins less than 0", () => {
@@ -224,7 +224,7 @@ describe("validateService", () => {
       );
       expect(() => {
         validateService(services);
-      }).toThrowError();
+      }).toThrow();
     });
   });
 });

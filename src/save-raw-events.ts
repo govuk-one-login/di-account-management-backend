@@ -1,4 +1,4 @@
-import { SQSEvent } from "aws-lambda";
+import { Context, SQSEvent } from "aws-lambda";
 import crypto from "crypto";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import {
@@ -8,18 +8,18 @@ import {
 } from "@aws-sdk/lib-dynamodb";
 import { TxmaEvent, UserData } from "./common/model";
 import { getEnvironmentVariable } from "./common/utils";
+import { Logger } from "@aws-lambda-powertools/logger";
 
 const marshallOptions = {
   convertClassInstanceToMap: true,
 };
-
 const translateConfig = { marshallOptions };
-
 const dynamoClient = new DynamoDBClient({});
 const dynamoDocClient = DynamoDBDocumentClient.from(
   dynamoClient,
   translateConfig
 );
+const logger = new Logger();
 
 const getEventId = (): string => {
   return crypto.randomUUID();
@@ -68,15 +68,19 @@ export const writeRawTxmaEvent = async (
   return dynamoDocClient.send(command);
 };
 
-export const handler = async (event: SQSEvent): Promise<void> => {
+export const handler = async (
+  event: SQSEvent,
+  context: Context
+): Promise<void> => {
+  logger.addContext(context);
   await Promise.all(
     event.Records.map(async (record) => {
       try {
-        console.log(`Started processing message with ID: ${record.messageId}`);
+        logger.info(`Started processing message with ID: ${record.messageId}`);
         const txmaEvent: TxmaEvent = JSON.parse(record.body);
         validateTxmaEventBody(txmaEvent);
         await writeRawTxmaEvent(txmaEvent);
-        console.log(`Finished processing message with ID: ${record.messageId}`);
+        logger.info(`Finished processing message with ID: ${record.messageId}`);
       } catch (error) {
         throw new Error(
           `Unable to save raw events for message with ID: ${record.messageId}, ${

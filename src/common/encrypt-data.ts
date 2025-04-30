@@ -2,6 +2,7 @@ import { KmsKeyringNode, buildEncrypt } from "@aws-crypto/client-node";
 import buildKmsKeyring from "./kms-keyring-builder";
 import getHashedAccessCheckValue from "./get-access-check-value";
 import { getEnvironmentVariable } from "./utils";
+import { Logger } from "@aws-lambda-powertools/logger";
 
 const MAX_ENCRYPTED_DATA_KEY = 5;
 const ENCODING = "base64";
@@ -14,26 +15,23 @@ const VERIFY_ACCESS_VALUE = getEnvironmentVariable("VERIFY_ACCESS_VALUE");
 const AWS_REGION = getEnvironmentVariable("AWS_REGION");
 const ACCOUNT_ID = getEnvironmentVariable("ACCOUNT_ID");
 const ENVIRONMENT = getEnvironmentVariable("ENVIRONMENT");
-
 let kmsKeyring: KmsKeyringNode | undefined = undefined;
 const encryptClientConfig = { maxEncryptedDataKeys: MAX_ENCRYPTED_DATA_KEY };
 const encryptClient = buildEncrypt(encryptClientConfig);
-
 let accessCheckValue: string;
+const logger = new Logger();
 
 const initializeEncryptionResources = async () => {
-  if (!kmsKeyring) {
-    kmsKeyring = await buildKmsKeyring(
-      GENERATOR_KEY_ARN,
-      WRAPPING_KEY_ARN,
-      BACKUP_WRAPPING_KEY_ARN
-    );
-  }
+  kmsKeyring ??= await buildKmsKeyring(
+    GENERATOR_KEY_ARN,
+    WRAPPING_KEY_ARN,
+    BACKUP_WRAPPING_KEY_ARN
+  );
   if (!accessCheckValue) {
     try {
       accessCheckValue = await getHashedAccessCheckValue(VERIFY_ACCESS_VALUE);
     } catch (error) {
-      console.error("Unable to obtain Access Verification value.");
+      logger.error("Unable to obtain Access Verification value.");
       throw error;
     }
   }
@@ -59,7 +57,7 @@ export const encryptData = async (
     });
     return result.toString(ENCODING);
   } catch (error: unknown) {
-    console.error("Failed to encrypt data.", { error });
+    logger.error("Failed to encrypt data.", { error });
     throw error;
   }
 };

@@ -90,6 +90,6 @@ describe("encryptData", () => {
     when(buildEncrypt().encrypt).mockRejectedValue(new Error("SomeKMSError"));
     await expect(async () => {
       await encryptData(encryptDataInput.jwt, encryptDataInput.userId);
-    }).rejects.toThrowError("SomeKMSError");
+    }).rejects.toThrow("SomeKMSError");
   });
 });

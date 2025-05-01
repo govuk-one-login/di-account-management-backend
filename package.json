@@ -20,16 +20,16 @@
     "url": "https://github.com/alphagov/di-account-management-backend.git"
   },
   "devDependencies": {
-    "@babel/core": "^7.26.10",
-    "@babel/preset-env": "^7.26.8",
-    "@babel/preset-typescript": "^7.27.0",
+    "@babel/core": "^7.27.1",
+    "@babel/preset-env": "^7.27.1",
+    "@babel/preset-typescript": "^7.27.1",
     "@eslint/js": "^9.25.1",
     "@types/aws-lambda": "^8.10.149",
     "@types/jest": "^29.5.14",
     "@types/jest-when": "^3.5.2",
     "@types/mocha": "^10.0.10",
-    "@typescript-eslint/eslint-plugin": "^8.31.0",
-    "@typescript-eslint/parser": "^8.31.0",
+    "@typescript-eslint/eslint-plugin": "^8.31.1",
+    "@typescript-eslint/parser": "^8.31.1",
     "aws-sdk-client-mock": "^4.1.0",
     "aws-sdk-client-mock-jest": "^4.1.0",
     "axios-mock-adapter": "2.1.0",
@@ -45,7 +45,7 @@
     "ts-jest": "^29.3.2",
     "ts-node": "^10.9.1",
     "typescript": "^5.8.3",
-    "typescript-eslint": "^8.31.0"
+    "typescript-eslint": "^8.31.1"
   },
   "dependencies": {
     "@aws-crypto/client-node": "^4.2.1",

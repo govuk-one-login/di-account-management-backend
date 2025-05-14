@@ -2981,6 +2981,7 @@ Resources:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-delete-activity-log
       CodeUri: src
       PackageType: Zip
+      Timeout: 10
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt DeleteActivityLogDeadLetterQueue.Arn

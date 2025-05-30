@@ -20,14 +20,14 @@ We transpile and package the Lambda functions using `sam build`. This needs `esb
 npm install -g esbuild
 ```
 
-### Pre-commit
+### Gitlint
 
-This repository uses [pre-commit](https://pre-commit.com/) to run linting on all staged files before they're committed.
-Install & setup pre-commit by running:
+This repository uses [Gitlint](https://jorisroovers.com/gitlint/latest/) to lint git commit messages.
+
+Install Gitlint by running:
 
 ```bash
-pip install pre-commit
-pre-commit install
+pip install gitlint # or `brew install gitlint` if using the brew package manager
 ```
 
 ## Testing

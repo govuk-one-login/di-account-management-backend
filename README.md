@@ -27,7 +27,7 @@ This repository uses [Gitlint](https://jorisroovers.com/gitlint/latest/) to lint
 Install Gitlint by running:
 
 ```bash
-pip install gitlint # or `brew install gitlint` if using the brew package manager
+pip install gitlint # or `brew install gitlint` if using the Homebrew package manager
 ```
 
 ## Testing

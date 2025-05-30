@@ -1,0 +1,20 @@
+[general]
+verbosity=3
+ignore=body-is-missing
+ignore-fixup-commits=false
+ignore-fixup-amend-commits=false
+ignore-squash-commits=false
+regex-style-search=true
+staged=true
+
+[title-max-length]
+line-length=72
+
+[title-min-length]
+min-length=10
+
+[title-match-regex]
+regex=^(BAU|OLH-[0-9]{1,4})[: ]+\w
+
+[author-valid-email]
+regex=[\w\.\+_-]+@(digital.cabinet-office.gov.uk|dsit.gov.uk|users.noreply.github.com)

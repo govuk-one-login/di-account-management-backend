@@ -947,6 +947,7 @@ Resources:
       CodeUri: src
       PackageType: Zip
       MemorySize: 250
+      Timeout: 10
       Events:
         DynamoStream:
           Type: DynamoDB
@@ -1494,6 +1495,7 @@ Resources:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-write-user-services
       CodeUri: src
       PackageType: Zip
+      Timeout: 10
       MemorySize: 220
       Events:
         UserServicesToWriteQueue:

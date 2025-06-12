@@ -123,7 +123,6 @@ export const handler = async (
       "ZENDESK_TICKET_FORM_ID"
     );
     const ACTIVITY_LOG_TABLE = getEnvironmentVariable("ACTIVITY_LOG_TABLE");
-    logger.info(`started processing event with ID: ${eventIdentifier}`);
     validateSuspiciousActivity(input);
     const zendeskUserName = await getSecret(ZENDESK_API_USER_KEY, {
       maxAge: 900,
@@ -191,7 +190,6 @@ export const handler = async (
         );
       }
     }
-    logger.info(`finished processing event with ID: ${eventIdentifier}`);
     return input;
   } catch (error) {
     throw new Error(

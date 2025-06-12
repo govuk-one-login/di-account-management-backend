@@ -70,27 +70,24 @@ export const handler = async (
   await Promise.all(
     Records.map(async (record) => {
       try {
-        logger.info(`started processing event with ID: ${record.eventID}`);
         const txmaEvent = unmarshall(
           record.dynamodb?.NewImage?.event.M as Record<string, AttributeValue>
         ) as TxmaEvent;
         if (allowedTxmaEvents.includes(txmaEvent.event_name)) {
           validateTxmaEventBody(txmaEvent);
           const formattedRecord = formatIntoActivityLogEntry(txmaEvent);
-          const { MessageId: messageId } = await sendSqsMessage(
+          await sendSqsMessage(
             JSON.stringify(formattedRecord),
             OUTPUT_QUEUE_URL
           );
-          logger.info(`[Message sent to QUEUE] with message id = ${messageId}`);
         } else {
           logger.info(
-            `DB stream sent a ${txmaEvent.event_name} event. Irrelevant for activity log so ignoring`
+            `DB stream sent a ${txmaEvent.event_name} event. Ignoring.`
           );
         }
-        logger.info(`finished processing event with ID: ${record.eventID}`);
       } catch (error) {
         if (error instanceof DroppedEventError) {
-          logger.info("Dropped Event encountered and ignored.");
+          logger.info(error.message);
         } else {
           throw new Error(
             `Unable to format activity log for event with ID: ${record.eventID}, ${

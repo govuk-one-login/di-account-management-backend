@@ -100,7 +100,6 @@ export const handler = async (
   const EVENT_NAME = getEnvironmentVariable("EVENT_NAME");
   const TXMA_QUEUE_URL = getEnvironmentVariable("TXMA_QUEUE_URL");
   try {
-    logger.info(`started processing event with ID: ${input.event_id}`);
     if (!validateObject(input, VALIDATOR_RULES_MAP.get(EVENT_NAME))) {
       throw new Error(
         `Received Event: ${JSON.stringify(input)} failed validation.`
@@ -122,7 +121,6 @@ export const handler = async (
       );
     }
     await sendAuditEvent(txMAEvent, TXMA_QUEUE_URL);
-    logger.info(`finished processing event with ID: ${input.event_id}`);
   } catch (err: unknown) {
     throw new Error(
       `Error occurred sending event to TxMA: ${(err as Error).message}`

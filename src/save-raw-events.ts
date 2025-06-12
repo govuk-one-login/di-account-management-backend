@@ -76,11 +76,9 @@ export const handler = async (
   await Promise.all(
     event.Records.map(async (record) => {
       try {
-        logger.info(`Started processing message with ID: ${record.messageId}`);
         const txmaEvent: TxmaEvent = JSON.parse(record.body);
         validateTxmaEventBody(txmaEvent);
         await writeRawTxmaEvent(txmaEvent);
-        logger.info(`Finished processing message with ID: ${record.messageId}`);
       } catch (error) {
         throw new Error(
           `Unable to save raw events for message with ID: ${record.messageId}, ${

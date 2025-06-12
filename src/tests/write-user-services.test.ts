@@ -70,7 +70,7 @@ describe("lambdaHandler", () => {
         errorMessage = (error as Error).message;
       }
       expect(errorMessage).toContain(
-        "Unable to write user sercjces for message with ID: 19dd0b57-b21e-4ac1-bd88-01bbb068cb78, mock error"
+        "Unable to write user services for message with ID: 19dd0b57-b21e-4ac1-bd88-01bbb068cb78, mock error"
       );
     });
   });

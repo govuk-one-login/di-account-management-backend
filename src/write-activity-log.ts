@@ -50,7 +50,6 @@ export const handler = async (
   await Promise.all(
     event.Records.map(async (record) => {
       try {
-        logger.info(`Started processing message with ID: ${record.messageId}`);
         const activityLogEntry: ActivityLogEntry = JSON.parse(record.body);
         validateActivityLogEntry(activityLogEntry);
         const encryptedActivityLog: EncryptedActivityLogEntry = {
@@ -66,7 +65,6 @@ export const handler = async (
           reported_suspicious: activityLogEntry.reported_suspicious,
         };
         await writeActivityLogEntry(encryptedActivityLog);
-        logger.info(`Finished processing message with ID: ${record.messageId}`);
       } catch (error) {
         throw new Error(
           `Unable to write activity log for message with ID: ${record.messageId}, ${

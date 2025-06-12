@@ -43,9 +43,9 @@ describe("handler", () => {
 
   test("Ignores any Non allowed event", async () => {
     await handler(MUCKY_DYNAMODB_STREAM_EVENT, {} as Context);
-    expect(loggerInfoMock).toHaveBeenCalledTimes(3);
+    expect(loggerInfoMock).toHaveBeenCalledTimes(1);
     expect(loggerInfoMock).toHaveBeenCalledWith(
-      `DB stream sent a ${randomEventType} event. Irrelevant for activity log so ignoring`
+      `DB stream sent a ${randomEventType} event. Ignoring.`
     );
   });
 
@@ -124,7 +124,7 @@ describe("handler", () => {
       await handler(TEST_HMRC_EVENT, {} as Context);
       expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(0);
       expect(Logger.prototype.info).toHaveBeenCalledWith(
-        "Dropped Event encountered and ignored."
+        "Event dropped due to internal RP."
       );
     });
   });

@@ -78,24 +78,21 @@ export const handler = async (
   await Promise.all(
     Records.map(async (record) => {
       try {
-        logger.info(`started processing event with ID: ${record.eventID}`);
         const txmaEvent = unmarshall(
           record.dynamodb?.NewImage?.event.M as Record<string, AttributeValue>
         ) as TxmaEvent;
         if (txmaEvent.event_name === "AUTH_AUTH_CODE_ISSUED") {
           validateTxmaEventBody(txmaEvent);
           const results = await queryUserServices(txmaEvent.user.user_id);
-          const { MessageId: messageId } = await sendSqsMessage(
+          await sendSqsMessage(
             JSON.stringify(createUserRecordEvent(txmaEvent, results)),
             OUTPUT_QUEUE_URL
           );
-          logger.info(`[Message sent to QUEUE] with message id = ${messageId}`);
         } else {
           logger.info(
             `DB stream sent a ${txmaEvent.event_name} event. Irrelevant for service card so ignoring`
           );
         }
-        logger.info(`finished processing event with ID: ${record.eventID}`);
       } catch (error) {
         throw new Error(
           `Unable to query user services for message with ID: ${record.eventID}, ${

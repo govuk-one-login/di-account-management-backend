@@ -150,17 +150,11 @@ export const handler = async (
   await Promise.all(
     Records.map(async (record) => {
       try {
-        logger.info(`started processing message with ID: ${record.messageId}`);
         const formattedRecord = formatRecord(validateAndParseSQSRecord(record));
-        const { MessageId: messageId } = await sendSqsMessage(
-          JSON.stringify(formattedRecord),
-          OUTPUT_QUEUE_URL
-        );
-        logger.info(`[Message sent to QUEUE] with message id = ${messageId}`);
-        logger.info(`finished processing message with ID: ${record.messageId}`);
+        await sendSqsMessage(JSON.stringify(formattedRecord), OUTPUT_QUEUE_URL);
       } catch (error) {
         if (error instanceof DroppedEventError) {
-          logger.info("Dropped Event encountered and ignored.");
+          logger.info(error.message);
         } else {
           throw new Error(
             `Unable to format user services for message with ID: ${record.messageId}, ${

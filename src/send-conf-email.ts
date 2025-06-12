@@ -116,7 +116,6 @@ export const handler = async (
   const NOTIFY_API_KEY = getEnvironmentVariable("NOTIFY_API_KEY");
   const TEMPLATE_ID = getEnvironmentVariable("TEMPLATE_ID");
   try {
-    logger.info(`started processing event with ID: ${input.event_id}`);
     const notifyApiKey = await getSecret(NOTIFY_API_KEY, {
       maxAge: 900,
     });
@@ -129,7 +128,6 @@ export const handler = async (
     if (response?.data?.id) {
       input.notify_message_id = response.data.id;
     }
-    logger.info(`finished processing event with ID: ${input.event_id}`);
     return input;
   } catch (error) {
     logger.error(

@@ -7,12 +7,10 @@ import {
 } from "@aws-sdk/lib-dynamodb";
 import { Service, UserServices } from "./common/model";
 import { getEnvironmentVariable } from "./common/utils";
-import { Logger } from "@aws-lambda-powertools/logger";
 
 const dynamoDocClient = DynamoDBDocumentClient.from(new DynamoDBClient({}), {
   marshallOptions: { convertClassInstanceToMap: true },
 });
-const logger = new Logger();
 
 export const validateService = (service: Service): void => {
   const {
@@ -55,14 +53,12 @@ export const handler = async (event: SQSEvent): Promise<void> => {
   await Promise.all(
     event.Records.map(async (record) => {
       try {
-        logger.info(`Started processing message with ID: ${record.messageId}`);
         const userServices: UserServices = JSON.parse(record.body);
         validateUserServices(userServices);
         await writeUserServices(userServices);
-        logger.info(`Finished processing message with ID: ${record.messageId}`);
       } catch (error) {
         throw new Error(
-          `Unable to write user sercjces for message with ID: ${record.messageId}, ${
+          `Unable to write user services for message with ID: ${record.messageId}, ${
             (error as Error).message
           }`
         );

@@ -92,7 +92,6 @@ export const handler = async (
   context: Context
 ): Promise<ReportSuspiciousActivityEvent> => {
   logger.addContext(context);
-  logger.info(`started processing event with ID: ${input.event_id}`);
   const activityLog = await queryActivityLog(input.user_id, input.event_id);
   const event_id = `${crypto.randomUUID()}`;
   const timestamps = getCurrentTimestamp();
@@ -150,6 +149,5 @@ export const handler = async (
   if (input.device_information) {
     reportedEvent.device_information = input.device_information;
   }
-  logger.info(`finished processing event with ID: ${input.event_id}`);
   return reportedEvent;
 };

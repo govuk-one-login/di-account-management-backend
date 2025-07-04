@@ -54,11 +54,15 @@ const validateTxmaEvent = (txmaEvent: TxmaEvent): void => {
   const ENVIRONMENT = getEnvironmentVariable("ENVIRONMENT");
 
   if (
-    filterClients(ENVIRONMENT, { clientType: "internal" }).some(
-      (client) => client.clientId === txmaClientId
-    )
+    filterClients(ENVIRONMENT, {
+      showInAccounts: false,
+      showInServices: false,
+      showInDeleteAccount: false,
+    }).some((client) => client.clientId === txmaClientId)
   ) {
-    throw new DroppedEventError(`Event dropped due to internal RP.`);
+    throw new DroppedEventError(
+      `Event dropped as we are not displaying the RP in the Your Services Page.`
+    );
   }
 
   if (txmaClientId && !getClientIDs(ENVIRONMENT).includes(txmaClientId)) {

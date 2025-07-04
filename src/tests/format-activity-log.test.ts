@@ -124,7 +124,7 @@ describe("handler", () => {
       await handler(TEST_HMRC_EVENT, {} as Context);
       expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(0);
       expect(Logger.prototype.info).toHaveBeenCalledWith(
-        "Event dropped due to internal RP."
+        "Event dropped as we are not displaying the RP in the activty history page."
       );
     });
   });

@@ -31,11 +31,13 @@ export const validateTxmaEventBody = (txmaEvent: TxmaEvent): void => {
   const ENVIRONMENT = getEnvironmentVariable("ENVIRONMENT");
 
   if (
-    filterClients(ENVIRONMENT, { clientType: "internal" }).some(
+    filterClients(ENVIRONMENT, { showInActivityHistory: false }).some(
       (client) => client.clientId === txmaClientId
     )
   ) {
-    throw new DroppedEventError(`Event dropped due to internal RP.`);
+    throw new DroppedEventError(
+      `Event dropped as we are not displaying the RP in the activty history page.`
+    );
   }
 
   if (txmaClientId && !getClientIDs(ENVIRONMENT).includes(txmaClientId)) {

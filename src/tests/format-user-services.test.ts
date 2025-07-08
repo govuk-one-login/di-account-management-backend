@@ -354,7 +354,7 @@ describe("handler", () => {
     Logger.prototype.info = jest.fn();
     await handler({ Records: inputSQSEvent }, {} as Context);
     expect(Logger.prototype.info).toHaveBeenCalledWith(
-      "Event dropped due to internal RP."
+      "Event dropped as we are not displaying the RP in the Your Services Page."
     );
   });
 

@@ -123,6 +123,11 @@ Conditions:
 
   IsProduction: !Equals [!Ref Environment, production]
 
+  BackupEnabled: !Or
+    - !Equals [!Ref Environment, staging]
+    - !Equals [!Ref Environment, integration]
+    - !Equals [!Ref Environment, production]
+
 Globals:
   Function:
     Environment:
@@ -471,6 +476,8 @@ Resources:
           Value: !Ref "Environment"
         - Key: Source
           Value: "https://github.com/alphagov/di-account-management-backend/blob/main/infrastructre/template.yaml"
+        - Key: BackupFrequency
+          Value: !If [BackupEnabled, "Bihourly", ""]
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
       SSESpecification:
@@ -519,6 +526,8 @@ Resources:
           Value: !Ref "Environment"
         - Key: Source
           Value: "https://github.com/alphagov/di-account-management-backend/blob/main/infrastructre/template.yaml"
+        - Key: BackupFrequency
+          Value: !If [BackupEnabled, "Bihourly", ""]
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
       SSESpecification:

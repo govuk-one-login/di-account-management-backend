@@ -37,14 +37,12 @@ jobs:
   lint_infrastructure:
     name: Lint Infrastructure
     uses: ./.github/workflows/lint-cloudformation.yaml
-    secrets: inherit
     with:
       gitRef: ${{ inputs.gitRef }}
 
   test_application:
     name: Test Lambdas
     uses: ./.github/workflows/lint-and-test-lambdas.yaml
-    secrets: inherit
     with:
       gitRef: ${{ inputs.gitRef }}
 

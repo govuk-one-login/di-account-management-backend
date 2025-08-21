@@ -37,7 +37,6 @@ jobs:
   lint_infrastructure:
     name: Lint Infrastructure
     uses: ./.github/workflows/lint-cloudformation.yaml
-    secrets: inherit
     with:
       gitRef: ${{ inputs.gitRef }}
 

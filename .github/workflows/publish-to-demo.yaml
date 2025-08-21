@@ -43,7 +43,6 @@ jobs:
   test_application:
     name: Test Lambdas
     uses: ./.github/workflows/lint-and-test-lambdas.yaml
-    secrets: inherit
     with:
       gitRef: ${{ inputs.gitRef }}
 

@@ -34,6 +34,10 @@
 
 - [ ] This PR adds or changes permissions
 
+### Monitoring
+
+- [ ] This PR includes changes that need to be monitored in production as the scope of the change could cause issues
+
 ## Testing
 
 <!-- Provide a summary of any manual testing you've done, for example deploying the branch to dev -->

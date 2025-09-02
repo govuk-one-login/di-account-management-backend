@@ -124,6 +124,7 @@ Conditions:
   IsProduction: !Equals [!Ref Environment, production]
 
   BackupEnabled: !Or
+    - !Equals [!Ref Environment, dev]
     - !Equals [!Ref Environment, staging]
     - !Equals [!Ref Environment, integration]
     - !Equals [!Ref Environment, production]

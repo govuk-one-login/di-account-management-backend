@@ -4401,6 +4401,14 @@ Resources:
       AliasName: !Sub "alias/${AWS::StackName}/${Environment}/QueueKmsKey"
       TargetKeyId: !Ref QueueKmsKey
 
+  QueueKmsKeyArnSSM:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Description: The Arn of the QueueKmsKey Key
+      Name: !Sub "/${AWS::StackName}/KMS/QueueKmsKey/ARN"
+      Type: String
+      Value: !GetAtt QueueKmsKey.Arn
+
   DatabaseKmsKey:
     Type: AWS::KMS::Key
     Properties:
@@ -4799,6 +4807,88 @@ Resources:
       Name: !Sub "/${AWS::StackName}/SNS/SuspiciousActivity/ARN"
       Type: String
       Value: !Ref SuspiciousActivityTopic
+
+#### Gov Notify Notifications
+  NotificationQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub "${AWS::StackName}-NotificationQueue"
+      MessageRetentionPeriod: 1209600
+      DelaySeconds: 0
+      VisibilityTimeout: 10
+      ReceiveMessageWaitTimeSeconds: 0
+      KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
+      RedriveAllowPolicy:
+        redrivePermission: denyAll
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt NotificationDLQ.Arn
+        maxReceiveCount: 5
+
+  NotificationQueueUrlSSM:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Description: The URL of the NotificationQueue Queue
+      Name: !Sub "/${AWS::StackName}/SQS/NotificationQueue/URL"
+      Type: String
+      Value: !GetAtt NotificationQueue.QueueUrl
+
+  NotificationQueueArnSSM:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Description: The ARN of the NotificationQueue Queue
+      Name: !Sub "/${AWS::StackName}/SQS/NotificationQueue/ARN"
+      Type: String
+      Value: !GetAtt NotificationQueue.Arn
+
+  NotificationQueueProcessingTooSlow:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      ActionsEnabled: true
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      AlarmDescription: !Sub "Notification queue processing too slow."
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 600
+      EvaluationPeriods: 1
+      TreatMissingData: notBreaching
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt NotificationQueue.QueueName
+      MetricName: ApproximateAgeOfOldestMessage
+      Namespace: AWS/SQS
+      Period: 60
+      Statistic: Maximum
+
+  NotificationDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub "${AWS::StackName}-NotificationDLQ"
+      KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
+      VisibilityTimeout: 0
+      MessageRetentionPeriod: 1209600
+      RedriveAllowPolicy:
+        redrivePermission: byQueue
+        sourceQueueArns:
+          - !Sub "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${AWS::StackName}-NotificationQueue"
+
+  NotificationDLQHasMessages:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      ActionsEnabled: true
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      AlarmDescription: !Sub "Notification DLQ has messages."
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Threshold: 1
+      EvaluationPeriods: 1
+      TreatMissingData: notBreaching
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt NotificationDLQ.QueueName
+      MetricName: ApproximateNumberOfMessagesVisible
+      Namespace: AWS/SQS
+      Period: 60
+      Statistic: Maximum
 
 Outputs:
   GeneratorKey:

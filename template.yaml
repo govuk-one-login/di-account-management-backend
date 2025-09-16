@@ -4808,14 +4808,14 @@ Resources:
       Type: String
       Value: !Ref SuspiciousActivityTopic
 
-#### Gov Notify Notifications
+  #### Gov Notify Notifications
   NotificationQueue:
     Type: AWS::SQS::Queue
     Properties:
       QueueName: !Sub "${AWS::StackName}-NotificationQueue"
       MessageRetentionPeriod: 1209600
       DelaySeconds: 0
-      VisibilityTimeout: 10
+      VisibilityTimeout: 15
       ReceiveMessageWaitTimeSeconds: 0
       KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
       RedriveAllowPolicy:
@@ -4889,6 +4889,149 @@ Resources:
       Namespace: AWS/SQS
       Period: 60
       Statistic: Maximum
+
+  ######################
+  # Notification Service
+  ######################
+
+  NotificationServiceFunction:
+    Type: AWS::Serverless::Function
+    DependsOn:
+      - NotificationServiceFunctionLogGroup
+    Properties:
+      FunctionName: !Sub ${Environment}-${AWS::StackName}-notification-service
+      CodeUri: src
+      PackageType: Zip
+      Timeout: 10
+      Events:
+        NotificationQueue:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt NotificationQueue.Arn
+            BatchSize: 10
+            FunctionResponseTypes:
+              - ReportBatchItemFailures
+      Handler: notification-service.handler
+      Role: !GetAtt NotificationServiceRole.Arn
+      Environment:
+        Variables:
+          NODE_OPTIONS: --enable-source-maps
+      DeploymentPreference:
+        Alarms:
+          - !Ref NotificationServiceFunctionSuccessRate
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Format: "esm"
+        OutExtension:
+          - .js=.mjs
+        Target: "es2020"
+        Sourcemap: true
+        EntryPoints:
+          - notification-service.ts
+        Banner:
+          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
+
+  NotificationServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      PermissionsBoundary: !If
+        - UsePermissionsBoundary
+        - !Ref PermissionsBoundary
+        - !Ref AWS::NoValue
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+        - !Ref NotificationServicePolicy
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+
+  NotificationServicePolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - sqs:ReceiveMessage
+              - sqs:DeleteMessage
+              - sqs:GetQueueAttributes
+            Resource: !GetAtt NotificationQueue.Arn
+          - Effect: Allow
+            Action:
+              - kms:Decrypt
+              - kms:GenerateDataKey*
+              - kms:ReEncrypt*
+            Resource: !GetAtt QueueKmsKey.Arn
+
+  NotificationServiceFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-notification-service"
+      RetentionInDays: 30
+      KmsKeyId: !GetAtt LoggingKmsKey.Arn
+
+  NotificationServiceCSLSSubscription:
+    Condition: ExportLogsToSplunk
+    Type: AWS::Logs::SubscriptionFilter
+    Properties:
+      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
+      FilterPattern: ""
+      LogGroupName: !Ref NotificationServiceFunctionLogGroup
+
+  NotificationServiceFunctionSuccessRate:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            NotificationServiceFunctionSuccessRate,
+          ],
+        ]
+      Metrics:
+        - Id: errors
+          MetricStat:
+            Metric:
+              Namespace: AWS/Lambda
+              MetricName: Errors
+              Dimensions:
+                - Name: FunctionName
+                  Value: !Ref NotificationServiceFunction
+            Period: 300
+            Stat: Sum
+          ReturnData: false
+        - Id: invocations
+          MetricStat:
+            Metric:
+              Namespace: AWS/Lambda
+              MetricName: Invocations
+              Dimensions:
+                - Name: FunctionName
+                  Value: !Ref NotificationServiceFunction
+            Period: 300
+            Stat: Sum
+          ReturnData: false
+        - Id: successRate
+          Expression: "1 - (errors / invocations)"
+          Label: "Success Rate"
+          ReturnData: true
+      Threshold: 0.95
+      ComparisonOperator: LessThanThreshold
+      EvaluationPeriods: 1
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
 
 Outputs:
   GeneratorKey:

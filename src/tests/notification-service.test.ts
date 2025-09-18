@@ -144,17 +144,6 @@ describe("notification-service handler", () => {
         data: {
           id: "notification-1",
           reference: "ref-1",
-          content: {
-            subject: "Test Subject",
-            body: "Test Body",
-            from_email: "noreply@example.com",
-          },
-          uri: "https://api.notifications.service.gov.uk/v2/notifications/notification-1",
-          template: {
-            id: "template-123",
-            version: 1,
-            uri: "https://api.notifications.service.gov.uk/v2/templates/template-123",
-          },
         },
       })
       .mockRejectedValueOnce(new Error("Send email failed"))
@@ -162,34 +151,12 @@ describe("notification-service handler", () => {
         data: {
           id: "notification-3",
           reference: "ref-3",
-          content: {
-            subject: "Test Subject",
-            body: "Test Body",
-            from_email: "noreply@example.com",
-          },
-          uri: "https://api.notifications.service.gov.uk/v2/notifications/notification-3",
-          template: {
-            id: "template-123",
-            version: 1,
-            uri: "https://api.notifications.service.gov.uk/v2/templates/template-123",
-          },
         },
       })
       .mockResolvedValueOnce({
         data: {
           id: "notification-4",
           reference: "ref-4",
-          content: {
-            subject: "Test Subject",
-            body: "Test Body",
-            from_email: "noreply@example.com",
-          },
-          uri: "https://api.notifications.service.gov.uk/v2/notifications/notification-4",
-          template: {
-            id: "template-123",
-            version: 1,
-            uri: "https://api.notifications.service.gov.uk/v2/templates/template-123",
-          },
         },
       });
 

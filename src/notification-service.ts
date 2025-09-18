@@ -79,19 +79,7 @@ const messageSchema = v.variant("notificationType", [
 const notifySuccessSchema = v.object({
   data: v.object({
     id: v.string(),
-    reference: v.optional(v.string()),
-    content: v.object({
-      subject: v.string(),
-      body: v.string(),
-      from_email: v.pipe(v.string(), v.email()),
-      one_click_unsubscribe_url: v.optional(v.pipe(v.string(), v.url())),
-    }),
-    uri: v.pipe(v.string(), v.url()),
-    template: v.object({
-      id: v.string(),
-      version: v.pipe(v.number(), v.integer()),
-      uri: v.pipe(v.string(), v.url()),
-    }),
+    reference: v.nullish(v.string()),
   }),
 });
 
@@ -154,13 +142,20 @@ export const handler = async (
             }
           );
 
-          const parsedResult = v.parse(notifySuccessSchema, result);
+          try {
+            const parsedResult = v.parse(notifySuccessSchema, result);
 
-          logger.info("Successfully sent a notification", {
-            messageId: record.messageId,
-            id: parsedResult.data.id,
-            reference: parsedResult.data.reference,
-          });
+            logger.info("Successfully sent a notification", {
+              messageId: record.messageId,
+              id: parsedResult.data.id,
+              reference: parsedResult.data.reference,
+            });
+          } catch (error) {
+            logger.error("Error occurred after sending a notification", {
+              messageId: record.messageId,
+              error: isAxiosError(error) ? error.response?.data : error,
+            });
+          }
         } catch (error) {
           logger.error("Error occurred when sending a notification", {
             messageId: record.messageId,

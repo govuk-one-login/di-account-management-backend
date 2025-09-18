@@ -37,18 +37,18 @@ const messageSchema = v.variant("notificationType", [
         os: deviceInfo.os.name,
         deviceVendor: deviceInfo.device.vendor,
         deviceModel: deviceInfo.device.model,
-        countryName_en: new Intl.DisplayNames("en", {
+        countryName_en: new Intl.DisplayNames("en-gb", {
           type: "region",
         }).of(input.countryCode),
-        countryName_cy: new Intl.DisplayNames("cy", {
+        countryName_cy: new Intl.DisplayNames("cy-gb", {
           type: "region",
         }).of(input.countryCode),
-        loggedOutAt_en: new Intl.DateTimeFormat("en", {
+        loggedOutAt_en: new Intl.DateTimeFormat("en-gb", {
           dateStyle: "full",
           timeStyle: "short",
           timeZone: "Europe/London",
         }).format(new Date(input.loggedOutAt)),
-        loggedOutAt_cy: new Intl.DateTimeFormat("cy", {
+        loggedOutAt_cy: new Intl.DateTimeFormat("cy-gb", {
           dateStyle: "full",
           timeStyle: "short",
           timeZone: "Europe/London",

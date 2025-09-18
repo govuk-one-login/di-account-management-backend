@@ -139,7 +139,9 @@ export const handler = async (
         } catch (error) {
           logger.error("Error occurred when sending a notification", {
             messageId: record.messageId,
-            error: error instanceof AxiosError ? error.response?.data : error,
+            error,
+            // @ts-expect-error - TODO
+            TODO: error?.response?.data,
           });
 
           batchItemFailures.push({ itemIdentifier: record.messageId });

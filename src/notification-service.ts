@@ -12,7 +12,6 @@ import { randomUUID } from "node:crypto";
 import { getSecret } from "@aws-lambda-powertools/parameters/secrets";
 import { getEnvironmentVariable } from "./common/utils";
 import assert from "node:assert";
-import { AxiosError } from "axios";
 
 const logger = new Logger();
 

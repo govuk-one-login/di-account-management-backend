@@ -243,42 +243,42 @@ Mappings:
     demo:
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.integration.publishing.service.gov.uk"
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "2b3170b5-159e-457f-a282-f30f6006dc32"
-      NOTIFY_TEMPLATE_IDS: |
+      NOTIFYTEMPLATEIDS: |
         {
           "GLOBAL_LOGOUT": "a92761ef-213b-4fb6-a53c-5912a931c159"
         }
     dev:
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.integration.publishing.service.gov.uk"
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "2b3170b5-159e-457f-a282-f30f6006dc32"
-      NOTIFY_TEMPLATE_IDS: |
+      NOTIFYTEMPLATEIDS: |
         {
           "GLOBAL_LOGOUT": "a92761ef-213b-4fb6-a53c-5912a931c159"
         }
     build:
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.staging.publishing.service.gov.uk"
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "2b3170b5-159e-457f-a282-f30f6006dc32"
-      NOTIFY_TEMPLATE_IDS: |
+      NOTIFYTEMPLATEIDS: |
         {
           "GLOBAL_LOGOUT": "a92761ef-213b-4fb6-a53c-5912a931c159"
         }
     staging:
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.staging.publishing.service.gov.uk"
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "2b3170b5-159e-457f-a282-f30f6006dc32"
-      NOTIFY_TEMPLATE_IDS: |
+      NOTIFYTEMPLATEIDS: |
         {
           "GLOBAL_LOGOUT": "a92761ef-213b-4fb6-a53c-5912a931c159"
         }
     integration:
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.integration.publishing.service.gov.uk"
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "0674c6e3-219c-4e3a-b04c-3786bac7f228"
-      NOTIFY_TEMPLATE_IDS: |
+      NOTIFYTEMPLATEIDS: |
         {
           "GLOBAL_LOGOUT": "fb33515d-41cb-40df-93c2-e1bf76c3672a"
         }
     production:
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.publishing.service.gov.uk"
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "0674c6e3-219c-4e3a-b04c-3786bac7f228"
-      NOTIFY_TEMPLATE_IDS: |
+      NOTIFYTEMPLATEIDS: |
         {
           "GLOBAL_LOGOUT": "fb33515d-41cb-40df-93c2-e1bf76c3672a"
         }
@@ -4946,7 +4946,7 @@ Resources:
             !FindInMap [
               EnvironmentVariables,
               !Ref Environment,
-              NOTIFY_TEMPLATE_IDS,
+              NOTIFYTEMPLATEIDS,
             ]
       DeploymentPreference:
         Alarms:

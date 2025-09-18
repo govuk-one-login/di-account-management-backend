@@ -4918,7 +4918,10 @@ Resources:
         Variables:
           NODE_OPTIONS: --enable-source-maps
           NOTIFY_API_KEY: /account-mgmt-backend/notify-api-key
-          NOTIFY_TEMPLATE_IDS: /account-mgmt-backend/notify-template-ids
+          NOTIFY_TEMPLATE_IDS: |
+            {
+              "GLOBAL_LOGOUT": "TODO"
+            }
       DeploymentPreference:
         Alarms:
           - !Ref NotificationServiceFunctionSuccessRate

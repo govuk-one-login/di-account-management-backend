@@ -19,25 +19,12 @@ enum NotificationType {
   GLOBAL_LOGOUT = "GLOBAL_LOGOUT",
 }
 
-const localeSchema = v.picklist(["en", "cy"]);
-
 const messageSchema = v.variant("notificationType", [
   v.pipe(
     v.object({
       notificationType: v.literal(NotificationType.GLOBAL_LOGOUT),
-      locale: localeSchema,
       emailAddress: v.pipe(v.string(), v.email()),
-      loggedOutAt: v.pipe(
-        v.string(),
-        v.isoTimestamp(),
-        v.transform((input) =>
-          new Intl.DateTimeFormat("en-GB", {
-            dateStyle: "full",
-            timeStyle: "short",
-            timeZone: "Europe/London",
-          }).format(new Date(input))
-        )
-      ),
+      loggedOutAt: v.pipe(v.string(), v.isoTimestamp()),
       ipAddress: v.pipe(v.string(), v.ip()),
       userAgent: v.string(),
       countryCode: v.string(),
@@ -50,9 +37,22 @@ const messageSchema = v.variant("notificationType", [
         os: deviceInfo.os.name,
         deviceVendor: deviceInfo.device.vendor,
         deviceModel: deviceInfo.device.model,
-        countryName: new Intl.DisplayNames([input.locale], {
+        countryName_en: new Intl.DisplayNames("en", {
           type: "region",
         }).of(input.countryCode),
+        countryName_cy: new Intl.DisplayNames("cy", {
+          type: "region",
+        }).of(input.countryCode),
+        loggedOutAt_en: new Intl.DateTimeFormat("en", {
+          dateStyle: "full",
+          timeStyle: "short",
+          timeZone: "Europe/London",
+        }).format(new Date(input.loggedOutAt)),
+        loggedOutAt_cy: new Intl.DateTimeFormat("cy", {
+          dateStyle: "full",
+          timeStyle: "short",
+          timeZone: "Europe/London",
+        }).format(new Date(input.loggedOutAt)),
       };
     })
   ),
@@ -79,10 +79,7 @@ const notifySuccessSchema = v.object({
   }),
 });
 
-const templateIDsSchema = v.record(
-  v.enum(NotificationType),
-  v.record(localeSchema, v.string())
-);
+const templateIDsSchema = v.record(v.enum(NotificationType), v.string());
 
 export const handler = async (
   event: SQSEvent,
@@ -91,12 +88,9 @@ export const handler = async (
   try {
     logger.addContext(context);
 
-    const NOTIFY_TEMPLATE_IDS = getEnvironmentVariable("NOTIFY_TEMPLATE_IDS");
     const notifyTemplateIds = v.parse(
       templateIDsSchema,
-      await getSecret(NOTIFY_TEMPLATE_IDS, {
-        maxAge: 900,
-      })
+      JSON.parse(getEnvironmentVariable("NOTIFY_TEMPLATE_IDS"))
     );
 
     const NOTIFY_API_KEY = getEnvironmentVariable("NOTIFY_API_KEY");
@@ -118,14 +112,12 @@ export const handler = async (
         try {
           const message = v.parse(messageSchema, JSON.parse(record.body));
 
-          const templateId =
-            notifyTemplateIds[message.notificationType]?.[message.locale];
+          const templateId = notifyTemplateIds[message.notificationType];
 
-          if (!templateId) {
-            throw new Error(
-              `Template ID not available for ${message.notificationType}.${message.locale}`
-            );
-          }
+          assert.ok(
+            templateId,
+            `Template ID not available for ${message.notificationType}`
+          );
 
           const result = await notify.sendEmail(
             templateId,

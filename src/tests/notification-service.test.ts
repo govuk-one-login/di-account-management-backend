@@ -1,12 +1,22 @@
-import { handler } from "../notification-service";
 import { SQSEvent, Context, SQSRecord } from "aws-lambda";
 import { getSecret } from "@aws-lambda-powertools/parameters/secrets";
 import { NotifyClient } from "notifications-node-client";
 import UAParser from "ua-parser-js";
 
+const mockLoggerInstance = {
+  addContext: jest.fn(),
+  info: jest.fn(),
+  error: jest.fn(),
+};
+
 jest.mock("@aws-lambda-powertools/parameters/secrets");
 jest.mock("notifications-node-client");
 jest.mock("ua-parser-js");
+jest.mock("@aws-lambda-powertools/logger", () => ({
+  Logger: jest.fn().mockImplementation(() => mockLoggerInstance),
+}));
+
+import { handler } from "../notification-service";
 
 const mockGetSecret = getSecret as jest.MockedFunction<typeof getSecret>;
 const mockNotifyClient = NotifyClient as jest.MockedClass<typeof NotifyClient>;
@@ -81,6 +91,10 @@ describe("notification-service handler", () => {
     expect(result.batchItemFailures[0].itemIdentifier).toBe("msg-0");
     expect(result.batchItemFailures[1].itemIdentifier).toBe("msg-1");
     expect(result.batchItemFailures[2].itemIdentifier).toBe("msg-2");
+    expect(mockLoggerInstance.error).toHaveBeenCalledWith(
+      "Error occurred when sending notifications",
+      { error: expect.anything() }
+    );
   });
 
   it("should fail when notify API key is undefined", async () => {
@@ -93,6 +107,10 @@ describe("notification-service handler", () => {
     expect(result.batchItemFailures[0].itemIdentifier).toBe("msg-0");
     expect(result.batchItemFailures[1].itemIdentifier).toBe("msg-1");
     expect(result.batchItemFailures[2].itemIdentifier).toBe("msg-2");
+    expect(mockLoggerInstance.error).toHaveBeenCalledWith(
+      "Error occurred when sending notifications",
+      { error: expect.anything() }
+    );
   });
 
   it("should handle mixed success and failure scenarios", async () => {
@@ -162,6 +180,40 @@ describe("notification-service handler", () => {
       "msg-1",
     ]);
     expect(mockSendEmail).toHaveBeenCalledTimes(3);
+
+    expect(mockLoggerInstance.info).toHaveBeenCalledWith(
+      "Successfully sent a notification",
+      {
+        messageId: "msg-0",
+        id: "notification-1",
+        reference: "ref-1",
+      }
+    );
+
+    expect(mockLoggerInstance.error).toHaveBeenCalledWith(
+      "Error occurred when sending a notification",
+      {
+        messageId: "msg-1",
+        error: expect.anything(),
+      }
+    );
+
+    expect(mockLoggerInstance.info).toHaveBeenCalledWith(
+      "Successfully sent a notification",
+      {
+        messageId: "msg-2",
+        id: "notification-3",
+        reference: "ref-3",
+      }
+    );
+
+    expect(mockLoggerInstance.error).toHaveBeenCalledWith(
+      "Error occurred when sending a notification",
+      {
+        messageId: "msg-3",
+        error: expect.anything(),
+      }
+    );
 
     expect(mockSendEmail).toHaveBeenNthCalledWith(
       1,

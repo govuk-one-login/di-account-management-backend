@@ -82,7 +82,7 @@ describe("notification-service handler", () => {
   });
 
   it("should fail when notifyTemplateIds cannot be parsed", async () => {
-    process.env.NOTIFY_TEMPLATE_IDS = "invalid-json";
+    process.env.NOTIFY_TEMPLATE_IDS = '"invalid-format"';
     const event = createSQSEvent(validGlobalLogoutMessages);
 
     const result = await handler(event, mockContext as Context);
@@ -94,6 +94,9 @@ describe("notification-service handler", () => {
     expect(mockLoggerInstance.error).toHaveBeenCalledWith(
       "Error occurred when sending notifications",
       { error: expect.anything() }
+    );
+    expect(mockLoggerInstance.error.mock.calls[0][1].error.message).toBe(
+      'Invalid type: Expected Object but received "invalid-format"'
     );
   });
 
@@ -110,6 +113,9 @@ describe("notification-service handler", () => {
     expect(mockLoggerInstance.error).toHaveBeenCalledWith(
       "Error occurred when sending notifications",
       { error: expect.anything() }
+    );
+    expect(mockLoggerInstance.error.mock.calls[0][1].error.message).toBe(
+      "NOTIFY_API_KEY_SECRET secret is undefined"
     );
   });
 
@@ -197,6 +203,9 @@ describe("notification-service handler", () => {
         error: expect.anything(),
       }
     );
+    expect(mockLoggerInstance.error.mock.calls[0][1].error.message).toBe(
+      'Invalid type: Expected "GLOBAL_LOGOUT" but received undefined'
+    );
 
     expect(mockLoggerInstance.info).toHaveBeenCalledWith(
       "Successfully sent a notification",
@@ -213,6 +222,9 @@ describe("notification-service handler", () => {
         messageId: "msg-3",
         error: expect.anything(),
       }
+    );
+    expect(mockLoggerInstance.error.mock.calls[1][1].error.message).toBe(
+      "Send email failed"
     );
 
     expect(mockSendEmail).toHaveBeenNthCalledWith(

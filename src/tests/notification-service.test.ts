@@ -21,6 +21,14 @@ jest.mock("@aws-lambda-powertools/logger", () => ({
 jest.mock("node:crypto", () => ({
   randomUUID: () => "test-uuid",
 }));
+jest.mock("ua-parser-js", () => ({
+  __esModule: true,
+  default: () => ({
+    browser: { name: "Chrome" },
+    os: { name: "Mac OS" },
+    device: { vendor: "Apple", model: "Macintosh" },
+  }),
+}));
 
 describe("setUpNotifyClient", () => {
   let setUpNotifyClient: typeof import("../notification-service").setUpNotifyClient;
@@ -221,7 +229,17 @@ describe("processNotification", () => {
       "template-id",
       "test@example.com",
       expect.objectContaining({
-        personalisation: expect.any(Object),
+        personalisation: {
+          ipAddress: "192.168.1.1",
+          browser: "Chrome",
+          os: "Mac OS",
+          deviceVendor: "Apple",
+          deviceModel: "Macintosh",
+          countryName_en: "United Kingdom",
+          countryName_cy: "Y Deyrnas Unedig",
+          loggedOutAt_en: "Sunday, 1 January 2023 at 12:00",
+          loggedOutAt_cy: "Dydd Sul, 1 Ionawr 2023 am 12:00",
+        },
         reference: "test-uuid",
       })
     );
@@ -248,7 +266,17 @@ describe("processNotification", () => {
       "template-id",
       "test@example.com",
       expect.objectContaining({
-        personalisation: expect.any(Object),
+        personalisation: {
+          ipAddress: "192.168.1.1",
+          browser: "Chrome",
+          os: "Mac OS",
+          deviceVendor: "Apple",
+          deviceModel: "Macintosh",
+          countryName_en: "United Kingdom",
+          countryName_cy: "Y Deyrnas Unedig",
+          loggedOutAt_en: "Sunday, 1 January 2023 at 12:00",
+          loggedOutAt_cy: "Dydd Sul, 1 Ionawr 2023 am 12:00",
+        },
         reference: "test-uuid",
       })
     );
@@ -270,7 +298,17 @@ describe("processNotification", () => {
       "template-id",
       "test@example.com",
       expect.objectContaining({
-        personalisation: expect.any(Object),
+        personalisation: {
+          ipAddress: "192.168.1.1",
+          browser: "Chrome",
+          os: "Mac OS",
+          deviceVendor: "Apple",
+          deviceModel: "Macintosh",
+          countryName_en: "United Kingdom",
+          countryName_cy: "Y Deyrnas Unedig",
+          loggedOutAt_en: "Sunday, 1 January 2023 at 12:00",
+          loggedOutAt_cy: "Dydd Sul, 1 Ionawr 2023 am 12:00",
+        },
         reference: "test-uuid",
       })
     );
@@ -296,7 +334,17 @@ describe("processNotification", () => {
       "template-id",
       "test@example.com",
       expect.objectContaining({
-        personalisation: expect.any(Object),
+        personalisation: {
+          ipAddress: "192.168.1.1",
+          browser: "Chrome",
+          os: "Mac OS",
+          deviceVendor: "Apple",
+          deviceModel: "Macintosh",
+          countryName_en: "United Kingdom",
+          countryName_cy: "Y Deyrnas Unedig",
+          loggedOutAt_en: "Sunday, 1 January 2023 at 12:00",
+          loggedOutAt_cy: "Dydd Sul, 1 Ionawr 2023 am 12:00",
+        },
         reference: "test-uuid",
       })
     );

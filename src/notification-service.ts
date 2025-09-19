@@ -13,8 +13,16 @@ import { randomUUID } from "node:crypto";
 import { getSecret } from "@aws-lambda-powertools/parameters/secrets";
 import { getEnvironmentVariable } from "./common/utils";
 import { isAxiosError } from "axios";
+import { MetricUnit } from "@aws-lambda-powertools/metrics";
+import { initMetrics } from "./common/metrics";
 
 const logger = new Logger();
+const metrics = initMetrics("notification-service");
+
+const addNotificationFailedMetric = (failureReason: string) => {
+  metrics.addDimension("failureReason", failureReason);
+  metrics.addMetric("notificationFailed", MetricUnit.Count, 1);
+};
 
 enum NotificationType {
   GLOBAL_LOGOUT = "GLOBAL_LOGOUT",
@@ -104,18 +112,22 @@ export const setUpNotifyClient = async (
       maxAge: 900,
     });
     if (!notifyApiKey) {
-      logger.error("Secret is undefined", {
+      const errorName = "Secret is undefined";
+      logger.error(errorName, {
         messageId: record.messageId,
         key: notifyApiSecretKey,
       });
+      addNotificationFailedMetric(errorName);
       batchItemFailures.push({ itemIdentifier: record.messageId });
       return;
     }
     if (typeof notifyApiKey !== "string") {
-      logger.error("Secret is not a string", {
+      const errorName = "Secret is not a string";
+      logger.error(errorName, {
         messageId: record.messageId,
         key: notifyApiSecretKey,
       });
+      addNotificationFailedMetric(errorName);
       batchItemFailures.push({ itemIdentifier: record.messageId });
       return;
     }
@@ -138,18 +150,22 @@ export const processNotification = async (
   try {
     messageFromJson = JSON.parse(record.body);
   } catch {
-    logger.error("Message is not valid JSON", {
+    const errorName = "Message is not valid JSON";
+    logger.error(errorName, {
       messageId: record.messageId,
     });
+    addNotificationFailedMetric(errorName);
     batchItemFailures.push({ itemIdentifier: record.messageId });
     return;
   }
 
   const messageParsed = v.safeParse(messageSchema, messageFromJson);
   if (!messageParsed.success) {
-    logger.error("Invalid message format", {
+    const errorName = "Invalid message format";
+    logger.error(errorName, {
       messageId: record.messageId,
     });
+    addNotificationFailedMetric(errorName);
     batchItemFailures.push({ itemIdentifier: record.messageId });
     return;
   }
@@ -162,10 +178,12 @@ export const processNotification = async (
 
   const templateId = notifyTemplateIds[message.notificationType];
   if (!templateId) {
-    logger.error("Template ID not available", {
+    const errorName = "Template ID not found";
+    logger.error(errorName, {
       messageId: record.messageId,
       notificationType: message.notificationType,
     });
+    addNotificationFailedMetric(errorName);
     batchItemFailures.push({ itemIdentifier: record.messageId });
     return;
   }
@@ -183,19 +201,23 @@ export const processNotification = async (
     );
   } catch (error) {
     if (isAxiosError(error)) {
-      logger.error("Unable to send notification", {
+      const errorName = "Unable to send notification";
+      logger.error(errorName, {
         messageId: record.messageId,
         notificationType: message.notificationType,
         status: error.response?.status,
         statusText: error.response?.statusText,
         details: error.response?.data,
       });
+      addNotificationFailedMetric(errorName);
     } else {
-      logger.error("Unable to send notification due to an unknown error", {
+      const errorName = "Unable to send notification due to an unknown error";
+      logger.error(errorName, {
         messageId: record.messageId,
         notificationType: message.notificationType,
         details: error instanceof Error ? error.message : undefined,
       });
+      addNotificationFailedMetric(errorName);
     }
     batchItemFailures.push({ itemIdentifier: record.messageId });
     return;
@@ -203,10 +225,12 @@ export const processNotification = async (
 
   const resultParsed = v.safeParse(notifySuccessSchema, sendResult);
   if (!resultParsed.success) {
-    logger.error("Invalid result format", {
+    const errorName = "Invalid result format";
+    logger.error(errorName, {
       messageId: record.messageId,
       notificationType: message.notificationType,
     });
+    addNotificationFailedMetric(errorName);
     batchItemFailures.push({ itemIdentifier: record.messageId });
     return;
   }
@@ -217,6 +241,7 @@ export const processNotification = async (
     reference: resultParsed.output.data.reference,
     notificationType: message.notificationType,
   });
+  metrics.addMetric("notificationSent", MetricUnit.Count, 1);
 };
 
 export const handler = async (
@@ -232,6 +257,8 @@ export const handler = async (
       processNotification(record, batchItemFailures)
     )
   );
+
+  metrics.publishStoredMetrics();
 
   return {
     batchItemFailures,

@@ -5076,6 +5076,7 @@ Resources:
       Threshold: 0.95
       ComparisonOperator: LessThanThreshold
       EvaluationPeriods: 1
+      TreatMissingData: notBreaching
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
 

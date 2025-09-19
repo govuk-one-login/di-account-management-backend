@@ -28,10 +28,7 @@ const messageSchema = v.variant("notificationType", [
       notificationType: v.literal(NotificationType.GLOBAL_LOGOUT),
       emailAddress: v.pipe(v.string(), v.email()),
       loggedOutAt: v.pipe(v.string(), v.isoTimestamp()),
-      ipAddress: v.fallback(
-        v.pipe(v.string(), v.ip()),
-        missingContentPlaceholder
-      ),
+      ipAddress: v.optional(v.pipe(v.string(), v.ip())),
       userAgent: v.optional(v.string()),
       countryCode: v.optional(v.string()),
     }),
@@ -41,36 +38,41 @@ const messageSchema = v.variant("notificationType", [
         : undefined;
 
       return {
-        ...input,
+        emailAddress: input.emailAddress,
+        notificationType: input.notificationType,
 
-        browser: deviceInfo?.browser.name ?? missingContentPlaceholder,
-        os: deviceInfo?.os.name ?? missingContentPlaceholder,
-        deviceVendor: deviceInfo?.device.vendor ?? missingContentPlaceholder,
-        deviceModel: deviceInfo?.device.model ?? missingContentPlaceholder,
+        personalisation: {
+          ipAddress: input.ipAddress ?? missingContentPlaceholder,
 
-        countryName_en: input.countryCode
-          ? (new Intl.DisplayNames("en-gb", {
-              type: "region",
-            }).of(input.countryCode) ?? missingContentPlaceholder)
-          : missingContentPlaceholder,
+          browser: deviceInfo?.browser.name ?? missingContentPlaceholder,
+          os: deviceInfo?.os.name ?? missingContentPlaceholder,
+          deviceVendor: deviceInfo?.device.vendor ?? missingContentPlaceholder,
+          deviceModel: deviceInfo?.device.model ?? missingContentPlaceholder,
 
-        countryName_cy: input.countryCode
-          ? (new Intl.DisplayNames("cy-gb", {
-              type: "region",
-            }).of(input.countryCode) ?? missingContentPlaceholder)
-          : missingContentPlaceholder,
+          countryName_en: input.countryCode
+            ? (new Intl.DisplayNames("en-gb", {
+                type: "region",
+              }).of(input.countryCode) ?? missingContentPlaceholder)
+            : missingContentPlaceholder,
 
-        loggedOutAt_en: new Intl.DateTimeFormat("en-gb", {
-          dateStyle: "full",
-          timeStyle: "short",
-          timeZone: "Europe/London",
-        }).format(new Date(input.loggedOutAt)),
+          countryName_cy: input.countryCode
+            ? (new Intl.DisplayNames("cy-gb", {
+                type: "region",
+              }).of(input.countryCode) ?? missingContentPlaceholder)
+            : missingContentPlaceholder,
 
-        loggedOutAt_cy: new Intl.DateTimeFormat("cy-gb", {
-          dateStyle: "full",
-          timeStyle: "short",
-          timeZone: "Europe/London",
-        }).format(new Date(input.loggedOutAt)),
+          loggedOutAt_en: new Intl.DateTimeFormat("en-gb", {
+            dateStyle: "full",
+            timeStyle: "short",
+            timeZone: "Europe/London",
+          }).format(new Date(input.loggedOutAt)),
+
+          loggedOutAt_cy: new Intl.DateTimeFormat("cy-gb", {
+            dateStyle: "full",
+            timeStyle: "short",
+            timeZone: "Europe/London",
+          }).format(new Date(input.loggedOutAt)),
+        },
       };
     })
   ),
@@ -114,7 +116,11 @@ export const handler = async (
     await Promise.allSettled(
       event.Records.map(async (record) => {
         try {
-          const message = v.parse(messageSchema, JSON.parse(record.body));
+          const message: {
+            emailAddress: string;
+            notificationType: NotificationType;
+            personalisation: Record<string, string>;
+          } = v.parse(messageSchema, JSON.parse(record.body));
 
           const templateId = notifyTemplateIds[message.notificationType];
 
@@ -127,17 +133,7 @@ export const handler = async (
             templateId,
             message.emailAddress,
             {
-              personalisation: {
-                ipAddress: message.ipAddress,
-                loggedOutAt_en: message.loggedOutAt_en,
-                loggedOutAt_cy: message.loggedOutAt_cy,
-                countryName_en: message.countryName_en,
-                countryName_cy: message.countryName_cy,
-                browser: message.browser,
-                os: message.os,
-                deviceVendor: message.deviceVendor,
-                deviceModel: message.deviceModel,
-              },
+              personalisation: message.personalisation,
               reference: randomUUID(),
             }
           );

@@ -3,6 +3,7 @@ import {
   SQSEvent,
   SQSBatchResponse,
   SQSBatchItemFailure,
+  SQSRecord,
 } from "aws-lambda";
 import { Logger } from "@aws-lambda-powertools/logger";
 import * as v from "valibot";
@@ -11,7 +12,6 @@ import { NotifyClient } from "notifications-node-client";
 import { randomUUID } from "node:crypto";
 import { getSecret } from "@aws-lambda-powertools/parameters/secrets";
 import { getEnvironmentVariable } from "./common/utils";
-import assert from "node:assert";
 import { isAxiosError } from "axios";
 
 const logger = new Logger();
@@ -87,94 +87,153 @@ const notifySuccessSchema = v.object({
 
 const templateIDsSchema = v.record(v.enum(NotificationType), v.string());
 
+const notifyTemplateIds = v.parse(
+  templateIDsSchema,
+  JSON.parse(getEnvironmentVariable("NOTIFY_TEMPLATE_IDS"))
+);
+
+let notifyClient: InstanceType<typeof NotifyClient> | undefined = undefined;
+
+export const setUpNotifyClient = async (
+  record: SQSRecord,
+  batchItemFailures: SQSBatchItemFailure[]
+) => {
+  if (!notifyClient) {
+    const notifyApiSecretKey = getEnvironmentVariable("NOTIFY_API_KEY");
+    const notifyApiKey = await getSecret(notifyApiSecretKey, {
+      maxAge: 900,
+    });
+    if (!notifyApiKey) {
+      logger.error("Secret is undefined", {
+        messageId: record.messageId,
+        key: notifyApiSecretKey,
+      });
+      batchItemFailures.push({ itemIdentifier: record.messageId });
+      return;
+    }
+    if (typeof notifyApiKey !== "string") {
+      logger.error("Secret is not a string", {
+        messageId: record.messageId,
+        key: notifyApiSecretKey,
+      });
+      batchItemFailures.push({ itemIdentifier: record.messageId });
+      return;
+    }
+    notifyClient = new NotifyClient(notifyApiKey);
+  }
+  return notifyClient;
+};
+
+export const processNotification = async (
+  record: SQSRecord,
+  batchItemFailures: SQSBatchItemFailure[]
+) => {
+  const notifyClient = await setUpNotifyClient(record, batchItemFailures);
+  if (!notifyClient) {
+    return;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let messageFromJson: any;
+  try {
+    messageFromJson = JSON.parse(record.body);
+  } catch {
+    logger.error("Message is not valid JSON", {
+      messageId: record.messageId,
+    });
+    batchItemFailures.push({ itemIdentifier: record.messageId });
+    return;
+  }
+
+  const messageParsed = v.safeParse(messageSchema, messageFromJson);
+  if (!messageParsed.success) {
+    logger.error("Invalid message format", {
+      messageId: record.messageId,
+    });
+    batchItemFailures.push({ itemIdentifier: record.messageId });
+    return;
+  }
+
+  const message: {
+    emailAddress: string;
+    notificationType: NotificationType;
+    personalisation: Record<string, string>;
+  } = messageParsed.output;
+
+  const templateId = notifyTemplateIds[message.notificationType];
+  if (!templateId) {
+    logger.error("Template ID not available", {
+      messageId: record.messageId,
+      notificationType: message.notificationType,
+    });
+    batchItemFailures.push({ itemIdentifier: record.messageId });
+    return;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let sendResult: any;
+  try {
+    sendResult = await notifyClient.sendEmail(
+      templateId,
+      message.emailAddress,
+      {
+        personalisation: message.personalisation,
+        reference: randomUUID(),
+      }
+    );
+  } catch (error) {
+    if (isAxiosError(error)) {
+      logger.error("Unable to send notification", {
+        messageId: record.messageId,
+        notificationType: message.notificationType,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        details: error.response?.data,
+      });
+    } else {
+      logger.error("Unable to send notification due to an unknown error", {
+        messageId: record.messageId,
+        notificationType: message.notificationType,
+        details: error instanceof Error ? error.message : undefined,
+      });
+    }
+    batchItemFailures.push({ itemIdentifier: record.messageId });
+    return;
+  }
+
+  const resultParsed = v.safeParse(notifySuccessSchema, sendResult);
+  if (!resultParsed.success) {
+    logger.error("Invalid result format", {
+      messageId: record.messageId,
+      notificationType: message.notificationType,
+    });
+    batchItemFailures.push({ itemIdentifier: record.messageId });
+    return;
+  }
+
+  logger.info("Successfully sent a notification", {
+    messageId: record.messageId,
+    id: resultParsed.output.data.id,
+    reference: resultParsed.output.data.reference,
+    notificationType: message.notificationType,
+  });
+};
+
 export const handler = async (
   event: SQSEvent,
   context: Context
 ): Promise<SQSBatchResponse> => {
-  try {
-    logger.addContext(context);
+  logger.addContext(context);
 
-    const notifyTemplateIds = v.parse(
-      templateIDsSchema,
-      JSON.parse(getEnvironmentVariable("NOTIFY_TEMPLATE_IDS"))
-    );
+  const batchItemFailures: SQSBatchItemFailure[] = [];
 
-    const NOTIFY_API_KEY = getEnvironmentVariable("NOTIFY_API_KEY");
-    const notifyApiKey = await getSecret(NOTIFY_API_KEY, {
-      maxAge: 900,
-    });
-    assert.ok(notifyApiKey, `${NOTIFY_API_KEY} secret is undefined`);
-    assert.ok(
-      typeof notifyApiKey === "string",
-      `${NOTIFY_API_KEY} secret is not a string`
-    );
+  await Promise.allSettled(
+    event.Records.map((record) =>
+      processNotification(record, batchItemFailures)
+    )
+  );
 
-    const notify = new NotifyClient(notifyApiKey);
-
-    const batchItemFailures: SQSBatchItemFailure[] = [];
-
-    await Promise.allSettled(
-      event.Records.map(async (record) => {
-        try {
-          const message: {
-            emailAddress: string;
-            notificationType: NotificationType;
-            personalisation: Record<string, string>;
-          } = v.parse(messageSchema, JSON.parse(record.body));
-
-          const templateId = notifyTemplateIds[message.notificationType];
-
-          assert.ok(
-            templateId,
-            `Template ID not available for ${message.notificationType}`
-          );
-
-          const result = await notify.sendEmail(
-            templateId,
-            message.emailAddress,
-            {
-              personalisation: message.personalisation,
-              reference: randomUUID(),
-            }
-          );
-
-          try {
-            const parsedResult = v.parse(notifySuccessSchema, result);
-
-            logger.info("Successfully sent a notification", {
-              messageId: record.messageId,
-              id: parsedResult.data.id,
-              reference: parsedResult.data.reference,
-            });
-          } catch (error) {
-            logger.error("Error occurred after sending a notification", {
-              messageId: record.messageId,
-              error: isAxiosError(error) ? error.response?.data : error,
-            });
-          }
-        } catch (error) {
-          logger.error("Error occurred when sending a notification", {
-            messageId: record.messageId,
-            error: isAxiosError(error) ? error.response?.data : error,
-          });
-
-          batchItemFailures.push({ itemIdentifier: record.messageId });
-        }
-      })
-    );
-
-    return {
-      batchItemFailures,
-    };
-  } catch (error) {
-    logger.error("Error occurred when sending notifications", {
-      error,
-    });
-
-    return {
-      batchItemFailures: event.Records.map((record) => ({
-        itemIdentifier: record.messageId,
-      })),
-    };
-  }
+  return {
+    batchItemFailures,
+  };
 };

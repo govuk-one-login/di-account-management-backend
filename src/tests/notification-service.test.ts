@@ -1,11 +1,13 @@
-import { SQSRecord, SQSBatchItemFailure } from "aws-lambda";
+import { SQSRecord, SQSBatchItemFailure, SQSEvent, Context } from "aws-lambda";
 
 const mockGetSecret = jest.fn();
 const mockNotifyClient = jest.fn();
 const mockSetUpNotifyClient = jest.fn();
+const mockProcessNotification = jest.fn();
 const mockLogger = {
   error: jest.fn(),
   info: jest.fn(),
+  addContext: jest.fn(),
 };
 const mockSendEmail = jest.fn();
 
@@ -108,11 +110,7 @@ describe("setUpNotifyClient", () => {
 });
 
 describe("processNotification", () => {
-  // TODO get sig from file rather than duplicating
-  let processNotification: (
-    record: SQSRecord,
-    batchItemFailures: SQSBatchItemFailure[]
-  ) => Promise<void>;
+  let processNotification: typeof import("../notification-service").processNotification;
   let mockRecord: SQSRecord;
   let batchItemFailures: SQSBatchItemFailure[];
   const OLD_PROCESS_ENV = process.env;
@@ -348,5 +346,67 @@ describe("processNotification", () => {
         reference: "test-uuid",
       })
     );
+  });
+});
+
+describe("handler", () => {
+  let handler: typeof import("../notification-service").handler;
+  const OLD_PROCESS_ENV = process.env;
+
+  beforeEach(async () => {
+    process.env = {
+      ...OLD_PROCESS_ENV,
+      NOTIFY_TEMPLATE_IDS: '{"GLOBAL_LOGOUT":"template-id"}',
+    };
+
+    const notificationService = await import("../notification-service");
+    handler = notificationService.handler;
+    jest
+      .spyOn(notificationService, "processNotification")
+      .mockImplementation(mockProcessNotification);
+  });
+
+  afterEach(() => {
+    process.env = OLD_PROCESS_ENV;
+    jest.clearAllMocks();
+    jest.resetModules();
+  });
+
+  it("should add context to logger and process all records", async () => {
+    const mockContext = { requestId: "test-request-id" } as unknown as Context;
+    const mockEvent = {
+      Records: [{ messageId: "msg-1" }, { messageId: "msg-2" }],
+    } as SQSEvent;
+
+    const result = await handler(mockEvent, mockContext);
+
+    expect(mockLogger.addContext).toHaveBeenCalledWith(mockContext);
+    expect(mockProcessNotification).toHaveBeenCalledTimes(2);
+    expect(mockProcessNotification).toHaveBeenCalledWith(
+      { messageId: "msg-1" },
+      []
+    );
+    expect(mockProcessNotification).toHaveBeenCalledWith(
+      { messageId: "msg-2" },
+      []
+    );
+    expect(result).toEqual({ batchItemFailures: [] });
+  });
+
+  it("should return batch item failures from processNotification", async () => {
+    const mockContext = { requestId: "test-request-id" } as unknown as Context;
+    const mockEvent = {
+      Records: [{ messageId: "msg-1" }],
+    } as SQSEvent;
+
+    mockProcessNotification.mockImplementation((record, batchItemFailures) => {
+      batchItemFailures.push({ itemIdentifier: record.messageId });
+    });
+
+    const result = await handler(mockEvent, mockContext);
+
+    expect(result).toEqual({
+      batchItemFailures: [{ itemIdentifier: "msg-1" }],
+    });
   });
 });

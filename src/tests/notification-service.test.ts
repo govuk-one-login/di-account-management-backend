@@ -10,6 +10,12 @@ const mockLogger = {
   addContext: jest.fn(),
 };
 const mockSendEmail = jest.fn();
+const mockMetrics = {
+  addDimension: jest.fn(),
+  addMetric: jest.fn(),
+  publishStoredMetrics: jest.fn(),
+};
+const mockInitMetrics = jest.fn(() => mockMetrics);
 
 jest.mock("@aws-lambda-powertools/parameters/secrets", () => ({
   getSecret: mockGetSecret,
@@ -30,6 +36,9 @@ jest.mock("ua-parser-js", () => ({
     os: { name: "Mac OS" },
     device: { vendor: "Apple", model: "Macintosh" },
   }),
+}));
+jest.mock("../common/metrics", () => ({
+  initMetrics: mockInitMetrics,
 }));
 
 describe("setUpNotifyClient", () => {
@@ -79,6 +88,15 @@ describe("setUpNotifyClient", () => {
       messageId: "test-message-id",
       key: "NOTIFY_API_SECRET_KEY",
     });
+    expect(mockMetrics.addDimension).toHaveBeenCalledWith(
+      "failureReason",
+      "Secret is undefined"
+    );
+    expect(mockMetrics.addMetric).toHaveBeenCalledWith(
+      "notificationFailed",
+      "Count",
+      1
+    );
     expect(result).toBeUndefined();
     expect(batchItemFailures).toEqual([{ itemIdentifier: "test-message-id" }]);
   });
@@ -92,6 +110,15 @@ describe("setUpNotifyClient", () => {
       messageId: "test-message-id",
       key: "NOTIFY_API_SECRET_KEY",
     });
+    expect(mockMetrics.addDimension).toHaveBeenCalledWith(
+      "failureReason",
+      "Secret is not a string"
+    );
+    expect(mockMetrics.addMetric).toHaveBeenCalledWith(
+      "notificationFailed",
+      "Count",
+      1
+    );
     expect(result).toBeUndefined();
     expect(batchItemFailures).toEqual([{ itemIdentifier: "test-message-id" }]);
   });
@@ -178,6 +205,15 @@ describe("processNotification", () => {
     expect(mockLogger.error).toHaveBeenCalledWith("Message is not valid JSON", {
       messageId: "test-message-id",
     });
+    expect(mockMetrics.addDimension).toHaveBeenCalledWith(
+      "failureReason",
+      "Message is not valid JSON"
+    );
+    expect(mockMetrics.addMetric).toHaveBeenCalledWith(
+      "notificationFailed",
+      "Count",
+      1
+    );
     expect(mockLogger.info).not.toHaveBeenCalled();
     expect(batchItemFailures).toEqual([{ itemIdentifier: "test-message-id" }]);
     expect(mockSendEmail).not.toHaveBeenCalled();
@@ -192,6 +228,15 @@ describe("processNotification", () => {
     expect(mockLogger.error).toHaveBeenCalledWith("Invalid message format", {
       messageId: "test-message-id",
     });
+    expect(mockMetrics.addDimension).toHaveBeenCalledWith(
+      "failureReason",
+      "Invalid message format"
+    );
+    expect(mockMetrics.addMetric).toHaveBeenCalledWith(
+      "notificationFailed",
+      "Count",
+      1
+    );
     expect(mockLogger.info).not.toHaveBeenCalled();
     expect(batchItemFailures).toEqual([{ itemIdentifier: "test-message-id" }]);
     expect(mockSendEmail).not.toHaveBeenCalled();
@@ -220,6 +265,15 @@ describe("processNotification", () => {
         statusText: "Bad Request",
         details: "Error details",
       }
+    );
+    expect(mockMetrics.addDimension).toHaveBeenCalledWith(
+      "failureReason",
+      "Unable to send notification"
+    );
+    expect(mockMetrics.addMetric).toHaveBeenCalledWith(
+      "notificationFailed",
+      "Count",
+      1
     );
     expect(mockLogger.info).not.toHaveBeenCalled();
     expect(batchItemFailures).toEqual([{ itemIdentifier: "test-message-id" }]);
@@ -258,6 +312,15 @@ describe("processNotification", () => {
         details: "Unknown error",
       }
     );
+    expect(mockMetrics.addDimension).toHaveBeenCalledWith(
+      "failureReason",
+      "Unable to send notification due to an unknown error"
+    );
+    expect(mockMetrics.addMetric).toHaveBeenCalledWith(
+      "notificationFailed",
+      "Count",
+      1
+    );
     expect(mockLogger.info).not.toHaveBeenCalled();
     expect(batchItemFailures).toEqual([{ itemIdentifier: "test-message-id" }]);
     expect(mockSendEmail).toHaveBeenCalledWith(
@@ -290,6 +353,15 @@ describe("processNotification", () => {
       messageId: "test-message-id",
       notificationType: "GLOBAL_LOGOUT",
     });
+    expect(mockMetrics.addDimension).toHaveBeenCalledWith(
+      "failureReason",
+      "Invalid result format"
+    );
+    expect(mockMetrics.addMetric).toHaveBeenCalledWith(
+      "notificationFailed",
+      "Count",
+      1
+    );
     expect(mockLogger.info).not.toHaveBeenCalled();
     expect(batchItemFailures).toEqual([{ itemIdentifier: "test-message-id" }]);
     expect(mockSendEmail).toHaveBeenCalledWith(
@@ -326,6 +398,11 @@ describe("processNotification", () => {
         reference: "test-reference",
         notificationType: "GLOBAL_LOGOUT",
       }
+    );
+    expect(mockMetrics.addMetric).toHaveBeenCalledWith(
+      "notificationSent",
+      "Count",
+      1
     );
     expect(batchItemFailures).toEqual([]);
     expect(mockSendEmail).toHaveBeenCalledWith(
@@ -380,6 +457,7 @@ describe("handler", () => {
 
     const result = await handler(mockEvent, mockContext);
 
+    expect(mockInitMetrics).toHaveBeenCalledWith("notification-service");
     expect(mockLogger.addContext).toHaveBeenCalledWith(mockContext);
     expect(mockProcessNotification).toHaveBeenCalledTimes(2);
     expect(mockProcessNotification).toHaveBeenCalledWith(
@@ -390,6 +468,7 @@ describe("handler", () => {
       { messageId: "msg-2" },
       []
     );
+    expect(mockMetrics.publishStoredMetrics).toHaveBeenCalled();
     expect(result).toEqual({ batchItemFailures: [] });
   });
 
@@ -405,6 +484,8 @@ describe("handler", () => {
 
     const result = await handler(mockEvent, mockContext);
 
+    expect(mockInitMetrics).toHaveBeenCalledWith("notification-service");
+    expect(mockMetrics.publishStoredMetrics).toHaveBeenCalled();
     expect(result).toEqual({
       batchItemFailures: [{ itemIdentifier: "msg-1" }],
     });

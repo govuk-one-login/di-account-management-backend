@@ -28,6 +28,7 @@
     "@types/jest": "^30.0.0",
     "@types/jest-when": "^3.5.2",
     "@types/mocha": "^10.0.10",
+    "@types/ua-parser-js": "^0.7.39",
     "@typescript-eslint/eslint-plugin": "^8.43.0",
     "@typescript-eslint/parser": "^8.43.0",
     "aws-sdk-client-mock": "^4.1.0",
@@ -50,6 +51,7 @@
   "dependencies": {
     "@aws-crypto/client-node": "^4.2.1",
     "@aws-lambda-powertools/logger": "^2.26.0",
+    "@aws-lambda-powertools/metrics": "^2.26.1",
     "@aws-lambda-powertools/parameters": "^2.26.0",
     "@aws-sdk/client-dynamodb": "^3.887.0",
     "@aws-sdk/client-lambda": "^3.887.0",
@@ -63,7 +65,9 @@
     "di-account-management-rp-registry": "github:govuk-one-login/di-account-management-rp-registry#main",
     "esbuild": "0.25.0",
     "jest-when": "^3.7.0",
-    "notifications-node-client": "^8.2.1"
+    "notifications-node-client": "^8.2.1",
+    "ua-parser-js": "^1.0.41",
+    "valibot": "^1.1.0"
   },
   "lint-staged": {
     "**/*.{js,jsx,ts,tsx,json,css,scss,md,yaml}": [

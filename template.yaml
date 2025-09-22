@@ -5001,13 +5001,10 @@ Resources:
           - Effect: Allow
             Action:
               - kms:Decrypt
-              - kms:GenerateDataKey*
-              - kms:ReEncrypt*
             Resource: !GetAtt QueueKmsKey.Arn
           - Effect: Allow
             Action:
               - "kms:Decrypt"
-              - "kms:GenerateDataKey"
             Resource:
               - !GetAtt SecretsKmsKey.Arn
           - Effect: Allow

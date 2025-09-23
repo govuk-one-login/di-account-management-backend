@@ -1,5 +1,8 @@
 # Design for reporting suspicious activity
 
+> [!IMPORTANT]
+> This ADR has been superseded by [ADR 0013](./0013-contact-form-for-reporting-activity.md).
+
 Establish a pattern for implementing workflows in a resilient and extendable way. The initial use case will be the report suspicious activity workflow.
 
 ## Context

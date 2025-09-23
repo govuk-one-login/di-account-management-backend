@@ -1,5 +1,8 @@
 # Reporting a Suspicious activity
 
+> [!IMPORTANT]
+> This ADR has been superseded by [ADR 0013](./0013-contact-form-for-reporting-activity.md).
+
 ## Summary
 
 - We will create a Zendesk ticket when an activity is reported .

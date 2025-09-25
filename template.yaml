@@ -35,7 +35,7 @@ Parameters:
       The name of the stack that defines the VPC in which this container will
       run.
     Type: String
-    Default: vpc-enhanced
+    Default: dev-platform-vpc
   CodeSigningConfigArn:
     Type: String
     Description: >

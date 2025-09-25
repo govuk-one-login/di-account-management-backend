@@ -184,6 +184,7 @@ Globals:
       SubnetIds:
         - Fn::ImportValue: !Sub "${VpcStackName}-ProtectedSubnetIdA"
         - Fn::ImportValue: !Sub "${VpcStackName}-ProtectedSubnetIdB"
+        - Fn::ImportValue: !Sub "${VpcStackName}-ProtectedSubnetIdC"
       SecurityGroupIds:
         - Fn::ImportValue: !Sub ${VpcStackName}-AWSServicesEndpointSecurityGroupId
     CodeSigningConfigArn: !If

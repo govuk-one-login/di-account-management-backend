@@ -2177,9 +2177,6 @@ Resources:
               GOVACCOUNTSPUBLISHINGAPIURL,
             ]
           NODE_OPTIONS: --enable-source-maps
-      DeploymentPreference:
-        Alarms:
-          - !Ref DeleteEmailSubscriptionsFunctionSuccessRate
     Metadata:
       BuildMethod: esbuild
       BuildProperties:

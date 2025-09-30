@@ -12,6 +12,9 @@ updates:
     ignore:
       - dependency-name: "node"
         versions: ["17.x", "18.x", "19.x"]
+      # Exclude major version updates - next major version has incompatible license
+      - dependency-name: "ua-parser-js"
+        update-types: ["version-update:semver-major"]
     commit-message:
       prefix: BAU
     groups:

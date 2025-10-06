@@ -35,7 +35,7 @@ Parameters:
       The name of the stack that defines the VPC in which this container will
       run.
     Type: String
-    Default: dev-platform-vpc
+    Default: vpc-enhanced
   CodeSigningConfigArn:
     Type: String
     Description: >
@@ -184,7 +184,6 @@ Globals:
       SubnetIds:
         - Fn::ImportValue: !Sub "${VpcStackName}-ProtectedSubnetIdA"
         - Fn::ImportValue: !Sub "${VpcStackName}-ProtectedSubnetIdB"
-        - Fn::ImportValue: !Sub "${VpcStackName}-ProtectedSubnetIdC"
       SecurityGroupIds:
         - Fn::ImportValue: !Sub ${VpcStackName}-AWSServicesEndpointSecurityGroupId
     CodeSigningConfigArn: !If

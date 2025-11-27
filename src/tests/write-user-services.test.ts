@@ -1,12 +1,6 @@
 import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
 import { SendMessageCommand, SQSClient } from "@aws-sdk/client-sqs";
 import { mockClient } from "aws-sdk-client-mock";
-import {
-  handler,
-  validateService,
-  validateUserServices,
-  writeUserServices,
-} from "../write-user-services";
 import { Service, UserServices } from "../common/model";
 import {
   TEST_SQS_EVENT_WITH_USER_SERVICES,
@@ -20,6 +14,20 @@ export const userId = "userId";
 
 const dynamoMock = mockClient(DynamoDBDocumentClient);
 const sqsMock = mockClient(SQSClient);
+const mockLogger = {
+  info: jest.fn(),
+};
+
+jest.mock("@aws-lambda-powertools/logger", () => ({
+  Logger: jest.fn(() => mockLogger),
+}));
+
+import {
+  handler,
+  validateService,
+  validateUserServices,
+  writeUserServices,
+} from "../write-user-services";
 
 describe("writeUserServices", () => {
   beforeEach(() => {
@@ -53,6 +61,11 @@ describe("lambdaHandler", () => {
   test("it iterates over each record in the batch", async () => {
     await handler(TEST_SQS_EVENT_WITH_USER_SERVICES);
     expect(dynamoMock.commandCalls(PutCommand).length).toEqual(2);
+  });
+
+  test("It logs the written item size", async () => {
+    await handler(TEST_SQS_EVENT_WITH_USER_SERVICES);
+    expect(mockLogger.info).toHaveBeenCalledWith(`Item size 159 bytes`);
   });
 
   describe("error handling", () => {

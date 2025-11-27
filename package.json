@@ -67,7 +67,7 @@
     "jest-when": "^3.7.0",
     "notifications-node-client": "^8.2.1",
     "ua-parser-js": "^1.0.41",
-    "valibot": "^1.1.0"
+    "valibot": "^1.2.0"
   },
   "lint-staged": {
     "**/*.{js,jsx,ts,tsx,json,css,scss,md,yaml}": [

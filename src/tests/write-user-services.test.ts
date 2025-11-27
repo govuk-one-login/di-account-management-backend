@@ -65,9 +65,7 @@ describe("lambdaHandler", () => {
 
   test("It logs the written item size", async () => {
     await handler(TEST_SQS_EVENT_WITH_USER_SERVICES);
-    expect(mockLogger.info).toHaveBeenCalledWith(
-      `Writing user services with item size 159 bytes`
-    );
+    expect(mockLogger.info).toHaveBeenCalledWith(`Item size 159 bytes`);
   });
 
   describe("error handling", () => {

@@ -9,7 +9,7 @@ import { Logger } from "@aws-lambda-powertools/logger";
 import { Service, UserServices } from "./common/model";
 import { getEnvironmentVariable } from "./common/utils";
 
-const logger = new Logger();
+const logger = new Logger({ serviceName: "write-user-services" });
 
 const dynamoDocClient = DynamoDBDocumentClient.from(new DynamoDBClient({}), {
   marshallOptions: { convertClassInstanceToMap: true },
@@ -59,7 +59,7 @@ export const handler = async (event: SQSEvent): Promise<void> => {
         const userServices: UserServices = JSON.parse(record.body);
         validateUserServices(userServices);
         logger.info(
-          `Writing user services with item size ${Buffer.byteLength(record.body, "utf8")} bytes`
+          `Item size ${Buffer.byteLength(record.body, "utf8")} bytes`
         );
         await writeUserServices(userServices);
       } catch (error) {

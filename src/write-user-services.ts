@@ -59,7 +59,7 @@ export const handler = async (event: SQSEvent): Promise<void> => {
         const userServices: UserServices = JSON.parse(record.body);
         validateUserServices(userServices);
         logger.info(
-          `Writing user services with item size ${Buffer.byteLength(JSON.stringify(userServices), "utf8")} bytes`
+          `Writing user services with item size ${Buffer.byteLength(record.body, "utf8")} bytes`
         );
         await writeUserServices(userServices);
       } catch (error) {

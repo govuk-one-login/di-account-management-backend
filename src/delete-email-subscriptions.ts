@@ -57,6 +57,7 @@ export const deleteEmailSubscription = async (userData: UserData) => {
     logger.info(`Received a 404 response from GOV.UK API for URL`);
   } else if (!response.ok) {
     const message = `Unable to send DELETE request to GOV.UK API. Status code : ${response.status}`;
+    logger.error(message);
     throw new Error(message);
   }
 };

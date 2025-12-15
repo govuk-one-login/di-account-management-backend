@@ -1,0 +1,25 @@
+{
+  "$schema": "https://raw.githubusercontent.com/govuk-one-login/quality-gates/refs/tags/v0.1.0/schemas/schema.json",
+  "services": [
+    {
+      "service-tag": "home",
+      "quality-gates": [
+        {
+          "check-types": [
+            "unit",
+            "new feature",
+            "regression",
+            "code style and linting"
+          ],
+          "provider": "GitHub",
+          "phase": "pre-merge",
+          "config": {
+            "file": ".github/workflows/lint-and-test-lambdas.yaml",
+            "path": "jobs.lint_and_test",
+            "name": "Lint and test lambdas"
+          }
+        }
+      ]
+    }
+  ]
+}

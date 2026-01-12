@@ -1,0 +1,55 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema-jsonc.json",
+  "workspaces": {
+    ".": {
+      "entry": [
+        "src/save-raw-events.ts",
+        "src/query-user-services.ts",
+        "src/format-user-services.ts",
+        "src/write-user-services.ts",
+        "src/delete-user-services.ts",
+        "src/delete-email-subscriptions.ts",
+        "src/write-activity-log.ts",
+        "src/format-activity-log.ts",
+        "src/delete-activity-log.ts",
+        "src/mark-activity-reported.ts",
+        "src/send-suspicious-activity.ts",
+        "src/send-conf-email.ts",
+        "src/create-support-ticket.ts",
+        "src/trigger-rsa-step.ts",
+        "src/notification-service.ts"
+      ],
+      "ignore": [
+        "src/get-access-check-value.ts",
+        "src/tests/testFixtures.ts",
+        "src/tests/testUtils.ts",
+        "src/common/constants.ts",
+        "src/common/model.ts",
+        "src/common/kms-keyring-builder.ts",
+        "src/kms-keyring-builder.ts",
+        "src/common/encrypt-data.ts"
+      ],
+      "ignoreBinaries": [
+        "zizmor",
+        "brew",
+        "sam",
+        "read",
+        "pre-commit"
+      ],
+      "ignoreDependencies": [
+        "esbuild",
+        "@aws-sdk/client-lambda",
+        "@babel/preset-env",
+        "@babel/preset-typescript",
+        "@types/mocha",
+        "@typescript-eslint/eslint-plugin",
+        "eslint-plugin-prettier",
+        "lint-staged",
+        "ts-node"
+      ]
+    },
+    "solutions/integration-tests": {
+      "entry": ["src/tests/**/*.ts"]
+    }
+  },
+}

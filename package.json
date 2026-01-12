@@ -16,7 +16,8 @@
     "check-gh-actions:fix": "zizmor . --fix",
     "sam-validate": "sam validate --region eu-west-2 --lint -t template.yaml",
     "knip": "knip",
-    "knip:fix": "knip --fix --allow-remove-files"
+    "knip:fix": "knip --fix --allow-remove-files",
+    "install-git-hooks": "pre-commit install --install-hooks --overwrite"
   },
   "author": "GDS",
   "license": "OGL",

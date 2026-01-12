@@ -18,20 +18,7 @@ on:
         default: main
 
 permissions:
-  id-token: write
-  actions: read
-  attestations: read
   contents: read
-  checks: read
-  deployments: read
-  discussions: read
-  issues: read
-  packages: read
-  pages: read
-  pull-requests: read
-  statuses: read
-  security-events: read
-  repository-projects: read
 
 jobs:
   lint_infrastructure:
@@ -62,6 +49,7 @@ jobs:
         uses: actions/checkout@8f4b7f84864484a7bf31766abe9204da3cbe65b3 # pin@v3
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Fill in backup wrapping key
         run: .github/workflows/find-and-replace-backup-wrapping-key.sh

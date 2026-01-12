@@ -34,11 +34,14 @@ jobs:
         uses: actions/checkout@8f4b7f84864484a7bf31766abe9204da3cbe65b3 # pin@v3
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Verify skipPreMerge is not in the last commit message
         id: verify_skip_merge
+        env:
+          GITHUB_EVENT_ACTION: ${{ github.event.action }}
         run: |
-          echo "Github event action is ${{ github.event.action }}"
+          echo "Github event action is $GITHUB_EVENT_ACTION"
           WORD="skipPreMerge"
           echo "Checking the last commit messages for the word '${WORD}':"
           SKIP_FOUND="false"
@@ -72,6 +75,7 @@ jobs:
         uses: actions/checkout@8f4b7f84864484a7bf31766abe9204da3cbe65b3 # pin@v3
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Fill in backup wrapping key
         if: ${{ !contains(env.skip_found, 'true') }}
@@ -136,6 +140,7 @@ jobs:
         uses: actions/checkout@8f4b7f84864484a7bf31766abe9204da3cbe65b3 # pin@v3
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Poll for deployment finished
         uses: govuk-one-login/github-actions/sam/check-stack-updated@b00f9eeccebbc72083d8ffca4f0a2448fb14bda5
@@ -161,6 +166,7 @@ jobs:
         uses: actions/checkout@8f4b7f84864484a7bf31766abe9204da3cbe65b3 # pin@v3
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Set up Python 3.9
         uses: actions/setup-python@d27e3f3d7c64b4bbf8e4abfb9b63b83e846e0435 # pin@v4

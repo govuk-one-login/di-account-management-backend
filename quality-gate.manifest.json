@@ -18,6 +18,29 @@
             "path": "jobs.lint_and_test",
             "name": "Lint and test lambdas"
           }
+        },
+        {
+          "check-types": [
+            "code style and linting",
+            "secret scanning",
+            "vulnerability detection"
+          ],
+          "provider": "GitHub",
+          "phase": "pre-merge",
+          "config": {
+            "file": ".pre-commit-config.yaml",
+            "name": "Run pre-commit"
+          }
+        },
+        {
+          "check-types": ["code quality", "unit test coverage"],
+          "provider": "GitHub",
+          "phase": "pre-merge",
+          "config": {
+            "file": ".github/workflows/sonarcloud.yaml",
+            "path": "jobs.sonarcloud",
+            "name": "SonarCloud"
+          }
         }
       ]
     }

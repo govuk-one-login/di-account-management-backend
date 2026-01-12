@@ -11,7 +11,12 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test:cov": "jest --coverage",
-    "prepare": "husky || true"
+    "install-brewfile": "cat Brewfile; echo; echo; read -p \"Install/update Brewfile dependencies as shown above (y/N)?\" -n 1 -r; echo; if [ \"$REPLY\" == \"y\" ]; then brew bundle check || brew bundle install; fi",
+    "check-gh-actions": "zizmor .",
+    "check-gh-actions:fix": "zizmor . --fix",
+    "sam-validate": "sam validate --region eu-west-2 --lint -t template.yaml",
+    "knip": "knip",
+    "knip:fix": "knip --fix --allow-remove-files"
   },
   "author": "GDS",
   "license": "OGL",
@@ -39,8 +44,8 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",
     "globals": "^17.0.0",
-    "husky": "^9.1.7",
     "jest": "^30.2.0",
+    "knip": "^5.80.2",
     "lint-staged": "^16.2.7",
     "prettier": "^3.7.4",
     "ts-jest": "^29.4.6",

@@ -1,0 +1,92 @@
+default_install_hook_types: [commit-msg, pre-commit, pre-push]
+fail_fast: true
+
+repos:
+  - repo: https://github.com/jorisroovers/gitlint
+    rev: acc9d9de6369b76d22cb4167029d2035e8730b98 # pragma: allowlist-secret
+    hooks:
+      - id: gitlint
+        stages: [commit-msg]
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: cef0300fd0fc4d2a87a85fa2093c6b283ea36f4b # pragma: allowlist-secret
+    hooks:
+      - id: detect-private-key
+        stages: [pre-commit]
+      - id: no-commit-to-branch
+        stages: [pre-commit]
+      - id: check-merge-conflict
+        stages: [pre-commit]
+
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: 68e8b45440415753fff70a312ece8da92ba85b4a # pragma: allowlist-secret
+    hooks:
+      - id: detect-secrets
+        args: ["--baseline", ".secrets.baseline"]
+        stages: [pre-commit]
+
+  - repo: local
+    hooks:
+      - id: package-audit-check
+        name: Check dependencies
+        entry: npm audit
+        language: system
+        exclude: .*
+        always_run: true
+        pass_filenames: false
+        stages: [pre-commit]
+
+  - repo: local
+    hooks:
+      - id: check-gh-actions
+        name: Check GitHub Actions
+        entry: npm run check-gh-actions
+        language: system
+        exclude: .*
+        always_run: true
+        pass_filenames: false
+        stages: [pre-commit]
+
+  - repo: local
+    hooks:
+      - id: eslint
+        name: ESLint
+        entry: npm run lint
+        language: system
+        exclude: .*
+        always_run: true
+        pass_filenames: false
+        stages: [pre-commit]
+
+  - repo: local
+    hooks:
+      - id: sam-validate
+        name: SAM validate
+        entry: npm run sam-validate
+        language: system
+        exclude: .*
+        always_run: true
+        pass_filenames: false
+        stages: [pre-commit]
+
+  - repo: local
+    hooks:
+      - id: knip
+        name: Knip
+        entry: npm run knip
+        language: system
+        exclude: .*
+        always_run: true
+        pass_filenames: false
+        stages: [pre-commit]
+
+  - repo: local
+    hooks:
+      - id: test
+        name: Test
+        entry: npm run test
+        language: system
+        exclude: .*
+        always_run: true
+        pass_filenames: false
+        stages: [pre-push]

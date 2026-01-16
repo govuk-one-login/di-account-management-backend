@@ -68,7 +68,7 @@
     "@aws-sdk/util-dynamodb": "^3.602.0",
     "@types/aws-lambda": "^8.10.159",
     "axios": "^1.13.2",
-    "di-account-management-rp-registry": "github:govuk-one-login/di-account-management-rp-registry#main",
+    "di-account-management-rp-registry": "github:govuk-one-login/di-account-management-rp-registry#OLH-3600-Onboarding-AdultSocialCare",
     "esbuild": "0.25.0",
     "jest-when": "^3.7.0",
     "notifications-node-client": "^8.2.1",

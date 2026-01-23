@@ -55,6 +55,7 @@
     "@aws-lambda-powertools/parameters": "^2.29.0",
     "@aws-sdk/client-dynamodb": "^3.940.0",
     "@aws-sdk/client-lambda": "^3.942.0",
+    "@aws-sdk/client-s3": "^3.972.0",
     "@aws-sdk/client-secrets-manager": "^3.940.0",
     "@aws-sdk/client-sfn": "^3.940.0",
     "@aws-sdk/client-sqs": "^3.940.0",

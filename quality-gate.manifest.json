@@ -41,6 +41,55 @@
             "path": "jobs.sonarcloud",
             "name": "SonarCloud"
           }
+        },
+        {
+          "check-types": [
+            "unit",
+            "new feature",
+            "regression"
+          ],
+          "provider": "GitHub",
+          "phase": "pre-upload",
+          "config": {
+            "file": ".github/workflows/sam-app-post-merge-actions.yaml",
+            "path": "jobs.deploy"
+          }
+        },
+        {
+          "check-types": ["canary"],
+          "provider": "GitHub",
+          "phase": "build",
+          "config": {
+            "file": ".github/workflows/sam-app-post-merge-actions.yaml",
+            "path": "jobs.deploy"
+          }
+        },
+        {
+          "check-types": ["canary"],
+          "provider": "GitHub",
+          "phase": "staging",
+          "config": {
+            "file": ".github/workflows/sam-app-post-merge-actions.yaml",
+            "path": "jobs.deploy"
+          }
+        },
+        {
+          "check-types": ["canary"],
+          "provider": "GitHub",
+          "phase": "integration",
+          "config": {
+            "file": ".github/workflows/sam-app-post-merge-actions.yaml",
+            "path": "jobs.deploy"
+          }
+        },
+        {
+          "check-types": ["canary"],
+          "provider": "GitHub",
+          "phase": "production",
+          "config": {
+            "file": ".github/workflows/sam-app-post-merge-actions.yaml",
+            "path": "jobs.deploy"
+          }
         }
       ]
     }

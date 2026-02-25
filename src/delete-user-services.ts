@@ -63,7 +63,7 @@ export const handler = async (
         throw new Error(
           `Unable to delete user services for message with ID: ${record.Sns.MessageId}, ${
             (error as Error).message
-          }`
+          }`, { cause: error }
         );
       }
     })

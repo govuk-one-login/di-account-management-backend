@@ -94,7 +94,7 @@ export const handler = async (
           throw new Error(
             `Unable to format activity log for event with ID: ${record.eventID}, ${
               (error as Error).message
-            }`
+            }`, { cause: error }
           );
         }
       }

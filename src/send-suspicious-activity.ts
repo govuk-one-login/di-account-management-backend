@@ -30,7 +30,7 @@ export const transformToTxMAEvent = (
       "Error generating TxMA event, required fields are not provided"
     );
   }
-  let txmaEvent = null;
+  let txmaEvent: TxMAAuditEvent;
   if (eventName === EventNamesEnum.HOME_REPORT_SUSPICIOUS_ACTIVITY) {
     txmaEvent = {
       user: {
@@ -123,7 +123,7 @@ export const handler = async (
     await sendAuditEvent(txMAEvent, TXMA_QUEUE_URL);
   } catch (err: unknown) {
     throw new Error(
-      `Error occurred sending event to TxMA: ${(err as Error).message}`
+      `Error occurred sending event to TxMA: ${(err as Error).message}`, { cause: err }
     );
   }
 };

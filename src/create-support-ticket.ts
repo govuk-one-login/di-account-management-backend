@@ -100,7 +100,7 @@ export async function createTicket(
     throw new Error(
       `${(error as HttpError).response.status} ${
         (error as HttpError).response.statusText
-      }}`
+      }}`, { cause: error }
     );
   }
 }
@@ -195,7 +195,7 @@ export const handler = async (
     throw new Error(
       `Unable to send suspicious activity event with ID: ${eventIdentifier} to Zendesk, ${
         (error as Error).message
-      }`
+      }`, { cause: error }
     );
   }
 };

@@ -163,7 +163,7 @@ export const handler = async (
           throw new Error(
             `Unable to format user services for message with ID: ${record.messageId}, ${
               (error as Error).message
-            }`
+            }`, { cause: error }
           );
         }
       }

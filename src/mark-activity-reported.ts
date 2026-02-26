@@ -82,7 +82,7 @@ export const queryActivityLog = async (
   } catch (error) {
     throw Error(
       `Error querying activity log with user_id: ${userId} 
-      and timestamp_group_id: ${eventId} Error is: ${(error as Error).message}`
+      and timestamp_group_id: ${eventId} Error is: ${(error as Error).message}`, { cause: error }
     );
   }
 };
@@ -125,6 +125,7 @@ export const handler = async (
       );
       throw new Error(
         "Error occurred in marking event as reported: " + (err as Error).message
+          , { cause: err }
       );
     }
   } else {

@@ -83,7 +83,7 @@ export const handler = async (
         throw new Error(
           `Unable to delete activity log for message with ID: ${record.Sns.MessageId}, ${
             (error as Error).message
-          }`
+          }`, { cause: error }
         );
       }
     })

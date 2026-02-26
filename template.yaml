@@ -774,7 +774,7 @@ Resources:
         Format: "esm"
         OutExtension:
           - .js=.mjs
-        Target: "es2020"
+        Target: "es2022"
         Sourcemap: true
         EntryPoints:
           - save-raw-events.ts
@@ -1008,7 +1008,7 @@ Resources:
         Format: "esm"
         OutExtension:
           - .js=.mjs
-        Target: "es2020"
+        Target: "es2022"
         Sourcemap: true
         EntryPoints:
           - query-user-services.ts
@@ -1268,7 +1268,7 @@ Resources:
         Format: "esm"
         OutExtension:
           - .js=.mjs
-        Target: "es2020"
+        Target: "es2022"
         Sourcemap: true
         EntryPoints:
           - format-user-services.ts
@@ -1546,7 +1546,7 @@ Resources:
         Format: "esm"
         OutExtension:
           - .js=.mjs
-        Target: "es2020"
+        Target: "es2022"
         Sourcemap: true
         EntryPoints:
           - write-user-services.ts
@@ -1838,7 +1838,7 @@ Resources:
         Format: "esm"
         OutExtension:
           - .js=.mjs
-        Target: "es2020"
+        Target: "es2022"
         Sourcemap: true
         EntryPoints:
           - delete-user-services.ts
@@ -2183,7 +2183,7 @@ Resources:
         Format: "esm"
         OutExtension:
           - .js=.mjs
-        Target: "es2020"
+        Target: "es2022"
         Sourcemap: true
         EntryPoints:
           - delete-email-subscriptions.ts
@@ -2426,7 +2426,7 @@ Resources:
         Format: "esm"
         OutExtension:
           - .js=.mjs
-        Target: "es2020"
+        Target: "es2022"
         Sourcemap: true
         EntryPoints:
           - write-activity-log.ts
@@ -2670,7 +2670,7 @@ Resources:
         Format: "esm"
         OutExtension:
           - .js=.mjs
-        Target: "es2020"
+        Target: "es2022"
         Sourcemap: true
         EntryPoints:
           - format-activity-log.ts
@@ -3025,7 +3025,7 @@ Resources:
         Format: "esm"
         OutExtension:
           - .js=.mjs
-        Target: "es2020"
+        Target: "es2022"
         Sourcemap: true
         EntryPoints:
           - delete-activity-log.ts
@@ -3288,7 +3288,7 @@ Resources:
         Format: "esm"
         OutExtension:
           - .js=.mjs
-        Target: "es2020"
+        Target: "es2022"
         Sourcemap: true
         EntryPoints:
           - mark-activity-reported.ts
@@ -3430,7 +3430,7 @@ Resources:
         Format: "esm"
         OutExtension:
           - .js=.mjs
-        Target: "es2020"
+        Target: "es2022"
         Sourcemap: true
         EntryPoints:
           - send-suspicious-activity.ts
@@ -3585,7 +3585,7 @@ Resources:
         Format: "esm"
         OutExtension:
           - .js=.mjs
-        Target: "es2020"
+        Target: "es2022"
         Sourcemap: true
         EntryPoints:
           - send-conf-email.ts
@@ -3737,7 +3737,7 @@ Resources:
         Format: "esm"
         OutExtension:
           - .js=.mjs
-        Target: "es2020"
+        Target: "es2022"
         Sourcemap: true
         EntryPoints:
           - create-support-ticket.ts
@@ -3995,7 +3995,7 @@ Resources:
         Format: "esm"
         OutExtension:
           - .js=.mjs
-        Target: "es2020"
+        Target: "es2022"
         Sourcemap: true
         EntryPoints:
           - trigger-rsa-step.ts
@@ -4955,7 +4955,7 @@ Resources:
         Format: "esm"
         OutExtension:
           - .js=.mjs
-        Target: "es2020"
+        Target: "es2022"
         Sourcemap: true
         EntryPoints:
           - notification-service.ts

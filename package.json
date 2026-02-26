@@ -29,7 +29,7 @@
     "@babel/core": "^7.29.0",
     "@babel/preset-env": "^7.29.0",
     "@babel/preset-typescript": "^7.28.5",
-    "@eslint/js": "^9.39.2",
+    "@eslint/js": "^10.0.1",
     "@types/aws-lambda": "^8.10.160",
     "@types/jest": "^30.0.0",
     "@types/jest-when": "^3.5.2",
@@ -41,7 +41,7 @@
     "aws-sdk-client-mock-jest": "^4.1.0",
     "axios-mock-adapter": "2.1.0",
     "babel-jest": "^30.2.0",
-    "eslint": "^9.39.2",
+    "eslint": "^10.0.1",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.5",
     "globals": "^17.3.0",
@@ -52,7 +52,7 @@
     "ts-jest": "^29.4.6",
     "ts-node": "^10.9.1",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.55.0"
+    "typescript-eslint": "^8.56.0"
   },
   "dependencies": {
     "@aws-crypto/client-node": "^4.2.1",
@@ -69,9 +69,9 @@
     "@types/aws-lambda": "^8.10.160",
     "axios": "^1.13.4",
     "di-account-management-rp-registry": "github:govuk-one-login/di-account-management-rp-registry#main",
-    "esbuild": "0.27.2",
+    "esbuild": "0.27.3",
     "jest-when": "^3.7.0",
-    "notifications-node-client": "^8.2.1",
+    "notifications-node-client": "^8.3.0",
     "ua-parser-js": "^1.0.41",
     "valibot": "^1.2.0"
   },

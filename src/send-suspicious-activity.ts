@@ -56,13 +56,13 @@ export const transformToTxMAEvent = (
           },
         ],
       },
-      ...(event.device_information !== undefined
-        ? {
+      ...(event.device_information === undefined
+        ? {}
+        : {
             restricted: {
               device_information: { encoded: event.device_information },
             },
-          }
-        : {}),
+          }),
     };
   } else {
     throw new Error(

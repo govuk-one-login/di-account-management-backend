@@ -19,6 +19,11 @@ export const allowedTxmaEvents: string[] = [
   "AUTH_IPV_SUCCESSFUL_IDENTITY_RESPONSE_RECEIVED",
 ];
 
+export const ACTIVITY_LOG = "activity_log";
+export const YEAR = "#year";
+export const TIMESTAMP = "timestamp";
+export const DELETION_THRESHOLD_TIME = ":fiveYearsAgo";
+
 export const REPORT_SUSPICIOUS_ACTIVITY_DEFAULT = false;
 export const CREATE_TICKET_PATH = "/tickets.json";
 export const SUSPICIOUS_ACTIVITY_EVENT_NAME = "HOME_REPORT_SUSPICIOUS_ACTIVITY";

@@ -42,3 +42,5 @@ updates:
       - dependencies
     commit-message:
       prefix: BAU
+    cooldown:
+      default-days: 7

@@ -1,0 +1,97 @@
+{
+  "$schema": "https://raw.githubusercontent.com/govuk-one-login/quality-gates/refs/tags/v0.1.0/schemas/schema.json",
+  "services": [
+    {
+      "service-tag": "home",
+      "quality-gates": [
+        {
+          "check-types": [
+            "unit",
+            "new feature",
+            "regression",
+            "code style and linting"
+          ],
+          "provider": "GitHub",
+          "phase": "pre-merge",
+          "config": {
+            "file": ".github/workflows/lint-and-test-lambdas.yaml",
+            "path": "jobs.lint_and_test",
+            "name": "Lint and test lambdas"
+          }
+        },
+        {
+          "check-types": [
+            "code style and linting",
+            "secret scanning",
+            "vulnerability detection"
+          ],
+          "provider": "GitHub",
+          "phase": "pre-merge",
+          "config": {
+            "file": ".pre-commit-config.yaml",
+            "name": "Run pre-commit"
+          }
+        },
+        {
+          "check-types": ["code quality", "unit test coverage"],
+          "provider": "GitHub",
+          "phase": "pre-merge",
+          "config": {
+            "file": ".github/workflows/sonarcloud.yaml",
+            "path": "jobs.sonarcloud",
+            "name": "SonarCloud"
+          }
+        },
+        {
+          "check-types": [
+            "unit",
+            "new feature",
+            "regression"
+          ],
+          "provider": "GitHub",
+          "phase": "pre-upload",
+          "config": {
+            "file": ".github/workflows/sam-app-post-merge-actions.yaml",
+            "path": "jobs.deploy"
+          }
+        },
+        {
+          "check-types": ["canary"],
+          "provider": "GitHub",
+          "phase": "build",
+          "config": {
+            "file": ".github/workflows/sam-app-post-merge-actions.yaml",
+            "path": "jobs.deploy"
+          }
+        },
+        {
+          "check-types": ["canary"],
+          "provider": "GitHub",
+          "phase": "staging",
+          "config": {
+            "file": ".github/workflows/sam-app-post-merge-actions.yaml",
+            "path": "jobs.deploy"
+          }
+        },
+        {
+          "check-types": ["canary"],
+          "provider": "GitHub",
+          "phase": "integration",
+          "config": {
+            "file": ".github/workflows/sam-app-post-merge-actions.yaml",
+            "path": "jobs.deploy"
+          }
+        },
+        {
+          "check-types": ["canary"],
+          "provider": "GitHub",
+          "phase": "production",
+          "config": {
+            "file": ".github/workflows/sam-app-post-merge-actions.yaml",
+            "path": "jobs.deploy"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -11,6 +11,8 @@ on:
 
 jobs:
   lint_and_test:
+    permissions:
+      contents: read
     name: di-account-management-backend
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -19,6 +21,8 @@ jobs:
         working-directory: ./src
     steps:
       - uses: actions/checkout@8f4b7f84864484a7bf31766abe9204da3cbe65b3 # pin@v3
+        with:
+          persist-credentials: false
 
       - name: Install Node.js
         uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # pin@v3

@@ -97,7 +97,7 @@ export const handler = async (
         throw new Error(
           `Unable to query user services for message with ID: ${record.eventID}, ${
             (error as Error).message
-          }`
+          }`, { cause: error }
         );
       }
     })

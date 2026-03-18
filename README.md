@@ -7,6 +7,9 @@ This is a serverless application for AWS. It's built and deployed using the [SAM
 ## Prerequisites
 
 We recommend using [`nvm`](https://github.com/nvm-sh/nvm) to install and manage Node.js versions. Run:
+- Install [Homebrew](https://brew.sh/)
+- Install Brewfile dependencies with `npm run install-brewfile`
+- Install Git Hooks with `npm run install-git-hooks`
 
 ```
 nvm install

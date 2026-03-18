@@ -45,7 +45,7 @@ export const handler = async (
         throw new Error(
           `Unable to trigger rsa step for message with ID: ${record.Sns.MessageId}, ${
             (error as Error).message
-          }`
+          }`, { cause: error }
         );
       }
     })

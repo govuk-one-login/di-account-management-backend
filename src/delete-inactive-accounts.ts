@@ -89,7 +89,7 @@ const getActivityHistory = async(): Promise<any[]> => {
     return lastActiveFiveYearsAgo;
 }
 
-export const handler = async (event: EventBridgeEvent, context: Context): Promise<any[]> => {
+export const handler = async (event: EventBridgeEvent<string, string|number>, context: Context): Promise<Record<string, string|number>[]> => {
     logger.addContext(context);
     logger.info("Delete Inactive Accounts function invoked");
     const inactiveAccounts = await getActivityHistory();

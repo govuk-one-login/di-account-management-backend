@@ -9,7 +9,7 @@ import {
   ReportSuspiciousActivityStepInput,
   ReportSuspiciousActivityEvent,
 } from "./common/model";
-import crypto from "crypto";
+import crypto from "node:crypto";
 import { COMPONENT_ID, EventNamesEnum } from "./common/constants";
 import { getCurrentTimestamp, getEnvironmentVariable } from "./common/utils";
 import { decryptData } from "./decrypt-data";

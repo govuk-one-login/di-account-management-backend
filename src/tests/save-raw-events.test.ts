@@ -1,5 +1,5 @@
 import "aws-sdk-client-mock-jest";
-import crypto from "crypto";
+import crypto from "node:crypto";
 import { SendMessageCommand, SQSClient } from "@aws-sdk/client-sqs";
 import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
 import { mockClient } from "aws-sdk-client-mock";

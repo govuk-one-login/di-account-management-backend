@@ -138,7 +138,7 @@ export const formatRecord = (record: UserRecordEvent) => {
   return {
     user_id: TxmaEvent.user.user_id,
     services: [
-      ...[conditionallyUpsertServiceList(matchingRecord, TxmaEvent)],
+      conditionallyUpsertServiceList(matchingRecord, TxmaEvent),
       ...nonMatchingRecords,
     ],
   };

@@ -5,11 +5,9 @@ const redact = (jsonString: string, fieldsToRedact: string[]): string => {
     for (const key in obj) {
       if (typeof obj[key] === "object") {
         redact(obj[key] as Record<string, unknown>);
-      } else {
-        if (fieldsToRedact.includes(key)) {
+      } else if (fieldsToRedact.includes(key)) {
           obj[key] = "REDACTED";
         }
-      }
     }
   }
 

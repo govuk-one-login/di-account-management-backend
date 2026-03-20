@@ -121,9 +121,9 @@ export const conditionallyUpsertServiceList = (
   matchingService: Service | undefined,
   TxmaEvent: TxmaEvent
 ): Service => ({
-  ...(!matchingService
-    ? newServicePresenter(TxmaEvent)
-    : existingServicePresenter(matchingService, TxmaEvent.timestamp)),
+  ...(matchingService
+    ? existingServicePresenter(matchingService, TxmaEvent.timestamp)
+    : newServicePresenter(TxmaEvent)),
 });
 
 export const formatRecord = (record: UserRecordEvent) => {

@@ -7,7 +7,7 @@ export interface KMSKeyRingConfig {
 
 const AWS_ARN_PREFIX = "^arn:aws:";
 const RegexpKMSKeyArn = new RegExp(
-  `${AWS_ARN_PREFIX}kms:\\w+(?:-\\w+)+:\\d{12}:key\\/[A-Za-z0-9]+(?:-[A-Za-z0-9]+)+$`
+  String.raw`${AWS_ARN_PREFIX}kms:\w+(?:-\w+)+:\d{12}:key\/[A-Za-z0-9]+(?:-[A-Za-z0-9]+)+$`
 );
 
 let kmsKeyRingConfig: KMSKeyRingConfig;

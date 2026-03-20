@@ -80,7 +80,7 @@ export const queryActivityLog = async (
     const response = await dynamoDocClient.send(new QueryCommand(command));
     return response.Items ? (response.Items[0] as ActivityLogEntry) : undefined;
   } catch (error) {
-    throw Error(
+    throw new Error(
       `Error querying activity log with user_id: ${userId} 
       and timestamp_group_id: ${eventId} Error is: ${(error as Error).message}`, { cause: error }
     );

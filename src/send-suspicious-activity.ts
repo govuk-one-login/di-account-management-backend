@@ -26,7 +26,7 @@ export const transformToTxMAEvent = (
     !event.notify_message_id ||
     !event.suspicious_activity
   ) {
-    throw Error(
+    throw new Error(
       "Error generating TxMA event, required fields are not provided"
     );
   }

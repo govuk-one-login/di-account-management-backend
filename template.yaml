@@ -236,6 +236,20 @@ Mappings:
     production:
       AccountNumber: "172348255554"
 
+  AuthenticationAccounts:
+    demo:
+      AccountNumber: ""
+    dev:
+      AccountNumber: ""
+    build:
+      AccountNumber: ""
+    staging:
+      AccountNumber: "851725205974"
+    integration:
+      AccountNumber: "211125600642"
+    production:
+      AccountNumber: "211125303002"
+
   EnvironmentVariables:
     ### These environment variables are referenced further down the file.
     ### Please ensure that any variables defined for an environment are defined for _all_ environments.
@@ -1772,6 +1786,24 @@ Resources:
                   - - "arn:aws:iam::"
                     - !FindInMap [
                         OrchestrationAccounts,
+                        !Ref Environment,
+                        "AccountNumber",
+                      ]
+                    - ":root"
+              Action: sns:Publish
+              Resource:
+                - !Ref UserAccountDeletionTopic
+            - !Ref AWS::NoValue
+          - !If
+            - "UseExternalEvents"
+            - Sid: "Allow Authentication Accounts to publish"
+              Effect: Allow
+              Principal:
+                AWS: !Join
+                  - ""
+                  - - "arn:aws:iam::"
+                    - !FindInMap [
+                        AuthenticationAccounts,
                         !Ref Environment,
                         "AccountNumber",
                       ]
@@ -4558,6 +4590,27 @@ Resources:
                   - - "arn:aws:iam::"
                     - !FindInMap [
                         OrchestrationAccounts,
+                        !Ref Environment,
+                        "AccountNumber",
+                      ]
+                    - ":root"
+              Action:
+                - kms:Decrypt
+                - kms:Encrypt
+                - kms:ReEncrypt*
+                - kms:GenerateDataKey*
+              Resource:
+                - "*"
+            - !Ref AWS::NoValue
+          - !If
+            - "UseExternalEvents"
+            - Effect: Allow
+              Principal:
+                AWS: !Join
+                  - ""
+                  - - "arn:aws:iam::"
+                    - !FindInMap [
+                        AuthenticationAccounts,
                         !Ref Environment,
                         "AccountNumber",
                       ]

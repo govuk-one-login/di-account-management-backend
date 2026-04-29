@@ -43,6 +43,16 @@
           }
         },
         {
+          "check-types": ["integration", "regression"],
+          "provider": "GitHub",
+          "phase": "pre-merge",
+          "config": {
+            "file": ".github/workflows/pre-merge.yaml",
+            "path": "jobs.test",
+            "name": "Pre Merge Check"
+          }
+        },
+        {
           "check-types": [
             "unit",
             "new feature",

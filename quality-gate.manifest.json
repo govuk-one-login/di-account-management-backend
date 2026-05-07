@@ -20,25 +20,12 @@
           }
         },
         {
-          "check-types": [
-            "code style and linting",
-            "secret scanning",
-            "vulnerability detection"
-          ],
-          "provider": "GitHub",
-          "phase": "pre-merge",
-          "config": {
-            "file": ".pre-commit-config.yaml",
-            "name": "Run pre-commit"
-          }
-        },
-        {
-          "check-types": ["code quality", "unit test coverage"],
+          "check-types": ["code quality", "unit test coverage", "vulnerability detection"],
           "provider": "GitHub",
           "phase": "pre-merge",
           "config": {
             "file": ".github/workflows/sonarcloud.yaml",
-            "path": "jobs.sonarcloud",
+            "path": "jobs.sonarcloud_home_backend",
             "name": "SonarCloud"
           }
         },
@@ -60,42 +47,6 @@
           ],
           "provider": "GitHub",
           "phase": "pre-upload",
-          "config": {
-            "file": ".github/workflows/sam-app-post-merge-actions.yaml",
-            "path": "jobs.deploy"
-          }
-        },
-        {
-          "check-types": ["canary"],
-          "provider": "GitHub",
-          "phase": "build",
-          "config": {
-            "file": ".github/workflows/sam-app-post-merge-actions.yaml",
-            "path": "jobs.deploy"
-          }
-        },
-        {
-          "check-types": ["canary"],
-          "provider": "GitHub",
-          "phase": "staging",
-          "config": {
-            "file": ".github/workflows/sam-app-post-merge-actions.yaml",
-            "path": "jobs.deploy"
-          }
-        },
-        {
-          "check-types": ["canary"],
-          "provider": "GitHub",
-          "phase": "integration",
-          "config": {
-            "file": ".github/workflows/sam-app-post-merge-actions.yaml",
-            "path": "jobs.deploy"
-          }
-        },
-        {
-          "check-types": ["canary"],
-          "provider": "GitHub",
-          "phase": "production",
           "config": {
             "file": ".github/workflows/sam-app-post-merge-actions.yaml",
             "path": "jobs.deploy"

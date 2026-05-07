@@ -1,4 +1,4 @@
-import "aws-sdk-client-mock-jest";
+import { vi, describe, test, expect, beforeEach, afterEach } from "vitest";
 import { handler } from "../trigger-rsa-step";
 import {
   testSuspiciousActivity,
@@ -10,15 +10,15 @@ import { mockClient } from "aws-sdk-client-mock";
 import { SendMessageCommand, SQSClient } from "@aws-sdk/client-sqs";
 import { Context } from "aws-lambda";
 
-jest.mock("../common/call-async-step-function.ts");
+vi.mock("../common/call-async-step-function.ts");
 const sqsMock = mockClient(SQSClient);
 
 describe("handler", () => {
   beforeEach(() => {
-    jest.resetModules();
+    vi.resetModules();
     process.env.STATE_MACHINE_ARN = "ReportSuspiciousActivityStepFunction";
     process.env.AWS_REGION = "AWS_REGION";
-    (callAsyncStepFunction as jest.Mock).mockImplementation(() => {
+    (callAsyncStepFunction as unknown as ReturnType<typeof vi.fn>).mockImplementation(() => {
       return {
         executionArn: "dummy-executionArn",
       };
@@ -28,7 +28,7 @@ describe("handler", () => {
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   test("the handler triggers the report suspicious activity step function successfully", async () => {

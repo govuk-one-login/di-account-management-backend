@@ -1,6 +1,6 @@
+import { vi, describe, test, it, expect, beforeEach, afterEach } from "vitest";
 import { Context, SQSRecord } from "aws-lambda";
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
-import "aws-sdk-client-mock-jest";
 
 import { mockClient } from "aws-sdk-client-mock";
 import {
@@ -31,7 +31,7 @@ describe("newServicePresenter", () => {
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   const TXMA_EVENT = makeTxmaEvent("clientID1234", "userID1234");
@@ -222,7 +222,7 @@ describe("sendSqsMessage", () => {
     process.env.AWS_REGION = "AwsRegion";
   });
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   const userRecordEvents: string = JSON.stringify({
@@ -271,7 +271,7 @@ describe("handler", () => {
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   test("it writes a formatted SQS event when user services are empty", async () => {
@@ -351,7 +351,7 @@ describe("handler", () => {
       },
     ]);
 
-    Logger.prototype.info = jest.fn();
+    Logger.prototype.info = vi.fn();
     await handler({ Records: inputSQSEvent }, {} as Context);
     expect(Logger.prototype.info).toHaveBeenCalledWith(
       "Event dropped as we are not displaying the RP in the Your Services Page."
@@ -368,7 +368,7 @@ describe("handler", () => {
       },
     ]);
 
-    Logger.prototype.warn = jest.fn();
+    Logger.prototype.warn = vi.fn();
     await handler({ Records: inputSQSEvent }, {} as Context);
     expect(Logger.prototype.warn).toHaveLength(0);
   });
@@ -383,7 +383,7 @@ describe("handler", () => {
       },
     ]);
 
-    Logger.prototype.warn = jest.fn();
+    Logger.prototype.warn = vi.fn();
     await handler({ Records: inputSQSEvent }, {} as Context);
     expect(Logger.prototype.warn).toHaveBeenCalledWith(
       'The client: "UNKNOWN" is not in the RP registry.'
@@ -403,7 +403,7 @@ describe("handler error handling ", () => {
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   test("write to a dead letter queue when an error is thrown", async () => {

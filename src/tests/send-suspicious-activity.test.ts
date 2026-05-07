@@ -1,4 +1,4 @@
-import "aws-sdk-client-mock-jest";
+import { vi, describe, test, expect, beforeEach, afterEach } from "vitest";
 import { SendMessageCommand, SQSClient } from "@aws-sdk/client-sqs";
 import { mockClient } from "aws-sdk-client-mock";
 
@@ -19,13 +19,13 @@ describe("sendAuditEventToTxMA", () => {
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   test("send audit event successfully", async () => {
-    const loggerInfo = jest
+    const loggerInfo = vi
       .spyOn(Logger.prototype, "info")
-      .mockImplementation();
+      .mockImplementation(() => undefined);
     const txMAEvent: TxMAAuditEvent = {
       user: {
         user_id: "qwerty",
@@ -63,9 +63,9 @@ describe("sendAuditEventToTxMA", () => {
   });
 
   test("send audit event fails and handles error correctly", async () => {
-    const loggerError = jest
+    const loggerError = vi
       .spyOn(Logger.prototype, "error")
-      .mockImplementation();
+      .mockImplementation(() => undefined);
     const txMAEvent: TxMAAuditEvent = {
       user: {
         user_id: "qwerty",
@@ -116,7 +116,7 @@ describe("sendSQSMessage", () => {
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   test("send sqs successfully", async () => {
@@ -160,19 +160,19 @@ describe("handler", () => {
     process.env.EVENT_NAME = "HOME_REPORT_SUSPICIOUS_ACTIVITY";
     process.env.TXMA_QUEUE_URL = "TXMA_QUEUE_URL";
     sqsMock.on(SendMessageCommand).resolves({ MessageId: "MessageId" });
-    jest.useFakeTimers();
-    jest.setSystemTime(new Date(Date.UTC(2023, 20, 12)));
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(Date.UTC(2023, 20, 12)));
   });
 
   afterEach(() => {
-    jest.useRealTimers();
-    jest.clearAllMocks();
+    vi.useRealTimers();
+    vi.clearAllMocks();
   });
 
   test("handler successfully sends audit event to txma", async () => {
-    const loggerInfo = jest
+    const loggerInfo = vi
       .spyOn(Logger.prototype, "info")
-      .mockImplementation();
+      .mockImplementation(() => undefined);
     const BASE64_ENCODED_DEVICE_INFO =
       "WEwuLXxLeGZPO2Fgcyo2V2R+KUQmUjFcc3V0SU4+L25WIT0+KzNVdkdKLGUnJVZKdzheUmtjblokNEhCLzNvaUB2PTZ3SVhMWDNua1d3a2tlSm1BPk8nVnYlKC9I%";
     const input: ReportSuspiciousActivityEvent = {
@@ -239,9 +239,9 @@ describe("handler", () => {
   });
 
   test("handler successfully sends audit event to txma when no device information provided", async () => {
-    const loggerInfo = jest
+    const loggerInfo = vi
       .spyOn(Logger.prototype, "info")
-      .mockImplementation();
+      .mockImplementation(() => undefined);
     const input: ReportSuspiciousActivityEvent = {
       event_id: "522c5ab4-7e66-4b2a-8f5c-4d31dc4e93e6",
       event_type: "HOME_REPORT_SUSPICIOUS_ACTIVITY",
@@ -308,7 +308,7 @@ describe("handler error handling", () => {
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   test("logs the error message", async () => {

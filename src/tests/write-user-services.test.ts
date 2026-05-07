@@ -1,3 +1,4 @@
+import { vi, describe, test, expect, beforeEach, afterEach } from "vitest";
 import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
 import { SendMessageCommand, SQSClient } from "@aws-sdk/client-sqs";
 import { mockClient } from "aws-sdk-client-mock";
@@ -14,12 +15,13 @@ export const userId = "userId";
 
 const dynamoMock = mockClient(DynamoDBDocumentClient);
 const sqsMock = mockClient(SQSClient);
-const mockLogger = {
-  info: jest.fn(),
-};
 
-jest.mock("@aws-lambda-powertools/logger", () => ({
-  Logger: jest.fn(() => mockLogger),
+const mockLogger = vi.hoisted(() => ({
+  info: vi.fn(),
+}));
+
+vi.mock("@aws-lambda-powertools/logger", () => ({
+  Logger: vi.fn(() => mockLogger),
 }));
 
 import {
@@ -37,7 +39,7 @@ describe("writeUserServices", () => {
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   test("writes to DynamoDB", async () => {
@@ -55,7 +57,7 @@ describe("lambdaHandler", () => {
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   test("it iterates over each record in the batch", async () => {

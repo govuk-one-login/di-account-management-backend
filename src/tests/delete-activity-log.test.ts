@@ -1,4 +1,4 @@
-import "aws-sdk-client-mock-jest";
+import { vi, describe, test, expect, beforeEach, afterEach } from "vitest";
 import { DynamoDBDocumentClient, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 import { mockClient } from "aws-sdk-client-mock";
@@ -64,8 +64,6 @@ describe("deleteUserData", () => {
     dynamoMock.reset();
     process.env.TABLE_NAME = "TABLE_NAME";
     process.env.DQL_URL = "DQL_URL";
-    // The mock will return activityLogEntry1 & 2 for the first set of requests
-    // and further requests will return activityLogEntry3 & 4
     dynamoMock
       .on(QueryCommand)
       .resolvesOnce({
@@ -79,7 +77,7 @@ describe("deleteUserData", () => {
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   test("multiple requests made to DB to get all request", async () => {
@@ -135,7 +133,7 @@ describe("handler", () => {
     });
 
     afterEach(() => {
-      jest.clearAllMocks();
+      vi.clearAllMocks();
     });
 
     test("it iterates over each record in the batch", async () => {
@@ -154,7 +152,7 @@ describe("handler", () => {
     });
 
     afterEach(() => {
-      jest.clearAllMocks();
+      vi.clearAllMocks();
     });
 
     test("no delete requests", async () => {

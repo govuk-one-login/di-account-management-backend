@@ -1,21 +1,21 @@
+import { vi, describe, it, expect, beforeAll, beforeEach } from "vitest";
 import { mockClient } from "aws-sdk-client-mock";
 import {
   GetSecretValueCommand,
   SecretsManagerClient,
 } from "@aws-sdk/client-secrets-manager";
 import { buildEncrypt, MessageHeader } from "@aws-crypto/client-node";
-import { when } from "jest-when";
 import { TEST_ACTIVITY_LOG_ENTRY } from "./testFixtures";
 
 const mockedSecretsManager = mockClient(SecretsManagerClient).on(
   GetSecretValueCommand
 );
 
-jest.mock("@aws-crypto/client-node", () => ({
-  buildEncrypt: jest.fn().mockReturnValue({
-    encrypt: jest.fn(),
+vi.mock("@aws-crypto/client-node", () => ({
+  buildEncrypt: vi.fn().mockReturnValue({
+    encrypt: vi.fn(),
   }),
-  KmsKeyringNode: jest.fn().mockImplementation(() => ({
+  KmsKeyringNode: vi.fn().mockImplementation(() => ({
     generatorKeyId: process.env.GENERATOR_KEY_ARN,
   })),
 }));
@@ -54,7 +54,7 @@ describe("encryptData", () => {
     mockedSecretsManager.resolves({
       SecretString: "testSecretValue",
     });
-    when(buildEncrypt().encrypt).mockResolvedValue({
+    vi.mocked(buildEncrypt().encrypt).mockResolvedValue({
       result: Buffer.from("testEncryptedDataString"),
       messageHeader: {} as MessageHeader,
     });
@@ -87,7 +87,9 @@ describe("encryptData", () => {
     mockedSecretsManager.resolves({
       SecretString: "testSecretValue",
     });
-    when(buildEncrypt().encrypt).mockRejectedValue(new Error("SomeKMSError"));
+    vi.mocked(buildEncrypt().encrypt).mockRejectedValue(
+      new Error("SomeKMSError")
+    );
     await expect(async () => {
       await encryptData(encryptDataInput.jwt, encryptDataInput.userId);
     }).rejects.toThrow("SomeKMSError");

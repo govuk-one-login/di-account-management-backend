@@ -1,3 +1,4 @@
+import { vi, describe, test, expect, beforeEach, afterEach } from "vitest";
 import validateObject from "../common/validator";
 import validatorRules, { ValidationRules } from "../common/validator-rules";
 import { ReportSuspiciousActivityEvent } from "../common/model";
@@ -34,7 +35,7 @@ describe("validate", () => {
     );
   });
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   test("successful validate report suspicious event", async () => {

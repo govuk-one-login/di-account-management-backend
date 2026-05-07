@@ -1,5 +1,5 @@
+import { vi, describe, test, expect, beforeEach, afterEach } from "vitest";
 import { mockClient } from "aws-sdk-client-mock";
-import "aws-sdk-client-mock-jest";
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 import {
   formatIntoActivityLogEntry,
@@ -27,18 +27,18 @@ import { Logger } from "@aws-lambda-powertools/logger";
 const sqsMock = mockClient(SQSClient);
 
 describe("handler", () => {
-  let loggerInfoMock: jest.SpyInstance;
+  let loggerInfoMock: ReturnType<typeof vi.spyOn>;
   beforeEach(() => {
     sqsMock.reset();
     process.env.TABLE_NAME = tableName;
     process.env.OUTPUT_QUEUE_URL = queueUrl;
     process.env.AWS_REGION = "AWS_REGION";
     process.env.ENVIRONMENT = "test";
-    loggerInfoMock = jest.spyOn(Logger.prototype, "info").mockImplementation();
+    loggerInfoMock = vi.spyOn(Logger.prototype, "info").mockImplementation(() => undefined);
     sqsMock.on(SendMessageCommand).resolves({ MessageId: messageId });
   });
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   test("Ignores any Non allowed event", async () => {
@@ -52,11 +52,11 @@ describe("handler", () => {
   test("it writes a formatted SQS event when txma event is valid", async () => {
     await handler(TEST_DYNAMO_STREAM_EVENT, {} as Context);
     expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(2);
-    expect(sqsMock).toHaveReceivedNthCommandWith(1, SendMessageCommand, {
+    expect(sqsMock).toHaveReceivedNthCommandWith(SendMessageCommand, 1, {
       QueueUrl: queueUrl,
       MessageBody: JSON.stringify(MUTABLE_ACTIVITY_LOG_ENTRY),
     });
-    expect(sqsMock).toHaveReceivedNthCommandWith(2, SendMessageCommand, {
+    expect(sqsMock).toHaveReceivedNthCommandWith(SendMessageCommand, 2, {
       QueueUrl: queueUrl,
       MessageBody: JSON.stringify(MUTABLE_ACTIVITY_LOG_ENTRY),
     });
@@ -68,7 +68,7 @@ describe("handler", () => {
     const TEST_HMRC_EVENT: DynamoDBStreamEvent = {
       Records: [generateDynamoSteamRecord(client_id)],
     };
-    Logger.prototype.warn = jest.fn();
+    Logger.prototype.warn = vi.fn();
     await handler(TEST_HMRC_EVENT, {} as Context);
     expect(Logger.prototype.warn).toHaveLength(0);
   });
@@ -79,7 +79,7 @@ describe("handler", () => {
     const TEST_HMRC_EVENT: DynamoDBStreamEvent = {
       Records: [generateDynamoSteamRecord(client_id)],
     };
-    Logger.prototype.warn = jest.fn();
+    Logger.prototype.warn = vi.fn();
     await handler(TEST_HMRC_EVENT, {} as Context);
     expect(Logger.prototype.warn).toHaveBeenCalledWith(
       'The client: "UNKNOWN" is not in the RP registry.'
@@ -96,7 +96,7 @@ describe("handler", () => {
     });
 
     afterEach(() => {
-      jest.clearAllMocks();
+      vi.clearAllMocks();
     });
 
     test("logs the error message", async () => {
@@ -120,7 +120,7 @@ describe("handler", () => {
           generateDynamoSteamRecord(hmrc_client_id),
         ],
       };
-      Logger.prototype.info = jest.fn();
+      Logger.prototype.info = vi.fn();
       await handler(TEST_HMRC_EVENT, {} as Context);
       expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(0);
       expect(Logger.prototype.info).toHaveBeenCalledWith(
@@ -228,7 +228,7 @@ describe("sendSqsMessage", () => {
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   test("Send the SQS event on the queue", async () => {

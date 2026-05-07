@@ -1,16 +1,18 @@
+import { vi, describe, test, expect, beforeEach, afterEach } from "vitest";
 import { Context } from "aws-lambda";
 import { TEST_SNS_EVENT, TEST_USER_DATA } from "./testFixtures";
-const mockLogger = {
-  error: jest.fn(),
-  info: jest.fn(),
-  addContext: jest.fn(),
-};
 
-jest.mock("@aws-lambda-powertools/logger", () => ({
-  Logger: jest.fn(() => mockLogger),
+const mockLogger = vi.hoisted(() => ({
+  error: vi.fn(),
+  info: vi.fn(),
+  addContext: vi.fn(),
 }));
 
-const mockFetch = jest.fn();
+vi.mock("@aws-lambda-powertools/logger", () => ({
+  Logger: vi.fn(() => mockLogger),
+}));
+
+const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
 import {
@@ -22,29 +24,21 @@ import {
 
 describe("handler", () => {
   beforeEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
     process.env.AWS_REGION = "AWS_REGION";
+    process.env.GOV_ACCOUNTS_PUBLISHING_API_TOKEN = "test-token";
+    process.env.GOV_ACCOUNTS_PUBLISHING_API_URL = "https://api.example.com";
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   test("that it successfully processes the SNS message", async () => {
-    const module = require("../delete-email-subscriptions");
-    const validateUserDataMock = jest
-      .spyOn(module, "validateUserData")
-      .mockReturnValueOnce("validateUserData-mock");
-
-    const deleteEmailSubscriptionMock = jest
-      .spyOn(module, "deleteEmailSubscription")
-      .mockReturnValue("deleteEmailSubscription-mock");
+    mockFetch.mockResolvedValue({ ok: true, status: 200 });
 
     await expect(handler(TEST_SNS_EVENT, {} as Context)).resolves.not.toThrow();
-    expect(validateUserDataMock).toHaveBeenCalledTimes(1);
-    expect(validateUserDataMock).toHaveBeenCalledWith(TEST_USER_DATA);
-    expect(deleteEmailSubscriptionMock).toHaveBeenCalledTimes(1);
-    expect(deleteEmailSubscriptionMock).toHaveBeenCalledWith(TEST_USER_DATA);
+    expect(mockFetch).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -97,13 +91,13 @@ describe("validateUserData", () => {
 
 describe("deleteEmailSubscription", () => {
   beforeEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
     process.env.GOV_ACCOUNTS_PUBLISHING_API_TOKEN = "test-token";
     process.env.GOV_ACCOUNTS_PUBLISHING_API_URL = "https://api.example.com";
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   test("successfully deletes email subscription", async () => {

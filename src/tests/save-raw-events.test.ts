@@ -1,4 +1,4 @@
-import "aws-sdk-client-mock-jest";
+import { vi, describe, test, expect, beforeEach, afterEach } from "vitest";
 import crypto from "node:crypto";
 import { SendMessageCommand, SQSClient } from "@aws-sdk/client-sqs";
 import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
@@ -58,16 +58,16 @@ describe("writeRawTxmaEvent", () => {
   beforeEach(() => {
     dynamoMock.reset();
     process.env.TABLE_NAME = TABLE_NAME;
-    jest.spyOn(Date, "now").mockImplementation(() => TIMESTAMP);
+    vi.spyOn(Date, "now").mockImplementation(() => TIMESTAMP);
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-expect-error
-    jest.spyOn(crypto, "randomUUID").mockImplementation(() => UUID);
+    vi.spyOn(crypto, "randomUUID").mockImplementation(() => UUID);
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
-    jest.spyOn(Date, "now").mockRestore();
-    jest.spyOn(crypto, "randomUUID").mockRestore();
+    vi.clearAllMocks();
+    vi.spyOn(Date, "now").mockRestore();
+    vi.spyOn(crypto, "randomUUID").mockRestore();
   });
 
   test("writes raw events to DynamoDB", async () => {
@@ -240,16 +240,16 @@ describe("handler", () => {
     dynamoMock.reset();
     sqsMock.reset();
     process.env.TABLE_NAME = "TABLE_NAME";
-    jest.spyOn(Date, "now").mockImplementation(() => TIMESTAMP);
+    vi.spyOn(Date, "now").mockImplementation(() => TIMESTAMP);
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-expect-error
-    jest.spyOn(crypto, "randomUUID").mockImplementation(() => UUID);
+    vi.spyOn(crypto, "randomUUID").mockImplementation(() => UUID);
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
-    jest.spyOn(Date, "now").mockRestore();
-    jest.spyOn(crypto, "randomUUID").mockRestore();
+    vi.clearAllMocks();
+    vi.spyOn(Date, "now").mockRestore();
+    vi.spyOn(crypto, "randomUUID").mockRestore();
   });
 
   test("Adds raw event to the table", async () => {
@@ -278,7 +278,7 @@ describe("handler error handling", () => {
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   test("logs the error message", async () => {

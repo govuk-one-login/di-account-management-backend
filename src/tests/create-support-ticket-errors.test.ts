@@ -1,4 +1,4 @@
-import "aws-sdk-client-mock-jest";
+import { vi, describe, test, expect, beforeEach, afterEach } from "vitest";
 import { mockClient } from "aws-sdk-client-mock";
 import {
   GetSecretValueCommand,
@@ -27,7 +27,7 @@ describe("handler error handling", () => {
     process.env.ACTIVITY_LOG_TABLE = "activity_log_table";
   });
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   test("throw error when required environment variables not provided", async () => {

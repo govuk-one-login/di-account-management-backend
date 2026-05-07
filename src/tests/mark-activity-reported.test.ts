@@ -1,4 +1,4 @@
-import "aws-sdk-client-mock-jest";
+import { vi, describe, test, expect, beforeEach, afterEach, Mock, MockInstance } from "vitest";
 import {
   decryptEventType,
   handler,
@@ -24,7 +24,7 @@ import { decryptData } from "../decrypt-data";
 import { Context } from "aws-lambda";
 import { Logger } from "@aws-lambda-powertools/logger";
 
-jest.mock("../decrypt-data.ts");
+vi.mock("../decrypt-data.ts");
 
 const dynamoMock = mockClient(DynamoDBDocumentClient);
 
@@ -34,7 +34,7 @@ describe("markEventAsReported", () => {
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   test("updates the correct event as reported", async () => {
@@ -58,10 +58,10 @@ describe("markEventAsReported", () => {
 
 describe("handler", () => {
   const OLD_ENV = process.env;
-  let loggerErrorMock: jest.SpyInstance;
+  let loggerErrorMock: MockInstance;
 
   beforeEach(() => {
-    jest.resetModules();
+    vi.resetModules();
 
     process.env = { ...OLD_ENV };
     process.env.ACTIVITY_LOG_TABLE_NAME = tableName;
@@ -74,17 +74,17 @@ describe("handler", () => {
     dynamoMock.on(QueryCommand).resolves({
       Items: [TEST_ENCRYPTED_ACTIVITY_LOG_ENTRY],
     });
-    loggerErrorMock = jest
+    loggerErrorMock = vi
       .spyOn(Logger.prototype, "error")
-      .mockImplementation();
-    (decryptData as jest.Mock).mockImplementation(() => {
+      .mockImplementation(() => undefined);
+    (decryptData as Mock).mockImplementation(() => {
       return "TXMA_EVENT";
     });
   });
 
   afterEach(() => {
     loggerErrorMock.mockRestore();
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     process.env = OLD_ENV;
   });
 
@@ -176,14 +176,14 @@ describe("handler", () => {
 
 describe("decrypt event type", () => {
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   const generatorKey =
     "arn:aws:kms:eu-west-2:111122223333:key/bc436485-5092-42b8-92a3-0aa8b93536dc";
   const wrappingKey =
     "arn:aws:kms:eu-west-2:111122223333:key/49c5492b-b1bc-42a8-9a5c-b2015e810c1c";
-  (decryptData as jest.Mock).mockImplementation(() => {
+  (decryptData as Mock).mockImplementation(() => {
     return "TXMA_EVENT";
   });
 
@@ -194,8 +194,8 @@ describe("decrypt event type", () => {
       generatorKey,
       wrappingKey
     );
-    expect(decryptData as jest.Mock).toHaveBeenCalledTimes(1);
-    expect(decryptData as jest.Mock).toHaveBeenCalledWith(
+    expect(decryptData as Mock).toHaveBeenCalledTimes(1);
+    expect(decryptData as Mock).toHaveBeenCalledWith(
       TEST_ENCRYPTED_ACTIVITY_LOG_ENTRY.event_type,
       userId,
       generatorKey,

@@ -39,13 +39,10 @@
       "ignoreDependencies": [
         "esbuild",
         "@aws-sdk/client-lambda",
-        "@babel/preset-env",
-        "@babel/preset-typescript",
         "@types/mocha",
         "@typescript-eslint/eslint-plugin",
         "eslint-plugin-prettier",
-        "lint-staged",
-        "ts-node"
+        "lint-staged"
       ]
     },
     "solutions/integration-tests": {

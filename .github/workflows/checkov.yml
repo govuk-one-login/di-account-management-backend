@@ -19,7 +19,7 @@ jobs:
       - name: Checkov GitHub Action
         uses: bridgecrewio/checkov-action@eec884fd62682f5f2b33e303e160d5e2fe8d89ec # v12.3052.0 # pragma: allowlist secret
         with:
-          directory: deploy
+          directory: .
           soft_fail: false
           output_format: cli
           output_file_path: console

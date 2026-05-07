@@ -20,13 +20,6 @@ jobs:
         uses: bridgecrewio/checkov-action@eec884fd62682f5f2b33e303e160d5e2fe8d89ec # v12.3052.0 # pragma: allowlist secret
         with:
           directory: deploy
-          skip_check: CKV_AWS_124 # Ensure that AWS CloudWatch Log Group specifies retention days - not required for this project # pragma: allowlist secret
           soft_fail: false
-          output_format: cli,sarif
-          output_file_path: console,results.sarif
-
-      - name: Upload SARIF file
-        if: always()
-        uses: github/codeql-action/upload-sarif@064a406de026ea27990a5b507b56911401ca2f95 # v2.18.0 # pragma: allowlist secret
-        with:
-          sarif_file: results.sarif
+          output_format: cli
+          output_file_path: console

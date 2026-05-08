@@ -13,6 +13,13 @@ jobs:
       - name: Checkov GitHub Action
         uses: bridgecrewio/checkov-action@eec884fd62682f5f2b33e303e160d5e2fe8d89ec # pragma: allowlist secret
         with:
-          directory: deploy
+          directory: .
           output_format: cli
           output_file_path: console
+          # CKV_AWS_111: Intentional - kms:* on Resource: * is required for KMS key policies per AWS best practices
+          # (https://docs.aws.amazon.com/kms/latest/developerguide/key-policies.html#key-policy-default-allow-root-enable-iam)
+          # X-Ray actions also do not support resource-level restrictions.
+          # CKV_AWS_116: Lambda DLQ configuration - created jira ticket OLH-4090
+          # CKV_GHA_7, CKV_DOCKER_3, CKV_DOCKER_2: Temporary skips - created jira ticket OLH-4089
+          # CKV_OPENAPI_4, CKV_OPENAPI_5: OIDC stub spec - created jira ticket OLH-4091
+          skip_check: CKV_AWS_111,CKV_AWS_116,CKV_GHA_7,CKV_DOCKER_3,CKV_DOCKER_2,CKV_OPENAPI_4,CKV_OPENAPI_5

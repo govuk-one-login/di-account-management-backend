@@ -22,4 +22,5 @@ jobs:
           # CKV_AWS_116: Lambda DLQ configuration - created jira ticket OLH-4090
           # CKV_GHA_7, CKV_DOCKER_3, CKV_DOCKER_2: Temporary skips - created jira ticket OLH-4089
           # CKV_OPENAPI_4, CKV_OPENAPI_5: OIDC stub spec - created jira ticket OLH-4091
-          skip_check: CKV_AWS_111,CKV_AWS_116,CKV_GHA_7,CKV_DOCKER_3,CKV_DOCKER_2,CKV_OPENAPI_4,CKV_OPENAPI_5
+          # CKV2_GHA_1: Permissions are explicitly set at the job level in each workflow rather than at the top level
+          skip_check: CKV_AWS_111,CKV_AWS_116,CKV_GHA_7,CKV_DOCKER_3,CKV_DOCKER_2,CKV_OPENAPI_4,CKV_OPENAPI_5,CKV2_GHA_1

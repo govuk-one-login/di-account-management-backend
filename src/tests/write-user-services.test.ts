@@ -2,12 +2,12 @@ import { vi, describe, test, expect, beforeEach, afterEach } from "vitest";
 import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
 import { SendMessageCommand, SQSClient } from "@aws-sdk/client-sqs";
 import { mockClient } from "aws-sdk-client-mock";
-import { Service, UserServices } from "../common/model";
+import { Service, UserServices } from "../common/model.js";
 import {
   TEST_SQS_EVENT_WITH_USER_SERVICES,
   TEST_USER_SERVICES,
   timestamp,
-} from "./testFixtures";
+} from "./testFixtures.js";
 
 export const date = timestamp;
 export const clientId = "clientId";
@@ -29,7 +29,7 @@ import {
   validateService,
   validateUserServices,
   writeUserServices,
-} from "../write-user-services";
+} from "../write-user-services.js";
 
 describe("writeUserServices", () => {
   beforeEach(() => {

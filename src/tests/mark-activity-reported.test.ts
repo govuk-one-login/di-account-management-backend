@@ -3,7 +3,7 @@ import {
   decryptEventType,
   handler,
   markEventAsReported,
-} from "../mark-activity-reported";
+} from "../mark-activity-reported.js";
 import { mockClient } from "aws-sdk-client-mock";
 import {
   DynamoDBDocumentClient,
@@ -18,13 +18,13 @@ import {
   testSuspiciousActivity,
   TEST_ENCRYPTED_ACTIVITY_LOG_ENTRY,
   timestamp,
-} from "./testFixtures";
-import { COMPONENT_ID, EventNamesEnum } from "../common/constants";
-import { decryptData } from "../decrypt-data";
+} from "./testFixtures.js";
+import { COMPONENT_ID, EventNamesEnum } from "../common/constants.js";
+import { decryptData } from "../decrypt-data.js";
 import { Context } from "aws-lambda";
 import { Logger } from "@aws-lambda-powertools/logger";
 
-vi.mock("../decrypt-data.ts");
+vi.mock("../decrypt-data.js");
 
 const dynamoMock = mockClient(DynamoDBDocumentClient);
 

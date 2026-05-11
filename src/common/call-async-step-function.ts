@@ -1,5 +1,5 @@
 import { Logger } from "@aws-lambda-powertools/logger";
-import type { ReportSuspiciousActivityStepInput } from "./model";
+import type { ReportSuspiciousActivityStepInput } from "./model.js";
 import {
   SFNClient,
   StartExecutionCommand,

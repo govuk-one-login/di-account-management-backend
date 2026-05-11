@@ -9,10 +9,10 @@ import {
   validateTxmaEventBody,
   writeRawTxmaEvent,
   validateUser,
-} from "../save-raw-events";
+} from "../save-raw-events.js";
 import { Context, SQSEvent, SQSRecord } from "aws-lambda";
-import { TxmaEvent } from "../common/model";
-import { clientId, eventId, user } from "./testFixtures";
+import { TxmaEvent } from "../common/model.js";
+import { clientId, eventId, user } from "./testFixtures.js";
 
 const eventName = "AUTH_AUTH_CODE_ISSUED";
 

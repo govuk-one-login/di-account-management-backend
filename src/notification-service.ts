@@ -5,8 +5,8 @@ import {
   SQSBatchItemFailure,
 } from "aws-lambda";
 import { Logger } from "@aws-lambda-powertools/logger";
-import { initMetrics } from "./common/metrics";
-import { processNotification } from "./notification-service-utils";
+import { initMetrics } from "./common/metrics.js";
+import { processNotification } from "./notification-service-utils.js";
 
 const logger = new Logger();
 const metrics = initMetrics("notification-service");

@@ -1,10 +1,10 @@
 import { Context, SNSEvent } from "aws-lambda";
-import { UserData } from "./common/model";
+import { UserData } from "./common/model.js";
 import { Logger } from "@aws-lambda-powertools/logger";
 import {
   deleteEmailSubscription,
   validateUserData,
-} from "./delete-email-subscriptions-utils";
+} from "./delete-email-subscriptions-utils.js";
 
 const logger = new Logger();
 

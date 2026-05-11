@@ -1,9 +1,9 @@
-import { Environment, ReportSuspiciousActivityEvent } from "./common/model";
-import { homeClientIds } from "./common/constants";
+import { Environment, ReportSuspiciousActivityEvent } from "./common/model.js";
+import { homeClientIds } from "./common/constants.js";
 import assert from "node:assert/strict";
 import { NotifyClient } from "notifications-node-client";
 import { getSecret } from "@aws-lambda-powertools/parameters/secrets";
-import { getEnvironmentVariable } from "./common/utils";
+import { getEnvironmentVariable } from "./common/utils.js";
 import {
   getTranslations,
   Translation,

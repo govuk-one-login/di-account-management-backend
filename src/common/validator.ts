@@ -1,4 +1,4 @@
-import { ValidationRule, ValidationRules } from "./validator-rules";
+import { ValidationRule, ValidationRules } from "./validator-rules.js";
 
 function validateObject(
   // TODO: Remove lint exclusion

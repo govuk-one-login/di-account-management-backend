@@ -1,7 +1,7 @@
 import { describe, test, expect } from "vitest";
 import { KmsKeyringNode } from "@aws-crypto/client-node";
-import buildKmsKeyring from "../kms-keyring-builder";
-import { exampleArn } from "./testFixtures";
+import buildKmsKeyring from "../kms-keyring-builder.js";
+import { exampleArn } from "./testFixtures.js";
 
 describe("kmsKeyringBuilder", () => {
   /* 

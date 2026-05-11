@@ -5,9 +5,9 @@ import {
   PutCommand,
   PutCommandOutput,
 } from "@aws-sdk/lib-dynamodb";
-import { ActivityLogEntry, EncryptedActivityLogEntry } from "./common/model";
-import encryptData from "./common/encrypt-data";
-import { getEnvironmentVariable } from "./common/utils";
+import { ActivityLogEntry, EncryptedActivityLogEntry } from "./common/model.js";
+import encryptData from "./common/encrypt-data.js";
+import { getEnvironmentVariable } from "./common/utils.js";
 import { Logger } from "@aws-lambda-powertools/logger";
 
 const dynamoDocClient = DynamoDBDocumentClient.from(new DynamoDBClient({}));

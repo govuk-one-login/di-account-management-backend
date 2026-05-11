@@ -3,11 +3,11 @@ import { Logger } from "@aws-lambda-powertools/logger";
 import * as v from "valibot";
 import UAParser from "ua-parser-js";
 import { randomUUID } from "node:crypto";
-import { getEnvironmentVariable } from "./common/utils";
+import { getEnvironmentVariable } from "./common/utils.js";
 import { isAxiosError } from "axios";
 import { MetricUnit } from "@aws-lambda-powertools/metrics";
-import { initMetrics } from "./common/metrics";
-import { setUpNotifyClient } from "./notification-service-client";
+import { initMetrics } from "./common/metrics.js";
+import { setUpNotifyClient } from "./notification-service-client.js";
 
 const logger = new Logger();
 const metrics = initMetrics("notification-service");

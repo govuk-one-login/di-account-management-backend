@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect } from "vitest";
-import redact from "../common/redact";
+import redact from "../common/redact.js";
 
 describe("Redact tests", (): void => {
   it("Redacts a field from a JSON document.", (): void => {

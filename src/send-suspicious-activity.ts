@@ -1,14 +1,14 @@
 import { SendMessageCommandOutput } from "@aws-sdk/client-sqs";
-import { ReportSuspiciousActivityEvent, TxMAAuditEvent } from "./common/model";
+import { ReportSuspiciousActivityEvent, TxMAAuditEvent } from "./common/model.js";
 import {
   COMPONENT_ID,
   EventNamesEnum,
   ValidationRulesKeyEnum,
-} from "./common/constants";
-import VALIDATOR_RULES_MAP from "./common/validator-rules";
-import validateObject from "./common/validator";
-import { sendSqsMessage } from "./common/sqs";
-import { getEnvironmentVariable } from "./common/utils";
+} from "./common/constants.js";
+import VALIDATOR_RULES_MAP from "./common/validator-rules.js";
+import validateObject from "./common/validator.js";
+import { sendSqsMessage } from "./common/sqs.js";
+import { getEnvironmentVariable } from "./common/utils.js";
 import { Logger } from "@aws-lambda-powertools/logger";
 import { Context } from "aws-lambda";
 

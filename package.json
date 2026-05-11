@@ -21,6 +21,7 @@
   },
   "author": "GDS",
   "license": "OGL",
+  "type": "module",
   "repository": {
     "type": "git",
     "url": "https://github.com/alphagov/di-account-management-backend.git"

@@ -48,7 +48,7 @@ vi.hoisted(() => {
 
 vi.mock("../notification-service-client", async (importOriginal) => {
   const actual =
-    await importOriginal<typeof import("../notification-service-client")>();
+    await importOriginal<typeof import("../notification-service-client.js")>();
   return {
     ...actual,
     setUpNotifyClient: mockSetUpNotifyClient.mockImplementation(
@@ -58,7 +58,7 @@ vi.mock("../notification-service-client", async (importOriginal) => {
 });
 vi.mock("../notification-service-utils", async (importOriginal) => {
   const actual =
-    await importOriginal<typeof import("../notification-service-utils")>();
+    await importOriginal<typeof import("../notification-service-utils.js")>();
   return {
     ...actual,
     processNotification: mockProcessNotification.mockImplementation(
@@ -67,9 +67,9 @@ vi.mock("../notification-service-utils", async (importOriginal) => {
   };
 });
 
-import { handler } from "../notification-service";
-import { setUpNotifyClient } from "../notification-service-client";
-import { processNotification } from "../notification-service-utils";
+import { handler } from "../notification-service.js";
+import { setUpNotifyClient } from "../notification-service-client.js";
+import { processNotification } from "../notification-service-utils.js";
 
 describe("module initialization", () => {
   it("should initialize metrics with correct namespace", () => {
@@ -89,7 +89,7 @@ describe("setUpNotifyClient", () => {
       NOTIFY_TEMPLATE_IDS: '{"GLOBAL_LOGOUT":"template-id"}',
     };
     const actual = await vi.importActual<
-      typeof import("../notification-service-client")
+      typeof import("../notification-service-client.js")
     >("../notification-service-client");
     mockSetUpNotifyClient.mockImplementation(actual.setUpNotifyClient);
     mockRecord = { messageId: "test-message-id" } as SQSRecord;
@@ -185,7 +185,7 @@ describe("processNotification", () => {
     };
 
     const actual = await vi.importActual<
-      typeof import("../notification-service-utils")
+      typeof import("../notification-service-utils.js")
     >("../notification-service-utils");
     mockProcessNotification.mockImplementation(actual.processNotification);
     mockSetUpNotifyClient.mockReset();

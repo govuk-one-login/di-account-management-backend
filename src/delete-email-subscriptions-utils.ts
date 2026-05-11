@@ -1,5 +1,5 @@
-import { UserData } from "./common/model";
-import { getEnvironmentVariable } from "./common/utils";
+import { UserData } from "./common/model.js";
+import { getEnvironmentVariable } from "./common/utils.js";
 import { Logger } from "@aws-lambda-powertools/logger";
 
 const logger = new Logger();

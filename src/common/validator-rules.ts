@@ -1,4 +1,4 @@
-import { ValidationRulesKeyEnum } from "./constants";
+import { ValidationRulesKeyEnum } from "./constants.js";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export type ValidationRule = (value: any) => boolean;

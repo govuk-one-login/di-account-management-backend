@@ -6,9 +6,9 @@ import {
 } from "@aws-sdk/client-secrets-manager";
 import MockAdapter from "axios-mock-adapter";
 import axios from "axios";
-import { handler } from "../create-support-ticket";
-import { testSuspiciousActivityInput } from "./testFixtures";
-import { EventNamesEnum } from "../common/constants";
+import { handler } from "../create-support-ticket.js";
+import { testSuspiciousActivityInput } from "./testFixtures.js";
+import { EventNamesEnum } from "../common/constants.js";
 import { Context } from "aws-lambda";
 
 const mockedSecretsManager = mockClient(SecretsManagerClient);

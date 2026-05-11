@@ -1,16 +1,16 @@
 import { vi, describe, test, expect, beforeEach, afterEach } from "vitest";
-import { handler } from "../trigger-rsa-step";
+import { handler } from "../trigger-rsa-step.js";
 import {
   testSuspiciousActivity,
   createSnsEvent,
   messageId,
-} from "./testFixtures";
-import { callAsyncStepFunction } from "../common/call-async-step-function";
+} from "./testFixtures.js";
+import { callAsyncStepFunction } from "../common/call-async-step-function.js";
 import { mockClient } from "aws-sdk-client-mock";
 import { SendMessageCommand, SQSClient } from "@aws-sdk/client-sqs";
 import { Context } from "aws-lambda";
 
-vi.mock("../common/call-async-step-function.ts");
+vi.mock("../common/call-async-step-function.js");
 const sqsMock = mockClient(SQSClient);
 
 describe("handler", () => {

@@ -9,7 +9,7 @@ import {
   decryptData,
   generateExpectedContext,
   validateEncryptionContext,
-} from "../decrypt-data";
+} from "../decrypt-data.js";
 
 vi.mock("@aws-crypto/client-node", () => ({
   buildDecrypt: vi.fn().mockReturnValue({

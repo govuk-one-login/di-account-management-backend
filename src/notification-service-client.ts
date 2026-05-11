@@ -2,9 +2,9 @@ import { SQSBatchItemFailure, SQSRecord } from "aws-lambda";
 import { Logger } from "@aws-lambda-powertools/logger";
 import { NotifyClient } from "notifications-node-client";
 import { getSecret } from "@aws-lambda-powertools/parameters/secrets";
-import { getEnvironmentVariable } from "./common/utils";
+import { getEnvironmentVariable } from "./common/utils.js";
 import { MetricUnit } from "@aws-lambda-powertools/metrics";
-import { initMetrics } from "./common/metrics";
+import { initMetrics } from "./common/metrics.js";
 
 const logger = new Logger();
 const metrics = initMetrics("notification-service");

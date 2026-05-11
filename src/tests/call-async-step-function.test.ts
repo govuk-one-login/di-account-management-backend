@@ -4,11 +4,11 @@ import {
   StartExecutionCommand,
   StartSyncExecutionCommand,
 } from "@aws-sdk/client-sfn";
-import { testSuspiciousActivity } from "./testFixtures";
+import { testSuspiciousActivity } from "./testFixtures.js";
 import {
   callAsyncStepFunction,
   stepFunctionsClient,
-} from "../common/call-async-step-function";
+} from "../common/call-async-step-function.js";
 import { Logger } from "@aws-lambda-powertools/logger";
 
 const mockStepFunctionClient = mockClient(stepFunctionsClient);

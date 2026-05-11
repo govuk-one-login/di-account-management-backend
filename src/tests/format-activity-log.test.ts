@@ -5,7 +5,7 @@ import {
   formatIntoActivityLogEntry,
   handler,
   validateTxmaEventBody,
-} from "../format-activity-log";
+} from "../format-activity-log.js";
 import {
   ERROR_DYNAMODB_STREAM_EVENT,
   generateDynamoSteamRecord,
@@ -17,10 +17,10 @@ import {
   randomEventType,
   tableName,
   TEST_DYNAMO_STREAM_EVENT,
-} from "./testFixtures";
-import { sendSqsMessage } from "../common/sqs";
-import { DynamoDBStreamEvent } from "aws-lambda/trigger/dynamodb-stream";
-import { DroppedEventError } from "../common/model";
+} from "./testFixtures.js";
+import { sendSqsMessage } from "../common/sqs.js";
+import { DynamoDBStreamEvent } from "aws-lambda";
+import { DroppedEventError } from "../common/model.js";
 import { Context } from "aws-lambda";
 import { Logger } from "@aws-lambda-powertools/logger";
 

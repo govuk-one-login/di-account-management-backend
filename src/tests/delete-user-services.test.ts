@@ -6,12 +6,12 @@ import {
   handler,
   validateUserData,
   deleteUserData,
-} from "../delete-user-services";
+} from "../delete-user-services.js";
 
 import {
   TEST_SNS_EVENT_WITH_TWO_RECORDS,
   TEST_USER_DATA,
-} from "./testFixtures";
+} from "./testFixtures.js";
 import { Context } from "aws-lambda";
 
 const dynamoMock = mockClient(DynamoDBDocumentClient);

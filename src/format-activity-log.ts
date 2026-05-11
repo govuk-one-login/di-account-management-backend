@@ -1,13 +1,13 @@
 import { Context, DynamoDBStreamEvent } from "aws-lambda";
 import { AttributeValue } from "@aws-sdk/client-dynamodb";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
-import { ActivityLogEntry, DroppedEventError, TxmaEvent } from "./common/model";
+import { ActivityLogEntry, DroppedEventError, TxmaEvent } from "./common/model.js";
 import {
   allowedTxmaEvents,
   REPORT_SUSPICIOUS_ACTIVITY_DEFAULT,
-} from "./common/constants";
-import { sendSqsMessage } from "./common/sqs";
-import { getEnvironmentVariable } from "./common/utils";
+} from "./common/constants.js";
+import { sendSqsMessage } from "./common/sqs.js";
+import { getEnvironmentVariable } from "./common/utils.js";
 import { filterClients, getClientIDs } from "di-account-management-rp-registry";
 import { Logger } from "@aws-lambda-powertools/logger";
 

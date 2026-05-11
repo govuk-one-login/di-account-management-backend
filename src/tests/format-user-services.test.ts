@@ -11,15 +11,15 @@ import {
   formatRecord,
   prettifyDate,
   handler,
-} from "../format-user-services";
+} from "../format-user-services.js";
 
-import { DroppedEventError, Service, UserServices } from "../common/model";
+import { DroppedEventError, Service, UserServices } from "../common/model.js";
 import {
   makeServiceRecord,
   makeSQSInputFixture,
   makeTxmaEvent,
-} from "./testUtils";
-import { sendSqsMessage } from "../common/sqs";
+} from "./testUtils.js";
+import { sendSqsMessage } from "../common/sqs.js";
 import { Logger } from "@aws-lambda-powertools/logger";
 
 const sqsMock = mockClient(SQSClient);

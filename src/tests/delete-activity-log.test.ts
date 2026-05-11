@@ -9,13 +9,13 @@ import {
   getAllActivityLogEntriesForUser,
   handler,
   validateUserData,
-} from "../delete-activity-log";
-import { ActivityLogEntry, UserData } from "../common/model";
+} from "../delete-activity-log.js";
+import { ActivityLogEntry, UserData } from "../common/model.js";
 import {
   TEST_SNS_EVENT_WITH_TWO_RECORDS,
   TEST_USER_DATA,
   eventId,
-} from "./testFixtures";
+} from "./testFixtures.js";
 import { Context } from "aws-lambda";
 
 const dynamoMock = mockClient(DynamoDBDocumentClient);

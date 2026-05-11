@@ -6,14 +6,14 @@ import {
   validateActivityLogEntry,
   writeActivityLogEntry,
   handler,
-} from "../write-activity-log";
+} from "../write-activity-log.js";
 import {
   ACTIVITY_LOG_ENTRY_NO_TIMESTAMP,
   ACTIVITY_LOG_ENTRY_NO_USER_ID,
   TEST_ACTIVITY_LOG_ENTRY,
   TEST_ENCRYPTED_ACTIVITY_LOG_ENTRY,
   TEST_SQS_EVENT,
-} from "./testFixtures";
+} from "./testFixtures.js";
 import { Context } from "aws-lambda";
 
 vi.mock(`../common/encrypt-data`, () => ({

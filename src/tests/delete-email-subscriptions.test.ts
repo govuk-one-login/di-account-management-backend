@@ -1,6 +1,6 @@
 import { vi, describe, test, expect, beforeEach, afterEach } from "vitest";
 import { Context } from "aws-lambda";
-import { TEST_SNS_EVENT, TEST_USER_DATA } from "./testFixtures";
+import { TEST_SNS_EVENT, TEST_USER_DATA } from "./testFixtures.js";
 
 const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
@@ -20,7 +20,7 @@ const deleteEmailSubscriptionMock = vi.hoisted(() => vi.fn());
 
 vi.mock("../delete-email-subscriptions-utils", async (importOriginal) => {
   const actual = await importOriginal<
-    typeof import("../delete-email-subscriptions-utils")
+    typeof import("../delete-email-subscriptions-utils.js")
   >();
   return {
     ...actual,
@@ -33,12 +33,12 @@ vi.mock("../delete-email-subscriptions-utils", async (importOriginal) => {
   };
 });
 
-import { handler } from "../delete-email-subscriptions";
+import { handler } from "../delete-email-subscriptions.js";
 import {
   getRequestConfig,
   validateUserData,
   deleteEmailSubscription,
-} from "../delete-email-subscriptions-utils";
+} from "../delete-email-subscriptions-utils.js";
 
 describe("handler", () => {
   beforeEach(() => {
@@ -75,7 +75,7 @@ describe("getRequestConfig", () => {
 describe("validateUserData", () => {
   beforeEach(async () => {
     const actual = await vi.importActual<
-      typeof import("../delete-email-subscriptions-utils")
+      typeof import("../delete-email-subscriptions-utils.js")
     >("../delete-email-subscriptions-utils");
     validateUserDataMock.mockImplementation(actual.validateUserData);
   });
@@ -121,7 +121,7 @@ describe("deleteEmailSubscription", () => {
   beforeEach(async () => {
     vi.clearAllMocks();
     const actual = await vi.importActual<
-      typeof import("../delete-email-subscriptions-utils")
+      typeof import("../delete-email-subscriptions-utils.js")
     >("../delete-email-subscriptions-utils");
     deleteEmailSubscriptionMock.mockImplementation(
       actual.deleteEmailSubscription

@@ -3,9 +3,9 @@ import {
   handler,
   formatActivityObjectForEmail,
   sendConfMail,
-} from "../send-conf-email";
+} from "../send-conf-email.js";
 import { NotifyClient } from "notifications-node-client";
-import { ReportSuspiciousActivityEvent } from "../common/model";
+import { ReportSuspiciousActivityEvent } from "../common/model.js";
 import { getSecret } from "@aws-lambda-powertools/parameters/secrets";
 import * as rpRegistry from "di-account-management-rp-registry";
 import { Context } from "aws-lambda";

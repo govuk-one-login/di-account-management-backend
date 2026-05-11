@@ -1,6 +1,6 @@
 import { vi, describe, test, expect } from "vitest";
 import { Metrics } from "@aws-lambda-powertools/metrics";
-import { initMetrics } from "../common/metrics";
+import { initMetrics } from "../common/metrics.js";
 
 vi.mock("@aws-lambda-powertools/metrics");
 

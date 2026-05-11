@@ -8,15 +8,15 @@ import {
   UserServices,
   TxmaEvent,
   UserData,
-} from "../common/model";
+} from "../common/model.js";
 import {
   handler,
   validateTxmaEventBody,
   validateUser,
   queryUserServices,
-} from "../query-user-services";
+} from "../query-user-services.js";
 import { DynamoDBStreamEvent, DynamoDBRecord, Context } from "aws-lambda";
-import { sendSqsMessage } from "../common/sqs";
+import { sendSqsMessage } from "../common/sqs.js";
 
 export const userId = "user_id";
 export const clientId = "client_id";

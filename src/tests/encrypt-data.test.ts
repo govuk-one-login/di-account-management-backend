@@ -5,7 +5,7 @@ import {
   SecretsManagerClient,
 } from "@aws-sdk/client-secrets-manager";
 import { buildEncrypt, MessageHeader } from "@aws-crypto/client-node";
-import { TEST_ACTIVITY_LOG_ENTRY } from "./testFixtures";
+import { TEST_ACTIVITY_LOG_ENTRY } from "./testFixtures.js";
 
 const mockedSecretsManager = mockClient(SecretsManagerClient).on(
   GetSecretValueCommand
@@ -27,7 +27,7 @@ describe("encryptData", () => {
     jwt: string;
   };
 
-  let encryptData: typeof import("../common/encrypt-data").encryptData;
+  let encryptData: typeof import("../common/encrypt-data.js").encryptData;
   beforeAll(async () => {
     process.env.GENERATOR_KEY_ARN =
       "arn:aws:kms:eu-west-2:111122223333:key/bc436485-5092-42b8-92a3-0aa8b93536dc";
@@ -39,7 +39,7 @@ describe("encryptData", () => {
       "arn:aws:kms:eu-west-2:111122223333:key/49c5492b-b1bc-42a8-9a5c-b2015e810c1c";
     process.env.BACKUP_WRAPPING_KEY_ARN =
       "arn:aws:kms:eu-west-2:111122223333:key/49c5492b-b1bc-42a8-9a5c-b2015e810c1c";
-    encryptData = (await import("../common/encrypt-data")).encryptData;
+    encryptData = (await import("../common/encrypt-data.js")).encryptData;
   });
   beforeEach(async () => {
     const activityLogEntry = JSON.stringify(TEST_ACTIVITY_LOG_ENTRY);

@@ -1,7 +1,7 @@
 import { vi, describe, test, expect, beforeEach, afterEach } from "vitest";
-import validateObject from "../common/validator";
-import validatorRules, { ValidationRules } from "../common/validator-rules";
-import { ReportSuspiciousActivityEvent } from "../common/model";
+import validateObject from "../common/validator.js";
+import validatorRules, { ValidationRules } from "../common/validator-rules.js";
+import { ReportSuspiciousActivityEvent } from "../common/model.js";
 
 describe("validate", () => {
   let suspiciousActivityEvent: ReportSuspiciousActivityEvent;

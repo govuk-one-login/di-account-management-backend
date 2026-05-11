@@ -1,7 +1,7 @@
 import { Context, SNSEvent } from "aws-lambda";
-import { ReportSuspiciousActivityStepInput } from "./common/model";
-import { callAsyncStepFunction } from "./common/call-async-step-function";
-import { getEnvironmentVariable } from "./common/utils";
+import { ReportSuspiciousActivityStepInput } from "./common/model.js";
+import { callAsyncStepFunction } from "./common/call-async-step-function.js";
+import { getEnvironmentVariable } from "./common/utils.js";
 import { Logger } from "@aws-lambda-powertools/logger";
 
 const logger = new Logger();

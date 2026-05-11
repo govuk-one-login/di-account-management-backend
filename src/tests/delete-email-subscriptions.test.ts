@@ -15,16 +15,36 @@ vi.mock("@aws-lambda-powertools/logger", () => ({
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
+const validateUserDataMock = vi.hoisted(() => vi.fn());
+const deleteEmailSubscriptionMock = vi.hoisted(() => vi.fn());
+
+vi.mock("../delete-email-subscriptions-utils", async (importOriginal) => {
+  const actual = await importOriginal<
+    typeof import("../delete-email-subscriptions-utils")
+  >();
+  return {
+    ...actual,
+    validateUserData: validateUserDataMock.mockImplementation(
+      actual.validateUserData
+    ),
+    deleteEmailSubscription: deleteEmailSubscriptionMock.mockImplementation(
+      actual.deleteEmailSubscription
+    ),
+  };
+});
+
+import { handler } from "../delete-email-subscriptions";
 import {
-  handler,
   getRequestConfig,
   validateUserData,
   deleteEmailSubscription,
-} from "../delete-email-subscriptions";
+} from "../delete-email-subscriptions-utils";
 
 describe("handler", () => {
   beforeEach(() => {
-    vi.restoreAllMocks();
+    vi.clearAllMocks();
+    validateUserDataMock.mockImplementation((data) => data);
+    deleteEmailSubscriptionMock.mockResolvedValue(undefined);
     process.env.AWS_REGION = "AWS_REGION";
     process.env.GOV_ACCOUNTS_PUBLISHING_API_TOKEN = "test-token";
     process.env.GOV_ACCOUNTS_PUBLISHING_API_URL = "https://api.example.com";
@@ -35,10 +55,11 @@ describe("handler", () => {
   });
 
   test("that it successfully processes the SNS message", async () => {
-    mockFetch.mockResolvedValue({ ok: true, status: 200 });
-
     await expect(handler(TEST_SNS_EVENT, {} as Context)).resolves.not.toThrow();
-    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(validateUserDataMock).toHaveBeenCalledTimes(1);
+    expect(validateUserDataMock).toHaveBeenCalledWith(TEST_USER_DATA);
+    expect(deleteEmailSubscriptionMock).toHaveBeenCalledTimes(1);
+    expect(deleteEmailSubscriptionMock).toHaveBeenCalledWith(TEST_USER_DATA);
   });
 });
 
@@ -52,6 +73,13 @@ describe("getRequestConfig", () => {
 });
 
 describe("validateUserData", () => {
+  beforeEach(async () => {
+    const actual = await vi.importActual<
+      typeof import("../delete-email-subscriptions-utils")
+    >("../delete-email-subscriptions-utils");
+    validateUserDataMock.mockImplementation(actual.validateUserData);
+  });
+
   test("that it does not throw an error when the SNS message is valid", () => {
     expect(validateUserData(TEST_USER_DATA)).toBe(TEST_USER_DATA);
   });
@@ -90,8 +118,14 @@ describe("validateUserData", () => {
 });
 
 describe("deleteEmailSubscription", () => {
-  beforeEach(() => {
-    vi.restoreAllMocks();
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    const actual = await vi.importActual<
+      typeof import("../delete-email-subscriptions-utils")
+    >("../delete-email-subscriptions-utils");
+    deleteEmailSubscriptionMock.mockImplementation(
+      actual.deleteEmailSubscription
+    );
     process.env.GOV_ACCOUNTS_PUBLISHING_API_TOKEN = "test-token";
     process.env.GOV_ACCOUNTS_PUBLISHING_API_URL = "https://api.example.com";
   });

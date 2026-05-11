@@ -1,4 +1,4 @@
-import { vi, describe, test, expect, beforeEach, afterEach } from "vitest";
+import { vi, describe, test, expect, beforeEach, afterEach, it } from "vitest";
 import { mockClient } from "aws-sdk-client-mock";
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 import {
@@ -34,7 +34,9 @@ describe("handler", () => {
     process.env.OUTPUT_QUEUE_URL = queueUrl;
     process.env.AWS_REGION = "AWS_REGION";
     process.env.ENVIRONMENT = "test";
-    loggerInfoMock = vi.spyOn(Logger.prototype, "info").mockImplementation(() => undefined);
+    loggerInfoMock = vi
+      .spyOn(Logger.prototype, "info")
+      .mockImplementation(() => undefined);
     sqsMock.on(SendMessageCommand).resolves({ MessageId: messageId });
   });
   afterEach(() => {

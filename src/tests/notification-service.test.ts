@@ -3,6 +3,8 @@ import { SQSRecord, SQSBatchItemFailure, SQSEvent, Context } from "aws-lambda";
 
 const mockGetSecret = vi.hoisted(() => vi.fn());
 const mockNotifyClient = vi.hoisted(() => vi.fn());
+const mockSetUpNotifyClient = vi.hoisted(() => vi.fn());
+const mockProcessNotification = vi.hoisted(() => vi.fn());
 const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
   info: vi.fn(),
@@ -39,8 +41,43 @@ vi.mock("../common/metrics", () => ({
   initMetrics: mockInitMetrics,
 }));
 
+vi.hoisted(() => {
+  process.env.NOTIFY_TEMPLATE_IDS = '{"GLOBAL_LOGOUT":"template-id"}';
+  process.env.NOTIFY_API_KEY = "NOTIFY_API_SECRET_KEY";
+});
+
+vi.mock("../notification-service-client", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../notification-service-client")>();
+  return {
+    ...actual,
+    setUpNotifyClient: mockSetUpNotifyClient.mockImplementation(
+      actual.setUpNotifyClient
+    ),
+  };
+});
+vi.mock("../notification-service-utils", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../notification-service-utils")>();
+  return {
+    ...actual,
+    processNotification: mockProcessNotification.mockImplementation(
+      actual.processNotification
+    ),
+  };
+});
+
+import { handler } from "../notification-service";
+import { setUpNotifyClient } from "../notification-service-client";
+import { processNotification } from "../notification-service-utils";
+
+describe("module initialization", () => {
+  it("should initialize metrics with correct namespace", () => {
+    expect(mockInitMetrics).toHaveBeenCalledWith("notification-service");
+  });
+});
+
 describe("setUpNotifyClient", () => {
-  let setUpNotifyClient: typeof import("../notification-service").setUpNotifyClient;
   let mockRecord: SQSRecord;
   let batchItemFailures: SQSBatchItemFailure[];
   const OLD_PROCESS_ENV = process.env;
@@ -51,8 +88,10 @@ describe("setUpNotifyClient", () => {
       NOTIFY_API_KEY: "NOTIFY_API_SECRET_KEY",
       NOTIFY_TEMPLATE_IDS: '{"GLOBAL_LOGOUT":"template-id"}',
     };
-    setUpNotifyClient = (await import("../notification-service"))
-      .setUpNotifyClient;
+    const actual = await vi.importActual<
+      typeof import("../notification-service-client")
+    >("../notification-service-client");
+    mockSetUpNotifyClient.mockImplementation(actual.setUpNotifyClient);
     mockRecord = { messageId: "test-message-id" } as SQSRecord;
     batchItemFailures = [];
   });
@@ -135,7 +174,6 @@ describe("setUpNotifyClient", () => {
 });
 
 describe("processNotification", () => {
-  let processNotification: typeof import("../notification-service").processNotification;
   let mockRecord: SQSRecord;
   let batchItemFailures: SQSBatchItemFailure[];
   const OLD_PROCESS_ENV = process.env;
@@ -143,16 +181,14 @@ describe("processNotification", () => {
   beforeEach(async () => {
     process.env = {
       ...OLD_PROCESS_ENV,
-      NOTIFY_API_KEY: "NOTIFY_API_SECRET_KEY",
       NOTIFY_TEMPLATE_IDS: '{"GLOBAL_LOGOUT":"template-id"}',
     };
 
-    // Set up the mock to return a client with sendEmail
-    mockGetSecret.mockResolvedValue("test-api-key");
-    mockNotifyClient.mockImplementation(() => ({ sendEmail: mockSendEmail }));
-
-    const notificationService = await import("../notification-service");
-    processNotification = notificationService.processNotification;
+    const actual = await vi.importActual<
+      typeof import("../notification-service-utils")
+    >("../notification-service-utils");
+    mockProcessNotification.mockImplementation(actual.processNotification);
+    mockSetUpNotifyClient.mockReset();
 
     mockRecord = {
       messageId: "test-message-id",
@@ -178,23 +214,25 @@ describe("processNotification", () => {
   afterEach(() => {
     process.env = OLD_PROCESS_ENV;
     vi.clearAllMocks();
-    vi.resetModules();
   });
 
-  it("should return early when setUpNotifyClient returns undefined (secret undefined)", async () => {
-    mockGetSecret.mockResolvedValue(undefined);
+  it("should return early when setUpNotifyClient returns undefined", async () => {
+    mockSetUpNotifyClient.mockResolvedValue(undefined);
 
     await processNotification(mockRecord, batchItemFailures);
 
-    expect(mockLogger.error).toHaveBeenCalledWith("Secret is undefined", {
-      messageId: "test-message-id",
-      key: "NOTIFY_API_SECRET_KEY",
-    });
-    expect(batchItemFailures).toEqual([{ itemIdentifier: "test-message-id" }]);
+    expect(mockSetUpNotifyClient).toHaveBeenCalledWith(
+      mockRecord,
+      batchItemFailures
+    );
+    expect(mockLogger.error).not.toHaveBeenCalled();
+    expect(mockLogger.info).not.toHaveBeenCalled();
+    expect(batchItemFailures).toEqual([]);
     expect(mockSendEmail).not.toHaveBeenCalled();
   });
 
   it("should handle invalid JSON and log error", async () => {
+    mockSetUpNotifyClient.mockResolvedValue({ sendEmail: mockSendEmail });
     mockRecord.body = "invalid json";
 
     await processNotification(mockRecord, batchItemFailures);
@@ -217,6 +255,7 @@ describe("processNotification", () => {
   });
 
   it("should handle invalid message format and log error", async () => {
+    mockSetUpNotifyClient.mockResolvedValue({ sendEmail: mockSendEmail });
     mockRecord.body = JSON.stringify({ invalid: "message" });
 
     await processNotification(mockRecord, batchItemFailures);
@@ -247,6 +286,7 @@ describe("processNotification", () => {
         data: "Error details",
       },
     };
+    mockSetUpNotifyClient.mockResolvedValue({ sendEmail: mockSendEmail });
     mockSendEmail.mockRejectedValue(axiosError);
 
     await processNotification(mockRecord, batchItemFailures);
@@ -270,11 +310,31 @@ describe("processNotification", () => {
       "Count",
       1
     );
+    expect(mockLogger.info).not.toHaveBeenCalled();
     expect(batchItemFailures).toEqual([{ itemIdentifier: "test-message-id" }]);
+    expect(mockSendEmail).toHaveBeenCalledWith(
+      "template-id",
+      "test@example.com",
+      expect.objectContaining({
+        personalisation: {
+          ipAddress: "192.168.1.1",
+          browser: "Chrome",
+          os: "Mac OS",
+          deviceVendor: "Apple",
+          deviceModel: "Macintosh",
+          countryName_en: "United Kingdom",
+          countryName_cy: "Y Deyrnas Unedig",
+          loggedOutAt_en: "Sunday, 1 January 2023 at 12:00",
+          loggedOutAt_cy: "Dydd Sul, 1 Ionawr 2023 am 12:00",
+        },
+        reference: "test-uuid",
+      })
+    );
   });
 
   it("should handle unknown error and log error", async () => {
     const unknownError = new Error("Unknown error");
+    mockSetUpNotifyClient.mockResolvedValue({ sendEmail: mockSendEmail });
     mockSendEmail.mockRejectedValue(unknownError);
 
     await processNotification(mockRecord, batchItemFailures);
@@ -296,10 +356,30 @@ describe("processNotification", () => {
       "Count",
       1
     );
+    expect(mockLogger.info).not.toHaveBeenCalled();
     expect(batchItemFailures).toEqual([{ itemIdentifier: "test-message-id" }]);
+    expect(mockSendEmail).toHaveBeenCalledWith(
+      "template-id",
+      "test@example.com",
+      expect.objectContaining({
+        personalisation: {
+          ipAddress: "192.168.1.1",
+          browser: "Chrome",
+          os: "Mac OS",
+          deviceVendor: "Apple",
+          deviceModel: "Macintosh",
+          countryName_en: "United Kingdom",
+          countryName_cy: "Y Deyrnas Unedig",
+          loggedOutAt_en: "Sunday, 1 January 2023 at 12:00",
+          loggedOutAt_cy: "Dydd Sul, 1 Ionawr 2023 am 12:00",
+        },
+        reference: "test-uuid",
+      })
+    );
   });
 
   it("should handle invalid result format and log error", async () => {
+    mockSetUpNotifyClient.mockResolvedValue({ sendEmail: mockSendEmail });
     mockSendEmail.mockResolvedValue({ invalid: "result" });
 
     await processNotification(mockRecord, batchItemFailures);
@@ -317,10 +397,31 @@ describe("processNotification", () => {
       "Count",
       1
     );
+    expect(mockLogger.info).not.toHaveBeenCalled();
     expect(batchItemFailures).toEqual([{ itemIdentifier: "test-message-id" }]);
+    expect(mockSendEmail).toHaveBeenCalledWith(
+      "template-id",
+      "test@example.com",
+      expect.objectContaining({
+        personalisation: {
+          ipAddress: "192.168.1.1",
+          browser: "Chrome",
+          os: "Mac OS",
+          deviceVendor: "Apple",
+          deviceModel: "Macintosh",
+          countryName_en: "United Kingdom",
+          countryName_cy: "Y Deyrnas Unedig",
+          loggedOutAt_en: "Sunday, 1 January 2023 at 12:00",
+          loggedOutAt_cy: "Dydd Sul, 1 Ionawr 2023 am 12:00",
+        },
+        reference: "test-uuid",
+      })
+    );
   });
 
   it("should successfully process notification and log success", async () => {
+    mockSetUpNotifyClient.mockResolvedValue({ sendEmail: mockSendEmail });
+
     await processNotification(mockRecord, batchItemFailures);
 
     expect(mockLogger.error).not.toHaveBeenCalled();
@@ -339,96 +440,79 @@ describe("processNotification", () => {
       1
     );
     expect(batchItemFailures).toEqual([]);
+    expect(mockSendEmail).toHaveBeenCalledWith(
+      "template-id",
+      "test@example.com",
+      expect.objectContaining({
+        personalisation: {
+          ipAddress: "192.168.1.1",
+          browser: "Chrome",
+          os: "Mac OS",
+          deviceVendor: "Apple",
+          deviceModel: "Macintosh",
+          countryName_en: "United Kingdom",
+          countryName_cy: "Y Deyrnas Unedig",
+          loggedOutAt_en: "Sunday, 1 January 2023 at 12:00",
+          loggedOutAt_cy: "Dydd Sul, 1 Ionawr 2023 am 12:00",
+        },
+        reference: "test-uuid",
+      })
+    );
   });
 });
 
 describe("handler", () => {
   const OLD_PROCESS_ENV = process.env;
 
-  beforeEach(async () => {
+  beforeEach(() => {
     process.env = {
       ...OLD_PROCESS_ENV,
-      NOTIFY_API_KEY: "NOTIFY_API_SECRET_KEY",
       NOTIFY_TEMPLATE_IDS: '{"GLOBAL_LOGOUT":"template-id"}',
     };
-
-    mockGetSecret.mockResolvedValue("test-api-key");
-    mockNotifyClient.mockImplementation(() => ({ sendEmail: mockSendEmail }));
+    mockProcessNotification.mockReset();
   });
 
   afterEach(() => {
     process.env = OLD_PROCESS_ENV;
     vi.clearAllMocks();
-    vi.resetModules();
   });
 
   it("should add context to logger and process all records", async () => {
-    const { handler } = await import("../notification-service");
-    mockSendEmail.mockResolvedValue({
-      data: { id: "notification-id", reference: "test-ref" },
-    });
-
     const mockContext = { requestId: "test-request-id" } as unknown as Context;
     const mockEvent = {
-      Records: [
-        {
-          messageId: "msg-1",
-          body: JSON.stringify({
-            notificationType: "GLOBAL_LOGOUT",
-            emailAddress: "test@example.com",
-            loggedOutAt: "2023-01-01T12:00:00Z",
-            ipAddress: "192.168.1.1",
-            userAgent: "Mozilla/5.0",
-            countryCode: "GB",
-          }),
-        },
-        {
-          messageId: "msg-2",
-          body: JSON.stringify({
-            notificationType: "GLOBAL_LOGOUT",
-            emailAddress: "test2@example.com",
-            loggedOutAt: "2023-01-01T12:00:00Z",
-            ipAddress: "192.168.1.2",
-            userAgent: "Mozilla/5.0",
-            countryCode: "GB",
-          }),
-        },
-      ],
+      Records: [{ messageId: "msg-1" }, { messageId: "msg-2" }],
     } as SQSEvent;
 
     const result = await handler(mockEvent, mockContext);
 
-    expect(mockInitMetrics).toHaveBeenCalledWith("notification-service");
     expect(mockLogger.addContext).toHaveBeenCalledWith(mockContext);
-    expect(mockSendEmail).toHaveBeenCalledTimes(2);
+    expect(mockProcessNotification).toHaveBeenCalledTimes(2);
+    expect(mockProcessNotification).toHaveBeenCalledWith(
+      { messageId: "msg-1" },
+      []
+    );
+    expect(mockProcessNotification).toHaveBeenCalledWith(
+      { messageId: "msg-2" },
+      []
+    );
     expect(mockMetrics.publishStoredMetrics).toHaveBeenCalled();
     expect(result).toEqual({ batchItemFailures: [] });
   });
 
   it("should return batch item failures from processNotification", async () => {
-    const { handler } = await import("../notification-service");
-    mockGetSecret.mockResolvedValue(undefined);
-
     const mockContext = { requestId: "test-request-id" } as unknown as Context;
     const mockEvent = {
-      Records: [
-        {
-          messageId: "msg-1",
-          body: JSON.stringify({
-            notificationType: "GLOBAL_LOGOUT",
-            emailAddress: "test@example.com",
-            loggedOutAt: "2023-01-01T12:00:00Z",
-            ipAddress: "192.168.1.1",
-            userAgent: "Mozilla/5.0",
-            countryCode: "GB",
-          }),
-        },
-      ],
+      Records: [{ messageId: "msg-1" }],
     } as SQSEvent;
+
+    mockProcessNotification.mockImplementation(
+      (record: SQSRecord, batchItemFailures: SQSBatchItemFailure[]) => {
+        batchItemFailures.push({ itemIdentifier: record.messageId });
+      }
+    );
 
     const result = await handler(mockEvent, mockContext);
 
-    expect(mockInitMetrics).toHaveBeenCalledWith("notification-service");
     expect(mockMetrics.publishStoredMetrics).toHaveBeenCalled();
     expect(result).toEqual({
       batchItemFailures: [{ itemIdentifier: "msg-1" }],

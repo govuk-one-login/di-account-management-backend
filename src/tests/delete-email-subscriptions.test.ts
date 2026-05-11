@@ -41,7 +41,10 @@ import {
 } from "../delete-email-subscriptions-utils.js";
 
 describe("handler", () => {
+  const originalEnv = process.env;
+
   beforeEach(() => {
+    process.env = { ...originalEnv };
     vi.clearAllMocks();
     validateUserDataMock.mockImplementation((data) => data);
     deleteEmailSubscriptionMock.mockResolvedValue(undefined);
@@ -51,6 +54,7 @@ describe("handler", () => {
   });
 
   afterEach(() => {
+    process.env = originalEnv;
     vi.clearAllMocks();
   });
 
@@ -118,7 +122,10 @@ describe("validateUserData", () => {
 });
 
 describe("deleteEmailSubscription", () => {
+  const originalEnv = process.env;
+
   beforeEach(async () => {
+    process.env = { ...originalEnv };
     vi.clearAllMocks();
     const actual = await vi.importActual<
       typeof import("../delete-email-subscriptions-utils.js")
@@ -131,6 +138,7 @@ describe("deleteEmailSubscription", () => {
   });
 
   afterEach(() => {
+    process.env = originalEnv;
     vi.clearAllMocks();
   });
 

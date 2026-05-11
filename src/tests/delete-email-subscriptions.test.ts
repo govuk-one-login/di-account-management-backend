@@ -1,45 +1,64 @@
+import { vi, describe, test, expect, beforeEach, afterEach } from "vitest";
 import { Context } from "aws-lambda";
-import { TEST_SNS_EVENT, TEST_USER_DATA } from "./testFixtures";
-const mockLogger = {
-  error: jest.fn(),
-  info: jest.fn(),
-  addContext: jest.fn(),
-};
+import { TEST_SNS_EVENT, TEST_USER_DATA } from "./testFixtures.js";
 
-jest.mock("@aws-lambda-powertools/logger", () => ({
-  Logger: jest.fn(() => mockLogger),
+const mockLogger = vi.hoisted(() => ({
+  error: vi.fn(),
+  info: vi.fn(),
+  addContext: vi.fn(),
 }));
 
-const mockFetch = jest.fn();
+vi.mock("@aws-lambda-powertools/logger", () => ({
+  Logger: vi.fn(() => mockLogger),
+}));
+
+const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
+const validateUserDataMock = vi.hoisted(() => vi.fn());
+const deleteEmailSubscriptionMock = vi.hoisted(() => vi.fn());
+
+vi.mock("../delete-email-subscriptions-utils.js", async (importOriginal) => {
+  const actual = await importOriginal<
+    typeof import("../delete-email-subscriptions-utils.js")
+  >();
+  return {
+    ...actual,
+    validateUserData: validateUserDataMock.mockImplementation(
+      actual.validateUserData
+    ),
+    deleteEmailSubscription: deleteEmailSubscriptionMock.mockImplementation(
+      actual.deleteEmailSubscription
+    ),
+  };
+});
+
+import { handler } from "../delete-email-subscriptions.js";
 import {
-  handler,
   getRequestConfig,
   validateUserData,
   deleteEmailSubscription,
-} from "../delete-email-subscriptions";
+} from "../delete-email-subscriptions-utils.js";
 
 describe("handler", () => {
+  const originalEnv = process.env;
+
   beforeEach(() => {
-    jest.restoreAllMocks();
+    process.env = { ...originalEnv };
+    vi.clearAllMocks();
+    validateUserDataMock.mockImplementation((data) => data);
+    deleteEmailSubscriptionMock.mockResolvedValue(undefined);
     process.env.AWS_REGION = "AWS_REGION";
+    process.env.GOV_ACCOUNTS_PUBLISHING_API_TOKEN = "test-token";
+    process.env.GOV_ACCOUNTS_PUBLISHING_API_URL = "https://api.example.com";
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    process.env = originalEnv;
+    vi.clearAllMocks();
   });
 
   test("that it successfully processes the SNS message", async () => {
-    const module = require("../delete-email-subscriptions");
-    const validateUserDataMock = jest
-      .spyOn(module, "validateUserData")
-      .mockReturnValueOnce("validateUserData-mock");
-
-    const deleteEmailSubscriptionMock = jest
-      .spyOn(module, "deleteEmailSubscription")
-      .mockReturnValue("deleteEmailSubscription-mock");
-
     await expect(handler(TEST_SNS_EVENT, {} as Context)).resolves.not.toThrow();
     expect(validateUserDataMock).toHaveBeenCalledTimes(1);
     expect(validateUserDataMock).toHaveBeenCalledWith(TEST_USER_DATA);
@@ -58,6 +77,13 @@ describe("getRequestConfig", () => {
 });
 
 describe("validateUserData", () => {
+  beforeEach(async () => {
+    const actual = await vi.importActual<
+      typeof import("../delete-email-subscriptions-utils.js")
+    >("../delete-email-subscriptions-utils.js");
+    validateUserDataMock.mockImplementation(actual.validateUserData);
+  });
+
   test("that it does not throw an error when the SNS message is valid", () => {
     expect(validateUserData(TEST_USER_DATA)).toBe(TEST_USER_DATA);
   });
@@ -96,14 +122,24 @@ describe("validateUserData", () => {
 });
 
 describe("deleteEmailSubscription", () => {
-  beforeEach(() => {
-    jest.restoreAllMocks();
+  const originalEnv = process.env;
+
+  beforeEach(async () => {
+    process.env = { ...originalEnv };
+    vi.clearAllMocks();
+    const actual = await vi.importActual<
+      typeof import("../delete-email-subscriptions-utils.js")
+    >("../delete-email-subscriptions-utils.js");
+    deleteEmailSubscriptionMock.mockImplementation(
+      actual.deleteEmailSubscription
+    );
     process.env.GOV_ACCOUNTS_PUBLISHING_API_TOKEN = "test-token";
     process.env.GOV_ACCOUNTS_PUBLISHING_API_URL = "https://api.example.com";
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    process.env = originalEnv;
+    vi.clearAllMocks();
   });
 
   test("successfully deletes email subscription", async () => {

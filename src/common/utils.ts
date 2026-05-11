@@ -1,4 +1,4 @@
-import { CurrentTimeDescriptor } from "./model";
+import { CurrentTimeDescriptor } from "./model.js";
 
 /**
  * A function for calculating and returning an object containing the current timestamp.

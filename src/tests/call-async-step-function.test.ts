@@ -1,14 +1,14 @@
+import { vi, describe, it, expect, beforeEach, afterEach, MockInstance } from "vitest";
 import { mockClient } from "aws-sdk-client-mock";
 import {
   StartExecutionCommand,
   StartSyncExecutionCommand,
 } from "@aws-sdk/client-sfn";
-import "aws-sdk-client-mock-jest";
-import { testSuspiciousActivity } from "./testFixtures";
+import { testSuspiciousActivity } from "./testFixtures.js";
 import {
   callAsyncStepFunction,
   stepFunctionsClient,
-} from "../common/call-async-step-function";
+} from "../common/call-async-step-function.js";
 import { Logger } from "@aws-lambda-powertools/logger";
 
 const mockStepFunctionClient = mockClient(stepFunctionsClient);
@@ -18,19 +18,19 @@ const testStepFunctionARN =
 
 describe("start report suspicious activities step function", () => {
   const input = testSuspiciousActivity;
-  let loggerErrorMock: jest.SpyInstance;
+  let loggerErrorMock: MockInstance;
   beforeEach(() => {
     process.env.AWS_REGION = "AWS_REGION";
-    loggerErrorMock = jest
+    loggerErrorMock = vi
       .spyOn(Logger.prototype, "error")
-      .mockImplementation();
+      .mockImplementation(() => undefined);
     mockStepFunctionClient.on(StartExecutionCommand).resolves({
       executionArn: "dummy-executionArn",
     });
   });
   afterEach(() => {
     loggerErrorMock.mockRestore();
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it("step function completes successfully without errors", async () => {

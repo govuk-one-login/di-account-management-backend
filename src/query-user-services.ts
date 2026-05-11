@@ -8,9 +8,9 @@ import {
   UserData,
   UserRecordEvent,
   UserServices,
-} from "./common/model";
-import { sendSqsMessage } from "./common/sqs";
-import { getEnvironmentVariable } from "./common/utils";
+} from "./common/model.js";
+import { sendSqsMessage } from "./common/sqs.js";
+import { getEnvironmentVariable } from "./common/utils.js";
 import { Logger } from "@aws-lambda-powertools/logger";
 
 const logger = new Logger();

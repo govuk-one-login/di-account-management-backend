@@ -1,4 +1,4 @@
-import "aws-sdk-client-mock-jest";
+import { vi, describe, test, expect, beforeEach, afterEach } from "vitest";
 import { mockClient } from "aws-sdk-client-mock";
 import {
   GetSecretValueCommand,
@@ -6,13 +6,13 @@ import {
 } from "@aws-sdk/client-secrets-manager";
 import MockAdapter from "axios-mock-adapter";
 import axios from "axios";
-import { handler, formatCommentBody } from "../create-support-ticket";
+import { handler, formatCommentBody } from "../create-support-ticket.js";
 import {
   eventId,
   tableName,
   testSuspiciousActivityInput,
   userId,
-} from "./testFixtures";
+} from "./testFixtures.js";
 import { DynamoDBDocumentClient, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { Context } from "aws-lambda";
 
@@ -44,8 +44,8 @@ describe("handler", () => {
   });
 
   afterEach(() => {
-    jest.useRealTimers();
-    jest.clearAllMocks();
+    vi.useRealTimers();
+    vi.clearAllMocks();
   });
 
   test("handler successfully sends suspicious event to zendesk and tags", async () => {

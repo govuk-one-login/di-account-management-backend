@@ -5,8 +5,8 @@ import {
   WriteRequest,
 } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, QueryCommand } from "@aws-sdk/lib-dynamodb";
-import { ActivityLogEntry, UserData } from "./common/model";
-import { getEnvironmentVariable } from "./common/utils";
+import { ActivityLogEntry, UserData } from "./common/model.js";
+import { getEnvironmentVariable } from "./common/utils.js";
 import { Logger } from "@aws-lambda-powertools/logger";
 import type { Context } from "aws-lambda";
 

@@ -4,8 +4,8 @@ import {
   TxmaEvent,
   UserRecordEvent,
   UserServices,
-} from "../common/model";
-import { clientId, sessionId, userId } from "./testFixtures";
+} from "../common/model.js";
+import { clientId, sessionId, userId } from "./testFixtures.js";
 
 export const makeServiceRecord = (
   clientId: string,

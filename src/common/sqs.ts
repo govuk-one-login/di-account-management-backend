@@ -4,7 +4,7 @@ import {
   SendMessageCommand,
   SendMessageCommandOutput,
 } from "@aws-sdk/client-sqs";
-import { getEnvironmentVariable } from "./utils";
+import { getEnvironmentVariable } from "./utils.js";
 
 export const sendSqsMessage = async (
   messageBody: string,

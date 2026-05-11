@@ -4,14 +4,14 @@ import {
   CreateTicketPayload,
   HttpError,
   ReportSuspiciousActivityEvent,
-} from "./common/model";
+} from "./common/model.js";
 import {
   CREATE_TICKET_PATH,
   SUSPICIOUS_ACTIVITY_EVENT_NAME,
-} from "./common/constants";
+} from "./common/constants.js";
 import { DynamoDBDocumentClient, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { getEnvironmentVariable } from "./common/utils";
+import { getEnvironmentVariable } from "./common/utils.js";
 import { Logger } from "@aws-lambda-powertools/logger";
 import type { Context } from "aws-lambda";
 

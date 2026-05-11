@@ -1,7 +1,7 @@
 import { KmsKeyringNode, buildEncrypt } from "@aws-crypto/client-node";
-import buildKmsKeyring from "./kms-keyring-builder";
-import getHashedAccessCheckValue from "./get-access-check-value";
-import { getEnvironmentVariable } from "./utils";
+import buildKmsKeyring from "./kms-keyring-builder.js";
+import getHashedAccessCheckValue from "./get-access-check-value.js";
+import { getEnvironmentVariable } from "./utils.js";
 import { Logger } from "@aws-lambda-powertools/logger";
 
 const MAX_ENCRYPTED_DATA_KEY = 5;

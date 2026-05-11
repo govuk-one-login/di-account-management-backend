@@ -1,4 +1,4 @@
-import "aws-sdk-client-mock-jest";
+import { vi, describe, test, expect, beforeEach, afterEach } from "vitest";
 import { mockClient } from "aws-sdk-client-mock";
 import {
   GetSecretValueCommand,
@@ -6,9 +6,9 @@ import {
 } from "@aws-sdk/client-secrets-manager";
 import MockAdapter from "axios-mock-adapter";
 import axios from "axios";
-import { handler } from "../create-support-ticket";
-import { testSuspiciousActivityInput } from "./testFixtures";
-import { EventNamesEnum } from "../common/constants";
+import { handler } from "../create-support-ticket.js";
+import { testSuspiciousActivityInput } from "./testFixtures.js";
+import { EventNamesEnum } from "../common/constants.js";
 import { Context } from "aws-lambda";
 
 const mockedSecretsManager = mockClient(SecretsManagerClient);
@@ -27,7 +27,7 @@ describe("handler error handling", () => {
     process.env.ACTIVITY_LOG_TABLE = "activity_log_table";
   });
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   test("throw error when required environment variables not provided", async () => {

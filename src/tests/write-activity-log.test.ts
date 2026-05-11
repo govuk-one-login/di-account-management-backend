@@ -1,4 +1,4 @@
-import "aws-sdk-client-mock-jest";
+import { vi, describe, test, expect, beforeEach, afterEach } from "vitest";
 import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
 import { SendMessageCommand, SQSClient } from "@aws-sdk/client-sqs";
 import { mockClient } from "aws-sdk-client-mock";
@@ -6,19 +6,19 @@ import {
   validateActivityLogEntry,
   writeActivityLogEntry,
   handler,
-} from "../write-activity-log";
+} from "../write-activity-log.js";
 import {
   ACTIVITY_LOG_ENTRY_NO_TIMESTAMP,
   ACTIVITY_LOG_ENTRY_NO_USER_ID,
   TEST_ACTIVITY_LOG_ENTRY,
   TEST_ENCRYPTED_ACTIVITY_LOG_ENTRY,
   TEST_SQS_EVENT,
-} from "./testFixtures";
+} from "./testFixtures.js";
 import { Context } from "aws-lambda";
 
-jest.mock(`../common/encrypt-data`, () => ({
+vi.mock(`../common/encrypt-data.js`, () => ({
   __esModule: true,
-  default: jest.fn(() => ({
+  default: vi.fn(() => ({
     return: "an-encrypted-activity-array",
   })),
 }));
@@ -63,7 +63,7 @@ describe("writeActivityLogEntry", () => {
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   test("writes to DynamoDB", async () => {
@@ -85,7 +85,7 @@ describe("lambdaHandler", () => {
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   test("it iterates over each record in the batch", async () => {

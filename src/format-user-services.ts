@@ -5,9 +5,9 @@ import {
   type Service,
   type TxmaEvent,
   DroppedEventError,
-} from "./common/model";
-import { sendSqsMessage } from "./common/sqs";
-import { getEnvironmentVariable } from "./common/utils";
+} from "./common/model.js";
+import { sendSqsMessage } from "./common/sqs.js";
+import { getEnvironmentVariable } from "./common/utils.js";
 import { filterClients, getClientIDs } from "di-account-management-rp-registry";
 import { Logger } from "@aws-lambda-powertools/logger";
 

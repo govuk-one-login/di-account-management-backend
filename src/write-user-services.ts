@@ -6,8 +6,8 @@ import {
   PutCommandOutput,
 } from "@aws-sdk/lib-dynamodb";
 import { Logger } from "@aws-lambda-powertools/logger";
-import { Service, UserServices } from "./common/model";
-import { getEnvironmentVariable } from "./common/utils";
+import { Service, UserServices } from "./common/model.js";
+import { getEnvironmentVariable } from "./common/utils.js";
 
 const logger = new Logger({ serviceName: "write-user-services" });
 

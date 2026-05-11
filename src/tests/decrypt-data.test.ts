@@ -1,21 +1,21 @@
+import { vi, describe, test, it, expect, beforeEach, afterEach } from "vitest";
 import {
   EncryptionContext,
   MessageHeader,
   buildDecrypt,
 } from "@aws-crypto/client-node";
-import { when } from "jest-when";
 
 import {
   decryptData,
   generateExpectedContext,
   validateEncryptionContext,
-} from "../decrypt-data";
+} from "../decrypt-data.js";
 
-jest.mock("@aws-crypto/client-node", () => ({
-  buildDecrypt: jest.fn().mockReturnValue({
-    decrypt: jest.fn(),
+vi.mock("@aws-crypto/client-node", () => ({
+  buildDecrypt: vi.fn().mockReturnValue({
+    decrypt: vi.fn(),
   }),
-  KmsKeyringNode: jest.fn().mockImplementation(() => ({
+  KmsKeyringNode: vi.fn().mockImplementation(() => ({
     generatorKeyId:
       "arn:aws:kms:eu-west-2:111122223333:key/bc436485-5092-42b8-92a3-0aa8b93536dc",
   })),
@@ -147,7 +147,7 @@ describe("decryptActivities", () => {
   });
 
   it("should decrypt an encrypted string", async () => {
-    when(buildDecrypt().decrypt).mockResolvedValue({
+    vi.mocked(buildDecrypt().decrypt).mockResolvedValue({
       plaintext: Buffer.from(encryptedActivities),
       messageHeader: {
         encryptionContext: {
@@ -178,7 +178,9 @@ describe("decryptActivities", () => {
   });
 
   it("should throw an error if something goes wrong when decrypting", () => {
-    when(buildDecrypt().decrypt).mockRejectedValue(new Error("A KMS error"));
+    vi.mocked(buildDecrypt().decrypt).mockRejectedValue(
+      new Error("A KMS error")
+    );
     expect(async () => {
       await decryptData(encryptedActivities, userId, generatorKey, wrappingKey);
     }).rejects.toThrow("A KMS error");

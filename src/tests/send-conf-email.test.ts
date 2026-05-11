@@ -1,26 +1,27 @@
+import { vi, describe, test, expect, beforeEach, afterEach } from "vitest";
 import {
   handler,
   formatActivityObjectForEmail,
   sendConfMail,
-} from "../send-conf-email";
+} from "../send-conf-email.js";
 import { NotifyClient } from "notifications-node-client";
-import { ReportSuspiciousActivityEvent } from "../common/model";
+import { ReportSuspiciousActivityEvent } from "../common/model.js";
 import { getSecret } from "@aws-lambda-powertools/parameters/secrets";
 import * as rpRegistry from "di-account-management-rp-registry";
 import { Context } from "aws-lambda";
 
-jest.mock("notifications-node-client");
-jest.mock("@aws-lambda-powertools/parameters/secrets", () => ({
-  getSecret: jest.fn(),
+vi.mock("notifications-node-client");
+vi.mock("@aws-lambda-powertools/parameters/secrets", () => ({
+  getSecret: vi.fn(),
 }));
 
 const RP_IDENTIFIER = "govuk";
 
 describe("formatActivityObjectForEmail", () => {
-  let getTranslationsMock: jest.SpyInstance;
+  let getTranslationsMock: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
-    getTranslationsMock = jest
+    getTranslationsMock = vi
       .spyOn(rpRegistry, "getTranslations")
       .mockImplementation((environment: string, language: "en" | "cy") => {
         const data = {
@@ -41,7 +42,7 @@ describe("formatActivityObjectForEmail", () => {
   });
   afterEach(() => {
     process.env.ENVIRONMENT_NAME = undefined;
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   const getInput = () => {
@@ -111,10 +112,10 @@ describe("formatActivityObjectForEmail", () => {
 });
 
 describe("sendConfMail", () => {
-  let getTranslationsMock: jest.SpyInstance;
+  let getTranslationsMock: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
-    getTranslationsMock = jest
+    getTranslationsMock = vi
       .spyOn(rpRegistry, "getTranslations")
       .mockImplementation((environment: string, language: "en" | "cy") => {
         const data = {
@@ -135,7 +136,7 @@ describe("sendConfMail", () => {
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   test("should send confirmation email", async () => {
@@ -144,12 +145,12 @@ describe("sendConfMail", () => {
     const templateId = "TEMPLATE_ID";
 
     const notifyClientMock = {
-      sendEmail: jest.fn().mockResolvedValueOnce({}),
+      sendEmail: vi.fn().mockResolvedValueOnce({}),
     };
 
-    jest
-      .spyOn(NotifyClient.prototype, "sendEmail")
-      .mockImplementationOnce(notifyClientMock.sendEmail);
+    vi.spyOn(NotifyClient.prototype, "sendEmail").mockImplementationOnce(
+      notifyClientMock.sendEmail
+    );
 
     const input: ReportSuspiciousActivityEvent = {
       event_id: "522c5ab4-7e66-4b2a-8f5c-4d31dc4e93e6",
@@ -194,8 +195,8 @@ describe("sendConfMail", () => {
   });
 });
 describe("handler", () => {
-  let getTranslationsMock: jest.SpyInstance;
-  const mockGetSecret = getSecret as jest.MockedFunction<typeof getSecret>;
+  let getTranslationsMock: ReturnType<typeof vi.spyOn>;
+  const mockGetSecret = getSecret as ReturnType<typeof vi.fn>;
   const input: ReportSuspiciousActivityEvent = {
     event_id: "522c5ab4-7e66-4b2a-8f5c-4d31dc4e93e6",
     event_type: "HOME_REPORT_SUSPICIOUS_ACTIVITY",
@@ -222,7 +223,7 @@ describe("handler", () => {
     process.env.NOTIFY_API_KEY = "mock-api-key";
     process.env.TEMPLATE_ID = "mock-template-id";
     mockGetSecret.mockResolvedValue("your-mock-value");
-    getTranslationsMock = jest
+    getTranslationsMock = vi
       .spyOn(rpRegistry, "getTranslations")
       .mockImplementation((environment: string, language: "en" | "cy") => {
         const data = {
@@ -244,7 +245,7 @@ describe("handler", () => {
 
   afterEach(() => {
     getTranslationsMock.mockClear();
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   test("should handle notify errors from sendConfMail correctly", async () => {
@@ -262,12 +263,12 @@ describe("handler", () => {
       },
     };
     const notifyClientMock = {
-      sendEmail: jest.fn().mockRejectedValueOnce(errorResponse),
+      sendEmail: vi.fn().mockRejectedValueOnce(errorResponse),
     };
 
-    jest
-      .spyOn(NotifyClient.prototype, "sendEmail")
-      .mockImplementationOnce(notifyClientMock.sendEmail);
+    vi.spyOn(NotifyClient.prototype, "sendEmail").mockImplementationOnce(
+      notifyClientMock.sendEmail
+    );
 
     await expect(handler(input, {} as Context)).rejects.toThrow(
       'Error sending email for event: [{"error":"BadRequestError","message":"Can\'t send to this recipient using a team-only API key"}]'
@@ -289,12 +290,12 @@ describe("handler", () => {
       },
     };
     const notifyClientMock = {
-      sendEmail: jest.fn().mockRejectedValueOnce(errorResponse),
+      sendEmail: vi.fn().mockRejectedValueOnce(errorResponse),
     };
 
-    jest
-      .spyOn(NotifyClient.prototype, "sendEmail")
-      .mockImplementationOnce(notifyClientMock.sendEmail);
+    vi.spyOn(NotifyClient.prototype, "sendEmail").mockImplementationOnce(
+      notifyClientMock.sendEmail
+    );
 
     await expect(handler(input, {} as Context)).rejects.toThrow(
       'Error sending email for event: {"response":{}}'
@@ -316,12 +317,12 @@ describe("handler", () => {
       },
     };
     const notifyClientMock = {
-      sendEmail: jest.fn().mockRejectedValueOnce(errorResponse),
+      sendEmail: vi.fn().mockRejectedValueOnce(errorResponse),
     };
 
-    jest
-      .spyOn(NotifyClient.prototype, "sendEmail")
-      .mockImplementationOnce(notifyClientMock.sendEmail);
+    vi.spyOn(NotifyClient.prototype, "sendEmail").mockImplementationOnce(
+      notifyClientMock.sendEmail
+    );
 
     await expect(handler(input, {} as Context)).rejects.toThrow(
       'Error sending email for event: {"response":{}}'
@@ -344,9 +345,9 @@ describe("handler", () => {
         "non-important-data": "hello dev",
       },
     };
-    jest
-      .spyOn(NotifyClient.prototype, "sendEmail")
-      .mockRejectedValueOnce(errorResponse);
+    vi.spyOn(NotifyClient.prototype, "sendEmail").mockRejectedValueOnce(
+      errorResponse
+    );
 
     await expect(handler(input, {} as Context)).rejects.toThrow(
       'Error sending email for event: {"response":{"non-important-data":"hello dev"}}'
@@ -361,9 +362,9 @@ describe("handler", () => {
         statusText: "Not Found",
       },
     };
-    jest
-      .spyOn(NotifyClient.prototype, "sendEmail")
-      .mockRejectedValueOnce(errorResponse);
+    vi.spyOn(NotifyClient.prototype, "sendEmail").mockRejectedValueOnce(
+      errorResponse
+    );
 
     await expect(handler(input, {} as Context)).rejects.toThrow(
       "Error sending email for event"

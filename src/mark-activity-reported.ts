@@ -8,12 +8,12 @@ import {
   ActivityLogEntry,
   ReportSuspiciousActivityStepInput,
   ReportSuspiciousActivityEvent,
-} from "./common/model";
+} from "./common/model.js";
 import crypto from "node:crypto";
-import { COMPONENT_ID, EventNamesEnum } from "./common/constants";
-import { getCurrentTimestamp, getEnvironmentVariable } from "./common/utils";
-import { decryptData } from "./decrypt-data";
-import redact from "./common/redact";
+import { COMPONENT_ID, EventNamesEnum } from "./common/constants.js";
+import { getCurrentTimestamp, getEnvironmentVariable } from "./common/utils.js";
+import { decryptData } from "./decrypt-data.js";
+import redact from "./common/redact.js";
 import { Logger } from "@aws-lambda-powertools/logger";
 import { Context } from "aws-lambda";
 

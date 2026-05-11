@@ -6,7 +6,7 @@ import {
   TxmaEvent,
   UserData,
   UserServices,
-} from "../common/model";
+} from "../common/model.js";
 import {
   DynamoDBRecord,
   DynamoDBStreamEvent,

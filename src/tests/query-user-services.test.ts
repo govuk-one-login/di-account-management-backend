@@ -1,3 +1,4 @@
+import { vi, describe, test, expect, beforeEach, afterEach } from "vitest";
 import { SendMessageCommand, SQSClient } from "@aws-sdk/client-sqs";
 import { DynamoDBDocumentClient, GetCommand } from "@aws-sdk/lib-dynamodb";
 import { mockClient } from "aws-sdk-client-mock";
@@ -7,16 +8,15 @@ import {
   UserServices,
   TxmaEvent,
   UserData,
-} from "../common/model";
-import "aws-sdk-client-mock-jest";
+} from "../common/model.js";
 import {
   handler,
   validateTxmaEventBody,
   validateUser,
   queryUserServices,
-} from "../query-user-services";
+} from "../query-user-services.js";
 import { DynamoDBStreamEvent, DynamoDBRecord, Context } from "aws-lambda";
-import { sendSqsMessage } from "../common/sqs";
+import { sendSqsMessage } from "../common/sqs.js";
 
 export const userId = "user_id";
 export const clientId = "client_id";
@@ -136,7 +136,7 @@ describe("queryUserServices", () => {
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   test("Query user service", async () => {
@@ -263,7 +263,7 @@ describe("sendSqsMessage", () => {
     process.env.AWS_REGION = "AWS_REGION";
   });
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
   test("Send the SQS event on the queue", async () => {
     sqsMock.on(SendMessageCommand).resolves({ MessageId: messageId });
@@ -292,18 +292,18 @@ describe("handler", () => {
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   test("Queries the dynamo db and send an sqs event", async () => {
     await handler(TEST_DYNAMO_STREAM_EVENT, {} as Context);
     expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(2);
     expect(dynamoMock.commandCalls(GetCommand).length).toEqual(2);
-    expect(sqsMock).toHaveReceivedNthCommandWith(1, SendMessageCommand, {
+    expect(sqsMock).toHaveReceivedNthCommandWith(SendMessageCommand, 1, {
       QueueUrl: queueUrl,
       MessageBody: JSON.stringify(userRecordEvents),
     });
-    expect(sqsMock).toHaveReceivedNthCommandWith(2, SendMessageCommand, {
+    expect(sqsMock).toHaveReceivedNthCommandWith(SendMessageCommand, 2, {
       QueueUrl: queueUrl,
       MessageBody: JSON.stringify(userRecordEvents),
     });
@@ -313,7 +313,7 @@ describe("handler", () => {
     await handler(MUCKY_DYNAMODB_STREAM_EVENT, {} as Context);
     expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(1);
     expect(dynamoMock.commandCalls(GetCommand).length).toEqual(1);
-    expect(sqsMock).toHaveReceivedNthCommandWith(1, SendMessageCommand, {
+    expect(sqsMock).toHaveReceivedNthCommandWith(SendMessageCommand, 1, {
       QueueUrl: queueUrl,
       MessageBody: JSON.stringify(userRecordEvents),
     });
@@ -331,7 +331,7 @@ describe("handler error handing ", () => {
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   test("logs the error message", async () => {

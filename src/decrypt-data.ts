@@ -3,9 +3,9 @@ import {
   KmsKeyringNode,
   buildDecrypt,
 } from "@aws-crypto/client-node";
-import buildKmsKeyring from "./common/kms-keyring-builder";
-import getHashedAccessCheckValue from "./common/get-access-check-value";
-import { getEnvironmentVariable } from "./common/utils";
+import buildKmsKeyring from "./common/kms-keyring-builder.js";
+import getHashedAccessCheckValue from "./common/get-access-check-value.js";
+import { getEnvironmentVariable } from "./common/utils.js";
 import { Logger } from "@aws-lambda-powertools/logger";
 
 const logger = new Logger();

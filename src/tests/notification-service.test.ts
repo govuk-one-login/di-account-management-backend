@@ -1,48 +1,83 @@
+import { vi, describe, it, expect, beforeEach, afterEach } from "vitest";
 import { SQSRecord, SQSBatchItemFailure, SQSEvent, Context } from "aws-lambda";
 
-const mockGetSecret = jest.fn();
-const mockNotifyClient = jest.fn();
-const mockSetUpNotifyClient = jest.fn();
-const mockProcessNotification = jest.fn();
-const mockLogger = {
-  error: jest.fn(),
-  info: jest.fn(),
-  addContext: jest.fn(),
-};
-const mockSendEmail = jest.fn();
-const mockMetrics = {
-  addDimension: jest.fn(),
-  addMetric: jest.fn(),
-  publishStoredMetrics: jest.fn(),
-};
-const mockInitMetrics = jest.fn(() => mockMetrics);
+const mockGetSecret = vi.hoisted(() => vi.fn());
+const mockNotifyClient = vi.hoisted(() => vi.fn());
+const mockSetUpNotifyClient = vi.hoisted(() => vi.fn());
+const mockProcessNotification = vi.hoisted(() => vi.fn());
+const mockLogger = vi.hoisted(() => ({
+  error: vi.fn(),
+  info: vi.fn(),
+  addContext: vi.fn(),
+}));
+const mockSendEmail = vi.fn();
+const mockMetrics = vi.hoisted(() => ({
+  addDimension: vi.fn(),
+  addMetric: vi.fn(),
+  publishStoredMetrics: vi.fn(),
+}));
+const mockInitMetrics = vi.hoisted(() => vi.fn(() => mockMetrics));
 
-jest.mock("@aws-lambda-powertools/parameters/secrets", () => ({
+vi.mock("@aws-lambda-powertools/parameters/secrets", () => ({
   getSecret: mockGetSecret,
 }));
-jest.mock("notifications-node-client", () => ({
+vi.mock("notifications-node-client", () => ({
   NotifyClient: mockNotifyClient,
 }));
-jest.mock("@aws-lambda-powertools/logger", () => ({
-  Logger: jest.fn(() => mockLogger),
+vi.mock("@aws-lambda-powertools/logger", () => ({
+  Logger: vi.fn(() => mockLogger),
 }));
-jest.mock("node:crypto", () => ({
+vi.mock("node:crypto", () => ({
   randomUUID: () => "test-uuid",
 }));
-jest.mock("ua-parser-js", () => ({
-  __esModule: true,
+vi.mock("ua-parser-js", () => ({
   default: () => ({
     browser: { name: "Chrome" },
     os: { name: "Mac OS" },
     device: { vendor: "Apple", model: "Macintosh" },
   }),
 }));
-jest.mock("../common/metrics", () => ({
+vi.mock("../common/metrics.js", () => ({
   initMetrics: mockInitMetrics,
 }));
 
+vi.hoisted(() => {
+  process.env.NOTIFY_TEMPLATE_IDS = '{"GLOBAL_LOGOUT":"template-id"}';
+  process.env.NOTIFY_API_KEY = "NOTIFY_API_SECRET_KEY";
+});
+
+vi.mock("../notification-service-client.js", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../notification-service-client.js")>();
+  return {
+    ...actual,
+    setUpNotifyClient: mockSetUpNotifyClient.mockImplementation(
+      actual.setUpNotifyClient
+    ),
+  };
+});
+vi.mock("../notification-service-utils.js", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../notification-service-utils.js")>();
+  return {
+    ...actual,
+    processNotification: mockProcessNotification.mockImplementation(
+      actual.processNotification
+    ),
+  };
+});
+
+import { handler } from "../notification-service.js";
+import { setUpNotifyClient } from "../notification-service-client.js";
+import { processNotification } from "../notification-service-utils.js";
+
+describe("module initialization", () => {
+  it("should initialize metrics with correct namespace", () => {
+    expect(mockInitMetrics).toHaveBeenCalledWith("notification-service");
+  });
+});
+
 describe("setUpNotifyClient", () => {
-  let setUpNotifyClient: typeof import("../notification-service").setUpNotifyClient;
   let mockRecord: SQSRecord;
   let batchItemFailures: SQSBatchItemFailure[];
   const OLD_PROCESS_ENV = process.env;
@@ -53,16 +88,18 @@ describe("setUpNotifyClient", () => {
       NOTIFY_API_KEY: "NOTIFY_API_SECRET_KEY",
       NOTIFY_TEMPLATE_IDS: '{"GLOBAL_LOGOUT":"template-id"}',
     };
-    setUpNotifyClient = (await import("../notification-service"))
-      .setUpNotifyClient;
+    const actual = await vi.importActual<
+      typeof import("../notification-service-client.js")
+    >("../notification-service-client.js");
+    mockSetUpNotifyClient.mockImplementation(actual.setUpNotifyClient);
     mockRecord = { messageId: "test-message-id" } as SQSRecord;
     batchItemFailures = [];
   });
 
   afterEach(() => {
     process.env = OLD_PROCESS_ENV;
-    jest.clearAllMocks();
-    jest.resetModules();
+    vi.clearAllMocks();
+    vi.resetModules();
   });
 
   it("should create NotifyClient when secret is valid", async () => {
@@ -137,7 +174,6 @@ describe("setUpNotifyClient", () => {
 });
 
 describe("processNotification", () => {
-  let processNotification: typeof import("../notification-service").processNotification;
   let mockRecord: SQSRecord;
   let batchItemFailures: SQSBatchItemFailure[];
   const OLD_PROCESS_ENV = process.env;
@@ -148,11 +184,11 @@ describe("processNotification", () => {
       NOTIFY_TEMPLATE_IDS: '{"GLOBAL_LOGOUT":"template-id"}',
     };
 
-    const notificationService = await import("../notification-service");
-    processNotification = notificationService.processNotification;
-    jest
-      .spyOn(notificationService, "setUpNotifyClient")
-      .mockImplementation(mockSetUpNotifyClient);
+    const actual = await vi.importActual<
+      typeof import("../notification-service-utils.js")
+    >("../notification-service-utils.js");
+    mockProcessNotification.mockImplementation(actual.processNotification);
+    mockSetUpNotifyClient.mockReset();
 
     mockRecord = {
       messageId: "test-message-id",
@@ -177,8 +213,7 @@ describe("processNotification", () => {
 
   afterEach(() => {
     process.env = OLD_PROCESS_ENV;
-    jest.clearAllMocks();
-    jest.resetModules();
+    vi.clearAllMocks();
   });
 
   it("should return early when setUpNotifyClient returns undefined", async () => {
@@ -427,26 +462,19 @@ describe("processNotification", () => {
 });
 
 describe("handler", () => {
-  let handler: typeof import("../notification-service").handler;
   const OLD_PROCESS_ENV = process.env;
 
-  beforeEach(async () => {
+  beforeEach(() => {
     process.env = {
       ...OLD_PROCESS_ENV,
       NOTIFY_TEMPLATE_IDS: '{"GLOBAL_LOGOUT":"template-id"}',
     };
-
-    const notificationService = await import("../notification-service");
-    handler = notificationService.handler;
-    jest
-      .spyOn(notificationService, "processNotification")
-      .mockImplementation(mockProcessNotification);
+    mockProcessNotification.mockReset();
   });
 
   afterEach(() => {
     process.env = OLD_PROCESS_ENV;
-    jest.clearAllMocks();
-    jest.resetModules();
+    vi.clearAllMocks();
   });
 
   it("should add context to logger and process all records", async () => {
@@ -457,7 +485,6 @@ describe("handler", () => {
 
     const result = await handler(mockEvent, mockContext);
 
-    expect(mockInitMetrics).toHaveBeenCalledWith("notification-service");
     expect(mockLogger.addContext).toHaveBeenCalledWith(mockContext);
     expect(mockProcessNotification).toHaveBeenCalledTimes(2);
     expect(mockProcessNotification).toHaveBeenCalledWith(
@@ -478,13 +505,14 @@ describe("handler", () => {
       Records: [{ messageId: "msg-1" }],
     } as SQSEvent;
 
-    mockProcessNotification.mockImplementation((record, batchItemFailures) => {
-      batchItemFailures.push({ itemIdentifier: record.messageId });
-    });
+    mockProcessNotification.mockImplementation(
+      (record: SQSRecord, batchItemFailures: SQSBatchItemFailure[]) => {
+        batchItemFailures.push({ itemIdentifier: record.messageId });
+      }
+    );
 
     const result = await handler(mockEvent, mockContext);
 
-    expect(mockInitMetrics).toHaveBeenCalledWith("notification-service");
     expect(mockMetrics.publishStoredMetrics).toHaveBeenCalled();
     expect(result).toEqual({
       batchItemFailures: [{ itemIdentifier: "msg-1" }],

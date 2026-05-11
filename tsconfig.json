@@ -4,12 +4,12 @@
     "strict": true,
     "preserveConstEnums": true,
     "sourceMap": true,
-    "module": "commonjs",
-    "moduleResolution": "node",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "types": ["jest", "node"],
+    "types": ["node"],
     "resolveJsonModule": true
   },
   "exclude": ["node_modules"]

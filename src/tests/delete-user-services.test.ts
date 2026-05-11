@@ -1,4 +1,4 @@
-import "aws-sdk-client-mock-jest";
+import { vi, describe, test, expect, beforeEach, afterEach } from "vitest";
 import { DynamoDBDocumentClient, DeleteCommand } from "@aws-sdk/lib-dynamodb";
 import { SendMessageCommand, SQSClient } from "@aws-sdk/client-sqs";
 import { mockClient } from "aws-sdk-client-mock";
@@ -6,12 +6,12 @@ import {
   handler,
   validateUserData,
   deleteUserData,
-} from "../delete-user-services";
+} from "../delete-user-services.js";
 
 import {
   TEST_SNS_EVENT_WITH_TWO_RECORDS,
   TEST_USER_DATA,
-} from "./testFixtures";
+} from "./testFixtures.js";
 import { Context } from "aws-lambda";
 
 const dynamoMock = mockClient(DynamoDBDocumentClient);
@@ -25,7 +25,7 @@ describe("deleteUserData", () => {
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   test("deletes item from DynamoDB", async () => {
@@ -46,7 +46,7 @@ describe("handler", () => {
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   test("it iterates over each record in the batch", async () => {

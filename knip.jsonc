@@ -17,7 +17,7 @@
         "src/send-conf-email.ts",
         "src/create-support-ticket.ts",
         "src/trigger-rsa-step.ts",
-        "src/notification-service.ts"
+        "src/notification-service.ts",
       ],
       "ignore": [
         "src/get-access-check-value.ts",
@@ -27,29 +27,19 @@
         "src/common/model.ts",
         "src/common/kms-keyring-builder.ts",
         "src/kms-keyring-builder.ts",
-        "src/common/encrypt-data.ts"
+        "src/common/encrypt-data.ts",
       ],
-      "ignoreBinaries": [
-        "zizmor",
-        "brew",
-        "sam",
-        "read",
-        "pre-commit"
-      ],
+      "ignoreBinaries": ["zizmor", "brew", "sam", "read", "pre-commit"],
       "ignoreDependencies": [
         "esbuild",
         "@aws-sdk/client-lambda",
-        "@babel/preset-env",
-        "@babel/preset-typescript",
-        "@types/mocha",
         "@typescript-eslint/eslint-plugin",
         "eslint-plugin-prettier",
         "lint-staged",
-        "ts-node"
-      ]
+      ],
     },
     "solutions/integration-tests": {
-      "entry": ["src/tests/**/*.ts"]
-    }
+      "entry": ["src/tests/**/*.ts"],
+    },
   },
 }

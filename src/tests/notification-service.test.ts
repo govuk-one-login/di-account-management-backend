@@ -37,7 +37,7 @@ vi.mock("ua-parser-js", () => ({
     device: { vendor: "Apple", model: "Macintosh" },
   }),
 }));
-vi.mock("../common/metrics", () => ({
+vi.mock("../common/metrics.js", () => ({
   initMetrics: mockInitMetrics,
 }));
 
@@ -46,7 +46,7 @@ vi.hoisted(() => {
   process.env.NOTIFY_API_KEY = "NOTIFY_API_SECRET_KEY";
 });
 
-vi.mock("../notification-service-client", async (importOriginal) => {
+vi.mock("../notification-service-client.js", async (importOriginal) => {
   const actual =
     await importOriginal<typeof import("../notification-service-client.js")>();
   return {
@@ -56,7 +56,7 @@ vi.mock("../notification-service-client", async (importOriginal) => {
     ),
   };
 });
-vi.mock("../notification-service-utils", async (importOriginal) => {
+vi.mock("../notification-service-utils.js", async (importOriginal) => {
   const actual =
     await importOriginal<typeof import("../notification-service-utils.js")>();
   return {
@@ -90,7 +90,7 @@ describe("setUpNotifyClient", () => {
     };
     const actual = await vi.importActual<
       typeof import("../notification-service-client.js")
-    >("../notification-service-client");
+    >("../notification-service-client.js");
     mockSetUpNotifyClient.mockImplementation(actual.setUpNotifyClient);
     mockRecord = { messageId: "test-message-id" } as SQSRecord;
     batchItemFailures = [];
@@ -186,7 +186,7 @@ describe("processNotification", () => {
 
     const actual = await vi.importActual<
       typeof import("../notification-service-utils.js")
-    >("../notification-service-utils");
+    >("../notification-service-utils.js");
     mockProcessNotification.mockImplementation(actual.processNotification);
     mockSetUpNotifyClient.mockReset();
 

@@ -16,7 +16,7 @@ import {
 } from "./testFixtures.js";
 import { Context } from "aws-lambda";
 
-vi.mock(`../common/encrypt-data`, () => ({
+vi.mock(`../common/encrypt-data.js`, () => ({
   __esModule: true,
   default: vi.fn(() => ({
     return: "an-encrypted-activity-array",

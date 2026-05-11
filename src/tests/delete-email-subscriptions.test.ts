@@ -18,7 +18,7 @@ global.fetch = mockFetch;
 const validateUserDataMock = vi.hoisted(() => vi.fn());
 const deleteEmailSubscriptionMock = vi.hoisted(() => vi.fn());
 
-vi.mock("../delete-email-subscriptions-utils", async (importOriginal) => {
+vi.mock("../delete-email-subscriptions-utils.js", async (importOriginal) => {
   const actual = await importOriginal<
     typeof import("../delete-email-subscriptions-utils.js")
   >();
@@ -76,7 +76,7 @@ describe("validateUserData", () => {
   beforeEach(async () => {
     const actual = await vi.importActual<
       typeof import("../delete-email-subscriptions-utils.js")
-    >("../delete-email-subscriptions-utils");
+    >("../delete-email-subscriptions-utils.js");
     validateUserDataMock.mockImplementation(actual.validateUserData);
   });
 
@@ -122,7 +122,7 @@ describe("deleteEmailSubscription", () => {
     vi.clearAllMocks();
     const actual = await vi.importActual<
       typeof import("../delete-email-subscriptions-utils.js")
-    >("../delete-email-subscriptions-utils");
+    >("../delete-email-subscriptions-utils.js");
     deleteEmailSubscriptionMock.mockImplementation(
       actual.deleteEmailSubscription
     );

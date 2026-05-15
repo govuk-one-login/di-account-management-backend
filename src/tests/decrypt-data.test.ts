@@ -15,10 +15,10 @@ vi.mock("@aws-crypto/client-node", () => ({
   buildDecrypt: vi.fn().mockReturnValue({
     decrypt: vi.fn(),
   }),
-  KmsKeyringNode: vi.fn().mockImplementation(() => ({
-    generatorKeyId:
-      "arn:aws:kms:eu-west-2:111122223333:key/bc436485-5092-42b8-92a3-0aa8b93536dc",
-  })),
+  KmsKeyringNode: class {
+    generatorKeyId =
+      "arn:aws:kms:eu-west-2:111122223333:key/bc436485-5092-42b8-92a3-0aa8b93536dc";
+  },
 }));
 
 const awsRegion = "aws-region";

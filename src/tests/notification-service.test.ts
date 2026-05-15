@@ -25,7 +25,11 @@ vi.mock("notifications-node-client", () => ({
   NotifyClient: mockNotifyClient,
 }));
 vi.mock("@aws-lambda-powertools/logger", () => ({
-  Logger: vi.fn(() => mockLogger),
+  Logger: class {
+    error = mockLogger.error;
+    info = mockLogger.info;
+    addContext = mockLogger.addContext;
+  },
 }));
 vi.mock("node:crypto", () => ({
   randomUUID: () => "test-uuid",

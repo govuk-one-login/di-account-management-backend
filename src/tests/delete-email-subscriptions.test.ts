@@ -9,7 +9,11 @@ const mockLogger = vi.hoisted(() => ({
 }));
 
 vi.mock("@aws-lambda-powertools/logger", () => ({
-  Logger: vi.fn(() => mockLogger),
+  Logger: class {
+    error = mockLogger.error;
+    info = mockLogger.info;
+    addContext = mockLogger.addContext;
+  },
 }));
 
 const mockFetch = vi.fn();
@@ -19,9 +23,10 @@ const validateUserDataMock = vi.hoisted(() => vi.fn());
 const deleteEmailSubscriptionMock = vi.hoisted(() => vi.fn());
 
 vi.mock("../delete-email-subscriptions-utils.js", async (importOriginal) => {
-  const actual = await importOriginal<
-    typeof import("../delete-email-subscriptions-utils.js")
-  >();
+  const actual =
+    await importOriginal<
+      typeof import("../delete-email-subscriptions-utils.js")
+    >();
   return {
     ...actual,
     validateUserData: validateUserDataMock.mockImplementation(

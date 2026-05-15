@@ -21,7 +21,9 @@ const mockLogger = vi.hoisted(() => ({
 }));
 
 vi.mock("@aws-lambda-powertools/logger", () => ({
-  Logger: vi.fn(() => mockLogger),
+  Logger: class {
+    info = mockLogger.info;
+  },
 }));
 
 import {

@@ -15,9 +15,9 @@ vi.mock("@aws-crypto/client-node", () => ({
   buildEncrypt: vi.fn().mockReturnValue({
     encrypt: vi.fn(),
   }),
-  KmsKeyringNode: vi.fn().mockImplementation(() => ({
-    generatorKeyId: process.env.GENERATOR_KEY_ARN,
-  })),
+  KmsKeyringNode: class {
+    generatorKeyId = process.env.GENERATOR_KEY_ARN;
+  },
 }));
 
 describe("encryptData", () => {

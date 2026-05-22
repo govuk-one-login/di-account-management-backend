@@ -166,10 +166,10 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Set up Python 3.9
+      - name: Set up Python 3.13
         uses: actions/setup-python@d27e3f3d7c64b4bbf8e4abfb9b63b83e846e0435 # pin@v4
         with:
-          python-version: "3.9"
+          python-version: "3.13"
           cache: "pip"
       - run: pip install --require-hashes -r $GITHUB_WORKSPACE/pre-merge-integration-tests/requirements.txt
 

@@ -36,11 +36,11 @@ updates:
     schedule:
       interval: daily
       time: "03:00"
+    cooldown:
+      default-days: 7
     target-branch: main
     labels:
       - dependabot
       - dependencies
     commit-message:
       prefix: BAU
-    cooldown:
-      default-days: 7

@@ -1,5 +1,7 @@
 name: "Verify & Publish to Dev"
 
+# This pipeline deploys work-in-progress branches for dev work
+# checkov:skip=CKV_GHA_7:workflow_dispatch inputs are required to select the branch/tag to deploy
 on:
   workflow_dispatch:
     inputs:

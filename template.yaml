@@ -126,6 +126,8 @@ Conditions:
 
   IsProduction: !Equals [!Ref Environment, production]
 
+  IsDevelopment: !Equals [!Ref Environment, dev]
+
   BackupEnabled: !Or
     - !Equals [!Ref Environment, staging]
     - !Equals [!Ref Environment, integration]
@@ -3000,6 +3002,173 @@ Resources:
       ComparisonOperator: GreaterThanOrEqualToThreshold
       TreatMissingData: notBreaching
       ActionsEnabled: true
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+
+  #########################################
+  # Update Inactive Account Tracker
+  #########################################
+
+  UpdateInactiveAccountTrackerFunction:
+    Type: AWS::Serverless::Function
+    DependsOn:
+      - UpdateInactiveAccountTrackerFunctionLogGroup
+    Properties:
+      FunctionName: !Sub ${Environment}-${AWS::StackName}-update-inactive-account-tracker
+      CodeUri: src
+      PackageType: Zip
+      Events:
+        DynamoStream:
+          Type: DynamoDB
+          Properties:
+            BatchSize: 1
+            Stream: !GetAtt RawEventsStore.StreamArn
+            Enabled: !If [IsDevelopment, true, false]
+            DestinationConfig:
+              OnFailure:
+                Destination: !GetAtt UpdateInactiveAccountTrackerDeadLetterQueue.Arn
+            StartingPosition: LATEST
+            FilterCriteria:
+              Filters:
+                - Pattern: '{ "eventName": ["INSERT"] }'
+      DeadLetterQueue:
+        Type: SQS
+        TargetArn: !GetAtt UpdateInactiveAccountTrackerDeadLetterQueue.Arn
+      Handler: update-inactive-account-tracker.handler
+      Role: !GetAtt UpdateInactiveAccountTrackerRole.Arn
+      Environment:
+        Variables:
+          NODE_OPTIONS: --enable-source-maps
+      DeploymentPreference:
+        Alarms:
+          - !Ref UpdateInactiveAccountTrackerFunctionSuccessRate
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Format: "esm"
+        OutExtension:
+          - .js=.mjs
+        Target: "es2022"
+        Sourcemap: true
+        EntryPoints:
+          - update-inactive-account-tracker.ts
+        Banner:
+          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
+
+  UpdateInactiveAccountTrackerDeadLetterQueue:
+    Type: AWS::SQS::Queue
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      MessageRetentionPeriod: 1209600
+      KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
+
+  UpdateInactiveAccountTrackerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      PermissionsBoundary: !If
+        - UsePermissionsBoundary
+        - !Ref PermissionsBoundary
+        - !Ref AWS::NoValue
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+        - !Ref UpdateInactiveAccountTrackerPolicy
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+
+  UpdateInactiveAccountTrackerPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - sqs:SendMessage
+            Resource: !GetAtt UpdateInactiveAccountTrackerDeadLetterQueue.Arn
+          - Effect: Allow
+            Action:
+              - dynamodb:DescribeStream
+              - dynamodb:GetRecords
+              - dynamodb:GetShardIterator
+              - dynamodb:ListStreams
+            Resource:
+              - !GetAtt RawEventsStore.StreamArn
+              - !Sub
+                - "${Arn}/*"
+                - Arn: !GetAtt RawEventsStore.StreamArn
+          - Effect: Allow
+            Action:
+              - kms:Decrypt
+            Resource:
+              - !GetAtt DatabaseKmsKey.Arn
+
+  UpdateInactiveAccountTrackerFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-update-inactive-account-tracker"
+      RetentionInDays: 30
+      KmsKeyId: !GetAtt LoggingKmsKey.Arn
+
+  UpdateInactiveAccountTrackerCSLSSubscription:
+    Condition: ExportLogsToSplunk
+    Type: AWS::Logs::SubscriptionFilter
+    Properties:
+      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
+      FilterPattern: ""
+      LogGroupName: !Ref UpdateInactiveAccountTrackerFunctionLogGroup
+
+  UpdateInactiveAccountTrackerFunctionSuccessRate:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            UpdateInactiveAccountTrackerFunctionSuccessRate,
+          ],
+        ]
+      Metrics:
+        - Id: errors
+          MetricStat:
+            Metric:
+              Namespace: AWS/Lambda
+              MetricName: Errors
+              Dimensions:
+                - Name: FunctionName
+                  Value: !Ref UpdateInactiveAccountTrackerFunction
+            Period: 300
+            Stat: Sum
+          ReturnData: false
+        - Id: invocations
+          MetricStat:
+            Metric:
+              Namespace: AWS/Lambda
+              MetricName: Invocations
+              Dimensions:
+                - Name: FunctionName
+                  Value: !Ref UpdateInactiveAccountTrackerFunction
+            Period: 300
+            Stat: Sum
+          ReturnData: false
+        - Id: successRate
+          Expression: "1 - (errors / invocations)"
+          Label: "Success Rate"
+          ReturnData: true
+      Threshold: 0.95
+      ComparisonOperator: LessThanThreshold
+      EvaluationPeriods: 1
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
 

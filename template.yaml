@@ -3214,6 +3214,13 @@ Resources:
                 - Arn: !GetAtt RawEventsStore.StreamArn
           - Effect: Allow
             Action:
+              - dynamodb:GetItem
+              - dynamodb:DeleteItem
+              - dynamodb:PutItem
+            Resource:
+              - !GetAtt InactiveAccountTrackerStore.Arn
+          - Effect: Allow
+            Action:
               - kms:Decrypt
             Resource:
               - !GetAtt DatabaseKmsKey.Arn

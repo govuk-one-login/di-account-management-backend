@@ -3098,6 +3098,7 @@ Resources:
       Environment:
         Variables:
           NODE_OPTIONS: --enable-source-maps
+          ACCOUNT_SAVED_NOTIFICATION_QUEUE_URL: !Ref AccountSavedNotificationQueue
       DeploymentPreference:
         Alarms:
           Fn::If:
@@ -3125,6 +3126,38 @@ Resources:
     Properties:
       MessageRetentionPeriod: 1209600
       KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
+
+  AccountSavedNotificationQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+
+  AccountSavedNotificationQueueOldestMessageAgeAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            AccountSavedNotificationQueueOldestMessageAgeAlarm,
+          ],
+        ]
+      MetricName: ApproximateAgeOfOldestMessage
+      Namespace: AWS/SQS
+      Statistic: Maximum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 300
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt AccountSavedNotificationQueue.QueueName
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
 
   UpdateInactiveAccountTrackerRole:
     Type: AWS::IAM::Role
@@ -3156,7 +3189,9 @@ Resources:
           - Effect: Allow
             Action:
               - sqs:SendMessage
-            Resource: !GetAtt UpdateInactiveAccountTrackerDeadLetterQueue.Arn
+            Resource:
+              - !GetAtt UpdateInactiveAccountTrackerDeadLetterQueue.Arn
+              - !GetAtt AccountSavedNotificationQueue.Arn
           - Effect: Allow
             Action:
               - dynamodb:DescribeStream
@@ -3173,6 +3208,11 @@ Resources:
               - kms:Decrypt
             Resource:
               - !GetAtt DatabaseKmsKey.Arn
+          - Effect: Allow
+            Action:
+              - kms:GenerateDataKey*
+            Resource:
+              - !GetAtt QueueKmsKey.Arn
 
   UpdateInactiveAccountTrackerFunctionLogGroup:
     Type: AWS::Logs::LogGroup

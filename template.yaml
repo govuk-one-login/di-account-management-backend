@@ -21,7 +21,7 @@ Parameters:
     Default: inactive_account_tracker
   UserNotificationsTableName:
     Type: String
-    Default: user-notifications
+    Default: user_notifications
   DummyEventStoreTableName:
     Type: String
     Default: dummy_events

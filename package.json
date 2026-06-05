@@ -59,7 +59,6 @@
     "@aws-sdk/client-sqs": "^3.1056.0",
     "@aws-sdk/lib-dynamodb": "^3.1056.0",
     "@aws-sdk/util-dynamodb": "^3.985.0",
-    "@types/aws-lambda": "^8.10.161",
     "axios": "^1.16.1",
     "di-account-management-rp-registry": "github:govuk-one-login/di-account-management-rp-registry#main",
     "esbuild": "0.27.3",

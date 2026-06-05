@@ -5372,6 +5372,66 @@ Resources:
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
 
+  #######################
+  # Analyse Activity Log
+  #######################
+
+  AnalyseActivityLogFunction:
+    Type: AWS::Serverless::Function
+    DependsOn:
+      - AnalyseActivityLogFunctionLogGroup
+    Properties:
+      FunctionName: !Sub ${Environment}-${AWS::StackName}-analyse-activity-log
+      CodeUri: src
+      PackageType: Zip
+      Timeout: 900
+      MemorySize: 6144
+      Handler: analyse-activity-log/handler.handler
+      Role: !GetAtt AnalyseActivityLogRole.Arn
+      Environment:
+        Variables:
+          NODE_OPTIONS: --enable-source-maps --max-old-space-size=5120
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Format: "esm"
+        OutExtension:
+          - .js=.mjs
+        Target: "es2022"
+        Sourcemap: true
+        EntryPoints:
+          - analyse-activity-log/handler.ts
+        Banner:
+          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
+
+  AnalyseActivityLogRole:
+    Type: AWS::IAM::Role
+    Properties:
+      PermissionsBoundary: !If
+        - UsePermissionsBoundary
+        - !Ref PermissionsBoundary
+        - !Ref AWS::NoValue
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+
+  AnalyseActivityLogFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-analyse-activity-log"
+      RetentionInDays: 30
+      KmsKeyId: !GetAtt LoggingKmsKey.Arn
+
 Outputs:
   GeneratorKey:
     Description: A generator key for generating a plaintext data key

@@ -36,6 +36,7 @@
         "@typescript-eslint/eslint-plugin",
         "eslint-plugin-prettier",
         "lint-staged",
+        "aws-lambda"
       ],
     },
     "solutions/integration-tests": {

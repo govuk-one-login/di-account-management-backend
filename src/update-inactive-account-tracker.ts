@@ -20,6 +20,8 @@ export const handler = async (
   logger.info("UpdateInactiveAccountTracker invoked");
 
   const tableName = getEnvironmentVariable("INACTIVE_ACCOUNT_TRACKER_TABLE_NAME");
+  const userNotificationsTableName = getEnvironmentVariable("USER_NOTIFICATIONS_TABLE_NAME");
+  const olhClientId = getEnvironmentVariable("OLH_CLIENT_ID");
 
   for (const record of event.Records) {
     const txmaEvent = unmarshall(
@@ -30,7 +32,7 @@ export const handler = async (
     const userId = txmaEvent.user?.user_id;
 
     if (!userId) {
-      throw Error("Missing user_id in event");
+      throw new Error("Missing user_id in event");
     }
 
     const response = await dynamoDocClient.send(
@@ -71,19 +73,14 @@ export const handler = async (
       { Delete: { TableName: tableName, Key: { commonSubjectId: userId } } }
     ];
 
-    if (currentTrackerRecord && currentTrackerRecord.status === 'pending') {
-      const userNotificationsTableName = getEnvironmentVariable("USER_NOTIFICATIONS_TABLE_NAME");
-      const existingNotification = await dynamoDocClient.send(
-        new GetCommand({ TableName: userNotificationsTableName, Key: { internalCommonSubjectId: userId } })
-      );
-      if (!existingNotification.Item) {
-        transactItems.push({
-          Put: {
-            TableName: userNotificationsTableName,
-            Item: { internalCommonSubjectId: userId, createdAt: new Date().toISOString(), notificationType: 'AccountKept' },
-          },
-        });
-      }
+
+    if (txmaEvent.client_id !== olhClientId) {
+      transactItems.push({
+        Delete: {
+          TableName: userNotificationsTableName,
+          Key: { internalCommonSubjectId: userId },
+        },
+      });
     }
 
     try {

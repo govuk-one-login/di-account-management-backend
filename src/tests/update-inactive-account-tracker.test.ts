@@ -19,6 +19,7 @@ describe("UpdateInactiveAccountTracker handler", () => {
   beforeEach(() => {
     process.env.INACTIVE_ACCOUNT_TRACKER_TABLE_NAME = "test-table";
     process.env.USER_NOTIFICATIONS_TABLE_NAME = "user-notifications-table";
+    process.env.OLH_CLIENT_ID = "test-client";
     dynamoMock.reset();
   });
 
@@ -125,7 +126,7 @@ describe("UpdateInactiveAccountTracker handler", () => {
     await expect(handler(event, {} as Context)).rejects.toThrow("found more than one inactivity tracker record for qwerty");
   });
 
-  test("adds notification to transaction when currentItem status is pending and no existing notification", async () => {
+  test("does not delete notification when no existing notification found", async () => {
     dynamoMock.on(QueryCommand).resolves({
       Items: [{ commonSubjectId: "qwerty", dateForDeletion: "2026-01-01", userLastActive: "2020-01-01T00:00:00.000Z", status: "pending", emailAddress: "x", statusLastUpdated: "" }],
     });
@@ -133,34 +134,10 @@ describe("UpdateInactiveAccountTracker handler", () => {
     dynamoMock.on(TransactWriteCommand).resolves({});
     const event: DynamoDBStreamEvent = { Records: [generateDynamoSteamRecord("test-client")] };
     await handler(event, {} as Context);
-    expect(dynamoMock).toHaveReceivedCommandWith(GetCommand, {
-      TableName: "user-notifications-table",
-      Key: { internalCommonSubjectId: "qwerty" },
-    });
-    expect(dynamoMock).toHaveReceivedCommandWith(TransactWriteCommand, {
-      TransactItems: expect.arrayContaining([
-        expect.objectContaining({
-          Put: expect.objectContaining({
-            TableName: "user-notifications-table",
-            Item: expect.objectContaining({ internalCommonSubjectId: "qwerty", notificationType: "AccountKept" }),
-          }),
-        }),
-      ]),
-    });
-  });
-
-  test("does not add notification when existing notification found", async () => {
-    dynamoMock.on(QueryCommand).resolves({
-      Items: [{ commonSubjectId: "qwerty", dateForDeletion: "2026-01-01", userLastActive: "2020-01-01T00:00:00.000Z", status: "pending", emailAddress: "x", statusLastUpdated: "" }],
-    });
-    dynamoMock.on(GetCommand).resolves({ Item: { internalCommonSubjectId: "qwerty" } });
-    dynamoMock.on(TransactWriteCommand).resolves({});
-    const event: DynamoDBStreamEvent = { Records: [generateDynamoSteamRecord("test-client")] };
-    await handler(event, {} as Context);
     expect(dynamoMock).toHaveReceivedCommandWith(TransactWriteCommand, {
       TransactItems: expect.not.arrayContaining([
         expect.objectContaining({
-          Put: expect.objectContaining({ TableName: "user-notifications-table" }),
+          Delete: expect.objectContaining({ TableName: "user-notifications-table" }),
         }),
       ]),
     });

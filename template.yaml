@@ -263,6 +263,7 @@ Mappings:
     ### Please ensure that any variables defined for an environment are defined for _all_ environments.
     ### We are passing the version ID of AWS secrets as cloudformation does not retrieve updated secrets unless there is a change in the template file related to it.
     demo:
+      OLHCLIENTID: "oneLoginHome"
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.integration.publishing.service.gov.uk"
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "2b3170b5-159e-457f-a282-f30f6006dc32"
       NOTIFYTEMPLATEIDS: |
@@ -270,6 +271,7 @@ Mappings:
           "GLOBAL_LOGOUT": "a92761ef-213b-4fb6-a53c-5912a931c159"
         }
     dev:
+      OLHCLIENTID: "oneLoginHome"
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.integration.publishing.service.gov.uk"
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "2b3170b5-159e-457f-a282-f30f6006dc32"
       NOTIFYTEMPLATEIDS: |
@@ -277,6 +279,7 @@ Mappings:
           "GLOBAL_LOGOUT": "a92761ef-213b-4fb6-a53c-5912a931c159"
         }
     build:
+      OLHCLIENTID: "oneLoginHome"
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.staging.publishing.service.gov.uk"
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "2b3170b5-159e-457f-a282-f30f6006dc32"
       NOTIFYTEMPLATEIDS: |
@@ -285,6 +288,7 @@ Mappings:
         }
     staging:
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.staging.publishing.service.gov.uk"
+      OLHCLIENTID: "EMGmY82k-92QSakDl_9keKDFmZY"
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "2b3170b5-159e-457f-a282-f30f6006dc32"
       NOTIFYTEMPLATEIDS: |
         {
@@ -292,12 +296,14 @@ Mappings:
         }
     integration:
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.integration.publishing.service.gov.uk"
+      OLHCLIENTID: "Y8xi2wDAaRvWYlEkoExOUZbAPaYyBEhB"
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "0674c6e3-219c-4e3a-b04c-3786bac7f228"
       NOTIFYTEMPLATEIDS: |
         {
           "GLOBAL_LOGOUT": "fb33515d-41cb-40df-93c2-e1bf76c3672a"
         }
     production:
+      OLHCLIENTID: "KcKmx2g1GH6ersWFvzMi1bhehq4"
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.publishing.service.gov.uk"
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "0674c6e3-219c-4e3a-b04c-3786bac7f228"
       NOTIFYTEMPLATEIDS: |
@@ -3110,6 +3116,12 @@ Resources:
           ACCOUNT_SAVED_NOTIFICATION_QUEUE_URL: !Ref AccountSavedNotificationQueue
           INACTIVE_ACCOUNT_TRACKER_TABLE_NAME: !Ref InactiveAccountTrackerTableName
           USER_NOTIFICATIONS_TABLE_NAME: !Ref UserNotificationsTableName
+          OLH_CLIENT_ID:
+            !FindInMap [
+              EnvironmentVariables,
+              !Ref Environment,
+              OLHCLIENTID,
+            ]
       DeploymentPreference:
         Alarms:
           Fn::If:
@@ -3225,8 +3237,7 @@ Resources:
               - !Sub "${InactiveAccountTrackerStore.Arn}/index/CommonSubjectIdIndex"
           - Effect: Allow
             Action:
-              - dynamodb:GetItem
-              - dynamodb:PutItem
+              - dynamodb:DeleteItem
             Resource:
               - !GetAtt UserNotificationsStore.Arn
           - Effect: Allow

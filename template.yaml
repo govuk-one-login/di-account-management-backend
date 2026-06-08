@@ -5391,6 +5391,7 @@ Resources:
       Environment:
         Variables:
           NODE_OPTIONS: --enable-source-maps --max-old-space-size=5120
+          TABLE_NAME: !Ref ActivityLogsStoreTableName
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -5415,6 +5416,7 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+        - !Ref AnalyseActivityLogPolicy
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -5424,6 +5426,23 @@ Resources:
                 - lambda.amazonaws.com
             Action:
               - "sts:AssumeRole"
+
+  AnalyseActivityLogPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - dynamodb:Scan
+            Resource:
+              - !GetAtt UserActivityLogsStore.Arn
+          - Effect: Allow
+            Action:
+              - kms:Decrypt
+            Resource:
+              - !GetAtt DatabaseKmsKey.Arn
 
   AnalyseActivityLogFunctionLogGroup:
     Type: AWS::Logs::LogGroup

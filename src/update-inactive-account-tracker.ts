@@ -28,68 +28,68 @@ export const handler = async (
     logger.info(`client_id: ${txmaEvent.client_id}`);
 
     const userId = txmaEvent.user?.user_id;
-    if (userId) {
-      const response = await dynamoDocClient.send(
-        new QueryCommand({
-          TableName: tableName,
-          IndexName: "CommonSubjectIdIndex",
-          KeyConditionExpression: "commonSubjectId = :uid",
-          ExpressionAttributeValues: { ":uid": userId },
-        })
+
+    if (!userId) {
+      throw Error("Missing user_id in event");
+    }
+
+    const response = await dynamoDocClient.send(
+      new QueryCommand({
+        TableName: tableName,
+        IndexName: "CommonSubjectIdIndex",
+        KeyConditionExpression: "commonSubjectId = :uid",
+        ExpressionAttributeValues: { ":uid": userId },
+      })
+    );
+
+    assert(response.Items && response.Items.length < 2, `found more than one inactivity tracker record for ${userId}`)
+
+    const currentTrackerRecord = response.Items && response.Items.length > 0 ? response.Items[0] as InactiveAccountTrackerRecord : null;
+
+    const eventDate = new Date(txmaEvent.timestamp * 1000);
+    const trackerDate = currentTrackerRecord ? new Date(currentTrackerRecord.userLastActive) : new Date(0);
+
+    const latestDate = eventDate > trackerDate ? eventDate : trackerDate;
+
+
+    if (currentTrackerRecord?.status === 'deleting') {
+      logger.warn(`AUTH_EVENT_ON_DELETED_ACCOUNT ${userId}`)
+      return;
+    }
+
+    const newItem: InactiveAccountTrackerRecord = {
+      commonSubjectId: userId,
+      userLastActive: latestDate.toISOString(),
+      dateForDeletion: latestDate.toISOString().split("T")[0],
+      emailAddress: 'unknown',
+      status: 'pending',
+      statusLastUpdated: new Date().toISOString(),
+    }
+
+    const transactItems: { Put?: { TableName: string; Item: Record<string, unknown> }; Delete?: { TableName: string; Key: Record<string, unknown> } }[] = [
+      { Put: { TableName: tableName, Item: newItem as unknown as Record<string, unknown> } },
+      { Delete: { TableName: tableName, Key: { commonSubjectId: userId } } }
+    ];
+
+    if (currentTrackerRecord && currentTrackerRecord.status === 'pending') {
+      const userNotificationsTableName = getEnvironmentVariable("USER_NOTIFICATIONS_TABLE_NAME");
+      const existingNotification = await dynamoDocClient.send(
+        new GetCommand({ TableName: userNotificationsTableName, Key: { internalCommonSubjectId: userId } })
       );
-
-      assert(response.Items && response.Items.length < 2, `found more than one inactivity tracker record for ${userId}`)
-
-      const eventDate = new Date(txmaEvent.timestamp * 1000);
-      let latestDate = eventDate.toISOString();
-
-      const currentItem = response.Items && response.Items.length > 0 ? response.Items[0] as InactiveAccountTrackerRecord : null;
-
-      if (currentItem) {
-        if (new Date(currentItem.userLastActive) > eventDate) {
-          latestDate = new Date(currentItem.userLastActive).toISOString();
-        }
-
-        if (currentItem.status === 'deleting') {
-          logger.warn(`AUTH_EVENT_ON_DELETED_ACCOUNT ${userId}`)
-          return;
-        }
+      if (!existingNotification.Item) {
+        transactItems.push({
+          Put: {
+            TableName: userNotificationsTableName,
+            Item: { internalCommonSubjectId: userId, createdAt: new Date().toISOString(), notificationType: 'AccountKept' },
+          },
+        });
       }
+    }
 
-      const newItem: InactiveAccountTrackerRecord = {
-        commonSubjectId: userId,
-        userLastActive: latestDate,
-        dateForDeletion: latestDate.split("T")[0],
-        emailAddress: 'unknown',
-        status: 'pending',
-        statusLastUpdated: new Date().toISOString(),
-      }
-
-      const transactItems: { Put?: { TableName: string; Item: Record<string, unknown> }; Delete?: { TableName: string; Key: Record<string, unknown> } }[] = [
-        { Put: { TableName: tableName, Item: newItem as unknown as Record<string, unknown> } },
-        { Delete: { TableName: tableName, Key: { commonSubjectId: userId } } }
-      ];
-
-      if (currentItem && currentItem.status === 'pending') {
-        const userNotificationsTableName = getEnvironmentVariable("USER_NOTIFICATIONS_TABLE_NAME");
-        const existingNotification = await dynamoDocClient.send(
-          new GetCommand({ TableName: userNotificationsTableName, Key: { internalCommonSubjectId: userId } })
-        );
-        if (!existingNotification.Item) {
-          transactItems.push({
-            Put: {
-              TableName: userNotificationsTableName,
-              Item: { internalCommonSubjectId: userId, createdAt: new Date().toISOString(), notificationType: 'AccountKept' },
-            },
-          });
-        }
-      }
-
-      try {
-        await dynamoDocClient.send(new TransactWriteCommand({ TransactItems: transactItems }));
-      } catch (error) {
-        throw new Error(`Failed to update inactive account tracker for user ${userId}: ${error}`);
-      }
+    try {
+      await dynamoDocClient.send(new TransactWriteCommand({ TransactItems: transactItems }));
+    } catch (error) {
+      throw new Error(`Failed to update inactive account tracker for user ${userId}: ${error}`);
     }
   }
 };

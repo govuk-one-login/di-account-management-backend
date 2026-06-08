@@ -210,6 +210,15 @@ export interface Personalisation {
   timeCy: string;
 }
 
+export interface InactiveAccountTrackerRecord {
+  dateForDeletion: string;
+  commonSubjectId: string;
+  emailAddress: string;
+  userLastActive: string;
+  status: string;
+  statusLastUpdated: string;
+}
+
 export class DroppedEventError extends Error {
   constructor(message: string) {
     super(message);

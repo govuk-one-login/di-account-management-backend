@@ -3108,6 +3108,7 @@ Resources:
         Variables:
           NODE_OPTIONS: --enable-source-maps
           ACCOUNT_SAVED_NOTIFICATION_QUEUE_URL: !Ref AccountSavedNotificationQueue
+          INACTIVE_ACCOUNT_TRACKER_TABLE_NAME: !Ref InactiveAccountTrackerTableName
       DeploymentPreference:
         Alarms:
           Fn::If:
@@ -3217,8 +3218,10 @@ Resources:
               - dynamodb:GetItem
               - dynamodb:DeleteItem
               - dynamodb:PutItem
+              - dynamodb:Query
             Resource:
               - !GetAtt InactiveAccountTrackerStore.Arn
+              - !Sub "${InactiveAccountTrackerStore.Arn}/index/CommonSubjectIdIndex"
           - Effect: Allow
             Action:
               - kms:Decrypt

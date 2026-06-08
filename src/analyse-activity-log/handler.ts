@@ -3,6 +3,12 @@ import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { Context } from "aws-lambda";
 import { scanSegment } from "./scan-segment.js";
 import { ageThresholdsFromNow, CounterIndex } from "./age-thresholds.js";
+import {
+  computePercentiles,
+  computeConcentration,
+  PercentileResult,
+  ConcentrationResult,
+} from "./compute-report.js";
 import { getEnvironmentVariable } from "../common/utils.js";
 
 const logger = new Logger({ serviceName: "analyse-activity-log" });
@@ -16,6 +22,8 @@ export interface ScanReport {
   total_items: number;
   total_users: number;
   scan_duration_seconds: number;
+  items_per_user_distribution: PercentileResult;
+  concentration: ConcentrationResult;
 }
 
 export const handler = async (
@@ -51,26 +59,39 @@ export const handler = async (
     )
   );
 
-  const totalUsers = results.reduce(
-    (sum, r) => sum + r.perUserCounters.length,
-    0
-  );
-  const totalItems = results.reduce(
-    (sum, r) =>
-      sum + r.perUserCounters.reduce((s, t) => s + t[CounterIndex.TOTAL], 0),
-    0
-  );
   const scanDurationSeconds = Math.round((Date.now() - startTime) / 1000);
 
   logger.info("Compiling report");
 
-  const summary: ScanReport = {
+  const allCounters = results.flatMap((r) => r.perUserCounters);
+
+  if (allCounters.length === 0) {
+    throw new Error("Scan returned no items");
+  }
+
+  const totalCounts = new Array(allCounters.length);
+  let totalItems = 0;
+  for (let i = 0; i < allCounters.length; i++) {
+    const count = allCounters[i][CounterIndex.TOTAL];
+    totalCounts[i] = count;
+    totalItems += count;
+  }
+
+  totalCounts.sort((a, b) => a - b);
+  const items_per_user_distribution = computePercentiles(totalCounts);
+
+  totalCounts.reverse();
+  const concentration = computeConcentration(totalCounts, totalItems);
+
+  const report: ScanReport = {
     total_items: totalItems,
-    total_users: totalUsers,
+    total_users: allCounters.length,
     scan_duration_seconds: scanDurationSeconds,
+    items_per_user_distribution,
+    concentration,
   };
 
-  logger.info("Scan complete", { ...summary });
+  logger.info("Report complete", { ...report });
 
-  return summary;
+  return report;
 };

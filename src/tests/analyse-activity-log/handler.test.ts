@@ -55,7 +55,9 @@ describe("analyse-activity-log handler", () => {
 
   describe("scan orchestration", () => {
     test("calls scanSegment once per segment", async () => {
-      mockScanSegment.mockResolvedValue({ perUserCounters: [] });
+      mockScanSegment.mockResolvedValue({
+        perUserCounters: [[1, 0, 0, 0, 0, 0, 0]],
+      });
 
       await handler({ totalSegments: 3 }, mockContext);
 
@@ -91,6 +93,14 @@ describe("analyse-activity-log handler", () => {
       );
     });
 
+    test("throws when scan returns no items", async () => {
+      mockScanSegment.mockResolvedValue({ perUserCounters: [] });
+
+      await expect(handler({ totalSegments: 1 }, mockContext)).rejects.toThrow(
+        "Scan returned no items"
+      );
+    });
+
     test("returns summed totals from all segments", async () => {
       mockScanSegment
         .mockResolvedValueOnce({
@@ -108,6 +118,11 @@ describe("analyse-activity-log handler", () => {
       expect(result.total_users).toBe(3);
       expect(result.total_items).toBe(10);
       expect(result.scan_duration_seconds).toBeGreaterThanOrEqual(0);
+      expect(result.items_per_user_distribution.mean).toBeCloseTo(10 / 3);
+      expect(result.items_per_user_distribution.max).toBe(5);
+      expect(result.concentration).toHaveProperty(
+        "top_1_pct_users_own_pct_of_items"
+      );
     });
   });
 });

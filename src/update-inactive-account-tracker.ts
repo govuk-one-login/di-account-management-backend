@@ -1,7 +1,7 @@
 import { Context, DynamoDBStreamEvent } from "aws-lambda";
 import { AttributeValue, DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
-import { DynamoDBDocumentClient, GetCommand, QueryCommand, TransactWriteCommand } from "@aws-sdk/lib-dynamodb";
+import { DynamoDBDocumentClient, QueryCommand, TransactWriteCommand } from "@aws-sdk/lib-dynamodb";
 import { TxmaEvent } from "./common/model.js";
 import { getEnvironmentVariable } from "./common/utils.js";
 import { Logger } from "@aws-lambda-powertools/logger";
@@ -44,9 +44,10 @@ export const handler = async (
       })
     );
 
-    assert(response.Items && response.Items.length < 2, `found more than one inactivity tracker record for ${userId}`)
+    assert(response.Items !== undefined, "Query response is missing Items");
+    assert(response.Items.length < 2, `found more than one inactivity tracker record for ${userId}`)
 
-    const currentTrackerRecord = response.Items && response.Items.length > 0 ? response.Items[0] as InactiveAccountTrackerRecord : null;
+    const currentTrackerRecord = response.Items.length > 0 ? response.Items[0] as InactiveAccountTrackerRecord : null;
 
     const eventDate = new Date(txmaEvent.timestamp * 1000);
     const trackerDate = currentTrackerRecord ? new Date(currentTrackerRecord.userLastActive) : new Date(0);

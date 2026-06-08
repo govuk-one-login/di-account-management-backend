@@ -6,10 +6,14 @@ import { ageThresholdsFromNow, CounterIndex } from "./age-thresholds.js";
 import {
   computePercentiles,
   computeConcentration,
+  computeUserBuckets,
+  computeItemsByAgeBucket,
+  AGE_BUCKET_LABELS,
   PercentileResult,
   ConcentrationResult,
+  UserBucket,
 } from "./compute-report.js";
-import { getEnvironmentVariable } from "../common/utils.js";
+import { getEnvironmentVariable, zeroedArray } from "../common/utils.js";
 
 const logger = new Logger({ serviceName: "analyse-activity-log" });
 const client = new DynamoDBClient({});
@@ -24,6 +28,8 @@ export interface ScanReport {
   scan_duration_seconds: number;
   items_per_user_distribution: PercentileResult;
   concentration: ConcentrationResult;
+  items_per_user_buckets: Record<string, UserBucket>;
+  items_by_age_bucket: Record<string, { count: number }>;
 }
 
 export const handler = async (
@@ -83,12 +89,24 @@ export const handler = async (
   totalCounts.reverse();
   const concentration = computeConcentration(totalCounts, totalItems);
 
+  const items_per_user_buckets = computeUserBuckets(totalCounts);
+
+  const ageBucketSums = zeroedArray(AGE_BUCKET_LABELS.length);
+  for (const r of results) {
+    for (let i = 0; i < r.exclusiveAgeBuckets.length; i++) {
+      ageBucketSums[i] += r.exclusiveAgeBuckets[i];
+    }
+  }
+  const items_by_age_bucket = computeItemsByAgeBucket(ageBucketSums);
+
   const report: ScanReport = {
     total_items: totalItems,
     total_users: allCounters.length,
     scan_duration_seconds: scanDurationSeconds,
     items_per_user_distribution,
     concentration,
+    items_per_user_buckets,
+    items_by_age_bucket,
   };
 
   logger.info("Report complete", { ...report });

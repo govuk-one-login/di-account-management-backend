@@ -126,5 +126,6 @@ describe("scanSegment", () => {
     expect(result.perUserCounters[0][CounterIndex.OLDER_12M]).toBe(3);
     expect(result.perUserCounters[0][CounterIndex.OLDER_18M]).toBe(2);
     expect(result.perUserCounters[0][CounterIndex.OLDER_24M]).toBe(1);
+    expect(result.exclusiveAgeBuckets).toEqual([1, 2, 1, 1, 1, 1, 1]);
   });
 });

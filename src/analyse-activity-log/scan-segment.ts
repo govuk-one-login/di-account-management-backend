@@ -33,7 +33,7 @@ const processItem = (
   }
 ): typeof state => {
   const userId = item.user_id?.S;
-  const ts = Number(item.timestamp?.N);
+  const ts = Math.floor(Number(item.timestamp?.N) / 1000);
   if (!userId || Number.isNaN(ts)) return state;
 
   if (userId !== state.currentUserId) {

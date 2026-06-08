@@ -14,9 +14,9 @@ const NOW_SECONDS = 1700000000;
 
 const thresholds: AgeThresholds = ageThresholdsFromNow(NOW_SECONDS);
 
-const makeItem = (userId: string, timestamp: number) => ({
+const makeItem = (userId: string, timestampSeconds: number) => ({
   user_id: { S: userId },
-  timestamp: { N: String(timestamp) },
+  timestamp: { N: String(timestampSeconds * 1000) },
 });
 
 describe("scanSegment", () => {

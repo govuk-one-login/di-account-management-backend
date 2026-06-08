@@ -72,10 +72,10 @@ export const handler = async (
 
       if (currentItem && currentItem.status === 'pending') {
         const userNotificationsTableName = getEnvironmentVariable("USER_NOTIFICATIONS_TABLE_NAME");
-        const existing = await dynamoDocClient.send(
+        const existingNotification = await dynamoDocClient.send(
           new GetCommand({ TableName: userNotificationsTableName, Key: { internalCommonSubjectId: userId } })
         );
-        if (!existing.Item) {
+        if (!existingNotification.Item) {
           transactItems.push({
             Put: {
               TableName: userNotificationsTableName,

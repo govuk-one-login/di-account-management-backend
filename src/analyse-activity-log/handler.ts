@@ -62,6 +62,8 @@ export const handler = async (
   );
   const scanDurationSeconds = Math.round((Date.now() - startTime) / 1000);
 
+  logger.info("Compiling report");
+
   const summary: ScanReport = {
     total_items: totalItems,
     total_users: totalUsers,

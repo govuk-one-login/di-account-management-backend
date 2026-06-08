@@ -157,6 +157,7 @@ describe("analyse-activity-log handler", () => {
 
       const result = await handler({ totalSegments: 2 }, mockContext);
 
+      expect(result.scan_date).toMatch(/^\d{4}-\d{2}-\d{2}T/);
       expect(result.total_users).toBe(8);
       expect(result.total_items).toBe(104);
       expect(result.items_per_user_distribution.mean).toBe(13);

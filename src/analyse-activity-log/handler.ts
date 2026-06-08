@@ -25,6 +25,7 @@ export interface AnalyseActivityLogEvent {
 }
 
 export interface ScanReport {
+  scan_date: string;
   total_items: number;
   total_users: number;
   scan_duration_seconds: number;
@@ -131,6 +132,7 @@ export const handler = async (
   };
 
   const report: ScanReport = {
+    scan_date: new Date(startTime).toISOString(),
     total_items: totalItems,
     total_users: allCounters.length,
     scan_duration_seconds: scanDurationSeconds,

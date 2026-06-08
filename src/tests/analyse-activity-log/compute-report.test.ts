@@ -4,7 +4,9 @@ import {
   computeConcentration,
   computeUserBuckets,
   computeItemsByAgeBucket,
+  computeTtlSimulation,
 } from "../../analyse-activity-log/compute-report.js";
+import { CounterIndex } from "../../analyse-activity-log/age-thresholds.js";
 
 describe("computePercentiles", () => {
   test("all same values", () => {
@@ -114,5 +116,57 @@ describe("computeItemsByAgeBucket", () => {
     expect(() => computeItemsByAgeBucket([1, 2, 3])).toThrow(
       "Expected 7 age buckets, got 3"
     );
+  });
+});
+
+describe("computeTtlSimulation", () => {
+  test("user with all items older than 3m is fully removed", () => {
+    // [TOTAL, OLDER_1M, OLDER_3M, OLDER_6M, OLDER_12M, OLDER_18M, OLDER_24M]
+    const userCounters = [[5, 5, 5, 3, 0, 0, 0]];
+    const result = computeTtlSimulation(userCounters, CounterIndex.OLDER_3M, 5);
+    expect(result.items_removed).toBe(5);
+    expect(result.items_retained).toBe(0);
+    expect(result.pct_items_removed).toBe(100);
+    expect(result.users_with_all_data_removed).toBe(1);
+    expect(result.users_with_data_retained).toBe(0);
+  });
+
+  test("user with no items older than 3m has 0 removed", () => {
+    const userCounters = [[5, 2, 0, 0, 0, 0, 0]];
+    const result = computeTtlSimulation(userCounters, CounterIndex.OLDER_3M, 5);
+    expect(result.items_removed).toBe(0);
+    expect(result.items_retained).toBe(5);
+    expect(result.pct_items_removed).toBe(0);
+    expect(result.users_with_all_data_removed).toBe(0);
+    expect(result.users_with_data_retained).toBe(1);
+    expect(result.items_per_user_after.mean).toBe(5);
+  });
+
+  test("user with 5 total, 3 older than 6m", () => {
+    const userCounters = [[5, 5, 4, 3, 0, 0, 0]];
+    const result = computeTtlSimulation(userCounters, CounterIndex.OLDER_6M, 5);
+    expect(result.items_removed).toBe(3);
+    expect(result.items_retained).toBe(2);
+    expect(result.pct_items_removed).toBe(60);
+    expect(result.users_with_all_data_removed).toBe(0);
+    expect(result.users_with_data_retained).toBe(1);
+    expect(result.items_per_user_after.mean).toBe(2);
+  });
+
+  test("post-TTL percentiles exclude fully-removed users", () => {
+    const userCounters = [
+      [10, 10, 10, 0, 0, 0, 0], // fully removed at 3m
+      [5, 3, 0, 0, 0, 0, 0], // retains 5
+      [8, 6, 2, 0, 0, 0, 0], // retains 6
+    ];
+    const result = computeTtlSimulation(
+      userCounters,
+      CounterIndex.OLDER_3M,
+      23
+    );
+    expect(result.users_with_all_data_removed).toBe(1);
+    expect(result.users_with_data_retained).toBe(2);
+    expect(result.items_per_user_after.mean).toBe(5.5);
+    expect(result.items_per_user_after.max).toBe(6);
   });
 });

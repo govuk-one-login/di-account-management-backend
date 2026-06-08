@@ -8,10 +8,12 @@ import {
   computeConcentration,
   computeUserBuckets,
   computeItemsByAgeBucket,
+  computeTtlSimulation,
   AGE_BUCKET_LABELS,
   PercentileResult,
   ConcentrationResult,
   UserBucket,
+  TtlSimulationResult,
 } from "./compute-report.js";
 import { getEnvironmentVariable, zeroedArray } from "../common/utils.js";
 
@@ -30,6 +32,7 @@ export interface ScanReport {
   concentration: ConcentrationResult;
   items_per_user_buckets: Record<string, UserBucket>;
   items_by_age_bucket: Record<string, { count: number }>;
+  ttl_impact_simulation: Record<string, TtlSimulationResult>;
 }
 
 export const handler = async (
@@ -99,6 +102,34 @@ export const handler = async (
   }
   const items_by_age_bucket = computeItemsByAgeBucket(ageBucketSums);
 
+  const ttl_impact_simulation: Record<string, TtlSimulationResult> = {
+    "3_months": computeTtlSimulation(
+      allCounters,
+      CounterIndex.OLDER_3M,
+      totalItems
+    ),
+    "6_months": computeTtlSimulation(
+      allCounters,
+      CounterIndex.OLDER_6M,
+      totalItems
+    ),
+    "12_months": computeTtlSimulation(
+      allCounters,
+      CounterIndex.OLDER_12M,
+      totalItems
+    ),
+    "18_months": computeTtlSimulation(
+      allCounters,
+      CounterIndex.OLDER_18M,
+      totalItems
+    ),
+    "24_months": computeTtlSimulation(
+      allCounters,
+      CounterIndex.OLDER_24M,
+      totalItems
+    ),
+  };
+
   const report: ScanReport = {
     total_items: totalItems,
     total_users: allCounters.length,
@@ -107,6 +138,7 @@ export const handler = async (
     concentration,
     items_per_user_buckets,
     items_by_age_bucket,
+    ttl_impact_simulation,
   };
 
   logger.info("Report complete", { ...report });

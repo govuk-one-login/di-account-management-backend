@@ -178,6 +178,65 @@ describe("analyse-activity-log handler", () => {
       expect(result.items_by_age_bucket["12-18_months"].count).toBe(17);
       expect(result.items_by_age_bucket["18-24_months"].count).toBe(12);
       expect(result.items_by_age_bucket["24+_months"].count).toBe(6);
+      expect(result.ttl_impact_simulation["3_months"]).toEqual({
+        items_removed: 68,
+        items_retained: 36,
+        pct_items_removed: 65,
+        users_with_all_data_removed: 0,
+        users_with_data_retained: 8,
+        items_per_user_after: expect.objectContaining({
+          mean: 4.5,
+          max: 10,
+        }),
+      });
+
+      expect(result.ttl_impact_simulation["6_months"]).toEqual({
+        items_removed: 47,
+        items_retained: 57,
+        pct_items_removed: 45,
+        users_with_all_data_removed: 0,
+        users_with_data_retained: 8,
+        items_per_user_after: expect.objectContaining({
+          mean: 7.125,
+          max: 20,
+        }),
+      });
+
+      expect(result.ttl_impact_simulation["12_months"]).toEqual({
+        items_removed: 27,
+        items_retained: 77,
+        pct_items_removed: 26,
+        users_with_all_data_removed: 0,
+        users_with_data_retained: 8,
+        items_per_user_after: expect.objectContaining({
+          mean: 9.625,
+          max: 30,
+        }),
+      });
+
+      expect(result.ttl_impact_simulation["18_months"]).toEqual({
+        items_removed: 12,
+        items_retained: 92,
+        pct_items_removed: 12,
+        users_with_all_data_removed: 0,
+        users_with_data_retained: 8,
+        items_per_user_after: expect.objectContaining({
+          mean: 11.5,
+          max: 40,
+        }),
+      });
+
+      expect(result.ttl_impact_simulation["24_months"]).toEqual({
+        items_removed: 5,
+        items_retained: 99,
+        pct_items_removed: 5,
+        users_with_all_data_removed: 0,
+        users_with_data_retained: 8,
+        items_per_user_after: expect.objectContaining({
+          mean: 12.375,
+          max: 45,
+        }),
+      });
     });
   });
 });

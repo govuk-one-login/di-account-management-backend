@@ -35,10 +35,11 @@ export const handler = async (
       throw new Error("Missing user_id in event");
     }
 
+    console.log(tableName, userNotificationsTableName, olhClientId)
     const response = await dynamoDocClient.send(
       new QueryCommand({
-        TableName: tableName,
         IndexName: "CommonSubjectIdIndex",
+        TableName: tableName,
         KeyConditionExpression: "commonSubjectId = :uid",
         ExpressionAttributeValues: { ":uid": userId },
       })

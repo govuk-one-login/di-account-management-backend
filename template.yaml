@@ -606,6 +606,8 @@ Resources:
       KeySchema:
         - AttributeName: dateForDeletion
           KeyType: HASH
+        - AttributeName: commonSubjectId
+          KeyType: RANGE
       Tags:
         - Key: Product
           Value: GOV.UK Sign In

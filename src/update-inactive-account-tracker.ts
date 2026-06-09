@@ -71,8 +71,13 @@ export const handler = async (
 
     const transactItems: { Put?: { TableName: string; Item: Record<string, unknown> }; Delete?: { TableName: string; Key: Record<string, unknown> } }[] = [
       { Put: { TableName: tableName, Item: newItem as unknown as Record<string, unknown> } },
-      { Delete: { TableName: tableName, Key: { commonSubjectId: userId } } }
     ];
+
+    if (currentTrackerRecord) {
+      transactItems.push({
+        Delete: { TableName: tableName, Key: { dateForDeletion: currentTrackerRecord.dateForDeletion, commonSubjectId: userId } }
+      });
+    }
 
 
     if (txmaEvent.client_id !== olhClientId) {

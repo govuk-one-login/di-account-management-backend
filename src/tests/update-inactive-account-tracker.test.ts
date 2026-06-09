@@ -68,6 +68,13 @@ describe("UpdateInactiveAccountTracker handler", () => {
         }),
       ]),
     });
+    expect(dynamoMock).toHaveReceivedCommandWith(TransactWriteCommand, {
+      TransactItems: expect.not.arrayContaining([
+        expect.objectContaining({
+          Delete: expect.objectContaining({ TableName: "test-table" }),
+        }),
+      ]),
+    });
   });
 
   test("uses event timestamp as latestDate when no existing record", async () => {
@@ -99,6 +106,12 @@ describe("UpdateInactiveAccountTracker handler", () => {
         expect.objectContaining({
           Put: expect.objectContaining({
             Item: expect.objectContaining({ userLastActive: futureDate }),
+          }),
+        }),
+        expect.objectContaining({
+          Delete: expect.objectContaining({
+            TableName: "test-table",
+            Key: { dateForDeletion: "2099-01-01", commonSubjectId: "qwerty" },
           }),
         }),
       ]),

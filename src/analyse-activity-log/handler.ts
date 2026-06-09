@@ -1,8 +1,17 @@
 import { Logger } from "@aws-lambda-powertools/logger";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import {
+  LambdaClient,
+  InvokeCommand,
+  InvocationType,
+} from "@aws-sdk/client-lambda";
 import { Context } from "aws-lambda";
-import { scanSegment } from "./scan-segment.js";
-import { ageThresholdsFromNow, CounterIndex } from "./age-thresholds.js";
+import { scanSegment, SegmentCursor } from "./scan-segment.js";
+import {
+  AgeThresholds,
+  ageThresholdsFromNow,
+  CounterIndex,
+} from "./age-thresholds.js";
 import {
   computePercentiles,
   computeConcentration,
@@ -18,12 +27,20 @@ import {
 import { getEnvironmentVariable, zeroedArray } from "../common/utils.js";
 
 const SCAN_BUDGET_MS = 13 * 60 * 1000;
+const MAX_INVOCATIONS = 20;
 
 const logger = new Logger({ serviceName: "analyse-activity-log" });
 const client = new DynamoDBClient({});
+const lambdaClient = new LambdaClient({});
 
 export interface AnalyseActivityLogEvent {
   totalSegments: number;
+  scanBudgetMs?: number;
+  maxInvocations?: number;
+  cursors?: (SegmentCursor | null)[];
+  invocation?: number;
+  ageThresholds?: AgeThresholds;
+  scanStartedAt?: string;
 }
 
 export interface ScanReport {
@@ -55,14 +72,44 @@ export const handler = async (
 
   logger.info("Analysis started", { totalSegments: event.totalSegments });
 
+  const invocation = event.invocation ?? 1;
+  const maxInvocations = Math.min(
+    event.maxInvocations ?? MAX_INVOCATIONS,
+    MAX_INVOCATIONS
+  );
+  const scanBudgetMs = Math.min(
+    event.scanBudgetMs ?? SCAN_BUDGET_MS,
+    SCAN_BUDGET_MS
+  );
+
+  if (invocation > maxInvocations) {
+    throw new Error(
+      `Exceeded maximum invocations (${maxInvocations}). Scan did not converge.`
+    );
+  }
+
   const startTime = Date.now();
-  const deadlineMs = startTime + SCAN_BUDGET_MS;
-  const ageThresholds = ageThresholdsFromNow(Math.floor(startTime / 1000));
+  const deadlineMs = startTime + scanBudgetMs;
+  const scanStartedAt =
+    event.scanStartedAt ?? new Date(startTime).toISOString();
+  const ageThresholds: AgeThresholds =
+    event.ageThresholds ?? ageThresholdsFromNow(Math.floor(startTime / 1000));
   const tableName = getEnvironmentVariable("TABLE_NAME");
 
-  const segments = [...new Array(event.totalSegments).keys()];
+  const segmentsToScan = event.cursors
+    ? event.cursors
+        .map((cursor, segment) => ({ cursor, segment }))
+        .filter(
+          (entry): entry is { cursor: SegmentCursor; segment: number } =>
+            entry.cursor !== null
+        )
+    : [...new Array(event.totalSegments).keys()].map((segment) => ({
+        cursor: undefined as SegmentCursor | undefined,
+        segment,
+      }));
+
   const results = await Promise.all(
-    segments.map((segment) =>
+    segmentsToScan.map(({ segment, cursor }) =>
       scanSegment(
         client,
         tableName,
@@ -71,6 +118,7 @@ export const handler = async (
         ageThresholds,
         {
           deadlineMs,
+          resumeFrom: cursor,
         }
       )
     )
@@ -80,10 +128,49 @@ export const handler = async (
   const scanComplete = results.every((r) => r.exhausted);
 
   if (!scanComplete) {
-    logger.info("Scan incomplete — deadline reached", {
-      incompleteSegments: results.filter((r) => !r.exhausted).length,
+    const nextCursors: (SegmentCursor | null)[] = new Array(
+      event.totalSegments
+    ).fill(null);
+    for (let i = 0; i < segmentsToScan.length; i++) {
+      nextCursors[segmentsToScan[i].segment] = results[i].cursor ?? null;
+    }
+    const functionName = getEnvironmentVariable("AWS_LAMBDA_FUNCTION_NAME");
+
+    const nextEvent: AnalyseActivityLogEvent = {
+      totalSegments: event.totalSegments,
+      scanBudgetMs,
+      maxInvocations,
+      cursors: nextCursors,
+      invocation: invocation + 1,
+      ageThresholds,
+      scanStartedAt,
+    };
+
+    const payload = Buffer.from(JSON.stringify(nextEvent));
+
+    logger.info("Scan incomplete, invoking next chunk", {
+      incompleteSegments: nextCursors.filter((c) => c !== null).length,
       scanDurationSeconds,
+      payloadBytes: payload.byteLength,
     });
+
+    if (payload.byteLength > 256_000) {
+      throw new Error(
+        `Payload too large for async invoke: ${payload.byteLength} bytes`
+      );
+    }
+
+    const response = await lambdaClient.send(
+      new InvokeCommand({
+        FunctionName: functionName,
+        InvocationType: InvocationType.Event,
+        Payload: payload,
+      })
+    );
+
+    if (response.StatusCode !== 202) {
+      throw new Error(`Async invoke returned status ${response.StatusCode}`);
+    }
   }
 
   logger.info("Compiling report");
@@ -147,10 +234,12 @@ export const handler = async (
   };
 
   const report: ScanReport = {
-    scan_date: new Date(startTime).toISOString(),
+    scan_date: scanStartedAt,
     total_items: totalItems,
     total_users: allCounters.length,
-    scan_duration_seconds: scanDurationSeconds,
+    scan_duration_seconds: Math.round(
+      (Date.now() - new Date(scanStartedAt).getTime()) / 1000
+    ),
     scan_complete: scanComplete,
     items_per_user_distribution,
     concentration,

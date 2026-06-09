@@ -5488,6 +5488,11 @@ Resources:
               - kms:Decrypt
             Resource:
               - !GetAtt DatabaseKmsKey.Arn
+          - Effect: Allow
+            Action:
+              - lambda:InvokeFunction
+            Resource:
+              - !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${Environment}-${AWS::StackName}-analyse-activity-log
 
   AnalyseActivityLogFunctionLogGroup:
     Type: AWS::Logs::LogGroup

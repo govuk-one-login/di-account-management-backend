@@ -1,5 +1,7 @@
 import { vi, describe, test, expect, beforeEach } from "vitest";
 import { Context } from "aws-lambda";
+import { mockClient } from "aws-sdk-client-mock";
+import { LambdaClient, InvokeCommand } from "@aws-sdk/client-lambda";
 
 vi.mock(
   "../../analyse-activity-log/scan-segment.js",
@@ -20,11 +22,15 @@ import { scanSegment } from "../../analyse-activity-log/scan-segment.js";
 
 const mockContext = {} as Context;
 const mockScanSegment = vi.mocked(scanSegment);
+const lambdaMock = mockClient(LambdaClient);
 
 describe("analyse-activity-log handler", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    lambdaMock.reset();
+    lambdaMock.on(InvokeCommand).resolves({ StatusCode: 202 });
     process.env.TABLE_NAME = "activity_log";
+    process.env.AWS_LAMBDA_FUNCTION_NAME = "test-function";
   });
 
   describe("input validation", () => {
@@ -104,9 +110,56 @@ describe("analyse-activity-log handler", () => {
       const result = await handler({ totalSegments: 2 }, mockContext);
 
       expect(result.scan_complete).toBe(true);
+      expect(lambdaMock.commandCalls(InvokeCommand)).toHaveLength(0);
     });
 
-    test("returns scan_complete false when segments incomplete", async () => {
+    test("throws when max invocations exceeded", async () => {
+      await expect(
+        handler({ totalSegments: 1, invocation: 21 }, mockContext)
+      ).rejects.toThrow("Exceeded maximum invocations (20)");
+    });
+
+    test("respects custom maxInvocations", async () => {
+      await expect(
+        handler(
+          { totalSegments: 1, maxInvocations: 3, invocation: 4 },
+          mockContext
+        )
+      ).rejects.toThrow("Exceeded maximum invocations (3)");
+    });
+
+    test("passes ageThresholds and scanStartedAt to next invocation", async () => {
+      const cursor = {
+        lastEvaluatedKey: { user_id: { S: "user-x" } },
+        lastUserId: "user-x",
+        lastUserCounters: [1, 0, 0, 0, 0, 0, 0],
+      };
+
+      mockScanSegment.mockResolvedValue({
+        perUserCounters: [[1, 0, 0, 0, 0, 0, 0]],
+        exclusiveAgeBuckets: [1, 0, 0, 0, 0, 0, 0],
+        exhausted: false,
+        cursor,
+      });
+
+      await handler({ totalSegments: 1 }, mockContext);
+
+      const invokeCall = lambdaMock.commandCalls(InvokeCommand)[0];
+      const payload = JSON.parse(
+        Buffer.from(invokeCall.args[0].input.Payload!).toString()
+      );
+
+      expect(payload.ageThresholds).toHaveLength(6);
+      expect(payload.scanStartedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+    });
+
+    test("self-invokes with cursors when segments incomplete", async () => {
+      const cursor = {
+        lastEvaluatedKey: { user_id: { S: "user-x" } },
+        lastUserId: "user-x",
+        lastUserCounters: [3, 1, 0, 0, 0, 0, 0],
+      };
+
       mockScanSegment
         .mockResolvedValueOnce({
           perUserCounters: [[3, 1, 0, 0, 0, 0, 0]],
@@ -117,16 +170,17 @@ describe("analyse-activity-log handler", () => {
           perUserCounters: [[2, 0, 0, 0, 0, 0, 0]],
           exclusiveAgeBuckets: [2, 0, 0, 0, 0, 0, 0],
           exhausted: false,
-          cursor: {
-            lastEvaluatedKey: { user_id: { S: "user-x" } },
-            lastUserId: "user-x",
-            lastUserCounters: [2, 0, 0, 0, 0, 0, 0],
-          },
+          cursor,
         });
 
-      const result = await handler({ totalSegments: 2 }, mockContext);
+      await handler({ totalSegments: 2 }, mockContext);
 
-      expect(result.scan_complete).toBe(false);
+      expect(lambdaMock.commandCalls(InvokeCommand)).toHaveLength(1);
+      const invokeCall = lambdaMock.commandCalls(InvokeCommand)[0];
+      const payload = JSON.parse(
+        Buffer.from(invokeCall.args[0].input.Payload!).toString()
+      );
+      expect(payload.cursors).toEqual([null, cursor]);
     });
 
     test("returns report from whatever was scanned", async () => {

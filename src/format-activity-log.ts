@@ -10,8 +10,11 @@ import { sendSqsMessage } from "./common/sqs.js";
 import { getEnvironmentVariable } from "./common/utils.js";
 import { filterClients, getClientIDs } from "di-account-management-rp-registry";
 import { Logger } from "@aws-lambda-powertools/logger";
+import { MetricUnit } from "@aws-lambda-powertools/metrics";
+import { initMetrics } from "./common/metrics.js";
 
 const logger = new Logger();
+const metrics = initMetrics("format-activity-log");
 
 const createNewActivityLogEntryFromTxmaEvent = (
   txmaEvent: TxmaEvent
@@ -41,6 +44,8 @@ export const validateTxmaEventBody = (txmaEvent: TxmaEvent): void => {
   }
 
   if (txmaClientId && !getClientIDs(ENVIRONMENT).includes(txmaClientId)) {
+    metrics.addDimension("clientId", txmaClientId);
+    metrics.addMetric("unknownClientIdReceived", MetricUnit.Count, 1);
     logger.warn(`The client: "${txmaClientId}" is not in the RP registry.`);
   }
 
@@ -100,4 +105,5 @@ export const handler = async (
       }
     })
   );
+  metrics.publishStoredMetrics();
 };

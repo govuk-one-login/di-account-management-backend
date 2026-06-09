@@ -87,7 +87,7 @@ export const handler = async (
     try {
       await dynamoDocClient.send(new TransactWriteCommand({ TransactItems: transactItems }));
     } catch (error) {
-      throw new Error(`Failed to update inactive account tracker for user ${userId}`, {
+      throw new Error(`Failed to update inactive account tracker for user ${userId} ${error}`, {
         cause: error
       });
     }

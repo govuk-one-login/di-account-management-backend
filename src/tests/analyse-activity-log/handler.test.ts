@@ -321,5 +321,177 @@ describe("analyse-activity-log handler", () => {
         }),
       });
     });
+
+    test("produces same report when data is split across two invocations", async () => {
+      // Invocation 1: segment 0 completes, segment 1 hits deadline mid-user
+      mockScanSegment
+        .mockResolvedValueOnce({
+          perUserCounters: [
+            [1, 0, 0, 0, 0, 0, 0],
+            [4, 2, 1, 0, 0, 0, 0],
+            [12, 10, 8, 5, 2, 0, 0],
+            [50, 45, 40, 30, 20, 10, 5],
+          ],
+          exclusiveAgeBuckets: [10, 12, 8, 10, 12, 10, 5],
+          exhausted: true,
+        })
+        .mockResolvedValueOnce({
+          perUserCounters: [
+            [1, 0, 0, 0, 0, 0, 0],
+            [3, 1, 0, 0, 0, 0, 0],
+          ],
+          exclusiveAgeBuckets: [3, 1, 0, 0, 0, 0, 0],
+          exhausted: false,
+          cursor: {
+            lastEvaluatedKey: { user_id: { S: "user-d" } },
+            lastUserId: "user-d",
+            lastUserCounters: [4, 3, 2, 1, 0, 0, 0],
+          },
+        });
+
+      await handler({ totalSegments: 2 }, mockContext);
+
+      // Extract the payload from the self-invocation
+      const invokeCall = lambdaMock.commandCalls(InvokeCommand)[0];
+      const nextEvent = JSON.parse(
+        Buffer.from(invokeCall.args[0].input.Payload!).toString()
+      );
+
+      // Invocation 2: segment 1 completes — cursor user (4 items) flushed, then 2 more users
+      vi.clearAllMocks();
+      mockScanSegment.mockResolvedValueOnce({
+        perUserCounters: [
+          [4, 3, 2, 1, 0, 0, 0],
+          [8, 6, 4, 2, 0, 0, 0],
+          [25, 20, 15, 10, 5, 2, 0],
+        ],
+        exclusiveAgeBuckets: [5, 9, 6, 5, 5, 2, 1],
+        exhausted: true,
+      });
+
+      const result = await handler(nextEvent, mockContext);
+
+      // 4 users from seg0 + 2 from seg1 inv1 + 3 from seg1 inv2 (includes resumed cursor user)
+      expect(result.total_users).toBe(9);
+      expect(result.total_items).toBe(108);
+      expect(result.items_per_user_distribution.max).toBe(50);
+      expect(result.items_by_age_bucket["0-1_months"].count).toBe(18);
+      expect(result.items_by_age_bucket["1-3_months"].count).toBe(22);
+      expect(result.items_by_age_bucket["3-6_months"].count).toBe(14);
+      expect(result.items_by_age_bucket["6-12_months"].count).toBe(15);
+      expect(result.items_by_age_bucket["12-18_months"].count).toBe(17);
+      expect(result.items_by_age_bucket["18-24_months"].count).toBe(12);
+      expect(result.items_by_age_bucket["24+_months"].count).toBe(6);
+    });
+
+    test("correctly maps cursors to segment indices across 3+ invocations", async () => {
+      // Invocation 2: 3 segments, only segment 2 still active
+      const cursor = {
+        lastEvaluatedKey: { user_id: { S: "user-z" } },
+        lastUserId: "user-z",
+        lastUserCounters: [1, 0, 0, 0, 0, 0, 0],
+      };
+
+      mockScanSegment.mockResolvedValueOnce({
+        perUserCounters: [[2, 0, 0, 0, 0, 0, 0]],
+        exclusiveAgeBuckets: [2, 0, 0, 0, 0, 0, 0],
+        exhausted: false,
+        cursor: {
+          lastEvaluatedKey: { user_id: { S: "user-zz" } },
+          lastUserId: "user-zz",
+          lastUserCounters: [1, 0, 0, 0, 0, 0, 0],
+        },
+      });
+
+      await handler(
+        {
+          totalSegments: 3,
+          cursors: [null, null, cursor],
+          accumulated: {
+            totalCountFrequency: { 5: 2 },
+            ageBuckets: [10, 0, 0, 0, 0, 0, 0],
+            ttlRetainedFrequency: {
+              "3_months": { 5: 2 },
+              "6_months": { 5: 2 },
+              "12_months": { 5: 2 },
+              "18_months": { 5: 2 },
+              "24_months": { 5: 2 },
+            },
+            usersFullyRemovedByTtl: {
+              "3_months": 0,
+              "6_months": 0,
+              "12_months": 0,
+              "18_months": 0,
+              "24_months": 0,
+            },
+          },
+          invocation: 3,
+        },
+        mockContext
+      );
+
+      // Should only scan segment 2
+      expect(mockScanSegment).toHaveBeenCalledTimes(1);
+      expect(mockScanSegment).toHaveBeenCalledWith(
+        expect.anything(),
+        "activity_log",
+        2,
+        3,
+        expect.any(Array),
+        expect.objectContaining({ resumeFrom: cursor })
+      );
+
+      // nextCursors should preserve segment indices
+      const invokeCall = lambdaMock.commandCalls(InvokeCommand)[0];
+      const payload = JSON.parse(
+        Buffer.from(invokeCall.args[0].input.Payload!).toString()
+      );
+      expect(payload.cursors).toHaveLength(3);
+      expect(payload.cursors[0]).toBeNull();
+      expect(payload.cursors[1]).toBeNull();
+      expect(payload.cursors[2]).not.toBeNull();
+      expect(payload.cursors[2].lastUserId).toBe("user-zz");
+    });
+
+    test("throws when payload exceeds 256KB", async () => {
+      const largeCursor = {
+        lastEvaluatedKey: { user_id: { S: "x".repeat(260000) } },
+        lastUserId: "user-x",
+        lastUserCounters: [1, 0, 0, 0, 0, 0, 0],
+      };
+
+      mockScanSegment.mockResolvedValue({
+        perUserCounters: [[1, 0, 0, 0, 0, 0, 0]],
+        exclusiveAgeBuckets: [1, 0, 0, 0, 0, 0, 0],
+        exhausted: false,
+        cursor: largeCursor,
+      });
+
+      await expect(handler({ totalSegments: 1 }, mockContext)).rejects.toThrow(
+        "Payload too large for async invoke"
+      );
+    });
+
+    test("throws when async invoke returns non-202 status", async () => {
+      lambdaMock.reset();
+      lambdaMock.on(InvokeCommand).resolves({ StatusCode: 500 });
+
+      const cursor = {
+        lastEvaluatedKey: { user_id: { S: "user-x" } },
+        lastUserId: "user-x",
+        lastUserCounters: [1, 0, 0, 0, 0, 0, 0],
+      };
+
+      mockScanSegment.mockResolvedValue({
+        perUserCounters: [[1, 0, 0, 0, 0, 0, 0]],
+        exclusiveAgeBuckets: [1, 0, 0, 0, 0, 0, 0],
+        exhausted: false,
+        cursor,
+      });
+
+      await expect(handler({ totalSegments: 1 }, mockContext)).rejects.toThrow(
+        "Async invoke returned status 500"
+      );
+    });
   });
 });

@@ -7,24 +7,26 @@ import {
 } from "@aws-sdk/client-lambda";
 import { Context } from "aws-lambda";
 import { scanSegment, SegmentCursor } from "./scan-segment.js";
+import { AgeThresholds, ageThresholdsFromNow } from "./age-thresholds.js";
 import {
-  AgeThresholds,
-  ageThresholdsFromNow,
-  CounterIndex,
-} from "./age-thresholds.js";
+  buildChunkResult,
+  mergeChunkResults,
+  emptyChunkResult,
+  ChunkResult,
+} from "./chunk-result.js";
 import {
-  computePercentiles,
-  computeConcentration,
-  computeUserBuckets,
+  computePercentilesFromFrequency,
+  computeConcentrationFromFrequency,
+  computeUserBucketsFromFrequency,
   computeItemsByAgeBucket,
-  computeTtlSimulation,
+  computeTtlSimulationFromFrequency,
   AGE_BUCKET_LABELS,
   PercentileResult,
   ConcentrationResult,
   UserBucket,
   TtlSimulationResult,
 } from "./compute-report.js";
-import { getEnvironmentVariable, zeroedArray } from "../common/utils.js";
+import { getEnvironmentVariable } from "../common/utils.js";
 
 const SCAN_BUDGET_MS = 13 * 60 * 1000;
 const MAX_INVOCATIONS = 20;
@@ -41,6 +43,7 @@ export interface AnalyseActivityLogEvent {
   invocation?: number;
   ageThresholds?: AgeThresholds;
   scanStartedAt?: string;
+  accumulated?: ChunkResult;
 }
 
 export interface ScanReport {
@@ -125,6 +128,16 @@ export const handler = async (
   );
 
   const scanDurationSeconds = Math.round((Date.now() - startTime) / 1000);
+
+  const chunkResult = results.reduce((acc, r) => {
+    const partial = buildChunkResult(r.perUserCounters, r.exclusiveAgeBuckets);
+    return mergeChunkResults(acc, partial);
+  }, emptyChunkResult(AGE_BUCKET_LABELS.length));
+
+  const accumulated = event.accumulated
+    ? mergeChunkResults(event.accumulated, chunkResult)
+    : chunkResult;
+
   const scanComplete = results.every((r) => r.exhausted);
 
   if (!scanComplete) {
@@ -144,6 +157,7 @@ export const handler = async (
       invocation: invocation + 1,
       ageThresholds,
       scanStartedAt,
+      accumulated,
     };
 
     const payload = Buffer.from(JSON.stringify(nextEvent));
@@ -175,76 +189,48 @@ export const handler = async (
 
   logger.info("Compiling report");
 
-  const allCounters = results.flatMap((r) => r.perUserCounters);
-
-  if (allCounters.length === 0) {
+  const frequency = accumulated.totalCountFrequency;
+  if (Object.keys(frequency).length === 0) {
     throw new Error("Scan returned no items");
   }
 
-  const totalCounts = new Array(allCounters.length);
   let totalItems = 0;
-  for (let i = 0; i < allCounters.length; i++) {
-    const count = allCounters[i][CounterIndex.TOTAL];
-    totalCounts[i] = count;
-    totalItems += count;
+  let totalUsers = 0;
+  for (const [count, users] of Object.entries(frequency)) {
+    totalItems += Number(count) * users;
+    totalUsers += users;
   }
 
-  totalCounts.sort((a, b) => a - b);
-  const items_per_user_distribution = computePercentiles(totalCounts);
+  const TTL_KEYS = [
+    "3_months",
+    "6_months",
+    "12_months",
+    "18_months",
+    "24_months",
+  ] as const;
 
-  totalCounts.reverse();
-  const concentration = computeConcentration(totalCounts, totalItems);
-
-  const items_per_user_buckets = computeUserBuckets(totalCounts);
-
-  const ageBucketSums = zeroedArray(AGE_BUCKET_LABELS.length);
-  for (const r of results) {
-    for (let i = 0; i < r.exclusiveAgeBuckets.length; i++) {
-      ageBucketSums[i] += r.exclusiveAgeBuckets[i];
-    }
+  const ttl_impact_simulation: Record<string, TtlSimulationResult> = {};
+  for (const key of TTL_KEYS) {
+    ttl_impact_simulation[key] = computeTtlSimulationFromFrequency(
+      accumulated.ttlRetainedFrequency[key],
+      accumulated.usersFullyRemovedByTtl[key],
+      totalItems,
+      totalUsers
+    );
   }
-  const items_by_age_bucket = computeItemsByAgeBucket(ageBucketSums);
-
-  const ttl_impact_simulation: Record<string, TtlSimulationResult> = {
-    "3_months": computeTtlSimulation(
-      allCounters,
-      CounterIndex.OLDER_3M,
-      totalItems
-    ),
-    "6_months": computeTtlSimulation(
-      allCounters,
-      CounterIndex.OLDER_6M,
-      totalItems
-    ),
-    "12_months": computeTtlSimulation(
-      allCounters,
-      CounterIndex.OLDER_12M,
-      totalItems
-    ),
-    "18_months": computeTtlSimulation(
-      allCounters,
-      CounterIndex.OLDER_18M,
-      totalItems
-    ),
-    "24_months": computeTtlSimulation(
-      allCounters,
-      CounterIndex.OLDER_24M,
-      totalItems
-    ),
-  };
 
   const report: ScanReport = {
     scan_date: scanStartedAt,
     total_items: totalItems,
-    total_users: allCounters.length,
+    total_users: totalUsers,
     scan_duration_seconds: Math.round(
       (Date.now() - new Date(scanStartedAt).getTime()) / 1000
     ),
     scan_complete: scanComplete,
-    items_per_user_distribution,
-    concentration,
-    items_per_user_buckets,
-    items_by_age_bucket,
+    items_per_user_distribution: computePercentilesFromFrequency(frequency),
+    concentration: computeConcentrationFromFrequency(frequency),
+    items_per_user_buckets: computeUserBucketsFromFrequency(frequency),
+    items_by_age_bucket: computeItemsByAgeBucket(accumulated.ageBuckets),
     ttl_impact_simulation,
   };
 

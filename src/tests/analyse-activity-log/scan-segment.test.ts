@@ -238,4 +238,25 @@ describe("scanSegment", () => {
       expect(result.perUserCounters[1][CounterIndex.TOTAL]).toBe(1);
     });
   });
+
+  test("skips items with missing user_id or invalid timestamp", async () => {
+    dynamoMock.on(ScanCommand).resolves({
+      Items: [
+        { timestamp: { N: String(NOW_SECONDS * 1000) } },
+        { user_id: { S: "user-a" }, timestamp: { N: "not-a-number" } },
+        makeItem("user-b", NOW_SECONDS - 10),
+      ],
+    });
+
+    const result = await scanSegment(
+      dynamoMock as unknown as DynamoDBClient,
+      "table",
+      0,
+      1,
+      thresholds
+    );
+
+    expect(result.perUserCounters).toHaveLength(1);
+    expect(result.perUserCounters[0][CounterIndex.TOTAL]).toBe(1);
+  });
 });

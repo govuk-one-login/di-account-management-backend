@@ -107,7 +107,7 @@ export const scanSegment = async (
 
     lastEvaluatedKey = response.LastEvaluatedKey;
 
-    if (hasDeadline && lastEvaluatedKey && Date.now() >= options!.deadlineMs!) {
+    if (hasDeadline && lastEvaluatedKey && Date.now() >= options.deadlineMs!) {
       logger.info("Segment deadline reached", {
         segment,
         items: state.totalItems,

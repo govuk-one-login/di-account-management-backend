@@ -30,3 +30,21 @@ export function getEnvironmentVariable(name: string): string {
 
 export const zeroedArray = (length: number): number[] =>
   new Array(length).fill(0);
+
+const MILLISECOND_THRESHOLD = 1_000_000_000_000;
+
+/**
+ * Normalises a timestamp to seconds, handling both seconds and milliseconds formats.
+ *
+ * Values >= 1_000_000_000_000 are treated as milliseconds and divided by 1000.
+ * Values below this threshold are assumed to already be in seconds.
+ *
+ * @example
+ * normaliseTimestamp(1_700_000_000)     // seconds → 1_700_000_000
+ * normaliseTimestamp(1_700_000_000_000) // milliseconds → 1_700_000_000
+ *
+ * @param value - Epoch timestamp in either seconds or milliseconds
+ * @returns Epoch timestamp in seconds (floored)
+ */
+export const normaliseTimestamp = (value: number): number =>
+  value >= MILLISECOND_THRESHOLD ? Math.floor(value / 1000) : value;

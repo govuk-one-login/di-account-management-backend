@@ -5,7 +5,7 @@ import {
   ScanCommandOutput,
 } from "@aws-sdk/client-dynamodb";
 import { Logger } from "@aws-lambda-powertools/logger";
-import { zeroedArray } from "../common/utils.js";
+import { zeroedArray, normaliseTimestamp } from "../common/utils.js";
 import {
   AgeThresholds,
   CounterIndex,
@@ -33,7 +33,7 @@ const processItem = (
   }
 ): typeof state => {
   const userId = item.user_id?.S;
-  const ts = Math.floor(Number(item.timestamp?.N) / 1000);
+  const ts = normaliseTimestamp(Number(item.timestamp?.N));
   if (!userId || Number.isNaN(ts)) return state;
 
   if (userId !== state.currentUserId) {

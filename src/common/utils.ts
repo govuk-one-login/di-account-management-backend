@@ -27,3 +27,6 @@ export function getEnvironmentVariable(name: string): string {
   }
   return value;
 }
+
+export const zeroedArray = (length: number): number[] =>
+  new Array(length).fill(0);

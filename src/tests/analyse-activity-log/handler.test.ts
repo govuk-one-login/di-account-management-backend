@@ -54,10 +54,11 @@ describe("analyse-activity-log handler", () => {
   });
 
   describe("scan orchestration", () => {
-    test("calls scanSegment once per segment", async () => {
+    test("calls scanSegment with deadline option", async () => {
       mockScanSegment.mockResolvedValue({
         perUserCounters: [[1, 0, 0, 0, 0, 0, 0]],
         exclusiveAgeBuckets: [1, 0, 0, 0, 0, 0, 0],
+        exhausted: true,
       });
 
       await handler({ totalSegments: 3 }, mockContext);
@@ -68,21 +69,8 @@ describe("analyse-activity-log handler", () => {
         "activity_log",
         0,
         3,
-        expect.any(Array)
-      );
-      expect(mockScanSegment).toHaveBeenCalledWith(
-        expect.anything(),
-        "activity_log",
-        1,
-        3,
-        expect.any(Array)
-      );
-      expect(mockScanSegment).toHaveBeenCalledWith(
-        expect.anything(),
-        "activity_log",
-        2,
-        3,
-        expect.any(Array)
+        expect.any(Array),
+        expect.objectContaining({ deadlineMs: expect.any(Number) })
       );
     });
 
@@ -98,6 +86,7 @@ describe("analyse-activity-log handler", () => {
       mockScanSegment.mockResolvedValue({
         perUserCounters: [],
         exclusiveAgeBuckets: [0, 0, 0, 0, 0, 0, 0],
+        exhausted: true,
       });
 
       await expect(handler({ totalSegments: 1 }, mockContext)).rejects.toThrow(
@@ -105,7 +94,42 @@ describe("analyse-activity-log handler", () => {
       );
     });
 
-    test("returns summed totals from all segments", async () => {
+    test("returns scan_complete true when all segments exhaust", async () => {
+      mockScanSegment.mockResolvedValue({
+        perUserCounters: [[3, 1, 0, 0, 0, 0, 0]],
+        exclusiveAgeBuckets: [2, 1, 0, 0, 0, 0, 0],
+        exhausted: true,
+      });
+
+      const result = await handler({ totalSegments: 2 }, mockContext);
+
+      expect(result.scan_complete).toBe(true);
+    });
+
+    test("returns scan_complete false when segments incomplete", async () => {
+      mockScanSegment
+        .mockResolvedValueOnce({
+          perUserCounters: [[3, 1, 0, 0, 0, 0, 0]],
+          exclusiveAgeBuckets: [2, 1, 0, 0, 0, 0, 0],
+          exhausted: true,
+        })
+        .mockResolvedValueOnce({
+          perUserCounters: [[2, 0, 0, 0, 0, 0, 0]],
+          exclusiveAgeBuckets: [2, 0, 0, 0, 0, 0, 0],
+          exhausted: false,
+          cursor: {
+            lastEvaluatedKey: { user_id: { S: "user-x" } },
+            lastUserId: "user-x",
+            lastUserCounters: [2, 0, 0, 0, 0, 0, 0],
+          },
+        });
+
+      const result = await handler({ totalSegments: 2 }, mockContext);
+
+      expect(result.scan_complete).toBe(false);
+    });
+
+    test("returns report from whatever was scanned", async () => {
       mockScanSegment
         .mockResolvedValueOnce({
           perUserCounters: [
@@ -113,10 +137,12 @@ describe("analyse-activity-log handler", () => {
             [5, 2, 1, 0, 0, 0, 0],
           ],
           exclusiveAgeBuckets: [5, 2, 1, 0, 0, 0, 0],
+          exhausted: true,
         })
         .mockResolvedValueOnce({
           perUserCounters: [[2, 0, 0, 0, 0, 0, 0]],
           exclusiveAgeBuckets: [2, 0, 0, 0, 0, 0, 0],
+          exhausted: true,
         });
 
       const result = await handler({ totalSegments: 2 }, mockContext);
@@ -144,6 +170,7 @@ describe("analyse-activity-log handler", () => {
             [50, 45, 40, 30, 20, 10, 5],
           ],
           exclusiveAgeBuckets: [10, 12, 8, 10, 12, 10, 5],
+          exhausted: true,
         })
         .mockResolvedValueOnce({
           perUserCounters: [
@@ -153,6 +180,7 @@ describe("analyse-activity-log handler", () => {
             [25, 20, 15, 10, 5, 2, 0],
           ],
           exclusiveAgeBuckets: [8, 10, 6, 5, 5, 2, 1],
+          exhausted: true,
         });
 
       const result = await handler({ totalSegments: 2 }, mockContext);

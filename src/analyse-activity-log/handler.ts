@@ -17,6 +17,8 @@ import {
 } from "./compute-report.js";
 import { getEnvironmentVariable, zeroedArray } from "../common/utils.js";
 
+const SCAN_BUDGET_MS = 13 * 60 * 1000;
+
 const logger = new Logger({ serviceName: "analyse-activity-log" });
 const client = new DynamoDBClient({});
 
@@ -29,6 +31,7 @@ export interface ScanReport {
   total_items: number;
   total_users: number;
   scan_duration_seconds: number;
+  scan_complete: boolean;
   items_per_user_distribution: PercentileResult;
   concentration: ConcentrationResult;
   items_per_user_buckets: Record<string, UserBucket>;
@@ -53,6 +56,7 @@ export const handler = async (
   logger.info("Analysis started", { totalSegments: event.totalSegments });
 
   const startTime = Date.now();
+  const deadlineMs = startTime + SCAN_BUDGET_MS;
   const ageThresholds = ageThresholdsFromNow(Math.floor(startTime / 1000));
   const tableName = getEnvironmentVariable("TABLE_NAME");
 
@@ -64,12 +68,23 @@ export const handler = async (
         tableName,
         segment,
         event.totalSegments,
-        ageThresholds
+        ageThresholds,
+        {
+          deadlineMs,
+        }
       )
     )
   );
 
   const scanDurationSeconds = Math.round((Date.now() - startTime) / 1000);
+  const scanComplete = results.every((r) => r.exhausted);
+
+  if (!scanComplete) {
+    logger.info("Scan incomplete — deadline reached", {
+      incompleteSegments: results.filter((r) => !r.exhausted).length,
+      scanDurationSeconds,
+    });
+  }
 
   logger.info("Compiling report");
 
@@ -136,6 +151,7 @@ export const handler = async (
     total_items: totalItems,
     total_users: allCounters.length,
     scan_duration_seconds: scanDurationSeconds,
+    scan_complete: scanComplete,
     items_per_user_distribution,
     concentration,
     items_per_user_buckets,

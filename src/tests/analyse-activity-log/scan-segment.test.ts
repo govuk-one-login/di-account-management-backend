@@ -24,7 +24,7 @@ describe("scanSegment", () => {
     dynamoMock.reset();
   });
 
-  test("empty segment returns zero counts", async () => {
+  test("empty segment returns exhausted true", async () => {
     dynamoMock.on(ScanCommand).resolves({ Items: [] });
 
     const result = await scanSegment(
@@ -36,6 +36,7 @@ describe("scanSegment", () => {
     );
 
     expect(result.perUserCounters).toHaveLength(0);
+    expect(result.exhausted).toBe(true);
   });
 
   test("single-item user", async () => {
@@ -53,6 +54,7 @@ describe("scanSegment", () => {
 
     expect(result.perUserCounters).toHaveLength(1);
     expect(result.perUserCounters[0][CounterIndex.TOTAL]).toBe(1);
+    expect(result.exhausted).toBe(true);
   });
 
   test("3 users across 2 pages with middle user spanning page boundary", async () => {
@@ -85,6 +87,7 @@ describe("scanSegment", () => {
     expect(result.perUserCounters[0][CounterIndex.TOTAL]).toBe(2);
     expect(result.perUserCounters[1][CounterIndex.TOTAL]).toBe(2);
     expect(result.perUserCounters[2][CounterIndex.TOTAL]).toBe(1);
+    expect(result.exhausted).toBe(true);
   });
 
   test("age bucket counting at threshold boundaries", async () => {
@@ -127,5 +130,112 @@ describe("scanSegment", () => {
     expect(result.perUserCounters[0][CounterIndex.OLDER_18M]).toBe(2);
     expect(result.perUserCounters[0][CounterIndex.OLDER_24M]).toBe(1);
     expect(result.exclusiveAgeBuckets).toEqual([1, 2, 1, 1, 1, 1, 1]);
+  });
+
+  describe("time-budgeted scanning", () => {
+    test("stops and returns cursor when deadline reached", async () => {
+      const lastKey = { user_id: { S: "user-b" } };
+
+      dynamoMock
+        .on(ScanCommand)
+        .resolvesOnce({
+          Items: [
+            makeItem("user-a", NOW_SECONDS - 10),
+            makeItem("user-b", NOW_SECONDS - 20),
+          ],
+          LastEvaluatedKey: lastKey,
+        })
+        .resolvesOnce({
+          Items: [makeItem("user-c", NOW_SECONDS - 30)],
+        });
+
+      const result = await scanSegment(
+        dynamoMock as unknown as DynamoDBClient,
+        "table",
+        0,
+        1,
+        thresholds,
+        { deadlineMs: Date.now() - 1 }
+      );
+
+      expect(result.exhausted).toBe(false);
+      expect(result.cursor).toBeDefined();
+      expect(result.cursor!.lastEvaluatedKey).toEqual(lastKey);
+      expect(result.cursor!.lastUserId).toBe("user-b");
+      expect(result.cursor!.lastUserCounters[CounterIndex.TOTAL]).toBe(1);
+    });
+
+    test("completes normally when deadline not reached", async () => {
+      dynamoMock.on(ScanCommand).resolves({
+        Items: [makeItem("user-a", NOW_SECONDS - 10)],
+      });
+
+      const result = await scanSegment(
+        dynamoMock as unknown as DynamoDBClient,
+        "table",
+        0,
+        1,
+        thresholds,
+        { deadlineMs: Date.now() + 60000 }
+      );
+
+      expect(result.exhausted).toBe(true);
+      expect(result.cursor).toBeUndefined();
+    });
+  });
+
+  describe("resuming from cursor", () => {
+    test("resumes with carried-over user counters", async () => {
+      dynamoMock.on(ScanCommand).resolves({
+        Items: [
+          makeItem("user-b", NOW_SECONDS - 10),
+          makeItem("user-c", NOW_SECONDS - 20),
+        ],
+      });
+
+      const result = await scanSegment(
+        dynamoMock as unknown as DynamoDBClient,
+        "table",
+        0,
+        1,
+        thresholds,
+        {
+          resumeFrom: {
+            lastEvaluatedKey: { user_id: { S: "user-a" } },
+            lastUserId: "user-b",
+            lastUserCounters: [2, 1, 0, 0, 0, 0, 0],
+          },
+        }
+      );
+
+      expect(result.perUserCounters).toHaveLength(2);
+      expect(result.perUserCounters[0][CounterIndex.TOTAL]).toBe(3);
+      expect(result.perUserCounters[1][CounterIndex.TOTAL]).toBe(1);
+    });
+
+    test("flushes resumed user if next page has different user", async () => {
+      dynamoMock.on(ScanCommand).resolves({
+        Items: [makeItem("user-c", NOW_SECONDS - 10)],
+      });
+
+      const result = await scanSegment(
+        dynamoMock as unknown as DynamoDBClient,
+        "table",
+        0,
+        1,
+        thresholds,
+        {
+          resumeFrom: {
+            lastEvaluatedKey: { user_id: { S: "user-b" } },
+            lastUserId: "user-b",
+            lastUserCounters: [5, 3, 2, 0, 0, 0, 0],
+          },
+        }
+      );
+
+      expect(result.perUserCounters).toHaveLength(2);
+      expect(result.perUserCounters[0][CounterIndex.TOTAL]).toBe(5);
+      expect(result.perUserCounters[1][CounterIndex.TOTAL]).toBe(1);
+    });
   });
 });

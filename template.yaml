@@ -858,7 +858,10 @@ Resources:
           NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
         Alarms:
-          - !Ref SaveRawEventsFunctionSuccessRate
+          Fn::If:
+            - IsNotDevelopmentOrDemo
+            - - !Ref SaveRawEventsFunctionSuccessRate
+            - - !Ref AWS::NoValue
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -1092,7 +1095,10 @@ Resources:
           NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
         Alarms:
-          - !Ref QueryUserServicesFunctionSuccessRate
+          Fn::If:
+            - IsNotDevelopmentOrDemo
+            - - !Ref QueryUserServicesFunctionSuccessRate
+            - - !Ref AWS::NoValue
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -1352,7 +1358,10 @@ Resources:
           ENVIRONMENT: !Ref Environment
       DeploymentPreference:
         Alarms:
-          - !Ref FormatUserServicesFunctionSuccessRate
+          Fn::If:
+            - IsNotDevelopmentOrDemo
+            - - !Ref FormatUserServicesFunctionSuccessRate
+            - - !Ref AWS::NoValue
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -1630,7 +1639,10 @@ Resources:
           NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
         Alarms:
-          - !Ref WriteUserServicesFunctionSuccessRate
+          Fn::If:
+            - IsNotDevelopmentOrDemo
+            - - !Ref WriteUserServicesFunctionSuccessRate
+            - - !Ref AWS::NoValue
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -1940,7 +1952,10 @@ Resources:
           NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
         Alarms:
-          - !Ref DeleteUserServicesFunctionSuccessRate
+          Fn::If:
+            - IsNotDevelopmentOrDemo
+            - - !Ref DeleteUserServicesFunctionSuccessRate
+            - - !Ref AWS::NoValue
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -2528,7 +2543,10 @@ Resources:
           NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
         Alarms:
-          - !Ref WriteActivityLogFunctionSuccessRate
+          Fn::If:
+            - IsNotDevelopmentOrDemo
+            - - !Ref WriteActivityLogFunctionSuccessRate
+            - - !Ref AWS::NoValue
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -2772,7 +2790,10 @@ Resources:
           NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
         Alarms:
-          - !Ref FormatActivityLogFunctionSuccessRate
+          Fn::If:
+            - IsNotDevelopmentOrDemo
+            - - !Ref FormatActivityLogFunctionSuccessRate
+            - - !Ref AWS::NoValue
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -3079,7 +3100,10 @@ Resources:
           NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
         Alarms:
-          - !Ref UpdateInactiveAccountTrackerFunctionSuccessRate
+          Fn::If:
+            - IsNotDevelopmentOrDemo
+            - - !Ref UpdateInactiveAccountTrackerFunctionSuccessRate
+            - - !Ref AWS::NoValue
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -3294,7 +3318,10 @@ Resources:
           NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
         Alarms:
-          - !Ref DeleteActivityLogFunctionSuccessRate
+          Fn::If:
+            - IsNotDevelopmentOrDemo
+            - - !Ref DeleteActivityLogFunctionSuccessRate
+            - - !Ref AWS::NoValue
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -3557,7 +3584,10 @@ Resources:
           NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
         Alarms:
-          - !Ref MarkActivityReportedFunctionSuccessRate
+          Fn::If:
+            - IsNotDevelopmentOrDemo
+            - - !Ref MarkActivityReportedFunctionSuccessRate
+            - - !Ref AWS::NoValue
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -3699,7 +3729,10 @@ Resources:
           NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
         Alarms:
-          - !Ref SendSuspiciousActivityFunctionSuccessRate
+          Fn::If:
+            - IsNotDevelopmentOrDemo
+            - - !Ref SendSuspiciousActivityFunctionSuccessRate
+            - - !Ref AWS::NoValue
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -3854,7 +3887,10 @@ Resources:
           NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
         Alarms:
-          - !Ref SendConfEmailFunctionSuccessRate
+          Fn::If:
+            - IsNotDevelopmentOrDemo
+            - - !Ref SendConfEmailFunctionSuccessRate
+            - - !Ref AWS::NoValue
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -4006,7 +4042,10 @@ Resources:
           NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
         Alarms:
-          - !Ref CreateSupportTicketFunctionSuccessRate
+          Fn::If:
+            - IsNotDevelopmentOrDemo
+            - - !Ref CreateSupportTicketFunctionSuccessRate
+            - - !Ref AWS::NoValue
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -4264,7 +4303,10 @@ Resources:
           NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
         Alarms:
-          - !Ref TriggerSuspiciousActivityStepFunctionSuccessRate
+          Fn::If:
+            - IsNotDevelopmentOrDemo
+            - - !Ref TriggerSuspiciousActivityStepFunctionSuccessRate
+            - - !Ref AWS::NoValue
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -5245,7 +5287,10 @@ Resources:
             ]
       DeploymentPreference:
         Alarms:
-          - !Ref NotificationServiceFunctionSuccessRate
+          Fn::If:
+            - IsNotDevelopmentOrDemo
+            - - !Ref NotificationServiceFunctionSuccessRate
+            - - !Ref AWS::NoValue
     Metadata:
       BuildMethod: esbuild
       BuildProperties:

@@ -16,9 +16,9 @@ Parameters:
     Description: The name of the stack that defines the Alerting resources
     Type: String
     Default: platform-alerting
-  InactiveAccountTrackerTableName:
+  InactveAccountTrackerStoreTableName:
     Type: String
-    Default: inactive_account_tracker_store
+    Default: inactive_account_tracker
   UserNotificationsTableName:
     Type: String
     Default: user_notifications
@@ -602,7 +602,7 @@ Resources:
           Projection:
             ProjectionType: ALL
       BillingMode: PAY_PER_REQUEST
-      TableName: !Ref InactiveAccountTrackerTableName
+      TableName: !Ref InactveAccountTrackerStoreTableName      
       KeySchema:
         - AttributeName: dateForDeletion
           KeyType: HASH
@@ -3116,7 +3116,7 @@ Resources:
         Variables:
           NODE_OPTIONS: --enable-source-maps
           ACCOUNT_SAVED_NOTIFICATION_QUEUE_URL: !Ref AccountSavedNotificationQueue
-          INACTIVE_ACCOUNT_TRACKER_TABLE_NAME: !Ref InactiveAccountTrackerTableName
+          INACTIVE_ACCOUNT_TRACKER_TABLE_NAME: !Ref InactveAccountTrackerStoreTableName
           USER_NOTIFICATIONS_TABLE_NAME: !Ref UserNotificationsTableName
           OLH_CLIENT_ID:
             !FindInMap [

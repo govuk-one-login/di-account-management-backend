@@ -1602,7 +1602,7 @@ Resources:
       Statistic: Sum
       Period: 300
       EvaluationPeriods: 1
-      Threshold: 1
+      Threshold: 20
       ComparisonOperator: GreaterThanOrEqualToThreshold
       TreatMissingData: notBreaching
       ActionsEnabled: true
@@ -3057,7 +3057,7 @@ Resources:
       Statistic: Sum
       Period: 300
       EvaluationPeriods: 1
-      Threshold: 1
+      Threshold: 20
       ComparisonOperator: GreaterThanOrEqualToThreshold
       TreatMissingData: notBreaching
       ActionsEnabled: true

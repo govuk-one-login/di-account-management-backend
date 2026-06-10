@@ -22,6 +22,16 @@ import {
 import { sendSqsMessage } from "../common/sqs.js";
 import { Logger } from "@aws-lambda-powertools/logger";
 
+const mockMetrics = vi.hoisted(() => ({
+  addDimension: vi.fn(),
+  addMetric: vi.fn(),
+  publishStoredMetrics: vi.fn(),
+}));
+const mockInitMetrics = vi.hoisted(() => vi.fn(() => mockMetrics));
+vi.mock("../common/metrics.js", () => ({
+  initMetrics: mockInitMetrics,
+}));
+
 const sqsMock = mockClient(SQSClient);
 
 describe("newServicePresenter", () => {
@@ -388,6 +398,23 @@ describe("handler", () => {
     expect(Logger.prototype.warn).toHaveBeenCalledWith(
       'The client: "UNKNOWN" is not in the RP registry.'
     );
+    expect(mockMetrics.addDimension).toHaveBeenCalledWith("clientId", "UNKNOWN");
+    expect(mockMetrics.addMetric).toHaveBeenCalledWith("unknownClientIdReceived", "Count", 1);
+    expect(mockMetrics.publishStoredMetrics).toHaveBeenCalled();
+  });
+
+  test("does not emit metric when client_id is recognised", async () => {
+    const emptyServiceList = [] as Service[];
+    const known_client_id = "EMGmY82k-92QSakDl_9keKDFmZY"; //home non prod ID
+    const inputSQSEvent = makeSQSInputFixture([
+      {
+        TxmaEvent: makeTxmaEvent(known_client_id, userId),
+        ServiceList: emptyServiceList,
+      },
+    ]);
+
+    await handler({ Records: inputSQSEvent }, {} as Context);
+    expect(mockMetrics.addMetric).not.toHaveBeenCalled();
   });
 });
 

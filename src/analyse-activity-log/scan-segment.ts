@@ -19,6 +19,17 @@ export interface SegmentResult {
   exclusiveAgeBuckets: number[];
 }
 
+export interface SegmentCursor {
+  lastEvaluatedKey: Record<string, AttributeValue>;
+  lastUserId: string;
+  lastUserCounters: number[];
+}
+
+export interface TimedSegmentResult extends SegmentResult {
+  exhausted: boolean;
+  cursor?: SegmentCursor;
+}
+
 const logger = new Logger({ serviceName: "analyse-activity-log" });
 
 const processItem = (
@@ -57,17 +68,22 @@ export const scanSegment = async (
   tableName: string,
   segment: number,
   totalSegments: number,
-  ageThresholds: AgeThresholds
-): Promise<SegmentResult> => {
+  ageThresholds: AgeThresholds,
+  options?: { deadlineMs?: number; resumeFrom?: SegmentCursor }
+): Promise<TimedSegmentResult> => {
   const state = {
     perUserCounters: [] as number[][],
     exclusiveAgeBuckets: zeroedArray(AGE_BUCKET_LABELS.length),
-    currentUserId: null as string | null,
-    counters: zeroedArray(Object.keys(CounterIndex).length),
+    currentUserId: options?.resumeFrom?.lastUserId ?? null,
+    counters: options?.resumeFrom?.lastUserCounters
+      ? [...options.resumeFrom.lastUserCounters]
+      : zeroedArray(Object.keys(CounterIndex).length),
     totalItems: 0,
   };
 
-  let lastEvaluatedKey: ScanCommandOutput["LastEvaluatedKey"];
+  let lastEvaluatedKey: ScanCommandOutput["LastEvaluatedKey"] =
+    options?.resumeFrom?.lastEvaluatedKey;
+  const hasDeadline = options?.deadlineMs !== undefined;
 
   do {
     const response = await client.send(
@@ -90,6 +106,24 @@ export const scanSegment = async (
     }
 
     lastEvaluatedKey = response.LastEvaluatedKey;
+
+    if (hasDeadline && lastEvaluatedKey && Date.now() >= options.deadlineMs!) {
+      logger.info("Segment deadline reached", {
+        segment,
+        items: state.totalItems,
+      });
+
+      return {
+        perUserCounters: state.perUserCounters,
+        exclusiveAgeBuckets: state.exclusiveAgeBuckets,
+        exhausted: false,
+        cursor: {
+          lastEvaluatedKey,
+          lastUserId: state.currentUserId!,
+          lastUserCounters: state.counters,
+        },
+      };
+    }
   } while (lastEvaluatedKey);
 
   if (state.currentUserId !== null) {
@@ -105,5 +139,6 @@ export const scanSegment = async (
   return {
     perUserCounters: state.perUserCounters,
     exclusiveAgeBuckets: state.exclusiveAgeBuckets,
+    exhausted: true,
   };
 };

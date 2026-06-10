@@ -14,57 +14,6 @@ export interface ConcentrationResult {
   top_10_pct_users_own_pct_of_items: number;
 }
 
-const percentileAtRank = (sorted: number[], percentile: number): number => {
-  const index = Math.ceil((percentile / 100) * sorted.length) - 1;
-  return sorted[Math.max(0, index)];
-};
-
-export const computePercentiles = (
-  sortedCounts: number[]
-): PercentileResult => {
-  const sum = sortedCounts.reduce((a, b) => a + b, 0);
-  return {
-    mean: sum / sortedCounts.length,
-    median: percentileAtRank(sortedCounts, 50),
-    p75: percentileAtRank(sortedCounts, 75),
-    p90: percentileAtRank(sortedCounts, 90),
-    p95: percentileAtRank(sortedCounts, 95),
-    p99: percentileAtRank(sortedCounts, 99),
-    max: sortedCounts.at(-1)!,
-  };
-};
-
-const topNPercentOwnership = (
-  descendingCounts: number[],
-  percent: number,
-  totalItems: number
-): number => {
-  const n = Math.ceil((percent / 100) * descendingCounts.length);
-  const topSum = descendingCounts.slice(0, n).reduce((a, b) => a + b, 0);
-  return Math.round((topSum / totalItems) * 100);
-};
-
-export const computeConcentration = (
-  descendingCounts: number[],
-  totalItems: number
-): ConcentrationResult => ({
-  top_1_pct_users_own_pct_of_items: topNPercentOwnership(
-    descendingCounts,
-    1,
-    totalItems
-  ),
-  top_5_pct_users_own_pct_of_items: topNPercentOwnership(
-    descendingCounts,
-    5,
-    totalItems
-  ),
-  top_10_pct_users_own_pct_of_items: topNPercentOwnership(
-    descendingCounts,
-    10,
-    totalItems
-  ),
-});
-
 export interface UserBucket {
   user_count: number;
   total_items: number;
@@ -83,25 +32,6 @@ const USER_BUCKET_RANGES = [
   { label: "10001-100000", min: 10001, max: 100000 },
   { label: "100000+", min: 100001, max: Infinity },
 ] as const;
-
-export const computeUserBuckets = (
-  totalCounts: number[]
-): Record<string, UserBucket> => {
-  const buckets: Record<string, UserBucket> = {};
-  for (const { label } of USER_BUCKET_RANGES) {
-    buckets[label] = { user_count: 0, total_items: 0 };
-  }
-  for (const count of totalCounts) {
-    const range = USER_BUCKET_RANGES.find(
-      (r) => count >= r.min && count <= r.max
-    );
-    if (range) {
-      buckets[range.label].user_count++;
-      buckets[range.label].total_items += count;
-    }
-  }
-  return buckets;
-};
 
 export const AGE_BUCKET_LABELS = [
   "0-1_months",
@@ -137,37 +67,117 @@ export interface TtlSimulationResult {
   items_per_user_after: PercentileResult;
 }
 
-export const computeTtlSimulation = (
-  perUserCounters: number[][],
-  thresholdIndex: number,
-  totalItems: number
-): TtlSimulationResult => {
-  let itemsRemoved = 0;
-  let usersWithAllDataRemoved = 0;
-  const retainedCounts: number[] = [];
+export const computePercentilesFromFrequency = (
+  frequency: Record<number, number>
+): PercentileResult => {
+  const entries = Object.entries(frequency)
+    .map(([k, v]) => [Number(k), v] as [number, number])
+    .sort((a, b) => a[0] - b[0]);
 
-  for (const counters of perUserCounters) {
-    const removed = counters[thresholdIndex];
-    const retained = counters[0] - removed;
-    itemsRemoved += removed;
-    if (retained === 0) {
-      usersWithAllDataRemoved++;
-    } else {
-      retainedCounts.push(retained);
-    }
+  let totalUsers = 0;
+  let totalItems = 0;
+  for (const [count, users] of entries) {
+    totalUsers += users;
+    totalItems += count * users;
   }
 
-  retainedCounts.sort((a, b) => a - b);
+  const percentileFromEntries = (percentile: number): number => {
+    const rank = Math.ceil((percentile / 100) * totalUsers);
+    let cumulative = 0;
+    for (const [count, users] of entries) {
+      cumulative += users;
+      if (cumulative >= rank) return count;
+    }
+    return entries.at(-1)![0];
+  };
+
+  return {
+    mean: totalItems / totalUsers,
+    median: percentileFromEntries(50),
+    p75: percentileFromEntries(75),
+    p90: percentileFromEntries(90),
+    p95: percentileFromEntries(95),
+    p99: percentileFromEntries(99),
+    max: entries.at(-1)![0],
+  };
+};
+
+export const computeConcentrationFromFrequency = (
+  frequency: Record<number, number>
+): ConcentrationResult => {
+  const entries = Object.entries(frequency)
+    .map(([k, v]) => [Number(k), v] as [number, number])
+    .sort((a, b) => b[0] - a[0]);
+
+  let totalUsers = 0;
+  let totalItems = 0;
+  for (const [count, users] of entries) {
+    totalUsers += users;
+    totalItems += count * users;
+  }
+
+  const topNPct = (percent: number): number => {
+    const n = Math.ceil((percent / 100) * totalUsers);
+    let usersAccum = 0;
+    let itemsAccum = 0;
+    for (const [count, users] of entries) {
+      const take = Math.min(users, n - usersAccum);
+      itemsAccum += count * take;
+      usersAccum += take;
+      if (usersAccum >= n) break;
+    }
+    return Math.round((itemsAccum / totalItems) * 100);
+  };
+
+  return {
+    top_1_pct_users_own_pct_of_items: topNPct(1),
+    top_5_pct_users_own_pct_of_items: topNPct(5),
+    top_10_pct_users_own_pct_of_items: topNPct(10),
+  };
+};
+
+export const computeUserBucketsFromFrequency = (
+  frequency: Record<number, number>
+): Record<string, UserBucket> => {
+  const buckets: Record<string, UserBucket> = {};
+  for (const { label } of USER_BUCKET_RANGES) {
+    buckets[label] = { user_count: 0, total_items: 0 };
+  }
+  for (const [countStr, users] of Object.entries(frequency)) {
+    const count = Number(countStr);
+    const range = USER_BUCKET_RANGES.find(
+      (r) => count >= r.min && count <= r.max
+    );
+    if (range) {
+      buckets[range.label].user_count += users;
+      buckets[range.label].total_items += count * users;
+    }
+  }
+  return buckets;
+};
+
+export const computeTtlSimulationFromFrequency = (
+  retainedFrequency: Record<number, number>,
+  usersFullyRemoved: number,
+  totalItems: number,
+  totalUsers: number
+): TtlSimulationResult => {
+  let itemsRetained = 0;
+  for (const [count, users] of Object.entries(retainedFrequency)) {
+    itemsRetained += Number(count) * users;
+  }
+  const itemsRemoved = totalItems - itemsRetained;
+
+  const hasRetained = Object.keys(retainedFrequency).length > 0;
 
   return {
     items_removed: itemsRemoved,
-    items_retained: totalItems - itemsRemoved,
+    items_retained: itemsRetained,
     pct_items_removed: Math.round((itemsRemoved / totalItems) * 100),
-    users_with_all_data_removed: usersWithAllDataRemoved,
-    users_with_data_retained: perUserCounters.length - usersWithAllDataRemoved,
-    items_per_user_after:
-      retainedCounts.length > 0
-        ? computePercentiles(retainedCounts)
-        : { mean: 0, median: 0, p75: 0, p90: 0, p95: 0, p99: 0, max: 0 },
+    users_with_all_data_removed: usersFullyRemoved,
+    users_with_data_retained: totalUsers - usersFullyRemoved,
+    items_per_user_after: hasRetained
+      ? computePercentilesFromFrequency(retainedFrequency)
+      : { mean: 0, median: 0, p75: 0, p90: 0, p95: 0, p99: 0, max: 0 },
   };
 };

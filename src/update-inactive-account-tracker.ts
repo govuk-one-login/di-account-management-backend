@@ -12,6 +12,29 @@ const logger = new Logger();
 const dynamoClient = new DynamoDBClient({});
 const dynamoDocClient = DynamoDBDocumentClient.from(dynamoClient);
 
+const getCurrentRecordForUser = async (userId: string, tableName: string): Promise<InactiveAccountTrackerRecord | null> => {
+  const response = await dynamoDocClient.send(
+    new QueryCommand({
+      IndexName: "CommonSubjectIdIndex",
+      TableName: tableName,
+      KeyConditionExpression: "commonSubjectId = :uid",
+      ExpressionAttributeValues: { ":uid": userId },
+    })
+  );
+
+  assert(response.Items !== undefined, "Query response is missing Items");
+  assert(response.Items.length < 2, `found more than one inactivity tracker record for ${userId}`)
+
+  return response.Items.length > 0 ? response.Items[0] as InactiveAccountTrackerRecord : null;
+}
+
+const getDateForDeletion = (txmaEvent: TxmaEvent, trackerRecord: InactiveAccountTrackerRecord | null) => {
+  const eventDate = new Date(txmaEvent.timestamp * 1000);
+  const trackerDate = trackerRecord ? new Date(trackerRecord.userLastActive) : new Date(0);
+
+  return eventDate > trackerDate ? eventDate : trackerDate;
+}
+
 export const handler = async (
   event: DynamoDBStreamEvent,
   context: Context
@@ -27,34 +50,12 @@ export const handler = async (
     const txmaEvent = unmarshall(
       record.dynamodb?.NewImage?.event.M as Record<string, AttributeValue>
     ) as TxmaEvent;
-    logger.info(`client_id: ${txmaEvent.client_id}`);
 
     const userId = txmaEvent.user?.user_id;
+    assert(userId !== undefined, "user_id is undefined in the event");
 
-    if (!userId) {
-      throw new Error("Missing user_id in event");
-    }
-
-    console.log(tableName, userNotificationsTableName, olhClientId)
-    const response = await dynamoDocClient.send(
-      new QueryCommand({
-        IndexName: "CommonSubjectIdIndex",
-        TableName: tableName,
-        KeyConditionExpression: "commonSubjectId = :uid",
-        ExpressionAttributeValues: { ":uid": userId },
-      })
-    );
-
-    assert(response.Items !== undefined, "Query response is missing Items");
-    assert(response.Items.length < 2, `found more than one inactivity tracker record for ${userId}`)
-
-    const currentTrackerRecord = response.Items.length > 0 ? response.Items[0] as InactiveAccountTrackerRecord : null;
-
-    const eventDate = new Date(txmaEvent.timestamp * 1000);
-    const trackerDate = currentTrackerRecord ? new Date(currentTrackerRecord.userLastActive) : new Date(0);
-
-    const latestDate = eventDate > trackerDate ? eventDate : trackerDate;
-
+    const currentTrackerRecord = await getCurrentRecordForUser(userId, tableName);
+    const latestDate = getDateForDeletion(txmaEvent, currentTrackerRecord);
 
     if (currentTrackerRecord?.status === 'deleting') {
       logger.warn(`AUTH_EVENT_ON_DELETED_ACCOUNT ${userId}`)
@@ -79,7 +80,6 @@ export const handler = async (
         Delete: { TableName: tableName, Key: { dateForDeletion: currentTrackerRecord.dateForDeletion, commonSubjectId: userId } }
       });
     }
-
 
     if (txmaEvent.client_id !== olhClientId) {
       transactItems.push({

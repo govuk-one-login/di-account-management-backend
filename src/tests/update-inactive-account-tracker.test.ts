@@ -166,6 +166,22 @@ describe("UpdateInactiveAccountTracker handler", () => {
     expect(dynamoMock).not.toHaveReceivedCommand(GetCommand);
   });
 
+  test("does not delete tracker record when dateForDeletion is unchanged", async () => {
+    dynamoMock.on(QueryCommand).resolves({
+      Items: [{ commonSubjectId: "qwerty", dateForDeletion: "1973-11-29", userLastActive: "1970-01-01T00:00:00.000Z", status: "pending", emailAddress: "x", statusLastUpdated: "" }],
+    });
+    dynamoMock.on(TransactWriteCommand).resolves({});
+    const event: DynamoDBStreamEvent = { Records: [generateDynamoSteamRecord("test-client")] };
+    await handler(event, {} as Context);
+    expect(dynamoMock).toHaveReceivedCommandWith(TransactWriteCommand, {
+      TransactItems: expect.not.arrayContaining([
+        expect.objectContaining({
+          Delete: expect.objectContaining({ TableName: "test-table" }),
+        }),
+      ]),
+    });
+  });
+
   test("throws error when transaction fails", async () => {
     dynamoMock.on(QueryCommand).resolves({ Items: [] });
     dynamoMock.on(TransactWriteCommand).rejects(new Error("TransactionCanceledException"));

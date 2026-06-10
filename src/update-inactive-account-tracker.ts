@@ -74,7 +74,7 @@ export const handler = async (
       { Put: { TableName: tableName, Item: newItem as unknown as Record<string, unknown> } },
     ];
 
-    if (currentTrackerRecord) {
+    if (currentTrackerRecord && currentTrackerRecord.dateForDeletion !== newItem.dateForDeletion) {
       transactItems.push({
         Delete: { TableName: tableName, Key: { dateForDeletion: currentTrackerRecord.dateForDeletion, commonSubjectId: userId } }
       });

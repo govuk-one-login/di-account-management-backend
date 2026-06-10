@@ -30,16 +30,6 @@ describe("UpdateInactiveAccountTracker handler", () => {
     delete process.env.USER_NOTIFICATIONS_TABLE_NAME;
   });
 
-  test("logs invocation message", async () => {
-    dynamoMock.on(QueryCommand).resolves({ Items: [] });
-    dynamoMock.on(TransactWriteCommand).resolves({});
-    const event: DynamoDBStreamEvent = { Records: [generateDynamoSteamRecord("test-client")] };
-    await handler(event, {} as Context);
-    expect(loggerInfoMock).toHaveBeenCalledWith(
-      "UpdateInactiveAccountTracker invoked"
-    );
-  });
-
   test("queries CommonSubjectIdIndex with user_id", async () => {
     dynamoMock.on(QueryCommand).resolves({ Items: [] });
     dynamoMock.on(TransactWriteCommand).resolves({});

@@ -40,7 +40,6 @@ export const handler = async (
   context: Context
 ): Promise<void> => {
   logger.addContext(context);
-  logger.info("UpdateInactiveAccountTracker invoked");
 
   const tableName = getEnvironmentVariable("INACTIVE_ACCOUNT_TRACKER_TABLE_NAME");
   const userNotificationsTableName = getEnvironmentVariable("USER_NOTIFICATIONS_TABLE_NAME");

@@ -210,12 +210,14 @@ export interface Personalisation {
   timeCy: string;
 }
 
+type InactiveAccountStatus = "pending" | "deleting"
+
 export interface InactiveAccountTrackerRecord {
   dateForDeletion: string;
   commonSubjectId: string;
   emailAddress: string;
   userLastActive: string;
-  status: string;
+  status: InactiveAccountStatus;
   statusLastUpdated: string;
 }
 

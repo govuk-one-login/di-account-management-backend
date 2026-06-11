@@ -29,6 +29,8 @@ const getCurrentRecordForUser = async (userId: string, tableName: string): Promi
 }
 
 const getDateForDeletion = (txmaEvent: TxmaEvent, trackerRecord: InactiveAccountTrackerRecord | null) => {
+  // if the timestamp on the audit event is older than the last active timestamp we have for the user
+  // we should keep the existing date for deletion as it means the events have been receieved out of order
   const eventDate = new Date(txmaEvent.timestamp * 1000);
   const trackerDate = trackerRecord ? new Date(trackerRecord.userLastActive) : new Date(0);
 
@@ -75,12 +77,16 @@ export const handler = async (
     ];
 
     if (currentTrackerRecord && currentTrackerRecord.dateForDeletion !== newItem.dateForDeletion) {
+      // if the dates are the same, then we don't need to delete the old record as
+      // it would have been updated in place by the Put command
       transactItems.push({
         Delete: { TableName: tableName, Key: { dateForDeletion: currentTrackerRecord.dateForDeletion, commonSubjectId: userId } }
       });
     }
 
     if (txmaEvent.client_id !== olhClientId) {
+      // if the user logs in to a different RP, then we won't show them the account kept notificaton
+      // when they log in to Home
       transactItems.push({
         Delete: {
           TableName: userNotificationsTableName,

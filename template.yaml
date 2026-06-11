@@ -18,7 +18,7 @@ Parameters:
     Default: platform-alerting
   InactveAccountTrackerStoreTableName:
     Type: String
-    Default: inactive_account_tracker
+    Default: inactive_account_tracker_store
   UserNotificationsTableName:
     Type: String
     Default: user_notifications

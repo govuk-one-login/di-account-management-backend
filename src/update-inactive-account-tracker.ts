@@ -12,6 +12,8 @@ const logger = new Logger();
 const dynamoClient = new DynamoDBClient({});
 const dynamoDocClient = DynamoDBDocumentClient.from(dynamoClient);
 
+type TransactionItems = ConstructorParameters<typeof TransactWriteCommand>[0]['TransactItems']
+
 const getCurrentRecordForUser = async (userId: string, tableName: string): Promise<InactiveAccountTrackerRecord | null> => {
   const response = await dynamoDocClient.send(
     new QueryCommand({
@@ -72,14 +74,14 @@ export const handler = async (
       statusLastUpdated: new Date().toISOString(),
     }
 
-    const transactItems: { Put?: { TableName: string; Item: Record<string, unknown> }; Delete?: { TableName: string; Key: Record<string, unknown> } }[] = [
+    const transactionItems: TransactionItems = [
       { Put: { TableName: tableName, Item: newItem as unknown as Record<string, unknown> } },
     ];
 
     if (currentTrackerRecord && currentTrackerRecord.dateForDeletion !== newItem.dateForDeletion) {
       // if the dates are the same, then we don't need to delete the old record as
       // it would have been updated in place by the Put command
-      transactItems.push({
+      transactionItems.push({
         Delete: { TableName: tableName, Key: { dateForDeletion: currentTrackerRecord.dateForDeletion, commonSubjectId: userId } }
       });
     }
@@ -87,7 +89,7 @@ export const handler = async (
     if (txmaEvent.client_id !== olhClientId) {
       // if the user logs in to a different RP, then we won't show them the account kept notificaton
       // when they log in to Home
-      transactItems.push({
+      transactionItems.push({
         Delete: {
           TableName: userNotificationsTableName,
           Key: { internalCommonSubjectId: userId },
@@ -96,7 +98,7 @@ export const handler = async (
     }
 
     try {
-      await dynamoDocClient.send(new TransactWriteCommand({ TransactItems: transactItems }));
+      await dynamoDocClient.send(new TransactWriteCommand({ TransactItems: transactionItems }));
     } catch (error) {
       throw new Error(`Failed to update inactive account tracker for user ${userId} ${error}`, {
         cause: error

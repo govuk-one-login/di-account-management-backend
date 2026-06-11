@@ -16,9 +16,9 @@ Parameters:
     Description: The name of the stack that defines the Alerting resources
     Type: String
     Default: platform-alerting
-  InactiveAccountTrackerTableName:
+  InactveAccountTrackerStoreTableName:
     Type: String
-    Default: inactive_account_tracker
+    Default: inactive_account_tracker_store
   UserNotificationsTableName:
     Type: String
     Default: user_notifications
@@ -263,6 +263,7 @@ Mappings:
     ### Please ensure that any variables defined for an environment are defined for _all_ environments.
     ### We are passing the version ID of AWS secrets as cloudformation does not retrieve updated secrets unless there is a change in the template file related to it.
     demo:
+      OLHCLIENTID: "oneLoginHome"
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.integration.publishing.service.gov.uk"
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "2b3170b5-159e-457f-a282-f30f6006dc32"
       NOTIFYTEMPLATEIDS: |
@@ -270,6 +271,7 @@ Mappings:
           "GLOBAL_LOGOUT": "a92761ef-213b-4fb6-a53c-5912a931c159"
         }
     dev:
+      OLHCLIENTID: "oneLoginHome"
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.integration.publishing.service.gov.uk"
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "2b3170b5-159e-457f-a282-f30f6006dc32"
       NOTIFYTEMPLATEIDS: |
@@ -277,6 +279,7 @@ Mappings:
           "GLOBAL_LOGOUT": "a92761ef-213b-4fb6-a53c-5912a931c159"
         }
     build:
+      OLHCLIENTID: "oneLoginHome"
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.staging.publishing.service.gov.uk"
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "2b3170b5-159e-457f-a282-f30f6006dc32"
       NOTIFYTEMPLATEIDS: |
@@ -285,6 +288,7 @@ Mappings:
         }
     staging:
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.staging.publishing.service.gov.uk"
+      OLHCLIENTID: "EMGmY82k-92QSakDl_9keKDFmZY"
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "2b3170b5-159e-457f-a282-f30f6006dc32"
       NOTIFYTEMPLATEIDS: |
         {
@@ -292,12 +296,14 @@ Mappings:
         }
     integration:
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.integration.publishing.service.gov.uk"
+      OLHCLIENTID: "Y8xi2wDAaRvWYlEkoExOUZbAPaYyBEhB"
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "0674c6e3-219c-4e3a-b04c-3786bac7f228"
       NOTIFYTEMPLATEIDS: |
         {
           "GLOBAL_LOGOUT": "fb33515d-41cb-40df-93c2-e1bf76c3672a"
         }
     production:
+      OLHCLIENTID: "KcKmx2g1GH6ersWFvzMi1bhehq4"
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.publishing.service.gov.uk"
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "0674c6e3-219c-4e3a-b04c-3786bac7f228"
       NOTIFYTEMPLATEIDS: |
@@ -586,11 +592,22 @@ Resources:
       AttributeDefinitions:
         - AttributeName: dateForDeletion
           AttributeType: S
+        - AttributeName: commonSubjectId
+          AttributeType: S
+      GlobalSecondaryIndexes:
+        - IndexName: CommonSubjectIdIndex
+          KeySchema:
+            - AttributeName: commonSubjectId
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
       BillingMode: PAY_PER_REQUEST
-      TableName: !Ref InactiveAccountTrackerTableName
+      TableName: !Ref InactveAccountTrackerStoreTableName      
       KeySchema:
         - AttributeName: dateForDeletion
           KeyType: HASH
+        - AttributeName: commonSubjectId
+          KeyType: RANGE
       Tags:
         - Key: Product
           Value: GOV.UK Sign In
@@ -3098,6 +3115,15 @@ Resources:
       Environment:
         Variables:
           NODE_OPTIONS: --enable-source-maps
+          ACCOUNT_SAVED_NOTIFICATION_QUEUE_URL: !Ref AccountSavedNotificationQueue
+          INACTIVE_ACCOUNT_TRACKER_TABLE_NAME: !Ref InactveAccountTrackerStoreTableName
+          USER_NOTIFICATIONS_TABLE_NAME: !Ref UserNotificationsTableName
+          OLH_CLIENT_ID:
+            !FindInMap [
+              EnvironmentVariables,
+              !Ref Environment,
+              OLHCLIENTID,
+            ]
       DeploymentPreference:
         Alarms:
           Fn::If:
@@ -3125,6 +3151,38 @@ Resources:
     Properties:
       MessageRetentionPeriod: 1209600
       KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
+
+  AccountSavedNotificationQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+
+  AccountSavedNotificationQueueOldestMessageAgeAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            AccountSavedNotificationQueueOldestMessageAgeAlarm,
+          ],
+        ]
+      MetricName: ApproximateAgeOfOldestMessage
+      Namespace: AWS/SQS
+      Statistic: Maximum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 300
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt AccountSavedNotificationQueue.QueueName
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
 
   UpdateInactiveAccountTrackerRole:
     Type: AWS::IAM::Role
@@ -3156,7 +3214,9 @@ Resources:
           - Effect: Allow
             Action:
               - sqs:SendMessage
-            Resource: !GetAtt UpdateInactiveAccountTrackerDeadLetterQueue.Arn
+            Resource:
+              - !GetAtt UpdateInactiveAccountTrackerDeadLetterQueue.Arn
+              - !GetAtt AccountSavedNotificationQueue.Arn
           - Effect: Allow
             Action:
               - dynamodb:DescribeStream
@@ -3170,9 +3230,28 @@ Resources:
                 - Arn: !GetAtt RawEventsStore.StreamArn
           - Effect: Allow
             Action:
+              - dynamodb:GetItem
+              - dynamodb:DeleteItem
+              - dynamodb:PutItem
+              - dynamodb:Query
+            Resource:
+              - !GetAtt InactiveAccountTrackerStore.Arn
+              - !Sub "${InactiveAccountTrackerStore.Arn}/index/CommonSubjectIdIndex"
+          - Effect: Allow
+            Action:
+              - dynamodb:DeleteItem
+            Resource:
+              - !GetAtt UserNotificationsStore.Arn
+          - Effect: Allow
+            Action:
               - kms:Decrypt
             Resource:
               - !GetAtt DatabaseKmsKey.Arn
+          - Effect: Allow
+            Action:
+              - kms:GenerateDataKey*
+            Resource:
+              - !GetAtt QueueKmsKey.Arn
 
   UpdateInactiveAccountTrackerFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -3188,6 +3267,42 @@ Resources:
       DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
       FilterPattern: ""
       LogGroupName: !Ref UpdateInactiveAccountTrackerFunctionLogGroup
+
+  AuthEventTriggeredOnAlreadyDeletedAccountFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      FilterPattern: "AUTH_EVENT_ON_DELETED_ACCOUNT"
+      LogGroupName: !Ref UpdateInactiveAccountTrackerFunctionLogGroup
+      MetricTransformations:
+        - MetricName: AuthEventTriggeredOnAlreadyDeletedAccountCount
+          MetricNamespace: !Ref SystemTagValue
+          MetricValue: 1
+          Unit: Count
+
+  AuthEventTriggeredOnAlreadyDeletedAccountAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            AuthEventTriggeredOnAlreadyDeletedAccountAlarm,
+          ],
+        ]
+      AlarmDescription: Triggers when an auth event is processed for an already deleted account.
+      MetricName: AuthEventTriggeredOnAlreadyDeletedAccountCount
+      Namespace: !Ref SystemTagValue
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      ActionsEnabled: true
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
 
   UpdateInactiveAccountTrackerFunctionSuccessRate:
     Type: AWS::CloudWatch::Alarm

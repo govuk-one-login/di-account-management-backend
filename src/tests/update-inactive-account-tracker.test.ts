@@ -28,9 +28,11 @@ describe("UpdateInactiveAccountTracker handler", () => {
     loggerWarnMock.mockClear();
     delete process.env.INACTIVE_ACCOUNT_TRACKER_TABLE_NAME;
     delete process.env.USER_NOTIFICATIONS_TABLE_NAME;
+    delete process.env.OLH_CLIENT_ID;
   });
 
   test("queries CommonSubjectIdIndex with user_id", async () => {
+
     dynamoMock.on(QueryCommand).resolves({ Items: [] });
     dynamoMock.on(TransactWriteCommand).resolves({});
     const event: DynamoDBStreamEvent = { Records: [generateDynamoSteamRecord("test-client")] };

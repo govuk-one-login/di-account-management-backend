@@ -160,7 +160,7 @@ describe("UpdateInactiveAccountTracker handler", () => {
 
   test("does not delete tracker record when dateForDeletion is unchanged", async () => {
     dynamoMock.on(QueryCommand).resolves({
-      Items: [{ commonSubjectId: "qwerty", dateForDeletion: "1973-11-29", userLastActive: "1970-01-01T00:00:00.000Z", status: "pending", emailAddress: "x", statusLastUpdated: "" }],
+      Items: [{ commonSubjectId: "qwerty", dateForDeletion: "1978-11-29", userLastActive: "1970-01-01T00:00:00.000Z", status: "pending", emailAddress: "x", statusLastUpdated: "" }],
     });
     dynamoMock.on(TransactWriteCommand).resolves({});
     const event: DynamoDBStreamEvent = { Records: [generateDynamoSteamRecord("test-client")] };

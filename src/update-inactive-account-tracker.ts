@@ -30,13 +30,19 @@ const getCurrentRecordForUser = async (userId: string, tableName: string): Promi
   return response.Items.length > 0 ? response.Items[0] as InactiveAccountTrackerRecord : null;
 }
 
-const getDateForDeletion = (txmaEvent: TxmaEvent, trackerRecord: InactiveAccountTrackerRecord | null) => {
+const getLatestDate = (txmaEvent: TxmaEvent, trackerRecord: InactiveAccountTrackerRecord | null) => {
   // if the timestamp on the audit event is older than the last active timestamp we have for the user
-  // we should keep the existing date for deletion as it means the events have been receieved out of order
+  // we should keep the existing date as it means the events have been receieved out of order
   const eventDate = new Date(txmaEvent.timestamp * 1000);
   const trackerDate = trackerRecord ? new Date(trackerRecord.userLastActive) : new Date(0);
 
   return eventDate > trackerDate ? eventDate : trackerDate;
+}
+
+const getDateForDeletion = (latestDate: Date): string => {
+  const deletionDate = new Date(latestDate);
+  deletionDate.setFullYear(deletionDate.getFullYear() + 5);
+  return deletionDate.toISOString().split("T")[0];
 }
 
 export const handler = async (
@@ -58,7 +64,7 @@ export const handler = async (
     assert(userId !== undefined, "user_id is undefined in the event");
 
     const currentTrackerRecord = await getCurrentRecordForUser(userId, tableName);
-    const latestDate = getDateForDeletion(txmaEvent, currentTrackerRecord);
+    const latestDate = getLatestDate(txmaEvent, currentTrackerRecord);
 
     if (currentTrackerRecord?.status === 'deleting') {
       logger.warn(`AUTH_EVENT_ON_DELETED_ACCOUNT ${userId}`)
@@ -68,7 +74,7 @@ export const handler = async (
     const newItem: InactiveAccountTrackerRecord = {
       commonSubjectId: userId,
       userLastActive: latestDate.toISOString(),
-      dateForDeletion: latestDate.toISOString().split("T")[0],
+      dateForDeletion: getDateForDeletion(latestDate),
       emailAddress: 'unknown',
       status: 'pending',
       statusLastUpdated: new Date().toISOString(),

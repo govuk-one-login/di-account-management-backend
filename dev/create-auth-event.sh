@@ -15,6 +15,7 @@ if [[ "$TS_INPUT" =~ ^\+([0-9]+)([ydhm])$ ]]; then
   d) OFFSET=$((VALUE * 86400)) ;;
   h) OFFSET=$((VALUE * 3600)) ;;
   m) OFFSET=$((VALUE * 60)) ;;
+  *) die "Invalid time unit. Use 'y' for years, 'd' for days, 'h' for hours, or 'm' for minutes." ;;
   esac
   TIMESTAMP=$(($(date +%s) + OFFSET))
 else

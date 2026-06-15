@@ -114,7 +114,7 @@ jobs:
         run: sam build --manifest package.json
 
       - name: Deploy SAM app
-        uses: govuk-one-login/devplatform-upload-action@5879c30205266ad61e8299a4fcea76364530c9c1 # pin@v3
+        uses: govuk-one-login/devplatform-upload-action@64e46134b4108ebfa1cf2a64fee00782f8e2e8cf # pin@v3
         with:
           artifact-bucket-name: ${{ secrets.DEMO_ARTIFACT_BUCKET_NAME }}
           signing-profile-name: ${{ secrets.DEMO_SIGNING_PROFILE_NAME }}

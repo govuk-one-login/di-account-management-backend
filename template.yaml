@@ -3680,6 +3680,7 @@ Resources:
 
   DeleteUserNotificationsSubscription:
     Condition: IsDevelopment
+    DependsOn: DeleteUserNotificationsFunctionAliaslive
     Type: AWS::SNS::Subscription
     Properties:
       Endpoint: !Join [":", [!GetAtt DeleteUserNotificationsFunction.Arn, live]]
@@ -3751,6 +3752,7 @@ Resources:
 
   DeleteUserNotificationsLambdaInvokePermission:
     Condition: IsDevelopment
+    DependsOn: DeleteUserNotificationsFunctionAliaslive
     Type: AWS::Lambda::Permission
     Properties:
       Action: lambda:InvokeFunction

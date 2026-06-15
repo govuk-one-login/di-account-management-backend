@@ -66,7 +66,7 @@ jobs:
           python-version: "3.9"
 
       - name: Set up SAM cli
-        uses: aws-actions/setup-sam@b42eb7a54dac4039080975e32860b1b30935c9af # pin@v2
+        uses: aws-actions/setup-sam@89ddb14d60e682855e3fea4be85b3c56485de310 # pin@v2
 
       - name: sam fix https://github.com/aws/aws-sam-cli/issues/4527
         run: $(dirname $(readlink $(which sam)))/pip install --force-reinstall "cryptography==38.0.4"

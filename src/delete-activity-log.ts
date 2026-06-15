@@ -45,8 +45,11 @@ export const getAllActivityLogEntriesForUser = async (
     ScanIndexForward: true,
     ExclusiveStartKey: lastEvaluatedKey,
   };
+  let pageCount = 0;
   do {
+    logger.info(`querying page ${pageCount + 1}`);
     const response = await dynamoDocClient.send(new QueryCommand(command));
+    pageCount++;
 
     if (response.Items) {
       queryResult.push(...(response.Items as ActivityLogEntry[]));
@@ -55,6 +58,9 @@ export const getAllActivityLogEntriesForUser = async (
     lastEvaluatedKey = response.LastEvaluatedKey ?? undefined;
   } while (lastEvaluatedKey);
 
+  logger.info(
+    `queried ${queryResult.length} activity log entries across ${pageCount} pages`
+  );
   return queryResult.length > 0 ? queryResult : undefined;
 };
 
@@ -92,7 +98,8 @@ export const batchDeleteActivityLog = async (
   activityLogEntries: ActivityLogEntry[]
 ) => {
   const batchArray = buildBatchDeletionRequestArray(activityLogEntries);
-  Promise.all(
+  logger.info(`deleting ${activityLogEntries.length} entries in ${batchArray.length} batches`);
+  await Promise.all(
     batchArray.map(async (arrayOf25orFewerItems) => {
       try {
         const batchcommand = new BatchWriteItemCommand({
@@ -123,9 +130,11 @@ export const handler = async (
         );
         const userData: UserData = JSON.parse(record.Sns.Message);
         validateUserData(userData);
+        logger.info("querying activity log entries");
         const activityLogEntries: ActivityLogEntry[] | undefined =
           await getAllActivityLogEntriesForUser(TABLE_NAME, userData);
         if (activityLogEntries) {
+          logger.info("starting batch deletion");
           await batchDeleteActivityLog(TABLE_NAME, activityLogEntries);
         }
         logger.info(

@@ -3712,16 +3712,6 @@ Resources:
               ArnEquals:
                 "aws:SourceArn": !Ref UserAccountDeletionTopic
 
-  DeleteUserNotificationsLambdaInvokePermission:
-    Condition: IsDevelopment
-    Type: AWS::Lambda::Permission
-    Properties:
-      Action: lambda:InvokeFunction
-      Principal: sns.amazonaws.com
-      SourceArn:
-        Ref: UserAccountDeletionTopic
-      FunctionName: !Join [":", [!GetAtt DeleteUserNotificationsFunction.Arn, live]]
-
   DeleteUserNotificationsFunction:
     DependsOn:
       - DeleteUserNotificationsFunctionLogGroup
@@ -3758,6 +3748,16 @@ Resources:
           - delete-user-notifications.ts
         Banner:
           - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
+
+  DeleteUserNotificationsLambdaInvokePermission:
+    Condition: IsDevelopment
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      Principal: sns.amazonaws.com
+      SourceArn:
+        Ref: UserAccountDeletionTopic
+      FunctionName: !Join [":", [!GetAtt DeleteUserNotificationsFunction.Arn, live]]
 
   DeleteUserNotificationsRole:
     Type: AWS::IAM::Role

@@ -67,7 +67,7 @@ export const handler = async (
     const latestDate = getLatestDate(txmaEvent, currentTrackerRecord);
 
     if (currentTrackerRecord?.status === 'deleting') {
-      logger.warn(`AUTH_EVENT_ON_DELETED_ACCOUNT ${userId}`)
+      logger.warn(`AUTH_EVENT_ON_DELETING_ACCOUNT ${userId}`)
       return;
     }
 

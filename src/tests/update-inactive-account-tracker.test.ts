@@ -116,7 +116,7 @@ describe("UpdateInactiveAccountTracker handler", () => {
     });
     const event: DynamoDBStreamEvent = { Records: [generateDynamoSteamRecord("test-client")] };
     await handler(event, {} as Context);
-    expect(loggerWarnMock).toHaveBeenCalledWith("AUTH_EVENT_ON_DELETED_ACCOUNT qwerty");
+    expect(loggerWarnMock).toHaveBeenCalledWith("AUTH_EVENT_ON_DELETING_ACCOUNT qwerty");
     expect(dynamoMock).not.toHaveReceivedCommand(TransactWriteCommand);
   });
 

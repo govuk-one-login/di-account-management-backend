@@ -3268,18 +3268,18 @@ Resources:
       FilterPattern: ""
       LogGroupName: !Ref UpdateInactiveAccountTrackerFunctionLogGroup
 
-  AuthEventTriggeredOnAlreadyDeletedAccountFilter:
+  AuthEventTriggeredOnAlreadyDeletingAccountFilter:
     Type: AWS::Logs::MetricFilter
     Properties:
-      FilterPattern: "AUTH_EVENT_ON_DELETED_ACCOUNT"
+      FilterPattern: "AUTH_EVENT_ON_DELETING_ACCOUNT"
       LogGroupName: !Ref UpdateInactiveAccountTrackerFunctionLogGroup
       MetricTransformations:
-        - MetricName: AuthEventTriggeredOnAlreadyDeletedAccountCount
+        - MetricName: AuthEventTriggeredOnAlreadyDeletingAccountCount
           MetricNamespace: !Ref SystemTagValue
           MetricValue: 1
           Unit: Count
 
-  AuthEventTriggeredOnAlreadyDeletedAccountAlarm:
+  AuthEventTriggeredOnAlreadyDeletingAccountAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
       AlarmName:
@@ -3288,11 +3288,11 @@ Resources:
           [
             !Ref AWS::StackName,
             !Ref Environment,
-            AuthEventTriggeredOnAlreadyDeletedAccountAlarm,
+            AuthEventTriggeredOnAlreadyDeletingAccountAlarm,
           ],
         ]
-      AlarmDescription: Triggers when an auth event is processed for an already deleted account.
-      MetricName: AuthEventTriggeredOnAlreadyDeletedAccountCount
+      AlarmDescription: Triggers when an auth event is processed for an account that is already in the deleting state.
+      MetricName: AuthEventTriggeredOnAlreadyDeletingAccountCount
       Namespace: !Ref SystemTagValue
       Statistic: Sum
       Period: 300

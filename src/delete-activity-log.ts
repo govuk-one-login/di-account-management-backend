@@ -92,7 +92,7 @@ export const batchDeleteActivityLog = async (
   activityLogEntries: ActivityLogEntry[]
 ) => {
   const batchArray = buildBatchDeletionRequestArray(activityLogEntries);
-  Promise.all(
+  await Promise.all(
     batchArray.map(async (arrayOf25orFewerItems) => {
       try {
         const batchcommand = new BatchWriteItemCommand({

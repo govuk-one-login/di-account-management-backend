@@ -115,11 +115,19 @@ describe("deleteUserData", () => {
     expect(batchDeletePayload[0][0]).toEqual(deleteRequest);
   });
 
-  test("test batch deletion request when 65 items to delete", () => {
+  test("test batch deletion request when 65 items to delete", async () => {
     const arrayOf56Activities: ActivityLogEntry[] =
       Array(56).fill(activityLogEntry);
-    batchDeleteActivityLog("TABLE_NAME", arrayOf56Activities);
+    await batchDeleteActivityLog("TABLE_NAME", arrayOf56Activities);
     expect(dynamoMock.commandCalls(BatchWriteItemCommand).length).toEqual(3);
+  });
+
+  test("propagates errors from failed batch deletes", async () => {
+    dynamoMock.on(BatchWriteItemCommand).rejects(new Error("DynamoDB error"));
+    const entries: ActivityLogEntry[] = [activityLogEntry];
+    await expect(
+      batchDeleteActivityLog("TABLE_NAME", entries)
+    ).rejects.toThrow("DynamoDB error");
   });
 });
 

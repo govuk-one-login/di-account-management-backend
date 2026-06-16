@@ -3674,6 +3674,331 @@ Resources:
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
 
+  ####################################
+  # Deleting User Notifications Records
+  ####################################
+
+  DeleteUserNotificationsSubscription:
+    Condition: IsDevelopment
+    DependsOn: DeleteUserNotificationsFunctionAliaslive
+    Type: AWS::SNS::Subscription
+    Properties:
+      Endpoint: !Join [":", [!GetAtt DeleteUserNotificationsFunction.Arn, live]]
+      Protocol: lambda
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt DeleteUserNotificationsSubscriptionDeadLetterQueue.Arn
+      TopicArn: !Ref UserAccountDeletionTopic
+
+  DeleteUserNotificationsSubscriptionDeadLetterQueue:
+    Type: AWS::SQS::Queue
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      MessageRetentionPeriod: 1209600
+      KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
+
+  DeleteUserNotificationsSubscriptionDeadLetterQueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues:
+        - !Ref DeleteUserNotificationsSubscriptionDeadLetterQueue
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: sns.amazonaws.com
+            Action: "sqs:SendMessage"
+            Resource: !GetAtt DeleteUserNotificationsSubscriptionDeadLetterQueue.Arn
+            Condition:
+              ArnEquals:
+                "aws:SourceArn": !Ref UserAccountDeletionTopic
+
+  DeleteUserNotificationsFunction:
+    DependsOn:
+      - DeleteUserNotificationsFunctionLogGroup
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${Environment}-${AWS::StackName}-delete-user-notifications
+      CodeUri: src
+      PackageType: Zip
+      DeadLetterQueue:
+        Type: SQS
+        TargetArn: !GetAtt DeleteUserNotificationsDeadLetterQueue.Arn
+      Handler: delete-user-notifications.handler
+      Role: !GetAtt DeleteUserNotificationsRole.Arn
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref UserNotificationsTableName
+          NODE_OPTIONS: --enable-source-maps
+      DeploymentPreference:
+        Alarms:
+          Fn::If:
+            - IsNotDevelopmentOrDemo
+            - - !Ref DeleteUserNotificationsFunctionSuccessRate
+            - - !Ref AWS::NoValue
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Format: "esm"
+        OutExtension:
+          - .js=.mjs
+        Target: "es2022"
+        Sourcemap: true
+        EntryPoints:
+          - delete-user-notifications.ts
+        Banner:
+          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
+
+  DeleteUserNotificationsLambdaInvokePermission:
+    Condition: IsDevelopment
+    DependsOn: DeleteUserNotificationsFunctionAliaslive
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      Principal: sns.amazonaws.com
+      SourceArn:
+        Ref: UserAccountDeletionTopic
+      FunctionName: !Join [":", [!GetAtt DeleteUserNotificationsFunction.Arn, live]]
+
+  DeleteUserNotificationsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      PermissionsBoundary: !If
+        - UsePermissionsBoundary
+        - !Ref PermissionsBoundary
+        - !Ref AWS::NoValue
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+        - !Ref DeleteUserNotificationsPolicy
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+
+  DeleteUserNotificationsPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - sqs:SendMessage
+            Resource: !GetAtt DeleteUserNotificationsDeadLetterQueue.Arn
+          - Effect: Allow
+            Action:
+              - dynamodb:DeleteItem
+            Resource:
+              - !GetAtt UserNotificationsStore.Arn
+              - !Sub
+                - "${Arn}/*"
+                - Arn: !GetAtt UserNotificationsStore.Arn
+          - Effect: Allow
+            Action:
+              - kms:Decrypt
+              - kms:GenerateDataKey*
+              - kms:ReEncrypt*
+            Resource:
+              - !GetAtt QueueKmsKey.Arn
+              - !GetAtt DatabaseKmsKey.Arn
+              - !GetAtt LoggingKmsKey.Arn
+              - !GetAtt LambdaKMSKey.Arn
+
+  DeleteUserNotificationsFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-delete-user-notifications"
+      RetentionInDays: 30
+      KmsKeyId: !GetAtt LoggingKmsKey.Arn
+
+  DeleteUserNotificationsCSLSSubscription:
+    Condition: ExportLogsToSplunk
+    Type: AWS::Logs::SubscriptionFilter
+    Properties:
+      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
+      FilterPattern: ""
+      LogGroupName: !Ref DeleteUserNotificationsFunctionLogGroup
+
+  DeleteUserNotificationsDeadLetterQueue:
+    Type: AWS::SQS::Queue
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      MessageRetentionPeriod: 1209600
+      KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
+
+  DeleteUserNotificationsDeadLetterQueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues:
+        - !Ref DeleteUserNotificationsDeadLetterQueue
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: sns.amazonaws.com
+            Action: "sqs:SendMessage"
+            Resource: !GetAtt DeleteUserNotificationsDeadLetterQueue.Arn
+            Condition:
+              ArnEquals:
+                "aws:SourceArn": !Ref UserAccountDeletionTopic
+
+  DeleteUserNotificationsDeadLetterQueueAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            DeleteUserNotificationsDeadLetterQueueAlarm,
+          ],
+        ]
+      AlarmDescription: More than 1 user notification failed to be deleted in the last 5 minutes.
+      Namespace: "AWS/SQS"
+      MetricName: "ApproximateNumberOfMessagesVisible"
+      Dimensions:
+        - Name: "QueueName"
+          Value: !GetAtt DeleteUserNotificationsDeadLetterQueue.QueueName
+      Statistic: "Sum"
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: "GreaterThanOrEqualToThreshold"
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      ActionsEnabled: true
+
+  DeleteUserNotificationsSubscriptionDeadLetterQueueAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            DeleteUserNotificationsSubscriptionDeadLetterQueueAlarm,
+          ],
+        ]
+      AlarmDescription: More than 1 deletion of user notifications failed in the last 5 minutes.
+      Namespace: "AWS/SQS"
+      MetricName: "ApproximateNumberOfMessagesVisible"
+      Dimensions:
+        - Name: "QueueName"
+          Value: !GetAtt DeleteUserNotificationsSubscriptionDeadLetterQueue.QueueName
+      Statistic: "Sum"
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: "GreaterThanOrEqualToThreshold"
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      ActionsEnabled: true
+
+  DeleteUserNotificationsDeadLetterQueueOldestMessageAgeAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            DeleteUserNotificationsDeadLetterQueueOldestMessageAgeAlarm,
+          ],
+        ]
+      MetricName: ApproximateAgeOfOldestMessage
+      Namespace: AWS/SQS
+      Statistic: Maximum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 300
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt DeleteUserNotificationsDeadLetterQueue.QueueName
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+
+  DeleteUserNotificationsSubscriptionDeadLetterQueueOldestMessageAgeAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            DeleteUserNotificationsSubscriptionDeadLetterQueueOldestMessageAgeAlarm,
+          ],
+        ]
+      MetricName: ApproximateAgeOfOldestMessage
+      Namespace: AWS/SQS
+      Statistic: Maximum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 300
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt DeleteUserNotificationsSubscriptionDeadLetterQueue.QueueName
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+
+  DeleteUserNotificationsFunctionSuccessRate:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            DeleteUserNotificationsFunctionSuccessRate,
+          ],
+        ]
+      Metrics:
+        - Id: errors
+          MetricStat:
+            Metric:
+              Namespace: AWS/Lambda
+              MetricName: Errors
+              Dimensions:
+                - Name: FunctionName
+                  Value: !Ref DeleteUserNotificationsFunction
+            Period: 300
+            Stat: Sum
+          ReturnData: false
+        - Id: invocations
+          MetricStat:
+            Metric:
+              Namespace: AWS/Lambda
+              MetricName: Invocations
+              Dimensions:
+                - Name: FunctionName
+                  Value: !Ref DeleteUserNotificationsFunction
+            Period: 300
+            Stat: Sum
+          ReturnData: false
+        - Id: successRate
+          Expression: "1 - (errors / invocations)"
+          Label: "Success Rate"
+          ReturnData: true
+      Threshold: 0.95
+      ComparisonOperator: LessThanThreshold
+      EvaluationPeriods: 1
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+
   ######################
   # Mark Suspicious Activity as Reported
   ######################

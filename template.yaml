@@ -1365,6 +1365,7 @@ Resources:
           Type: SQS
           Properties:
             Queue: !GetAtt UserServicesToFormatQueue.Arn
+      # Why is DeadLetterQueue here? See Note 1 at the bottom of this template.
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt FormatUserServicesDeadLetterQueue.Arn
@@ -1437,6 +1438,7 @@ Resources:
               - sqs:DeleteMessage
               - sqs:GetQueueAttributes
             Resource: !GetAtt UserServicesToFormatQueue.Arn
+          # Why is sqs:SendMessage here? See Note 1 at the bottom of this template.
           - Effect: Allow
             Action:
               - sqs:SendMessage
@@ -1651,6 +1653,7 @@ Resources:
           Type: SQS
           Properties:
             Queue: !GetAtt UserServicesToWriteQueue.Arn
+      # Why is DeadLetterQueue here? See Note 1 at the bottom of this template.
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt WriteUserServicesDeadLetterQueue.Arn
@@ -1721,6 +1724,7 @@ Resources:
               - sqs:DeleteMessage
               - sqs:GetQueueAttributes
             Resource: !GetAtt UserServicesToWriteQueue.Arn
+          # Why is sqs:SendMessage here? See Note 1 at the bottom of this template.
           - Effect: Allow
             Action:
               - sqs:SendMessage
@@ -2548,6 +2552,7 @@ Resources:
           Type: SQS
           Properties:
             Queue: !GetAtt ActivityLogToWriteQueue.Arn
+      # Why is DeadLetterQueue here? See Note 1 at the bottom of this template.
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt WriteActivityLogDeadLetterQueue.Arn
@@ -2625,6 +2630,7 @@ Resources:
               - sqs:DeleteMessage
               - sqs:GetQueueAttributes
             Resource: !GetAtt ActivityLogToWriteQueue.Arn
+          # Why is sqs:SendMessage here? See Note 1 at the bottom of this template.
           - Effect: Allow
             Action:
               - sqs:SendMessage
@@ -5961,3 +5967,28 @@ Outputs:
     Value: !GetAtt WrapperKey.Arn
     Export:
       Name: !Sub "${AWS::StackName}-WrappingKey"
+
+# NOTES
+#
+# Note 1: Inert DeadLetterQueue property on SQS-triggered Lambdas
+#
+# The SAM DeadLetterQueue property (Lambda DeadLetterConfig) only applies to
+# asynchronous invocations. SQS event source mappings invoke Lambda synchronously,
+# so this property has no effect. The actual DLQ mechanism is the RedrivePolicy
+# on the source queue (e.g. UserServicesToFormatQueue, UserServicesToWriteQueue,
+# ActivityLogToWriteQueue).
+#
+# It cannot be removed because DeploymentPreference (canary deploys) publishes
+# Lambda versions. CloudFormation requires all versions referenced by the alias
+# to have the same DeadLetterConfig. Removing it causes:
+# "Specified versions must be configured with the same DLQ target"
+#
+# The associated sqs:SendMessage permissions on the DLQ ARNs are also retained
+# for the same reason - SAM validates the role has SendMessage on the DLQ target.
+#
+# This could be removed in the future with a temporary removal of canary deployments.
+#
+# References:
+# - https://docs.aws.amazon.com/lambda/latest/api/API_DeadLetterConfig.html
+# - https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html
+# - #1057, #1059, #1060

@@ -572,7 +572,7 @@ Resources:
         - Key: Source
           Value: "https://github.com/alphagov/di-account-management-backend/blob/main/infrastructre/template.yaml"
         - Key: BackupFrequency
-          Value: !If [BackupEnabled, "Bihourly", ""]
+          Value: !If [BackupEnabled, "Daily", ""]
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
       SSESpecification:

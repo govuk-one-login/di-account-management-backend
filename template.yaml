@@ -1227,6 +1227,9 @@ Resources:
     Type: AWS::SQS::Queue
     Properties:
       KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt FormatUserServicesDeadLetterQueue.Arn
+        maxReceiveCount: 5
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
 
@@ -1362,9 +1365,6 @@ Resources:
           Type: SQS
           Properties:
             Queue: !GetAtt UserServicesToFormatQueue.Arn
-      DeadLetterQueue:
-        Type: SQS
-        TargetArn: !GetAtt FormatUserServicesDeadLetterQueue.Arn
       Handler: format-user-services.handler
       Role: !GetAtt FormatUserServicesRole.Arn
       ReservedConcurrentExecutions: 30
@@ -1437,10 +1437,6 @@ Resources:
           - Effect: Allow
             Action:
               - sqs:SendMessage
-            Resource: !GetAtt FormatUserServicesDeadLetterQueue.Arn
-          - Effect: Allow
-            Action:
-              - sqs:SendMessage
             Resource: !GetAtt UserServicesToWriteQueue.Arn
           - Effect: Allow
             Action:
@@ -1468,6 +1464,9 @@ Resources:
     Type: AWS::SQS::Queue
     Properties:
       KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt WriteUserServicesDeadLetterQueue.Arn
+        maxReceiveCount: 5
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
 
@@ -1645,9 +1644,6 @@ Resources:
           Type: SQS
           Properties:
             Queue: !GetAtt UserServicesToWriteQueue.Arn
-      DeadLetterQueue:
-        Type: SQS
-        TargetArn: !GetAtt WriteUserServicesDeadLetterQueue.Arn
       Handler: write-user-services.handler
       Role: !GetAtt WriteServiceRecordRole.Arn
       Environment:
@@ -1715,10 +1711,6 @@ Resources:
               - sqs:DeleteMessage
               - sqs:GetQueueAttributes
             Resource: !GetAtt UserServicesToWriteQueue.Arn
-          - Effect: Allow
-            Action:
-              - sqs:SendMessage
-            Resource: !GetAtt WriteUserServicesDeadLetterQueue.Arn
           - Effect: Allow
             Action:
               - dynamodb:PutItem
@@ -2542,9 +2534,6 @@ Resources:
           Type: SQS
           Properties:
             Queue: !GetAtt ActivityLogToWriteQueue.Arn
-      DeadLetterQueue:
-        Type: SQS
-        TargetArn: !GetAtt WriteActivityLogDeadLetterQueue.Arn
       Handler: write-activity-log.handler
       Role: !GetAtt WriteActivityRecordRole.Arn
       ReservedConcurrentExecutions: 30
@@ -2619,10 +2608,6 @@ Resources:
               - sqs:DeleteMessage
               - sqs:GetQueueAttributes
             Resource: !GetAtt ActivityLogToWriteQueue.Arn
-          - Effect: Allow
-            Action:
-              - sqs:SendMessage
-            Resource: !GetAtt WriteActivityLogDeadLetterQueue.Arn
           - Effect: Allow
             Action:
               - dynamodb:PutItem
@@ -2919,6 +2904,9 @@ Resources:
     Type: AWS::SQS::Queue
     Properties:
       KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt WriteActivityLogDeadLetterQueue.Arn
+        maxReceiveCount: 5
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
 

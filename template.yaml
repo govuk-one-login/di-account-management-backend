@@ -1440,6 +1440,10 @@ Resources:
           - Effect: Allow
             Action:
               - sqs:SendMessage
+            Resource: !GetAtt FormatUserServicesDeadLetterQueue.Arn
+          - Effect: Allow
+            Action:
+              - sqs:SendMessage
             Resource: !GetAtt UserServicesToWriteQueue.Arn
           - Effect: Allow
             Action:
@@ -1717,6 +1721,10 @@ Resources:
               - sqs:DeleteMessage
               - sqs:GetQueueAttributes
             Resource: !GetAtt UserServicesToWriteQueue.Arn
+          - Effect: Allow
+            Action:
+              - sqs:SendMessage
+            Resource: !GetAtt WriteUserServicesDeadLetterQueue.Arn
           - Effect: Allow
             Action:
               - dynamodb:PutItem
@@ -2617,6 +2625,10 @@ Resources:
               - sqs:DeleteMessage
               - sqs:GetQueueAttributes
             Resource: !GetAtt ActivityLogToWriteQueue.Arn
+          - Effect: Allow
+            Action:
+              - sqs:SendMessage
+            Resource: !GetAtt WriteActivityLogDeadLetterQueue.Arn
           - Effect: Allow
             Action:
               - dynamodb:PutItem

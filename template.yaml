@@ -1365,6 +1365,9 @@ Resources:
           Type: SQS
           Properties:
             Queue: !GetAtt UserServicesToFormatQueue.Arn
+      DeadLetterQueue:
+        Type: SQS
+        TargetArn: !GetAtt FormatUserServicesDeadLetterQueue.Arn
       Handler: format-user-services.handler
       Role: !GetAtt FormatUserServicesRole.Arn
       ReservedConcurrentExecutions: 30
@@ -1644,6 +1647,9 @@ Resources:
           Type: SQS
           Properties:
             Queue: !GetAtt UserServicesToWriteQueue.Arn
+      DeadLetterQueue:
+        Type: SQS
+        TargetArn: !GetAtt WriteUserServicesDeadLetterQueue.Arn
       Handler: write-user-services.handler
       Role: !GetAtt WriteServiceRecordRole.Arn
       Environment:
@@ -2534,6 +2540,9 @@ Resources:
           Type: SQS
           Properties:
             Queue: !GetAtt ActivityLogToWriteQueue.Arn
+      DeadLetterQueue:
+        Type: SQS
+        TargetArn: !GetAtt WriteActivityLogDeadLetterQueue.Arn
       Handler: write-activity-log.handler
       Role: !GetAtt WriteActivityRecordRole.Arn
       ReservedConcurrentExecutions: 30

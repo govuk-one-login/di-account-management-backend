@@ -50,7 +50,7 @@ export const deleteUserData = async (
     return;
   }
 
-  await Promise.all(
+  await Promise.allSettled(
     queryResponse.Items.map((item) =>
       dynamoDocClient.send(
         new DeleteCommand({
@@ -70,7 +70,7 @@ export const handler = async (
   context: Context
 ): Promise<void> => {
   logger.addContext(context);
-  await Promise.all(
+  await Promise.allSettled(
     event.Records.map(async (record) => {
       try {
         logger.info(
@@ -84,8 +84,7 @@ export const handler = async (
         );
       } catch (error) {
         throw new Error(
-          `Unable to delete inactive account tracker data for message with ID: ${record.Sns.MessageId}, ${
-            (error as Error).message
+          `Unable to delete inactive account tracker data for message with ID: ${record.Sns.MessageId}, ${(error as Error).message
           }`, { cause: error }
         );
       }

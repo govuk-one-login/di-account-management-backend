@@ -17,7 +17,7 @@ export interface QueryAndDispatchEvent {
 }
 
 export const processConfig: Record<string, { queueUrlEnvVar: string }> = {
-  sendNotification: { queueUrlEnvVar: "SEND_NOTIFICATION_QUEUE_URL" },
+  Warning30Day: { queueUrlEnvVar: "WARNING_30_DAY_NOTIFICATION_QUEUE_URL" },
 };
 
 export const calculateTargetDate = (daysToDeletion: number): string => {

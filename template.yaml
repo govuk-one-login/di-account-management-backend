@@ -3168,6 +3168,13 @@ Resources:
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
 
+  30DayNotificationQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+
   AccountSavedNotificationQueueOldestMessageAgeAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
@@ -5978,7 +5985,7 @@ Resources:
       Environment:
         Variables:
           TABLE_NAME: !Ref InactveAccountTrackerStoreTableName
-          SEND_NOTIFICATION_QUEUE_URL: !Ref AccountSavedNotificationQueue
+          WARNING_30_DAY_NOTIFICATION_QUEUE_URL: !Ref 30DayNotificationQueue
           NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
         Alarms:
@@ -6033,6 +6040,7 @@ Resources:
             Resource:
               - !GetAtt QueryAndDispatchInactiveAccountsDeadLetterQueue.Arn
               - !GetAtt AccountSavedNotificationQueue.Arn
+              - !GetAtt 30DayNotificationQueue.Arn
           - Effect: Allow
             Action:
               - dynamodb:Query

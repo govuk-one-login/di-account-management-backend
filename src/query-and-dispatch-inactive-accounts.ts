@@ -4,7 +4,7 @@ import { DynamoDBDocumentClient, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 import { Logger } from "@aws-lambda-powertools/logger";
 import { getEnvironmentVariable } from "./common/utils.js";
-import type { InactiveAccountTrackerRecord } from "./common/model.js";
+import type { InactiveAccountStatus, InactiveAccountTrackerRecord } from "./common/model.js";
 
 const logger = new Logger();
 const dynamoClient = new DynamoDBClient({});
@@ -15,10 +15,12 @@ export interface QueryAndDispatchEvent {
   processName: string;
 }
 
-export const processConfig: Record<string, { queueUrlEnvVar: string; daysToDeletion: number[] }> = {
-  Warning30Day: { queueUrlEnvVar: "WARNING_30_DAY_NOTIFICATION_QUEUE_URL", daysToDeletion: [30] },
-  Warning7Day: { queueUrlEnvVar: "WARNING_8_DAY_NOTIFICATION_QUEUE_URL", daysToDeletion: [7] },
-  DeleteAccount: { queueUrlEnvVar: "ACCOUNT_DELETION_QUEUE_URL", daysToDeletion: [0] },
+type ProcessConfig = Record<string, { queueUrlEnvVar: string; daysToDeletion: number[]; allowedStatuses: InactiveAccountStatus[] }>
+
+export const processConfig: ProcessConfig = {
+  Warning30Day: { queueUrlEnvVar: "WARNING_30_DAY_NOTIFICATION_QUEUE_URL", daysToDeletion: [30], allowedStatuses: ["pending"] },
+  Warning7Day: { queueUrlEnvVar: "WARNING_7_DAY_NOTIFICATION_QUEUE_URL", daysToDeletion: [7], allowedStatuses: ["pending", "30DayWarningSent"] },
+  DeleteAccount: { queueUrlEnvVar: "ACCOUNT_DELETION_QUEUE_URL", daysToDeletion: [0], allowedStatuses: ["pending", "30DayWarningSent", "7DayWarningSent"] },
 };
 
 export const calculateTargetDate = (daysToDeletion: number): string => {
@@ -69,7 +71,7 @@ export const handler = async (
 
   const tableName = getEnvironmentVariable("TABLE_NAME");
 
-  const { queueUrlEnvVar, daysToDeletion } = processConfig[event.processName];
+  const { queueUrlEnvVar, daysToDeletion, allowedStatuses } = processConfig[event.processName];
   const queueUrl = getEnvironmentVariable(queueUrlEnvVar);
 
   const records: InactiveAccountTrackerRecord[] = [];
@@ -80,12 +82,14 @@ export const handler = async (
     records.push(...result);
   }
 
-  if (records.length === 0) {
-    logger.info("No accounts found for target dates");
+  const eligibleRecords = records.filter((record) => allowedStatuses.includes(record.status));
+
+  if (eligibleRecords.length === 0) {
+    logger.info("No eligible accounts found for target dates");
     return;
   }
 
-  for (const record of records) {
+  for (const record of eligibleRecords) {
     await sqsClient.send(
       new SendMessageCommand({
         QueueUrl: queueUrl,
@@ -94,5 +98,5 @@ export const handler = async (
     );
   }
 
-  logger.info(`Dispatched ${records.length} accounts to ${event.processName}`);
+  logger.info(`Dispatched ${eligibleRecords.length} accounts to ${event.processName}`);
 };

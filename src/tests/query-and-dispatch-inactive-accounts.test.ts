@@ -25,14 +25,12 @@ const mockRecord = {
 describe("validateEvent", () => {
   test("throws when daysToDeletion is not an integer", () => {
     expect(() => validateEvent({ daysToDeletion: 1.5, processName: "sendNotification" })).toThrow(
-      "daysToDeletion must be a non-negative integer"
+      "daysToDeletion must be an integer"
     );
   });
 
-  test("throws when daysToDeletion is negative", () => {
-    expect(() => validateEvent({ daysToDeletion: -1, processName: "sendNotification" })).toThrow(
-      "daysToDeletion must be a non-negative integer"
-    );
+  test("does not throw when daysToDeletion is negative", () => {
+    expect(() => validateEvent({ daysToDeletion: -1, processName: "Warning30Day" })).not.toThrow();
   });
 
   test("throws when processName is unknown", () => {
@@ -53,6 +51,7 @@ describe("calculateTargetDate", () => {
 
     expect(calculateTargetDate(3)).toBe("2026-06-20");
     expect(calculateTargetDate(0)).toBe("2026-06-17");
+    expect(calculateTargetDate(-3)).toBe("2026-06-14");
 
     vi.useRealTimers();
   });
@@ -132,10 +131,27 @@ describe("handler", () => {
     expect(sqsMock.commandCalls(SendMessageCommand)).toHaveLength(0);
   });
 
+  test("handles negative daysToDeletion correctly", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-06-17T12:00:00.000Z"));
+
+    dynamoMock.on(QueryCommand).resolves({ Items: [mockRecord] });
+    sqsMock.on(SendMessageCommand).resolves({});
+
+    await handler({ daysToDeletion: -3, processName: "Warning30Day" }, {} as Context);
+
+    expect(dynamoMock.commandCalls(QueryCommand)[0].args[0].input).toMatchObject({
+      ExpressionAttributeValues: { ":date": "2026-06-14" },
+    });
+    expect(sqsMock.commandCalls(SendMessageCommand)).toHaveLength(1);
+
+    vi.useRealTimers();
+  });
+
   test("throws on invalid input", async () => {
     await expect(
-      handler({ daysToDeletion: -1, processName: "Warning30Day" }, {} as Context)
-    ).rejects.toThrow("daysToDeletion must be a non-negative integer");
+      handler({ daysToDeletion: 1.5, processName: "Warning30Day" }, {} as Context)
+    ).rejects.toThrow("daysToDeletion must be an integer");
   });
 
   test("propagates SQS errors", async () => {

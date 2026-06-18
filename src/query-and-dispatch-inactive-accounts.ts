@@ -28,10 +28,9 @@ export const calculateTargetDate = (daysToDeletion: number): string => {
 
 export const validateEvent = (event: QueryAndDispatchEvent): void => {
   if (
-    !Number.isInteger(event.daysToDeletion) ||
-    event.daysToDeletion < 0
+    !Number.isInteger(event.daysToDeletion)
   ) {
-    throw new Error(`Error triggering ${event.processName}, daysToDeletion must be a non-negative integer, received: ${event.daysToDeletion}`);
+    throw new Error(`Error triggering ${event.processName}, daysToDeletion must be an integer, received: ${event.daysToDeletion}`);
   }
   if (!event.processName || !processConfig[event.processName]) {
     throw new Error(`Unknown processName: ${event.processName}`);

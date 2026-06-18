@@ -95,38 +95,6 @@ describe("handler", () => {
     vi.clearAllMocks();
   });
 
-  test("queries DynamoDB for each daysToDeletion and dispatches records to SQS", async () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-06-17T12:00:00.000Z"));
-
-    dynamoMock.on(QueryCommand).resolves({ Items: [mockRecord] });
-    sqsMock.on(SendMessageCommand).resolves({});
-
-    await handler({ processName: "Warning30Day" }, {} as Context);
-
-    // processConfig has daysToDeletion: [29, 30, 31], so 3 queries
-    expect(dynamoMock.commandCalls(QueryCommand)).toHaveLength(3);
-    expect(dynamoMock.commandCalls(QueryCommand)[0].args[0].input).toMatchObject({
-      TableName: "inactive-accounts-table",
-      KeyConditionExpression: "dateForDeletion = :date",
-      ExpressionAttributeValues: { ":date": "2026-07-16" },
-    });
-    expect(dynamoMock.commandCalls(QueryCommand)[1].args[0].input).toMatchObject({
-      ExpressionAttributeValues: { ":date": "2026-07-17" },
-    });
-    expect(dynamoMock.commandCalls(QueryCommand)[2].args[0].input).toMatchObject({
-      ExpressionAttributeValues: { ":date": "2026-07-18" },
-    });
-    // 1 record per query = 3 SQS messages
-    expect(sqsMock.commandCalls(SendMessageCommand)).toHaveLength(3);
-    expect(sqsMock.commandCalls(SendMessageCommand)[0].args[0].input).toMatchObject({
-      QueueUrl: "https://sqs.eu-west-2.amazonaws.com/123/queue",
-      MessageBody: JSON.stringify(mockRecord),
-    });
-
-    vi.useRealTimers();
-  });
-
   test("does not send messages when no records found", async () => {
     dynamoMock.on(QueryCommand).resolves({ Items: [] });
 

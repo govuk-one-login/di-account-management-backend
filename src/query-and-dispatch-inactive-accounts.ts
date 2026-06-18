@@ -12,12 +12,13 @@ const dynamoDocClient = DynamoDBDocumentClient.from(dynamoClient);
 const sqsClient = new SQSClient({});
 
 export interface QueryAndDispatchEvent {
-  daysToDeletion: number;
   processName: string;
 }
 
-export const processConfig: Record<string, { queueUrlEnvVar: string }> = {
-  Warning30Day: { queueUrlEnvVar: "WARNING_30_DAY_NOTIFICATION_QUEUE_URL" },
+export const processConfig: Record<string, { queueUrlEnvVar: string; daysToDeletion: number[] }> = {
+  Warning30Day: { queueUrlEnvVar: "WARNING_30_DAY_NOTIFICATION_QUEUE_URL", daysToDeletion: [30] },
+  Warning7Day: { queueUrlEnvVar: "WARNING_8_DAY_NOTIFICATION_QUEUE_URL", daysToDeletion: [7] },
+  DeleteAccount: { queueUrlEnvVar: "ACCOUNT_DELETION_QUEUE_URL", daysToDeletion: [0] },
 };
 
 export const calculateTargetDate = (daysToDeletion: number): string => {
@@ -27,11 +28,6 @@ export const calculateTargetDate = (daysToDeletion: number): string => {
 };
 
 export const validateEvent = (event: QueryAndDispatchEvent): void => {
-  if (
-    !Number.isInteger(event.daysToDeletion)
-  ) {
-    throw new TypeError(`Error triggering ${event.processName}, daysToDeletion must be an integer, received: ${event.daysToDeletion}`);
-  }
   if (!event.processName || !processConfig[event.processName]) {
     throw new Error(`Unknown processName: ${event.processName}`);
   }
@@ -73,17 +69,19 @@ export const handler = async (
 
   const tableName = getEnvironmentVariable("TABLE_NAME");
 
-  const queueUrl = getEnvironmentVariable(
-    processConfig[event.processName].queueUrlEnvVar
-  );
+  const { queueUrlEnvVar, daysToDeletion } = processConfig[event.processName];
+  const queueUrl = getEnvironmentVariable(queueUrlEnvVar);
 
-  const targetDate = calculateTargetDate(event.daysToDeletion);
-  logger.info(`Querying accounts for deletion date: ${targetDate}`);
-
-  const records = await queryAccountsByDate(tableName, targetDate);
+  const records: InactiveAccountTrackerRecord[] = [];
+  for (const days of daysToDeletion) {
+    const targetDate = calculateTargetDate(days);
+    logger.info(`Querying accounts for deletion date: ${targetDate}`);
+    const result = await queryAccountsByDate(tableName, targetDate);
+    records.push(...result);
+  }
 
   if (records.length === 0) {
-    logger.info("No accounts found for target date");
+    logger.info("No accounts found for target dates");
     return;
   }
 

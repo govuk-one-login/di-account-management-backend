@@ -23,24 +23,20 @@ const mockRecord = {
 };
 
 describe("validateEvent", () => {
-  test("throws when daysToDeletion is not an integer", () => {
-    expect(() => validateEvent({ daysToDeletion: 1.5, processName: "sendNotification" })).toThrow(
-      "daysToDeletion must be an integer"
-    );
-  });
-
-  test("does not throw when daysToDeletion is negative", () => {
-    expect(() => validateEvent({ daysToDeletion: -1, processName: "Warning30Day" })).not.toThrow();
-  });
-
   test("throws when processName is unknown", () => {
-    expect(() => validateEvent({ daysToDeletion: 3, processName: "unknown" })).toThrow(
+    expect(() => validateEvent({ processName: "unknown" })).toThrow(
       "Unknown processName: unknown"
     );
   });
 
+  test("throws when processName is empty", () => {
+    expect(() => validateEvent({ processName: "" })).toThrow(
+      "Unknown processName:"
+    );
+  });
+
   test("does not throw for valid input", () => {
-    expect(() => validateEvent({ daysToDeletion: 3, processName: "Warning30Day" })).not.toThrow();
+    expect(() => validateEvent({ processName: "Warning30Day" })).not.toThrow();
   });
 });
 
@@ -99,22 +95,30 @@ describe("handler", () => {
     vi.clearAllMocks();
   });
 
-  test("queries DynamoDB and dispatches each record to SQS", async () => {
+  test("queries DynamoDB for each daysToDeletion and dispatches records to SQS", async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-06-17T12:00:00.000Z"));
 
-    dynamoMock.on(QueryCommand).resolves({ Items: [mockRecord, { ...mockRecord, commonSubjectId: "user-2" }] });
+    dynamoMock.on(QueryCommand).resolves({ Items: [mockRecord] });
     sqsMock.on(SendMessageCommand).resolves({});
 
-    await handler({ daysToDeletion: 3, processName: "Warning30Day" }, {} as Context);
+    await handler({ processName: "Warning30Day" }, {} as Context);
 
-    expect(dynamoMock.commandCalls(QueryCommand)).toHaveLength(1);
+    // processConfig has daysToDeletion: [29, 30, 31], so 3 queries
+    expect(dynamoMock.commandCalls(QueryCommand)).toHaveLength(3);
     expect(dynamoMock.commandCalls(QueryCommand)[0].args[0].input).toMatchObject({
       TableName: "inactive-accounts-table",
       KeyConditionExpression: "dateForDeletion = :date",
-      ExpressionAttributeValues: { ":date": "2026-06-20" },
+      ExpressionAttributeValues: { ":date": "2026-07-16" },
     });
-    expect(sqsMock.commandCalls(SendMessageCommand)).toHaveLength(2);
+    expect(dynamoMock.commandCalls(QueryCommand)[1].args[0].input).toMatchObject({
+      ExpressionAttributeValues: { ":date": "2026-07-17" },
+    });
+    expect(dynamoMock.commandCalls(QueryCommand)[2].args[0].input).toMatchObject({
+      ExpressionAttributeValues: { ":date": "2026-07-18" },
+    });
+    // 1 record per query = 3 SQS messages
+    expect(sqsMock.commandCalls(SendMessageCommand)).toHaveLength(3);
     expect(sqsMock.commandCalls(SendMessageCommand)[0].args[0].input).toMatchObject({
       QueueUrl: "https://sqs.eu-west-2.amazonaws.com/123/queue",
       MessageBody: JSON.stringify(mockRecord),
@@ -126,32 +130,15 @@ describe("handler", () => {
   test("does not send messages when no records found", async () => {
     dynamoMock.on(QueryCommand).resolves({ Items: [] });
 
-    await handler({ daysToDeletion: 3, processName: "Warning30Day" }, {} as Context);
+    await handler({ processName: "Warning30Day" }, {} as Context);
 
     expect(sqsMock.commandCalls(SendMessageCommand)).toHaveLength(0);
   });
 
-  test("handles negative daysToDeletion correctly", async () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-06-17T12:00:00.000Z"));
-
-    dynamoMock.on(QueryCommand).resolves({ Items: [mockRecord] });
-    sqsMock.on(SendMessageCommand).resolves({});
-
-    await handler({ daysToDeletion: -3, processName: "Warning30Day" }, {} as Context);
-
-    expect(dynamoMock.commandCalls(QueryCommand)[0].args[0].input).toMatchObject({
-      ExpressionAttributeValues: { ":date": "2026-06-14" },
-    });
-    expect(sqsMock.commandCalls(SendMessageCommand)).toHaveLength(1);
-
-    vi.useRealTimers();
-  });
-
-  test("throws on invalid input", async () => {
+  test("throws on invalid processName", async () => {
     await expect(
-      handler({ daysToDeletion: 1.5, processName: "Warning30Day" }, {} as Context)
-    ).rejects.toThrow("daysToDeletion must be an integer");
+      handler({ processName: "unknown" }, {} as Context)
+    ).rejects.toThrow("Unknown processName: unknown");
   });
 
   test("propagates SQS errors", async () => {
@@ -159,7 +146,7 @@ describe("handler", () => {
     sqsMock.on(SendMessageCommand).rejects(new Error("SQS failure"));
 
     await expect(
-      handler({ daysToDeletion: 3, processName: "Warning30Day" }, {} as Context)
+      handler({ processName: "Warning30Day" }, {} as Context)
     ).rejects.toThrow("SQS failure");
   });
 });

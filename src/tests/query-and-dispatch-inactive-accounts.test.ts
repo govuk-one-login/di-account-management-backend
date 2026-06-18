@@ -42,7 +42,7 @@ describe("validateEvent", () => {
   });
 
   test("does not throw for valid input", () => {
-    expect(() => validateEvent({ daysToDeletion: 3, processName: "sendNotification" })).not.toThrow();
+    expect(() => validateEvent({ daysToDeletion: 3, processName: "Warning30Day" })).not.toThrow();
   });
 });
 
@@ -93,7 +93,7 @@ describe("handler", () => {
     dynamoMock.reset();
     sqsMock.reset();
     process.env.TABLE_NAME = "inactive-accounts-table";
-    process.env.SEND_NOTIFICATION_QUEUE_URL = "https://sqs.eu-west-2.amazonaws.com/123/queue";
+    process.env.WARNING_30_DAY_NOTIFICATION_QUEUE_URL = "https://sqs.eu-west-2.amazonaws.com/123/queue";
   });
 
   afterEach(() => {
@@ -107,7 +107,7 @@ describe("handler", () => {
     dynamoMock.on(QueryCommand).resolves({ Items: [mockRecord, { ...mockRecord, commonSubjectId: "user-2" }] });
     sqsMock.on(SendMessageCommand).resolves({});
 
-    await handler({ daysToDeletion: 3, processName: "sendNotification" }, {} as Context);
+    await handler({ daysToDeletion: 3, processName: "Warning30Day" }, {} as Context);
 
     expect(dynamoMock.commandCalls(QueryCommand)).toHaveLength(1);
     expect(dynamoMock.commandCalls(QueryCommand)[0].args[0].input).toMatchObject({
@@ -127,14 +127,14 @@ describe("handler", () => {
   test("does not send messages when no records found", async () => {
     dynamoMock.on(QueryCommand).resolves({ Items: [] });
 
-    await handler({ daysToDeletion: 3, processName: "sendNotification" }, {} as Context);
+    await handler({ daysToDeletion: 3, processName: "Warning30Day" }, {} as Context);
 
     expect(sqsMock.commandCalls(SendMessageCommand)).toHaveLength(0);
   });
 
   test("throws on invalid input", async () => {
     await expect(
-      handler({ daysToDeletion: -1, processName: "sendNotification" }, {} as Context)
+      handler({ daysToDeletion: -1, processName: "Warning30Day" }, {} as Context)
     ).rejects.toThrow("daysToDeletion must be a non-negative integer");
   });
 
@@ -143,7 +143,7 @@ describe("handler", () => {
     sqsMock.on(SendMessageCommand).rejects(new Error("SQS failure"));
 
     await expect(
-      handler({ daysToDeletion: 3, processName: "sendNotification" }, {} as Context)
+      handler({ daysToDeletion: 3, processName: "Warning30Day" }, {} as Context)
     ).rejects.toThrow("SQS failure");
   });
 });

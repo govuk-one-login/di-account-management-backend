@@ -1098,7 +1098,7 @@ Resources:
             StartingPosition: LATEST
             FilterCriteria:
               Filters:
-                - Pattern: '{ "eventName": ["INSERT"] }'
+                - Pattern: '{ "eventName": ["INSERT"], "dynamodb": { "NewImage": { "event": { "M": { "event_name": { "S": ["AUTH_AUTH_CODE_ISSUED"] } } } } } }'
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt QueryUserServicesDeadLetterQueue.Arn
@@ -2802,7 +2802,7 @@ Resources:
             StartingPosition: LATEST
             FilterCriteria:
               Filters:
-                - Pattern: '{ "eventName": ["INSERT"] }'
+                - Pattern: '{ "eventName": ["INSERT"], "dynamodb": { "NewImage": { "event": { "M": { "event_name": { "S": ["AUTH_AUTH_CODE_ISSUED", "AUTH_IPV_AUTHORISATION_REQUESTED", "AUTH_IPV_SUCCESSFUL_IDENTITY_RESPONSE_RECEIVED"] } } } } } }'
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt FormatActivityLogDeadLetterQueue.Arn
@@ -3121,7 +3121,7 @@ Resources:
             StartingPosition: LATEST
             FilterCriteria:
               Filters:
-                - Pattern: '{ "eventName": ["INSERT"] }'
+                - Pattern: '{ "eventName": ["INSERT"], "dynamodb": { "NewImage": { "event": { "M": { "event_name": { "S": ["AUTH_AUTH_CODE_ISSUED"] } } } } } }'
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt UpdateInactiveAccountTrackerDeadLetterQueue.Arn

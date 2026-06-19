@@ -1071,6 +1071,39 @@ Resources:
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
 
+  UnknownClientIdAnomalyDetector:
+    Type: AWS::CloudWatch::AnomalyDetector
+    Properties:
+      Namespace: "account-management-backend"
+      MetricName: "unknownClientIdReceived"
+      Stat: Sum
+
+  UnknownClientIdAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [!Ref AWS::StackName, !Ref Environment, UnknownClientIdAlarm],
+        ]
+      AlarmDescription: "Anomalous number of unknown client IDs received. Runbook: https://github.com/govuk-one-login/di-account-management-backend/blob/main/docs/runbooks/unknown-client-id-alarm.md"
+      ComparisonOperator: GreaterThanUpperThreshold
+      EvaluationPeriods: 1
+      ThresholdMetricId: ad1
+      Metrics:
+        - Id: m1
+          MetricStat:
+            Metric:
+              Namespace: "account-management-backend"
+              MetricName: "unknownClientIdReceived"
+            Period: 86400
+            Stat: Sum
+        - Id: ad1
+          Expression: ANOMALY_DETECTION_BAND(m1, 2)
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      ActionsEnabled: true
+
   ########################
   # Querying User Services
   ########################

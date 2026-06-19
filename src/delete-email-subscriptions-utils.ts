@@ -50,7 +50,19 @@ export const deleteEmailSubscription = async (userData: UserData) => {
   const deleteUrl = getDeleteUrl(GOV_ACCOUNTS_PUBLISHING_API_URL, userData);
   const config = getRequestConfig(GOV_ACCOUNTS_PUBLISHING_API_TOKEN);
 
-  const response = await fetch(deleteUrl, config);
+  let response: Response;
+  try {
+    response = await fetch(deleteUrl, config);
+  } catch (err) {
+    const error = err as Error;
+    logger.error("Failed to fetch GOV.UK API", {
+      errorName: error.name,
+      errorMessage: error.message,
+      errorCauseCode: (error.cause as { code?: string })?.code ?? "",
+    });
+    throw error;
+  }
+
   if (response.status === 404) {
     // We are logging a 404 as is an appropriate reponse when the user does not have an email subscription .
     logger.info(`Received a 404 response from GOV.UK API for URL`);

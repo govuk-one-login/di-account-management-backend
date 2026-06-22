@@ -17,12 +17,30 @@ PROFILE_ARG=""
 
 while [[ $# -gt 0 ]]; do
   case $1 in
-    --table-name) TABLE_NAME="$2"; shift 2 ;;
-    --profile) PROFILE_ARG="--profile $2"; shift 2 ;;
-    --region) REGION="$2"; shift 2 ;;
-    *) echo "Unknown arg: $1"; exit 1 ;;
+  --table-name)
+    TABLE_NAME="$2"
+    shift 2
+    ;;
+  --profile)
+    PROFILE_ARG="--profile $2"
+    shift 2
+    ;;
+  --region)
+    REGION="$2"
+    shift 2
+    ;;
+  *)
+    echo "Unknown arg: $1"
+    exit 1
+    ;;
   esac
 done
+
+status_pending="pending"
+status_30day_warned="30DayWarningSent"
+status_7day_warned="7DayWarningSent"
+status_permanently_suspended="permenantSuspension"
+status_deleting="deleting"
 
 # Calculate target dates relative to today
 today=$(date -u +%Y-%m-%d)
@@ -58,45 +76,45 @@ put_item() {
 
 # --- Warning30Day process: daysToDeletion=30, allowedStatuses=["pending"] ---
 echo "=== Warning30Day scenarios (dateForDeletion = $in_30_days) ==="
-put_item "$in_30_days" "user-30day-pending-001" "pending" \
+put_item "$in_30_days" "user-30day-pending-001" "$status_pending" \
   "ELIGIBLE: pending status, should be dispatched to 30-day warning queue"
-put_item "$in_30_days" "user-30day-pending-002" "pending" \
+put_item "$in_30_days" "user-30day-pending-002" "$status_pending" \
   "ELIGIBLE: another pending account for 30-day warning"
-put_item "$in_30_days" "user-30day-already-warned" "30DayWarningSent" \
+put_item "$in_30_days" "user-30day-already-warned" "$status_30day_warned" \
   "FILTERED OUT: already sent 30-day warning, not in allowedStatuses"
-put_item "$in_30_days" "user-30day-7day-warned" "7DayWarningSent" \
+put_item "$in_30_days" "user-30day-7day-warned" "$status_7day_warned" \
   "FILTERED OUT: 7-day warning already sent, not in allowedStatuses"
-put_item "$in_30_days" "user-30day-deleting" "deleting" \
+put_item "$in_30_days" "user-30day-deleting" "$status_deleting" \
   "FILTERED OUT: already in deleting status"
-put_item "$in_30_days" "user-30day-suspended" "permenantSuspension" \
+put_item "$in_30_days" "user-30day-suspended" "$status_permanently_suspended" \
   "FILTERED OUT: permanently suspended"
 echo ""
 
 # --- Warning7Day process: daysToDeletion=7, allowedStatuses=["pending", "30DayWarningSent"] ---
 echo "=== Warning7Day scenarios (dateForDeletion = $in_7_days) ==="
-put_item "$in_7_days" "user-7day-pending-001" "pending" \
+put_item "$in_7_days" "user-7day-pending-001" "$status_pending" \
   "ELIGIBLE: pending status, should be dispatched to 7-day warning queue"
-put_item "$in_7_days" "user-7day-30warned-001" "30DayWarningSent" \
+put_item "$in_7_days" "user-7day-30warned-001" "$status_30day_warned" \
   "ELIGIBLE: 30-day warning sent, should be dispatched to 7-day warning queue"
-put_item "$in_7_days" "user-7day-already-7warned" "7DayWarningSent" \
+put_item "$in_7_days" "user-7day-already-7warned" "$status_7day_warned" \
   "FILTERED OUT: 7-day warning already sent, not in allowedStatuses"
-put_item "$in_7_days" "user-7day-deleting" "deleting" \
+put_item "$in_7_days" "user-7day-deleting" "$status_deleting" \
   "FILTERED OUT: already in deleting status"
-put_item "$in_7_days" "user-7day-suspended" "permenantSuspension" \
+put_item "$in_7_days" "user-7day-suspended" "$status_permanently_suspended" \
   "FILTERED OUT: permanently suspended"
 echo ""
 
 # --- DeleteAccount process: daysToDeletion=0, allowedStatuses=["pending", "30DayWarningSent", "7DayWarningSent"] ---
 echo "=== DeleteAccount scenarios (dateForDeletion = $today) ==="
-put_item "$today" "user-delete-pending-001" "pending" \
+put_item "$today" "user-delete-pending-001" "$status_pending" \
   "ELIGIBLE: pending status, should be dispatched to deletion queue"
-put_item "$today" "user-delete-30warned-001" "30DayWarningSent" \
+put_item "$today" "user-delete-30warned-001" "$status_30day_warned" \
   "ELIGIBLE: 30-day warning sent, should be dispatched to deletion queue"
-put_item "$today" "user-delete-7warned-001" "7DayWarningSent" \
+put_item "$today" "user-delete-7warned-001" "$status_7day_warned" \
   "ELIGIBLE: 7-day warning sent, should be dispatched to deletion queue"
-put_item "$today" "user-delete-deleting" "deleting" \
+put_item "$today" "user-delete-deleting" "$status_deleting" \
   "FILTERED OUT: already in deleting status"
-put_item "$today" "user-delete-suspended" "permenantSuspension" \
+put_item "$today" "user-delete-suspended" "$status_permanently_suspended" \
   "FILTERED OUT: permanently suspended"
 echo ""
 

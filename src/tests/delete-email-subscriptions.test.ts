@@ -178,6 +178,26 @@ describe("deleteEmailSubscription", () => {
     );
   });
 
+  test("logs structured error details when fetch fails", async () => {
+    const cause = new Error("connect ETIMEDOUT") as Error & { code?: string };
+    cause.code = "ETIMEDOUT";
+    const fetchError = new TypeError("fetch failed");
+    fetchError.cause = cause;
+    mockFetch.mockRejectedValue(fetchError);
+
+    await expect(deleteEmailSubscription(TEST_USER_DATA)).rejects.toThrow(
+      "fetch failed"
+    );
+    expect(mockLogger.error).toHaveBeenCalledWith(
+      "Failed to fetch GOV.UK API",
+      {
+        errorName: "TypeError",
+        errorMessage: "fetch failed",
+        errorCauseCode: "ETIMEDOUT",
+      }
+    );
+  });
+
   test("constructs URL without legacy_subject_id when not present", async () => {
     const userData = { ...TEST_USER_DATA, legacy_subject_id: undefined };
     mockFetch.mockResolvedValue({ ok: true, status: 200 });

@@ -1,77 +1,82 @@
 {
-  "$schema": "https://raw.githubusercontent.com/govuk-one-login/quality-gates/refs/tags/v0.1.0/schemas/schema.json",
+  "$schema": "https://raw.githubusercontent.com/govuk-one-login/quality-gates/refs/tags/v0.11.0/schemas/schema.json",
   "services": [
     {
-      "service-tag": "home",
-      "quality-gates": [
+      "serviceTag": "home",
+      "promotionType": "securePipelines",
+      "checks": [
         {
-          "check-types": [
+          "checkTypes": [
             "unit",
             "new feature",
             "regression",
             "code style and linting"
           ],
-          "provider": "GitHub",
           "phase": "pre-merge",
+          "provider": "GitHub",
           "config": {
             "file": ".github/workflows/lint-and-test-lambdas.yaml",
-            "path": "jobs.lint_and_test",
-            "name": "Lint and test lambdas"
+            "path": "$.jobs.lint_and_test"
           }
         },
         {
-          "check-types": ["code quality"],
-          "provider": "GitHub",
+          "checkTypes": [
+            "code quality"
+          ],
           "phase": "pre-merge",
+          "provider": "GitHub",
           "config": {
             "file": ".github/workflows/checkov.yml",
-            "path": "jobs.checkov",
-            "name": "Checkov"
+            "path": "$.jobs.checkov"
           }
         },
         {
-          "check-types": [
+          "checkTypes": [
             "secret scanning"
           ],
-          "provider": "GitHub",
           "phase": "pre-merge",
+          "provider": "GitHub",
           "config": {
             "file": ".github/workflows/detect-secrets.yaml",
-            "path": "jobs.detect-secrets",
-            "name": "Detect secrets"
+            "path": "$.jobs.detect-secrets"
           }
-        },        
+        },
         {
-          "check-types": ["code quality", "unit test coverage", "vulnerability detection"],
-          "provider": "GitHub",
+          "checkTypes": [
+            "code quality",
+            "unit test coverage",
+            "vulnerability detection"
+          ],
           "phase": "pre-merge",
+          "provider": "GitHub",
           "config": {
             "file": ".github/workflows/sonarcloud.yaml",
-            "path": "jobs.sonarcloud_home_backend",
-            "name": "SonarCloud"
+            "path": "$.jobs.sonarcloud_home_backend"
           }
         },
         {
-          "check-types": ["integration", "regression"],
-          "provider": "GitHub",
+          "checkTypes": [
+            "integration",
+            "regression"
+          ],
           "phase": "pre-merge",
+          "provider": "GitHub",
           "config": {
             "file": ".github/workflows/pre-merge.yaml",
-            "path": "jobs.test",
-            "name": "Pre Merge Check"
+            "path": "$.jobs.test"
           }
         },
         {
-          "check-types": [
+          "checkTypes": [
             "unit",
             "new feature",
             "regression"
           ],
-          "provider": "GitHub",
           "phase": "pre-upload",
+          "provider": "GitHub",
           "config": {
             "file": ".github/workflows/sam-app-post-merge-actions.yaml",
-            "path": "jobs.deploy"
+            "path": "$.jobs.deploy"
           }
         }
       ]

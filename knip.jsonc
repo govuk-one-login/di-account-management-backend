@@ -32,7 +32,6 @@
       "ignoreBinaries": ["zizmor", "brew", "sam", "read", "pre-commit"],
       "ignoreDependencies": [
         "esbuild",
-        "@aws-sdk/client-lambda",
         "@typescript-eslint/eslint-plugin",
         "eslint-plugin-prettier",
         "lint-staged",

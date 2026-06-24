@@ -6356,19 +6356,19 @@ Resources:
         Warning30DayScheduleEvent:
           Type: Schedule
           Properties:
-            Schedule: "cron(0 9 * * *)"
+            Schedule: "cron(0 9 * * ? *)"
             Input: '{"processName": "Warning30Day"}'
             Enabled: !If [IsDevelopment, true, false]
         Warning7DayScheduleEvent:
           Type: Schedule
           Properties:
-            Schedule: "cron(0 9 * * *)"
+            Schedule: "cron(0 9 * * ? *)"
             Input: '{"processName": "Warning7Day"}'
             Enabled: !If [IsDevelopment, true, false]
         AccountDeletionScheduleEvent:
           Type: Schedule
           Properties:
-            Schedule: "cron(0 9 * * *)"
+            Schedule: "cron(0 9 * * ? *)"
             Input: '{"processName": "DeleteAccount"}'
             Enabled: !If [IsDevelopment, true, false]
 

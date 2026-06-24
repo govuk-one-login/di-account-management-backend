@@ -210,7 +210,7 @@ export interface Personalisation {
   timeCy: string;
 }
 
-type InactiveAccountStatus = "pending" | "deleting"
+export type InactiveAccountStatus = "pending" | "deleting" | "30DayWarningSent" | "7DayWarningSent" | "permanentSuspension"
 
 export interface InactiveAccountTrackerRecord {
   dateForDeletion: string;

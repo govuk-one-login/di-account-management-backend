@@ -39,7 +39,7 @@ done
 status_pending="pending"
 status_30day_warned="30DayWarningSent"
 status_7day_warned="7DayWarningSent"
-status_permanently_suspended="permenantSuspension"
+status_permanently_suspended="permanentSuspension"
 status_deleting="deleting"
 
 # Calculate target dates relative to today

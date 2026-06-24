@@ -6353,19 +6353,19 @@ Resources:
       PackageType: Zip
       Timeout: 60
       Events:
-        ScheduleEvent:
+        Warning30DayScheduleEvent:
           Type: Schedule
           Properties:
             Schedule: "cron(0 9 * * *)"
             Input: '{"processName": "Warning30Day"}'
             Enabled: !If [IsDevelopment, true, false]
-        ScheduleEvent:
+        Warning7DayScheduleEvent:
           Type: Schedule
           Properties:
             Schedule: "cron(0 9 * * *)"
             Input: '{"processName": "Warning7Day"}'
             Enabled: !If [IsDevelopment, true, false]
-        ScheduleEvent:
+        AccountDeletionScheduleEvent:
           Type: Schedule
           Properties:
             Schedule: "cron(0 9 * * *)"

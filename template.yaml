@@ -6357,8 +6357,8 @@ Resources:
           Type: Schedule
           Properties:
             Schedule: "rate(1 day)"
-            Input: '{"daysToDeletion": 30, "processName": "sendNotification"}'
-            Enabled: !If [IsNotDevelopmentOrDemo, true, false]
+            Input: '{"processName": "Warning30Day"}'
+            Enabled: !If [IsDevelopment, true, false]
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt QueryAndDispatchInactiveAccountsDeadLetterQueue.Arn

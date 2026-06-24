@@ -6356,9 +6356,22 @@ Resources:
         ScheduleEvent:
           Type: Schedule
           Properties:
-            Schedule: "rate(1 day)"
+            Schedule: "cron(0 9 * * *)"
             Input: '{"processName": "Warning30Day"}'
             Enabled: !If [IsDevelopment, true, false]
+        ScheduleEvent:
+          Type: Schedule
+          Properties:
+            Schedule: "cron(0 9 * * *)"
+            Input: '{"processName": "Warning7Day"}'
+            Enabled: !If [IsDevelopment, true, false]
+        ScheduleEvent:
+          Type: Schedule
+          Properties:
+            Schedule: "cron(0 9 * * *)"
+            Input: '{"processName": "DeleteAccount"}'
+            Enabled: !If [IsDevelopment, true, false]
+
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt QueryAndDispatchInactiveAccountsDeadLetterQueue.Arn

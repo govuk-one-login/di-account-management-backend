@@ -3364,6 +3364,133 @@ Resources:
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
 
+  #########################################
+  # Publish Account Deletion to SNS Topic
+  #########################################
+
+  PublishAccountDeletionFunction:
+    Condition: IsDevelopment
+    Type: AWS::Serverless::Function
+    DependsOn:
+      - PublishAccountDeletionFunctionLogGroup
+    Properties:
+      FunctionName: !Sub ${Environment}-${AWS::StackName}-publish-account-deletion
+      CodeUri: src
+      PackageType: Zip
+      Events:
+        DynamoStream:
+          Type: DynamoDB
+          Properties:
+            BatchSize: 1
+            Stream: !GetAtt RawEventsStore.StreamArn
+            Enabled: true
+            DestinationConfig:
+              OnFailure:
+                Destination: !GetAtt PublishAccountDeletionDeadLetterQueue.Arn
+            StartingPosition: LATEST
+            FilterCriteria:
+              Filters:
+                - Pattern: '{ "eventName": ["INSERT"], "dynamodb": { "NewImage": { "event": { "M": { "event_name": { "S": ["AUTH_DELETE_ACCOUNT"] } } } } } }'
+      DeadLetterQueue:
+        Type: SQS
+        TargetArn: !GetAtt PublishAccountDeletionDeadLetterQueue.Arn
+      Handler: publish-account-deletion.handler
+      Role: !GetAtt PublishAccountDeletionRole.Arn
+      Environment:
+        Variables:
+          TOPIC_ARN: !Ref UserAccountDeletionTopic
+          NODE_OPTIONS: --enable-source-maps
+      DeploymentPreference:
+        Alarms:
+          - !Ref AWS::NoValue
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Format: "esm"
+        OutExtension:
+          - .js=.mjs
+        Target: "es2022"
+        Sourcemap: true
+        EntryPoints:
+          - publish-account-deletion.ts
+        Banner:
+          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
+
+  PublishAccountDeletionDeadLetterQueue:
+    Condition: IsDevelopment
+    Type: AWS::SQS::Queue
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      MessageRetentionPeriod: 1209600
+      KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
+
+  PublishAccountDeletionRole:
+    Condition: IsDevelopment
+    Type: AWS::IAM::Role
+    Properties:
+      PermissionsBoundary: !If
+        - UsePermissionsBoundary
+        - !Ref PermissionsBoundary
+        - !Ref AWS::NoValue
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+        - !Ref PublishAccountDeletionPolicy
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+
+  PublishAccountDeletionPolicy:
+    Condition: IsDevelopment
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - sqs:SendMessage
+            Resource: !GetAtt PublishAccountDeletionDeadLetterQueue.Arn
+          - Effect: Allow
+            Action:
+              - dynamodb:DescribeStream
+              - dynamodb:GetRecords
+              - dynamodb:GetShardIterator
+              - dynamodb:ListStreams
+            Resource:
+              - !GetAtt RawEventsStore.StreamArn
+              - !Sub
+                - "${Arn}/*"
+                - Arn: !GetAtt RawEventsStore.StreamArn
+          - Effect: Allow
+            Action:
+              - sns:Publish
+            Resource: !Ref UserAccountDeletionTopic
+          - Effect: Allow
+            Action:
+              - kms:Decrypt
+              - kms:GenerateDataKey*
+            Resource:
+              - !GetAtt QueueKmsKey.Arn
+              - !GetAtt DatabaseKmsKey.Arn
+              - !GetAtt SnsKmsKey.Arn
+
+  PublishAccountDeletionFunctionLogGroup:
+    Condition: IsDevelopment
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-publish-account-deletion"
+      RetentionInDays: 30
+      KmsKeyId: !GetAtt LoggingKmsKey.Arn
+
   ################################
   # Deleting Activity Log Records
   ################################

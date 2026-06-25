@@ -6348,7 +6348,7 @@ Resources:
     DependsOn:
       - QueryAndDispatchInactiveAccountsFunctionLogGroup
     Properties:
-      FunctionName: !Sub ${Environment}-${AWS::StackName}-query-and-dispatch-inactive-accounts
+      FunctionName: !Sub ${Environment}-${AWS::StackName}-inactive-accounts-processor
       CodeUri: src
       PackageType: Zip
       Timeout: 60
@@ -6459,7 +6459,7 @@ Resources:
   QueryAndDispatchInactiveAccountsFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-query-and-dispatch-inactive-accounts"
+      LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-inactive-accounts-processor"
       RetentionInDays: 30
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 

@@ -14,7 +14,7 @@ import {
 } from "./age-thresholds.js";
 import { AGE_BUCKET_LABELS } from "./compute-report.js";
 
-export interface SegmentResult {
+interface SegmentResult {
   perUserCounters: number[][];
   exclusiveAgeBuckets: number[];
 }

@@ -3452,6 +3452,7 @@ Resources:
       Environment:
         Variables:
           NODE_OPTIONS: --enable-source-maps
+          INACTIVE_ACCOUNT_TRACKER_TABLE_NAME: !Ref InactveAccountTrackerStoreTableName
       DeploymentPreference:
         Alarms:
           Fn::If:
@@ -3522,6 +3523,13 @@ Resources:
               - !Sub
                 - "${Arn}/*"
                 - Arn: !GetAtt RawEventsStore.StreamArn
+          - Effect: Allow
+            Action:
+              - dynamodb:Query
+              - dynamodb:UpdateItem
+            Resource:
+              - !GetAtt InactiveAccountTrackerStore.Arn
+              - !Sub "${InactiveAccountTrackerStore.Arn}/index/CommonSubjectIdIndex"
           - Effect: Allow
             Action:
               - kms:Decrypt

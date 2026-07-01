@@ -3578,6 +3578,7 @@ Resources:
 
   UpdateUserEmailFunctionSuccessRate:
     Type: AWS::CloudWatch::Alarm
+    Condition: IsDevelopment
     Properties:
       AlarmName:
         !Join [

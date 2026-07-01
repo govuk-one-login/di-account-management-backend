@@ -3424,6 +3424,7 @@ Resources:
 
   UpdateUserEmailFunction:
     Type: AWS::Serverless::Function
+    Condition: IsDevelopment
     DependsOn:
       - UpdateUserEmailFunctionLogGroup
     Properties:
@@ -3578,7 +3579,6 @@ Resources:
 
   UpdateUserEmailFunctionSuccessRate:
     Type: AWS::CloudWatch::Alarm
-    Condition: IsDevelopment
     Properties:
       AlarmName:
         !Join [

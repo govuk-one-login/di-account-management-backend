@@ -3424,7 +3424,6 @@ Resources:
 
   UpdateUserEmailFunction:
     Type: AWS::Serverless::Function
-    Condition: IsDevelopment
     DependsOn:
       - UpdateUserEmailFunctionLogGroup
     Properties:

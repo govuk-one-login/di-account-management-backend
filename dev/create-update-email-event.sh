@@ -40,12 +40,10 @@ read -rp "Enter user_id: " USER_ID
 read -rp "Enter new email address: " NEW_EMAIL
 
 if [[ -z "$USER_ID" ]]; then
-  echo "Error: user_id is required"
   exit 1
 fi
 
 if [[ -z "$NEW_EMAIL" ]]; then
-  echo "Error: email address is required"
   exit 1
 fi
 

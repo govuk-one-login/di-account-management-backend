@@ -85,6 +85,11 @@ updates:
       - dependencies
     commit-message:
       prefix: BAU
+    groups:
+      pre-commit-minor-patch:
+        update-types:
+          - "minor"
+          - "patch"
 
   - package-ecosystem: pip
     directories:
@@ -101,3 +106,8 @@ updates:
     labels:
       - dependabot
       - dependencies
+    groups:
+      pip-minor-patch:
+        update-types:
+          - "minor"
+          - "patch"

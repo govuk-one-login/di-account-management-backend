@@ -41,7 +41,7 @@ const generateTestTxmaEvent = (
   user,
 });
 
-const generateDynamoSteamRecord = (
+const generateDynamoStreamRecord = (
   txmaEventName = "AUTH_AUTH_CODE_ISSUED"
 ): DynamoDBRecord => ({
   eventID: "1234567",
@@ -82,14 +82,14 @@ const generateDynamoSteamRecord = (
 });
 
 export const TEST_DYNAMO_STREAM_EVENT: DynamoDBStreamEvent = {
-  Records: [generateDynamoSteamRecord(), generateDynamoSteamRecord()],
+  Records: [generateDynamoStreamRecord(), generateDynamoStreamRecord()],
 };
 
 export const MUCKY_DYNAMODB_STREAM_EVENT: DynamoDBStreamEvent = {
   Records: [
-    generateDynamoSteamRecord("AUTH_IPV_AUTHORISATION_REQUESTED"),
-    generateDynamoSteamRecord(),
-    generateDynamoSteamRecord("AUTH_OTHER_RANDOM_EVENT"),
+    generateDynamoStreamRecord("AUTH_IPV_AUTHORISATION_REQUESTED"),
+    generateDynamoStreamRecord(),
+    generateDynamoStreamRecord("AUTH_OTHER_RANDOM_EVENT"),
   ],
 };
 

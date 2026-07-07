@@ -1,10 +1,10 @@
 import { vi, describe, test, expect, afterEach, beforeEach } from "vitest";
-import { Context, DynamoDBStreamEvent } from "aws-lambda";
+import { DynamoDBRecord, Context, DynamoDBStreamEvent } from "aws-lambda";
 import { Logger } from "@aws-lambda-powertools/logger";
 import { mockClient } from "aws-sdk-client-mock";
 import { DynamoDBDocumentClient, GetCommand, QueryCommand, TransactWriteCommand } from "@aws-sdk/lib-dynamodb";
 import { handler } from "../update-inactive-account-tracker.js";
-import { generateDynamoSteamRecord } from "./testFixtures.js";
+import { generateDynamoStreamRecord } from "./testFixtures.js";
 
 const dynamoMock = mockClient(DynamoDBDocumentClient);
 
@@ -35,7 +35,7 @@ describe("UpdateInactiveAccountTracker handler", () => {
 
     dynamoMock.on(QueryCommand).resolves({ Items: [] });
     dynamoMock.on(TransactWriteCommand).resolves({});
-    const event: DynamoDBStreamEvent = { Records: [generateDynamoSteamRecord("test-client")] };
+    const event: DynamoDBStreamEvent = { Records: [generateDynamoStreamRecord("test-client")] };
     await handler(event, {} as Context);
     expect(dynamoMock).toHaveReceivedCommandWith(QueryCommand, {
       TableName: "test-table",
@@ -48,7 +48,7 @@ describe("UpdateInactiveAccountTracker handler", () => {
   test("writes new tracker record via transaction when no existing record", async () => {
     dynamoMock.on(QueryCommand).resolves({ Items: [] });
     dynamoMock.on(TransactWriteCommand).resolves({});
-    const event: DynamoDBStreamEvent = { Records: [generateDynamoSteamRecord("test-client")] };
+    const event: DynamoDBStreamEvent = { Records: [generateDynamoStreamRecord("test-client")] };
     await handler(event, {} as Context);
     expect(dynamoMock).toHaveReceivedCommandWith(TransactWriteCommand, {
       TransactItems: expect.arrayContaining([
@@ -72,7 +72,7 @@ describe("UpdateInactiveAccountTracker handler", () => {
   test("uses event timestamp as latestDate when no existing record", async () => {
     dynamoMock.on(QueryCommand).resolves({ Items: [] });
     dynamoMock.on(TransactWriteCommand).resolves({});
-    const event: DynamoDBStreamEvent = { Records: [generateDynamoSteamRecord("test-client")] };
+    const event: DynamoDBStreamEvent = { Records: [generateDynamoStreamRecord("test-client")] };
     await handler(event, {} as Context);
     expect(dynamoMock).toHaveReceivedCommandWith(TransactWriteCommand, {
       TransactItems: expect.arrayContaining([
@@ -91,7 +91,7 @@ describe("UpdateInactiveAccountTracker handler", () => {
       Items: [{ commonSubjectId: "qwerty", dateForDeletion: "2099-01-01", userLastActive: futureDate, status: "active", emailAddress: "x", statusLastUpdated: "" }],
     });
     dynamoMock.on(TransactWriteCommand).resolves({});
-    const event: DynamoDBStreamEvent = { Records: [generateDynamoSteamRecord("test-client")] };
+    const event: DynamoDBStreamEvent = { Records: [generateDynamoStreamRecord("test-client")] };
     await handler(event, {} as Context);
     expect(dynamoMock).toHaveReceivedCommandWith(TransactWriteCommand, {
       TransactItems: expect.arrayContaining([
@@ -114,7 +114,7 @@ describe("UpdateInactiveAccountTracker handler", () => {
     dynamoMock.on(QueryCommand).resolves({
       Items: [{ commonSubjectId: "qwerty", dateForDeletion: "2026-01-01", userLastActive: "2026-01-01T00:00:00.000Z", status: "deleting", emailAddress: "x", statusLastUpdated: "" }],
     });
-    const event: DynamoDBStreamEvent = { Records: [generateDynamoSteamRecord("test-client")] };
+    const event: DynamoDBStreamEvent = { Records: [generateDynamoStreamRecord("test-client")] };
     await handler(event, {} as Context);
     expect(loggerWarnMock).toHaveBeenCalledWith("AUTH_EVENT_ON_DELETING_ACCOUNT qwerty");
     expect(dynamoMock).not.toHaveReceivedCommand(TransactWriteCommand);
@@ -127,7 +127,7 @@ describe("UpdateInactiveAccountTracker handler", () => {
         { commonSubjectId: "qwerty", dateForDeletion: "2026-01-02", userLastActive: "2026-01-02T00:00:00.000Z", status: "pending", emailAddress: "x", statusLastUpdated: "" },
       ],
     });
-    const event: DynamoDBStreamEvent = { Records: [generateDynamoSteamRecord("test-client")] };
+    const event: DynamoDBStreamEvent = { Records: [generateDynamoStreamRecord("test-client")] };
     await expect(handler(event, {} as Context)).rejects.toThrow("found more than one inactivity tracker record for qwerty");
   });
 
@@ -137,7 +137,7 @@ describe("UpdateInactiveAccountTracker handler", () => {
     });
     dynamoMock.on(GetCommand).resolves({ Item: undefined });
     dynamoMock.on(TransactWriteCommand).resolves({});
-    const event: DynamoDBStreamEvent = { Records: [generateDynamoSteamRecord("test-client")] };
+    const event: DynamoDBStreamEvent = { Records: [generateDynamoStreamRecord("test-client")] };
     await handler(event, {} as Context);
     expect(dynamoMock).toHaveReceivedCommandWith(TransactWriteCommand, {
       TransactItems: expect.not.arrayContaining([
@@ -153,7 +153,7 @@ describe("UpdateInactiveAccountTracker handler", () => {
       Items: [{ commonSubjectId: "qwerty", dateForDeletion: "2026-01-01", userLastActive: "2020-01-01T00:00:00.000Z", status: "active", emailAddress: "x", statusLastUpdated: "" }],
     });
     dynamoMock.on(TransactWriteCommand).resolves({});
-    const event: DynamoDBStreamEvent = { Records: [generateDynamoSteamRecord("test-client")] };
+    const event: DynamoDBStreamEvent = { Records: [generateDynamoStreamRecord("test-client")] };
     await handler(event, {} as Context);
     expect(dynamoMock).not.toHaveReceivedCommand(GetCommand);
   });
@@ -163,7 +163,7 @@ describe("UpdateInactiveAccountTracker handler", () => {
       Items: [{ commonSubjectId: "qwerty", dateForDeletion: "1978-11-29", userLastActive: "1970-01-01T00:00:00.000Z", status: "pending", emailAddress: "x", statusLastUpdated: "" }],
     });
     dynamoMock.on(TransactWriteCommand).resolves({});
-    const event: DynamoDBStreamEvent = { Records: [generateDynamoSteamRecord("test-client")] };
+    const event: DynamoDBStreamEvent = { Records: [generateDynamoStreamRecord("test-client")] };
     await handler(event, {} as Context);
     expect(dynamoMock).toHaveReceivedCommandWith(TransactWriteCommand, {
       TransactItems: expect.not.arrayContaining([
@@ -177,9 +177,35 @@ describe("UpdateInactiveAccountTracker handler", () => {
   test("throws error when transaction fails", async () => {
     dynamoMock.on(QueryCommand).resolves({ Items: [] });
     dynamoMock.on(TransactWriteCommand).rejects(new Error("TransactionCanceledException"));
-    const event: DynamoDBStreamEvent = { Records: [generateDynamoSteamRecord("test-client")] };
+    const event: DynamoDBStreamEvent = { Records: [generateDynamoStreamRecord("test-client")] };
     await expect(handler(event, {} as Context)).rejects.toThrow(
       "Failed to update inactive account tracker for user qwerty"
     );
   });
+
+  test("throws an error when email is missing from the event", async () => {
+    const invalidRecord = {
+      dynamodb: {
+        NewImage: {
+          event: {
+            M: {
+              client_id: { S: "test-client" },
+              user: {
+                M: {
+                  user_id: { S: "qwerty" }
+                }
+              }
+            }
+          }
+        }
+      }
+    };
+
+    const event: DynamoDBStreamEvent = { Records: [invalidRecord as DynamoDBRecord] };
+
+    await expect(handler(event, {} as Context)).rejects.toThrow(
+      "email is undefined in the event"
+    );
+  });
+
 });

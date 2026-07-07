@@ -61,7 +61,9 @@ export const handler = async (
     ) as TxmaEvent;
 
     const userId = txmaEvent.user?.user_id;
+    const email = txmaEvent.user?.email;
     assert(userId !== undefined, "user_id is undefined in the event");
+    assert(email !== undefined, "email is undefined in the event");
 
     const currentTrackerRecord = await getCurrentRecordForUser(userId, tableName);
     const latestDate = getLatestDate(txmaEvent, currentTrackerRecord);
@@ -75,7 +77,7 @@ export const handler = async (
       commonSubjectId: userId,
       userLastActive: latestDate.toISOString(),
       dateForDeletion: getDateForDeletion(latestDate),
-      emailAddress: 'unknown',
+      emailAddress: email,
       status: 'pending',
       statusLastUpdated: new Date().toISOString(),
       source: "txma_audit_event",

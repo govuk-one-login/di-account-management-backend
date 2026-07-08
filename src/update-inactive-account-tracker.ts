@@ -59,13 +59,15 @@ export const handler = async (
     const txmaEvent = unmarshall(
       record.dynamodb?.NewImage?.event.M as Record<string, AttributeValue>
     ) as TxmaEvent;
-
+    
     const userId = txmaEvent.user?.user_id;
-    const email = txmaEvent.user?.email;
     assert(userId !== undefined, "user_id is undefined in the event");
-    assert(email !== undefined, "email is undefined in the event");
-
+    if (txmaEvent.user?.email === undefined) {
+      logger.warn(`AUTH_EVENT_NO_EMAIL for userId ${userId}`)
+    }
+    
     const currentTrackerRecord = await getCurrentRecordForUser(userId, tableName);
+    const email = txmaEvent.user?.email ?? currentTrackerRecord?.emailAddress ?? "";
     const latestDate = getLatestDate(txmaEvent, currentTrackerRecord);
 
     if (currentTrackerRecord?.status === 'deleting') {

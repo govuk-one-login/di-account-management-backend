@@ -183,7 +183,47 @@ describe("UpdateInactiveAccountTracker handler", () => {
     );
   });
 
-  test("throws an error when email is missing from the event", async () => {
+  test("includes email and does not log warning when email exists on the event", async () => {
+    dynamoMock.on(QueryCommand).resolves({
+      Items: [{ commonSubjectId: "qwerty", dateForDeletion: "1978-11-29", userLastActive: "1970-01-01T00:00:00.000Z", status: "pending", statusLastUpdated: "" }],
+    });
+    const recordWithEmail = {
+      dynamodb: {
+        NewImage: {
+          event: {
+            M: {
+              client_id: { S: "test-client" },
+              user: {
+                M: {
+                  user_id: { S: "qwerty" },
+                  email: { S: "email@exists.uk" }
+                }
+              }
+            }
+          }
+        }
+      }
+    };
+
+    const event: DynamoDBStreamEvent = { Records: [recordWithEmail as DynamoDBRecord] };
+    await handler(event, {} as Context);
+    expect(dynamoMock).toHaveReceivedCommandWith(TransactWriteCommand, {
+      TransactItems: expect.arrayContaining([
+        expect.objectContaining({
+          Put: expect.objectContaining({
+            TableName: "test-table",
+            Item: expect.objectContaining({ emailAddress: "email@exists.uk" }),
+          }),
+        }),
+      ]),
+    });
+    expect(loggerWarnMock).not.toHaveBeenCalled();
+  });
+
+  test("logs warning when email is missing from the event and from pre-existing record", async () => {
+    dynamoMock.on(QueryCommand).resolves({
+      Items: [{ commonSubjectId: "qwerty", dateForDeletion: "1978-11-29", userLastActive: "1970-01-01T00:00:00.000Z", status: "pending", statusLastUpdated: "" }],
+    });
     const invalidRecord = {
       dynamodb: {
         NewImage: {
@@ -200,12 +240,53 @@ describe("UpdateInactiveAccountTracker handler", () => {
         }
       }
     };
-
     const event: DynamoDBStreamEvent = { Records: [invalidRecord as DynamoDBRecord] };
-
-    await expect(handler(event, {} as Context)).rejects.toThrow(
-      "email is undefined in the event"
-    );
+    await handler(event, {} as Context);
+    expect(dynamoMock).toHaveReceivedCommandWith(TransactWriteCommand, {
+      TransactItems: expect.arrayContaining([
+        expect.objectContaining({
+          Put: expect.objectContaining({
+            TableName: "test-table",
+            Item: expect.objectContaining({ commonSubjectId: "qwerty", emailAddress: "" }),
+          }),
+        }),
+      ]),
+    });
+    expect(loggerWarnMock).toHaveBeenCalledWith("AUTH_EVENT_NO_EMAIL for userId qwerty");
   });
 
+  test("logs warning when email is missing from the event but is present in pre-existing record", async () => {
+    dynamoMock.on(QueryCommand).resolves({
+      Items: [{ commonSubjectId: "qwerty", dateForDeletion: "1978-11-29", userLastActive: "1970-01-01T00:00:00.000Z", emailAddress: "testing-warning@test.co", status: "pending", statusLastUpdated: "" }],
+    });
+    const invalidRecord = {
+      dynamodb: {
+        NewImage: {
+          event: {
+            M: {
+              client_id: { S: "test-client" },
+              user: {
+                M: {
+                  user_id: { S: "qwerty" }
+                }
+              }
+            }
+          }
+        }
+      }
+    };
+    const event: DynamoDBStreamEvent = { Records: [invalidRecord as DynamoDBRecord] };
+    await handler(event, {} as Context);
+    expect(dynamoMock).toHaveReceivedCommandWith(TransactWriteCommand, {
+      TransactItems: expect.arrayContaining([
+        expect.objectContaining({
+          Put: expect.objectContaining({
+            TableName: "test-table",
+            Item: expect.objectContaining({ commonSubjectId: "qwerty", emailAddress: "testing-warning@test.co" }),
+          }),
+        }),
+      ]),
+    });
+    expect(loggerWarnMock).toHaveBeenCalledWith("AUTH_EVENT_NO_EMAIL for userId qwerty");
+  });
 });

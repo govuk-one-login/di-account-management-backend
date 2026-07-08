@@ -219,6 +219,8 @@ export interface InactiveAccountTrackerRecord {
   userLastActive: string;
   status: InactiveAccountStatus;
   statusLastUpdated: string;
+  source: string;
+  sourceId?: string;
 }
 
 export class DroppedEventError extends Error {

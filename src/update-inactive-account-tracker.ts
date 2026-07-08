@@ -78,6 +78,8 @@ export const handler = async (
       emailAddress: 'unknown',
       status: 'pending',
       statusLastUpdated: new Date().toISOString(),
+      source: "txma_audit_event",
+      sourceId: txmaEvent.event_id,
     }
 
     const transactionItems: TransactionItems = [

@@ -55,7 +55,7 @@ describe("UpdateInactiveAccountTracker handler", () => {
         expect.objectContaining({
           Put: expect.objectContaining({
             TableName: "test-table",
-            Item: expect.objectContaining({ commonSubjectId: "qwerty", status: "pending" }),
+            Item: expect.objectContaining({ commonSubjectId: "qwerty", status: "pending", source: "txma_audit_event", sourceId: "event_id" }),
           }),
         }),
       ]),

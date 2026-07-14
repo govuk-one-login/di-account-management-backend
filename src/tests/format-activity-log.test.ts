@@ -8,7 +8,7 @@ import {
 } from "../format-activity-log.js";
 import {
   ERROR_DYNAMODB_STREAM_EVENT,
-  generateDynamoSteamRecord,
+  generateDynamoStreamRecord,
   messageId,
   MUCKY_DYNAMODB_STREAM_EVENT,
   MUTABLE_ACTIVITY_LOG_ENTRY,
@@ -78,7 +78,7 @@ describe("handler", () => {
     const client_id = "EMGmY82k-92QSakDl_9keKDFmZY"; //home non prod ID
 
     const TEST_HMRC_EVENT: DynamoDBStreamEvent = {
-      Records: [generateDynamoSteamRecord(client_id)],
+      Records: [generateDynamoStreamRecord(client_id)],
     };
     Logger.prototype.warn = vi.fn();
     await handler(TEST_HMRC_EVENT, {} as Context);
@@ -89,7 +89,7 @@ describe("handler", () => {
     const client_id = "UNKNOWN";
 
     const TEST_HMRC_EVENT: DynamoDBStreamEvent = {
-      Records: [generateDynamoSteamRecord(client_id)],
+      Records: [generateDynamoStreamRecord(client_id)],
     };
     Logger.prototype.warn = vi.fn();
     await handler(TEST_HMRC_EVENT, {} as Context);
@@ -105,7 +105,7 @@ describe("handler", () => {
     const client_id = "EMGmY82k-92QSakDl_9keKDFmZY"; //home non prod ID
 
     const TEST_EVENT: DynamoDBStreamEvent = {
-      Records: [generateDynamoSteamRecord(client_id)],
+      Records: [generateDynamoStreamRecord(client_id)],
     };
     await handler(TEST_EVENT, {} as Context);
     expect(mockMetrics.addMetric).not.toHaveBeenCalled();
@@ -141,8 +141,8 @@ describe("handler", () => {
 
       const TEST_HMRC_EVENT: DynamoDBStreamEvent = {
         Records: [
-          generateDynamoSteamRecord(hmrc_client_id),
-          generateDynamoSteamRecord(hmrc_client_id),
+          generateDynamoStreamRecord(hmrc_client_id),
+          generateDynamoStreamRecord(hmrc_client_id),
         ],
       };
       Logger.prototype.info = vi.fn();

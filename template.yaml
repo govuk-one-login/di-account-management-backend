@@ -3337,6 +3337,17 @@ Resources:
       FilterPattern: ""
       LogGroupName: !Ref UpdateInactiveAccountTrackerFunctionLogGroup
 
+  AuthEventTriggeredOnMissingEmailFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      FilterPattern: "AUTH_EVENT_NO_EMAIL for userId"
+      LogGroupName: !Ref UpdateInactiveAccountTrackerFunctionLogGroup
+      MetricTransformations:
+        - MetricName: AuthEventTriggeredOnMissingEmailCount
+          MetricNamespace: !Ref SystemTagValue
+          MetricValue: 1
+          Unit: Count
+
   AuthEventTriggeredOnAlreadyDeletingAccountFilter:
     Type: AWS::Logs::MetricFilter
     Properties:
@@ -3347,6 +3358,31 @@ Resources:
           MetricNamespace: !Ref SystemTagValue
           MetricValue: 1
           Unit: Count
+
+  AuthEventTriggeredOnMissingEmailAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            AuthEventTriggeredOnMissingEmailAlarm,
+          ],
+        ]
+      AlarmDescription: Triggers when an auth event is processed without an email address.
+      MetricName: AuthEventTriggeredOnMissingEmailCount
+      Namespace: !Ref SystemTagValue
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      ActionsEnabled: true
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
 
   AuthEventTriggeredOnAlreadyDeletingAccountAlarm:
     Type: AWS::CloudWatch::Alarm

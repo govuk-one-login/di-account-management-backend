@@ -4,7 +4,8 @@ import { DynamoDBDocumentClient, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 import { Logger } from "@aws-lambda-powertools/logger";
 import { getEnvironmentVariable } from "./common/utils.js";
-import type { InactiveAccountStatus, InactiveAccountTrackerRecord } from "./common/model.js";
+import type { InactiveAccountTrackerRecord } from "./common/model.js";
+import { processConfig } from "./common/process-config.js";
 
 const logger = new Logger();
 const dynamoClient = new DynamoDBClient({});
@@ -14,14 +15,6 @@ const sqsClient = new SQSClient({});
 export interface QueryAndDispatchEvent {
   processName: string;
 }
-
-type ProcessConfig = Record<string, { queueUrlEnvVar: string; daysToDeletion: number[]; allowedStatuses: InactiveAccountStatus[] }>
-
-const processConfig: ProcessConfig = {
-  Warning30Day: { queueUrlEnvVar: "WARNING_30_DAY_NOTIFICATION_QUEUE_URL", daysToDeletion: [30], allowedStatuses: ["pending"] },
-  Warning7Day: { queueUrlEnvVar: "WARNING_7_DAY_NOTIFICATION_QUEUE_URL", daysToDeletion: [7], allowedStatuses: ["pending", "30DayWarningSent"] },
-  DeleteAccount: { queueUrlEnvVar: "ACCOUNT_DELETION_QUEUE_URL", daysToDeletion: [0], allowedStatuses: ["pending", "30DayWarningSent", "7DayWarningSent"] },
-};
 
 export const calculateTargetDate = (daysToDeletion: number): string => {
   const date = new Date();
@@ -93,7 +86,7 @@ export const handler = async (
     await sqsClient.send(
       new SendMessageCommand({
         QueueUrl: queueUrl,
-        MessageBody: JSON.stringify(record),
+        MessageBody: JSON.stringify({ ...record, procesName: event.processName }),
       })
     );
   }

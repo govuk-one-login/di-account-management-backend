@@ -86,7 +86,7 @@ export const handler = async (
     await sqsClient.send(
       new SendMessageCommand({
         QueueUrl: queueUrl,
-        MessageBody: JSON.stringify({ ...record, procesName: event.processName }),
+        MessageBody: JSON.stringify({ ...record, processName: event.processName }),
       })
     );
   }

@@ -6951,6 +6951,18 @@ Resources:
       CodeUri: src
       Handler: send-inactive-warning-email.handler
       PackageType: Zip
+      Events:
+        30DayNotificationEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt 30DayNotificationQueue.Arn
+        7DayNotificationEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt 7DayNotificationQueue.Arn
+      DeadLetterQueue:
+        Type: SQS
+        TargetArn: !GetAtt SendInactiveWarningEmailDeadLetterQueue.Arn
       Role: !GetAtt SendInactiveWarningEmailRole.Arn
       Environment:
         Variables:
@@ -7004,8 +7016,34 @@ Resources:
         Statement:
           - Effect: Allow
             Action:
+              - sqs:ReceiveMessage
+              - sqs:DeleteMessage
+              - sqs:GetQueueAttributes
+            Resource:
+              - !GetAtt 30DayNotificationQueue.Arn
+              - !GetAtt 7DayNotificationQueue.Arn
+          - Effect: Allow
+            Action:
+              - sqs:SendMessage
+            Resource: !GetAtt SendInactiveWarningEmailDeadLetterQueue.Arn
+          - Effect: Allow
+            Action:
+              - kms:Decrypt
+              - kms:GenerateDataKey*
+            Resource:
+              - !GetAtt QueueKmsKey.Arn
+          - Effect: Allow
+            Action:
               - "cloudwatch:PutMetricData"
             Resource: "*"
+
+  SendInactiveWarningEmailDeadLetterQueue:
+    Type: AWS::SQS::Queue
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      MessageRetentionPeriod: 1209600
+      KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
 
   SendInactiveWarningEmailFunctionLogGroup:
     Type: AWS::Logs::LogGroup

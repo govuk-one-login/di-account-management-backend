@@ -75,8 +75,11 @@ export const handler = async (
       return;
     }
 
+    const publicSubjectId = txmaEvent.user?.public_subject_id ?? currentTrackerRecord?.publicSubjectId;
+
     const newItem: InactiveAccountTrackerRecord = {
       commonSubjectId: userId,
+      ...(publicSubjectId && { publicSubjectId }),
       userLastActive: latestDate.toISOString(),
       dateForDeletion: getDateForDeletion(latestDate),
       emailAddress: email,

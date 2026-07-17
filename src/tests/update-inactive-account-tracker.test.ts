@@ -4,7 +4,7 @@ import { Logger } from "@aws-lambda-powertools/logger";
 import { mockClient } from "aws-sdk-client-mock";
 import { DynamoDBDocumentClient, GetCommand, QueryCommand, TransactWriteCommand } from "@aws-sdk/lib-dynamodb";
 import { handler } from "../update-inactive-account-tracker.js";
-import { generateDynamoStreamRecord } from "./testFixtures.js";
+import { generateDynamoStreamRecord, timestamp } from "./testFixtures.js";
 
 const dynamoMock = mockClient(DynamoDBDocumentClient);
 
@@ -253,6 +253,103 @@ describe("UpdateInactiveAccountTracker handler", () => {
       ]),
     });
     expect(loggerWarnMock).toHaveBeenCalledWith("AUTH_EVENT_NO_EMAIL for userId qwerty");
+  });
+
+  test("stores publicSubjectId from event when present", async () => {
+    dynamoMock.on(QueryCommand).resolves({ Items: [] });
+    dynamoMock.on(TransactWriteCommand).resolves({});
+    const recordWithPublicSubjectId = {
+      dynamodb: {
+        NewImage: {
+          event: {
+            M: {
+              event_id: { S: "event_id" },
+              client_id: { S: "test-client" },
+              timestamp: { N: `${timestamp}` },
+              user: {
+                M: {
+                  user_id: { S: "qwerty" },
+                  public_subject_id: { S: "public-subject-123" },
+                },
+              },
+            },
+          },
+        },
+      },
+    };
+    const event: DynamoDBStreamEvent = { Records: [recordWithPublicSubjectId as DynamoDBRecord] };
+    await handler(event, {} as Context);
+    expect(dynamoMock).toHaveReceivedCommandWith(TransactWriteCommand, {
+      TransactItems: expect.arrayContaining([
+        expect.objectContaining({
+          Put: expect.objectContaining({
+            Item: expect.objectContaining({ publicSubjectId: "public-subject-123" }),
+          }),
+        }),
+      ]),
+    });
+  });
+
+  test("falls back to publicSubjectId from existing tracker record when not on event", async () => {
+    dynamoMock.on(QueryCommand).resolves({
+      Items: [{ commonSubjectId: "qwerty", dateForDeletion: "1978-11-29", userLastActive: "1970-01-01T00:00:00.000Z", emailAddress: "x", publicSubjectId: "public-subject-from-record", status: "pending", statusLastUpdated: "" }],
+    });
+    dynamoMock.on(TransactWriteCommand).resolves({});
+    const recordWithoutPublicSubjectId = {
+      dynamodb: {
+        NewImage: {
+          event: {
+            M: {
+              event_id: { S: "event_id" },
+              client_id: { S: "test-client" },
+              timestamp: { N: `${timestamp}` },
+              user: { M: { user_id: { S: "qwerty" } } },
+            },
+          },
+        },
+      },
+    };
+    const event: DynamoDBStreamEvent = { Records: [recordWithoutPublicSubjectId as DynamoDBRecord] };
+    await handler(event, {} as Context);
+    expect(dynamoMock).toHaveReceivedCommandWith(TransactWriteCommand, {
+      TransactItems: expect.arrayContaining([
+        expect.objectContaining({
+          Put: expect.objectContaining({
+            Item: expect.objectContaining({ publicSubjectId: "public-subject-from-record" }),
+          }),
+        }),
+      ]),
+    });
+  });
+
+  test("omits publicSubjectId from tracker record when absent from both event and existing record", async () => {
+    dynamoMock.on(QueryCommand).resolves({ Items: [] });
+    dynamoMock.on(TransactWriteCommand).resolves({});
+    const recordWithoutPublicSubjectId = {
+      dynamodb: {
+        NewImage: {
+          event: {
+            M: {
+              event_id: { S: "event_id" },
+              client_id: { S: "test-client" },
+              timestamp: { N: `${timestamp}` },
+              user: { M: { user_id: { S: "qwerty" } } },
+            },
+          },
+        },
+      },
+    };
+    const event: DynamoDBStreamEvent = { Records: [recordWithoutPublicSubjectId as DynamoDBRecord] };
+    await handler(event, {} as Context);
+    expect(dynamoMock).toHaveReceivedCommandWith(TransactWriteCommand, {
+      TransactItems: expect.arrayContaining([
+        expect.objectContaining({
+          Put: expect.objectContaining({
+            Item: expect.not.objectContaining({ publicSubjectId: expect.anything() }),
+          }),
+        }),
+      ]),
+    });
   });
 
   test("logs warning when email is missing from the event but is present in pre-existing record", async () => {

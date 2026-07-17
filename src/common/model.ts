@@ -215,6 +215,7 @@ export type InactiveAccountStatus = "pending" | "deleting" | "30DayWarningSent" 
 export interface InactiveAccountTrackerRecord {
   dateForDeletion: string;
   commonSubjectId: string;
+  publicSubjectId?: string;
   emailAddress: string;
   userLastActive: string;
   status: InactiveAccountStatus;

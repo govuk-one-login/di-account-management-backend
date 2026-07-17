@@ -5,44 +5,36 @@
       "service-tag": "home",
       "quality-gates": [
         {
-          "check-types": [
-            "unit",
-            "new feature",
-            "regression",
-            "code style and linting"
-          ],
+          "check-types": ["unit", "new feature", "regression"],
           "provider": "GitHub",
           "phase": "pre-merge",
           "config": {
-            "file": ".github/workflows/lint-and-test-lambdas.yaml",
-            "path": "jobs.lint_and_test",
-            "name": "Lint and test lambdas"
-          }
-        },
-        {
-          "check-types": ["code quality"],
-          "provider": "GitHub",
-          "phase": "pre-merge",
-          "config": {
-            "file": ".github/workflows/checkov.yml",
-            "path": "jobs.checkov",
-            "name": "Checkov"
+            "file": ".github/workflows/test-lambdas.yaml",
+            "path": "jobs.test",
+            "name": "Test lambdas"
           }
         },
         {
           "check-types": [
-            "secret scanning"
+            "code style and linting",
+            "secret scanning",
+            "vulnerability detection",
+            "code quality"
           ],
           "provider": "GitHub",
           "phase": "pre-merge",
           "config": {
-            "file": ".github/workflows/detect-secrets.yaml",
-            "path": "jobs.detect-secrets",
-            "name": "Detect secrets"
+            "file": ".github/workflows/check.yaml",
+            "path": "jobs.check",
+            "name": "Check"
           }
-        },        
+        },
         {
-          "check-types": ["code quality", "unit test coverage", "vulnerability detection"],
+          "check-types": [
+            "code quality",
+            "unit test coverage",
+            "vulnerability detection"
+          ],
           "provider": "GitHub",
           "phase": "pre-merge",
           "config": {
@@ -62,11 +54,7 @@
           }
         },
         {
-          "check-types": [
-            "unit",
-            "new feature",
-            "regression"
-          ],
+          "check-types": ["unit", "new feature", "regression"],
           "provider": "GitHub",
           "phase": "pre-upload",
           "config": {

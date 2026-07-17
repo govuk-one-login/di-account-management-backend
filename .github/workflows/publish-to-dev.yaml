@@ -23,15 +23,9 @@ permissions:
   contents: read
 
 jobs:
-  lint_infrastructure:
-    name: Lint Infrastructure
-    uses: ./.github/workflows/lint-cloudformation.yaml
-    with:
-      gitRef: ${{ inputs.gitRef }}
-
   test_application:
     name: Test Lambdas
-    uses: ./.github/workflows/lint-and-test-lambdas.yaml
+    uses: ./.github/workflows/test-lambdas.yaml
     with:
       gitRef: ${{ inputs.gitRef }}
 
@@ -43,7 +37,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     needs:
-      - lint_infrastructure
       - test_application
     steps:
       - name: Checkout repo

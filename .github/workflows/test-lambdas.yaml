@@ -1,4 +1,4 @@
-name: Lint and test lambdas
+name: Test lambdas
 
 on:
   workflow_call:
@@ -10,7 +10,7 @@ on:
   pull_request:
 
 jobs:
-  lint_and_test:
+  test:
     permissions:
       contents: read
     name: di-account-management-backend
@@ -30,10 +30,7 @@ jobs:
           node-version-file: ".nvmrc"
 
       - name: Install dependencies
-        run: npm ci
-
-      - name: Lint
-        run: npm run lint
+        run: npm ci --ignore-scripts
 
       - name: Test
         run: npm test

@@ -1,4 +1,4 @@
-name: Test lambdas
+name: Local tests (unit)
 
 on:
   workflow_call:
@@ -10,7 +10,7 @@ on:
   pull_request:
 
 jobs:
-  test:
+  local-tests-unit:
     permissions:
       contents: read
     name: di-account-management-backend

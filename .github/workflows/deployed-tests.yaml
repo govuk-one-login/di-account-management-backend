@@ -1,4 +1,4 @@
-name: Pre Merge Check
+name: Deployed tests
 
 on:
   workflow_call:
@@ -88,7 +88,7 @@ jobs:
           node-version-file: ".nvmrc"
 
       - name: Install ESbuild
-        run: npm install -g esbuild@0.23.1 # zizmor: ignore[adhoc-packages]
+        run: npm install -g --ignore-scripts esbuild@0.23.1 # zizmor: ignore[adhoc-packages]
 
       - name: Set up Python 3.9
         uses: actions/setup-python@d27e3f3d7c64b4bbf8e4abfb9b63b83e846e0435 # pin@v4
@@ -146,7 +146,7 @@ jobs:
           stack-name: home-backend
           gh-polling-role: ${{ secrets.DEMO_TESTING_ROLE_ARN }}
 
-  test:
+  deployed-tests:
     if: ${{ needs.check-if-skipping-pre-merge.outputs.skip_found == 'false' }}
     runs-on: ubuntu-latest
     defaults:

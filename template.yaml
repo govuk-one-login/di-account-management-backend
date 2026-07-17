@@ -6978,3 +6978,15 @@ Outputs:
 # - https://docs.aws.amazon.com/lambda/latest/api/API_DeadLetterConfig.html
 # - https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html
 # - #1057, #1059, #1060
+
+  TestBreakCfnLint:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: Test
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: "not-a-number"
+      MetricName: Test
+      Namespace: Test
+      Period: 300
+      Statistic: Average
+      Threshold: 1

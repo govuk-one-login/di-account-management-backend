@@ -1,0 +1,66 @@
+name: Check
+
+permissions: {}
+
+on:
+  pull_request:
+  merge_group:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          persist-credentials: false
+
+      - name: Set up Node
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+        with:
+          node-version-file: .nvmrc
+
+      - name: Set up Python
+        uses: actions/setup-python@c8813ba1bc76ebf779b911ad8ffccbf2e449cb48
+        with:
+          python-version: "3.14"
+
+      - name: Install Python dependencies
+        run: "pip install --require-hashes --only-binary :all: -r .github/workflows/requirements.txt"
+
+      - name: Set up SAM CLI
+        uses: aws-actions/setup-sam@89ddb14d60e682855e3fea4be85b3c56485de310
+        with:
+          use-installer: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Cache pre-commit environments
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
+          restore-keys: pre-commit-
+
+      - name: Run pre-commit
+        run: pre-commit run --all-files --show-diff-on-failure
+
+      - name: Checkov
+        uses: bridgecrewio/checkov-action@d9d1e5cdc53e3a91f0c4c58db7bc19ee31cac7e5
+        with:
+          directory: .
+          output_format: cli
+          output_file_path: console
+          # CKV_AWS_111: Intentional - kms:* on Resource: * is required for KMS key policies per AWS best practices
+          # (https://docs.aws.amazon.com/kms/latest/developerguide/key-policies.html#key-policy-default-allow-root-enable-iam)
+          # X-Ray actions also do not support resource-level restrictions.
+          # CKV_AWS_116: Lambda DLQ configuration - created jira ticket OLH-4090
+          # CKV_DOCKER_3, CKV_DOCKER_2: Temporary skips - created jira ticket OLH-4089
+          # CKV_OPENAPI_4, CKV_OPENAPI_5: OIDC stub spec - created jira ticket OLH-4091
+          # CKV2_GHA_1: Permissions are explicitly set at the job level in each workflow rather than at the top level
+          skip_check: CKV_AWS_111,CKV_AWS_116,CKV_DOCKER_3,CKV_DOCKER_2,CKV_OPENAPI_4,CKV_OPENAPI_5,CKV2_GHA_1

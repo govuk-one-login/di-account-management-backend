@@ -4,7 +4,7 @@ import { Logger } from "@aws-lambda-powertools/logger";
 import { mockClient } from "aws-sdk-client-mock";
 import { DynamoDBDocumentClient, GetCommand, QueryCommand, TransactWriteCommand } from "@aws-sdk/lib-dynamodb";
 import { handler } from "../update-inactive-account-tracker.js";
-import { generateDynamoStreamRecord } from "./testFixtures.js";
+import { generateDynamoStreamRecord, timestamp } from "./testFixtures.js";
 
 const dynamoMock = mockClient(DynamoDBDocumentClient);
 

@@ -5,11 +5,13 @@ import { TEST_SNS_EVENT, TEST_USER_DATA } from "./testFixtures.js";
 const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
   info: vi.fn(),
+  warn: vi.fn(),
   addContext: vi.fn(),
 }));
 
 vi.mock("@aws-lambda-powertools/logger", () => ({
   Logger: class {
+    warn = mockLogger.warn;
     error = mockLogger.error;
     info = mockLogger.info;
     addContext = mockLogger.addContext;
@@ -69,6 +71,17 @@ describe("handler", () => {
     expect(validateUserDataMock).toHaveBeenCalledWith(TEST_USER_DATA);
     expect(deleteEmailSubscriptionMock).toHaveBeenCalledTimes(1);
     expect(deleteEmailSubscriptionMock).toHaveBeenCalledWith(TEST_USER_DATA);
+  });
+
+  test("that it retries up to 3 times total when deleteEmailSubscription throws error", async () => {
+    vi.mocked(deleteEmailSubscriptionMock).mockRejectedValue(
+      new Error("deleteEmailSubscription FAIL"),
+    );
+    await expect(handler(TEST_SNS_EVENT, {} as Context)).rejects.toThrow("deleteEmailSubscription FAIL");
+    expect(deleteEmailSubscriptionMock).toHaveBeenCalledTimes(3);
+    expect(mockLogger.warn).toHaveBeenCalledWith(
+      "Attempt to delete email subscription has failed. Retrying"
+    );
   });
 });
 

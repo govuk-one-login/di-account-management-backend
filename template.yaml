@@ -266,61 +266,61 @@ Mappings:
       OLHCLIENTID: "oneLoginHome"
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.integration.publishing.service.gov.uk"
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "2b3170b5-159e-457f-a282-f30f6006dc32"
-      WARNING30DAYEMAILTEMPLATEID: "PLACEHOLDER-demo-30-day-template-id"
-      WARNING7DAYEMAILTEMPLATEID: "PLACEHOLDER-demo-7-day-template-id"
       NOTIFYTEMPLATEIDS: |
         {
-          "GLOBAL_LOGOUT": "a92761ef-213b-4fb6-a53c-5912a931c159"
+          "GLOBAL_LOGOUT": "a92761ef-213b-4fb6-a53c-5912a931c159",
+          "INACTIVE_ACCOUNT_WARNING_30_DAY": "2891a677-8273-4704-8521-db8190405ba3",
+          "INACTIVE_ACCOUNT_WARNING_7_DAY": "d665bcf9-4dc3-45cb-af35-a5757912bd10"
         }
     dev:
       OLHCLIENTID: "oneLoginHome"
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.integration.publishing.service.gov.uk"
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "2b3170b5-159e-457f-a282-f30f6006dc32"
-      WARNING30DAYEMAILTEMPLATEID: "PLACEHOLDER-dev-30-day-template-id"
-      WARNING7DAYEMAILTEMPLATEID: "PLACEHOLDER-dev-7-day-template-id"
       NOTIFYTEMPLATEIDS: |
         {
-          "GLOBAL_LOGOUT": "a92761ef-213b-4fb6-a53c-5912a931c159"
+          "GLOBAL_LOGOUT": "a92761ef-213b-4fb6-a53c-5912a931c159",
+          "INACTIVE_ACCOUNT_WARNING_30_DAY": "2891a677-8273-4704-8521-db8190405ba3",
+          "INACTIVE_ACCOUNT_WARNING_7_DAY": "d665bcf9-4dc3-45cb-af35-a5757912bd10"
         }
     build:
       OLHCLIENTID: "oneLoginHome"
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.staging.publishing.service.gov.uk"
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "2b3170b5-159e-457f-a282-f30f6006dc32"
-      WARNING30DAYEMAILTEMPLATEID: "PLACEHOLDER-build-30-day-template-id"
-      WARNING7DAYEMAILTEMPLATEID: "PLACEHOLDER-build-7-day-template-id"
       NOTIFYTEMPLATEIDS: |
         {
-          "GLOBAL_LOGOUT": "a92761ef-213b-4fb6-a53c-5912a931c159"
+          "GLOBAL_LOGOUT": "a92761ef-213b-4fb6-a53c-5912a931c159",
+          "INACTIVE_ACCOUNT_WARNING_30_DAY": "2891a677-8273-4704-8521-db8190405ba3",
+          "INACTIVE_ACCOUNT_WARNING_7_DAY": "d665bcf9-4dc3-45cb-af35-a5757912bd10"
         }
     staging:
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.staging.publishing.service.gov.uk"
       OLHCLIENTID: "EMGmY82k-92QSakDl_9keKDFmZY"
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "2b3170b5-159e-457f-a282-f30f6006dc32"
-      WARNING30DAYEMAILTEMPLATEID: "PLACEHOLDER-staging-30-day-template-id"
-      WARNING7DAYEMAILTEMPLATEID: "PLACEHOLDER-staging-7-day-template-id"
       NOTIFYTEMPLATEIDS: |
         {
-          "GLOBAL_LOGOUT": "a92761ef-213b-4fb6-a53c-5912a931c159"
+          "GLOBAL_LOGOUT": "a92761ef-213b-4fb6-a53c-5912a931c159",
+          "INACTIVE_ACCOUNT_WARNING_30_DAY": "bfc551ea-4c23-4765-bdf5-df29173d54a8",
+          "INACTIVE_ACCOUNT_WARNING_7_DAY": "af7393e6-1231-47f3-98fc-172a1b2e2367"
         }
     integration:
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.integration.publishing.service.gov.uk"
       OLHCLIENTID: "Y8xi2wDAaRvWYlEkoExOUZbAPaYyBEhB"
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "0674c6e3-219c-4e3a-b04c-3786bac7f228"
-      WARNING30DAYEMAILTEMPLATEID: "PLACEHOLDER-integration-30-day-template-id"
-      WARNING7DAYEMAILTEMPLATEID: "PLACEHOLDER-integration-7-day-template-id"
       NOTIFYTEMPLATEIDS: |
         {
-          "GLOBAL_LOGOUT": "fb33515d-41cb-40df-93c2-e1bf76c3672a"
+          "GLOBAL_LOGOUT": "fb33515d-41cb-40df-93c2-e1bf76c3672a",
+          "INACTIVE_ACCOUNT_WARNING_30_DAY": "bfc551ea-4c23-4765-bdf5-df29173d54a8",
+          "INACTIVE_ACCOUNT_WARNING_7_DAY": "af7393e6-1231-47f3-98fc-172a1b2e2367"
         }
     production:
       OLHCLIENTID: "KcKmx2g1GH6ersWFvzMi1bhehq4"
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.publishing.service.gov.uk"
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "0674c6e3-219c-4e3a-b04c-3786bac7f228"
-      WARNING30DAYEMAILTEMPLATEID: "PLACEHOLDER-production-30-day-template-id"
-      WARNING7DAYEMAILTEMPLATEID: "PLACEHOLDER-production-7-day-template-id"
       NOTIFYTEMPLATEIDS: |
         {
-          "GLOBAL_LOGOUT": "fb33515d-41cb-40df-93c2-e1bf76c3672a"
+          "GLOBAL_LOGOUT": "fb33515d-41cb-40df-93c2-e1bf76c3672a",
+          "INACTIVE_ACCOUNT_WARNING_30_DAY": "7cd0d104-a108-4d07-8a09-3a49435e580b",
+          "INACTIVE_ACCOUNT_WARNING_7_DAY": "65517b6d-4fab-4756-8da1-c0960df8a1da"
         }
 
   AccountInterventionsService:
@@ -6979,18 +6979,6 @@ Resources:
       Environment:
         Variables:
           NODE_OPTIONS: --enable-source-maps
-          WARNING_30_DAY_EMAIL_TEMPLATE_ID:
-            !FindInMap [
-              EnvironmentVariables,
-              !Ref Environment,
-              WARNING30DAYEMAILTEMPLATEID,
-            ]
-          WARNING_7_DAY_EMAIL_TEMPLATE_ID:
-            !FindInMap [
-              EnvironmentVariables,
-              !Ref Environment,
-              WARNING7DAYEMAILTEMPLATEID,
-            ]
       DeploymentPreference:
         Alarms:
           Fn::If:

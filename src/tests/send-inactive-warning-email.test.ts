@@ -1,8 +1,12 @@
 import { vi, describe, test, expect, beforeEach } from "vitest";
 import { Context, SQSEvent } from "aws-lambda";
+import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
+import { mockClient } from "aws-sdk-client-mock";
+import "aws-sdk-client-mock-vitest";
 
 const mockMetrics = vi.hoisted(() => ({
   publishStoredMetrics: vi.fn(),
+  addMetric: vi.fn(),
 }));
 const mockInitMetrics = vi.hoisted(() => vi.fn(() => mockMetrics));
 
@@ -11,6 +15,8 @@ vi.mock("../common/metrics.js", () => ({
 }));
 
 import { handler } from "../send-inactive-warning-email.js";
+
+const sqsMock = mockClient(SQSClient);
 
 const buildSqsEvent = (bodies: object[]): SQSEvent => ({
   Records: bodies.map((body, index) => ({
@@ -34,29 +40,130 @@ const buildSqsEvent = (bodies: object[]): SQSEvent => ({
 describe("send-inactive-warning-email handler", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    sqsMock.reset();
+    sqsMock.on(SendMessageCommand).resolves({ MessageId: "test-message-id" });
+
+    process.env.NOTIFICATION_QUEUE_URL = "https://sqs.eu-west-2.amazonaws.com/123456789012/NotificationQueue";
   });
 
-  test("processes SQS records and publishes metrics", async () => {
+  test("enqueues a 30-day warning notification to the NotificationQueue", async () => {
     const event = buildSqsEvent([
       {
         commonSubjectId: "user-123",
         emailAddress: "test@example.com",
         dateForDeletion: "2026-08-15",
         processName: "Warning30Day",
+        status: "pending",
       },
     ]);
 
     await handler(event, {} as Context);
+
+    expect(sqsMock).toHaveReceivedCommandWith(SendMessageCommand, {
+      QueueUrl: "https://sqs.eu-west-2.amazonaws.com/123456789012/NotificationQueue",
+      MessageBody: JSON.stringify({
+        notificationType: "INACTIVE_ACCOUNT_WARNING_30_DAY",
+        emailAddress: "test@example.com",
+        dateForDeletion: "2026-08-15",
+      }),
+    });
+    expect(mockMetrics.addMetric).toHaveBeenCalledWith("notificationEnqueued", expect.anything(), 1);
     expect(mockMetrics.publishStoredMetrics).toHaveBeenCalledTimes(1);
+  });
+
+  test("enqueues a 7-day warning notification to the NotificationQueue", async () => {
+    const event = buildSqsEvent([
+      {
+        commonSubjectId: "user-456",
+        emailAddress: "user@example.com",
+        dateForDeletion: "2026-07-27",
+        processName: "Warning7Day",
+        status: "30DayWarningSent",
+      },
+    ]);
+
+    await handler(event, {} as Context);
+
+    expect(sqsMock).toHaveReceivedCommandWith(SendMessageCommand, {
+      QueueUrl: "https://sqs.eu-west-2.amazonaws.com/123456789012/NotificationQueue",
+      MessageBody: JSON.stringify({
+        notificationType: "INACTIVE_ACCOUNT_WARNING_7_DAY",
+        emailAddress: "user@example.com",
+        dateForDeletion: "2026-07-27",
+      }),
+    });
+    expect(mockMetrics.addMetric).toHaveBeenCalledWith("notificationEnqueued", expect.anything(), 1);
+  });
+
+  test("skips record when status is not allowed for process", async () => {
+    const event = buildSqsEvent([
+      {
+        commonSubjectId: "user-789",
+        emailAddress: "test@example.com",
+        dateForDeletion: "2026-08-15",
+        processName: "Warning30Day",
+        status: "30DayWarningSent",
+      },
+    ]);
+
+    await handler(event, {} as Context);
+
+    expect(sqsMock).not.toHaveReceivedCommand(SendMessageCommand);
   });
 
   test("processes multiple records from a batch", async () => {
     const event = buildSqsEvent([
-      { commonSubjectId: "user-1", processName: "Warning30Day" },
-      { commonSubjectId: "user-2", processName: "Warning7Day" },
+      {
+        commonSubjectId: "user-1",
+        emailAddress: "user1@example.com",
+        dateForDeletion: "2026-08-15",
+        processName: "Warning30Day",
+        status: "pending",
+      },
+      {
+        commonSubjectId: "user-2",
+        emailAddress: "user2@example.com",
+        dateForDeletion: "2026-07-27",
+        processName: "Warning7Day",
+        status: "pending",
+      },
     ]);
 
     await handler(event, {} as Context);
+
+    expect(sqsMock).toHaveReceivedCommandTimes(SendMessageCommand, 2);
     expect(mockMetrics.publishStoredMetrics).toHaveBeenCalledTimes(1);
+  });
+
+  test("throws error when SQS send fails", async () => {
+    sqsMock.on(SendMessageCommand).rejects(new Error("SQS send failed"));
+
+    const event = buildSqsEvent([
+      {
+        commonSubjectId: "user-123",
+        emailAddress: "test@example.com",
+        dateForDeletion: "2026-08-15",
+        processName: "Warning30Day",
+        status: "pending",
+      },
+    ]);
+
+    await expect(handler(event, {} as Context)).rejects.toThrow("SQS send failed");
+  });
+
+  test("throws when process configuration is not found", async () => {
+    const event = buildSqsEvent([
+      {
+        commonSubjectId: "user-123",
+        emailAddress: "test@example.com",
+        dateForDeletion: "2026-08-15",
+        processName: "UnknownProcess",
+        status: "pending",
+      },
+    ]);
+
+    await expect(handler(event, {} as Context)).rejects.toThrow(
+      "Process configuration not found for UnknownProcess"
+    );
   });
 });

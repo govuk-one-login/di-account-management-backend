@@ -1,4 +1,4 @@
-name: Test lambdas
+name: Local tests (unit)
 
 on:
   workflow_call:
@@ -8,12 +8,12 @@ on:
         type: string
         default: ${{ github.ref }}
   pull_request:
+  merge_group:
 
 jobs:
-  test:
+  local-tests-unit:
     permissions:
       contents: read
-    name: di-account-management-backend
     runs-on: ubuntu-latest
     timeout-minutes: 15
     defaults:

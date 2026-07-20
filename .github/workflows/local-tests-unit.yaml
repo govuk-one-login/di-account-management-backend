@@ -14,7 +14,6 @@ jobs:
   local-tests-unit:
     permissions:
       contents: read
-    name: di-account-management-backend
     runs-on: ubuntu-latest
     timeout-minutes: 15
     defaults:

@@ -214,14 +214,24 @@ export type InactiveAccountStatus = "pending" | "deleting" | "30DayWarningSent" 
 
 export interface InactiveAccountTrackerRecord {
   dateForDeletion: string;
+
   commonSubjectId: string;
-  publicSubjectId?: string;
-  emailAddress: string;
-  userLastActive: string;
+  publicSubjectId: string;
+
   status: InactiveAccountStatus;
   statusLastUpdated: string;
-  source: string;
-  sourceId?: string;
+
+  userLastActive: string;
+  userLastActiveSource: string;
+  userLastActiveSourceId?: string;
+  userLastActiveUpdated: string;
+
+  emailAddress: string;
+  emailAddressLastUpdated: string;
+  emailAddressSource: string;
+  emailAddressSourceId?: string;
+
+  hasSetupMfa: boolean; //used to decide if we should notify the user
 }
 
 export class DroppedEventError extends Error {

@@ -266,6 +266,8 @@ Mappings:
       OLHCLIENTID: "oneLoginHome"
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.integration.publishing.service.gov.uk"
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "2b3170b5-159e-457f-a282-f30f6006dc32"
+      WARNING30DAYEMAILTEMPLATEID: "PLACEHOLDER-demo-30-day-template-id"
+      WARNING7DAYEMAILTEMPLATEID: "PLACEHOLDER-demo-7-day-template-id"
       NOTIFYTEMPLATEIDS: |
         {
           "GLOBAL_LOGOUT": "a92761ef-213b-4fb6-a53c-5912a931c159"
@@ -274,6 +276,8 @@ Mappings:
       OLHCLIENTID: "oneLoginHome"
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.integration.publishing.service.gov.uk"
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "2b3170b5-159e-457f-a282-f30f6006dc32"
+      WARNING30DAYEMAILTEMPLATEID: "PLACEHOLDER-dev-30-day-template-id"
+      WARNING7DAYEMAILTEMPLATEID: "PLACEHOLDER-dev-7-day-template-id"
       NOTIFYTEMPLATEIDS: |
         {
           "GLOBAL_LOGOUT": "a92761ef-213b-4fb6-a53c-5912a931c159"
@@ -282,6 +286,8 @@ Mappings:
       OLHCLIENTID: "oneLoginHome"
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.staging.publishing.service.gov.uk"
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "2b3170b5-159e-457f-a282-f30f6006dc32"
+      WARNING30DAYEMAILTEMPLATEID: "PLACEHOLDER-build-30-day-template-id"
+      WARNING7DAYEMAILTEMPLATEID: "PLACEHOLDER-build-7-day-template-id"
       NOTIFYTEMPLATEIDS: |
         {
           "GLOBAL_LOGOUT": "a92761ef-213b-4fb6-a53c-5912a931c159"
@@ -290,6 +296,8 @@ Mappings:
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.staging.publishing.service.gov.uk"
       OLHCLIENTID: "EMGmY82k-92QSakDl_9keKDFmZY"
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "2b3170b5-159e-457f-a282-f30f6006dc32"
+      WARNING30DAYEMAILTEMPLATEID: "PLACEHOLDER-staging-30-day-template-id"
+      WARNING7DAYEMAILTEMPLATEID: "PLACEHOLDER-staging-7-day-template-id"
       NOTIFYTEMPLATEIDS: |
         {
           "GLOBAL_LOGOUT": "a92761ef-213b-4fb6-a53c-5912a931c159"
@@ -298,6 +306,8 @@ Mappings:
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.integration.publishing.service.gov.uk"
       OLHCLIENTID: "Y8xi2wDAaRvWYlEkoExOUZbAPaYyBEhB"
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "0674c6e3-219c-4e3a-b04c-3786bac7f228"
+      WARNING30DAYEMAILTEMPLATEID: "PLACEHOLDER-integration-30-day-template-id"
+      WARNING7DAYEMAILTEMPLATEID: "PLACEHOLDER-integration-7-day-template-id"
       NOTIFYTEMPLATEIDS: |
         {
           "GLOBAL_LOGOUT": "fb33515d-41cb-40df-93c2-e1bf76c3672a"
@@ -306,6 +316,8 @@ Mappings:
       OLHCLIENTID: "KcKmx2g1GH6ersWFvzMi1bhehq4"
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.publishing.service.gov.uk"
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "0674c6e3-219c-4e3a-b04c-3786bac7f228"
+      WARNING30DAYEMAILTEMPLATEID: "PLACEHOLDER-production-30-day-template-id"
+      WARNING7DAYEMAILTEMPLATEID: "PLACEHOLDER-production-7-day-template-id"
       NOTIFYTEMPLATEIDS: |
         {
           "GLOBAL_LOGOUT": "fb33515d-41cb-40df-93c2-e1bf76c3672a"
@@ -6967,6 +6979,18 @@ Resources:
       Environment:
         Variables:
           NODE_OPTIONS: --enable-source-maps
+          WARNING_30_DAY_EMAIL_TEMPLATE_ID:
+            !FindInMap [
+              EnvironmentVariables,
+              !Ref Environment,
+              WARNING30DAYEMAILTEMPLATEID,
+            ]
+          WARNING_7_DAY_EMAIL_TEMPLATE_ID:
+            !FindInMap [
+              EnvironmentVariables,
+              !Ref Environment,
+              WARNING7DAYEMAILTEMPLATEID,
+            ]
       DeploymentPreference:
         Alarms:
           Fn::If:

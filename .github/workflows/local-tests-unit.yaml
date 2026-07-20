@@ -8,6 +8,7 @@ on:
         type: string
         default: ${{ github.ref }}
   pull_request:
+  merge_group:
 
 jobs:
   local-tests-unit:

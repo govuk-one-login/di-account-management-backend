@@ -6979,6 +6979,7 @@ Resources:
       Environment:
         Variables:
           NODE_OPTIONS: --enable-source-maps
+          NOTIFICATION_QUEUE_URL: !Ref NotificationQueue 
       DeploymentPreference:
         Alarms:
           Fn::If:

@@ -1,6 +1,7 @@
 import { vi, describe, test, expect, beforeEach } from "vitest";
 import { Context, SQSEvent } from "aws-lambda";
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
+import { DynamoDBDocumentClient, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { mockClient } from "aws-sdk-client-mock";
 import "aws-sdk-client-mock-vitest";
 
@@ -17,6 +18,7 @@ vi.mock("../common/metrics.js", () => ({
 import { handler } from "../send-inactive-warning-email.js";
 
 const sqsMock = mockClient(SQSClient);
+const dynamoMock = mockClient(DynamoDBDocumentClient);
 
 const buildSqsEvent = (bodies: object[]): SQSEvent => ({
   Records: bodies.map((body, index) => ({
@@ -41,9 +43,12 @@ describe("send-inactive-warning-email handler", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     sqsMock.reset();
+    dynamoMock.reset();
     sqsMock.on(SendMessageCommand).resolves({ MessageId: "test-message-id" });
+    dynamoMock.on(UpdateCommand).resolves({});
 
     process.env.NOTIFICATION_QUEUE_URL = "https://sqs.eu-west-2.amazonaws.com/123456789012/NotificationQueue";
+    process.env.INACTIVE_ACCOUNT_TRACKER_TABLE_NAME = "test-inactive-tracker-table";
   });
 
   test("enqueues a 30-day warning notification to the NotificationQueue", async () => {
@@ -66,6 +71,19 @@ describe("send-inactive-warning-email handler", () => {
         emailAddress: "test@example.com",
         dateForDeletion: "2026-08-15",
       }),
+    });
+    expect(dynamoMock).toHaveReceivedCommandWith(UpdateCommand, {
+      TableName: "test-inactive-tracker-table",
+      Key: {
+        dateForDeletion: "2026-08-15",
+        commonSubjectId: "user-123",
+      },
+      UpdateExpression: "SET #status = :status, statusLastUpdated = :timestamp",
+      ExpressionAttributeNames: { "#status": "status" },
+      ExpressionAttributeValues: {
+        ":status": "30DayWarningSent",
+        ":timestamp": expect.any(String),
+      },
     });
     expect(mockMetrics.addMetric).toHaveBeenCalledWith("notificationEnqueued", expect.anything(), 1);
     expect(mockMetrics.publishStoredMetrics).toHaveBeenCalledTimes(1);
@@ -92,6 +110,19 @@ describe("send-inactive-warning-email handler", () => {
         dateForDeletion: "2026-07-27",
       }),
     });
+    expect(dynamoMock).toHaveReceivedCommandWith(UpdateCommand, {
+      TableName: "test-inactive-tracker-table",
+      Key: {
+        dateForDeletion: "2026-07-27",
+        commonSubjectId: "user-456",
+      },
+      UpdateExpression: "SET #status = :status, statusLastUpdated = :timestamp",
+      ExpressionAttributeNames: { "#status": "status" },
+      ExpressionAttributeValues: {
+        ":status": "7DayWarningSent",
+        ":timestamp": expect.any(String),
+      },
+    });
     expect(mockMetrics.addMetric).toHaveBeenCalledWith("notificationEnqueued", expect.anything(), 1);
   });
 
@@ -109,6 +140,7 @@ describe("send-inactive-warning-email handler", () => {
     await handler(event, {} as Context);
 
     expect(sqsMock).not.toHaveReceivedCommand(SendMessageCommand);
+    expect(dynamoMock).not.toHaveReceivedCommand(UpdateCommand);
   });
 
   test("processes multiple records from a batch", async () => {
@@ -132,6 +164,7 @@ describe("send-inactive-warning-email handler", () => {
     await handler(event, {} as Context);
 
     expect(sqsMock).toHaveReceivedCommandTimes(SendMessageCommand, 2);
+    expect(dynamoMock).toHaveReceivedCommandTimes(UpdateCommand, 2);
     expect(mockMetrics.publishStoredMetrics).toHaveBeenCalledTimes(1);
   });
 
@@ -164,6 +197,38 @@ describe("send-inactive-warning-email handler", () => {
 
     await expect(handler(event, {} as Context)).rejects.toThrow(
       "Process configuration not found for UnknownProcess"
+    );
+  });
+
+  test("throws when DynamoDB update fails", async () => {
+    dynamoMock.on(UpdateCommand).rejects(new Error("DynamoDB update failed"));
+
+    const event = buildSqsEvent([
+      {
+        commonSubjectId: "user-123",
+        emailAddress: "test@example.com",
+        dateForDeletion: "2026-08-15",
+        processName: "Warning30Day",
+        status: "pending",
+      },
+    ]);
+
+    await expect(handler(event, {} as Context)).rejects.toThrow("DynamoDB update failed");
+  });
+
+  test("throws when process has no target status configured", async () => {
+    const event = buildSqsEvent([
+      {
+        commonSubjectId: "user-123",
+        emailAddress: "test@example.com",
+        dateForDeletion: "2026-08-15",
+        processName: "DeleteAccount",
+        status: "pending",
+      },
+    ]);
+
+    await expect(handler(event, {} as Context)).rejects.toThrow(
+      "No notification type configured for process DeleteAccount"
     );
   });
 });

@@ -6979,7 +6979,8 @@ Resources:
       Environment:
         Variables:
           NODE_OPTIONS: --enable-source-maps
-          NOTIFICATION_QUEUE_URL: !Ref NotificationQueue 
+          NOTIFICATION_QUEUE_URL: !Ref NotificationQueue
+          INACTIVE_ACCOUNT_TRACKER_TABLE_NAME: !Ref InactiveAccountTrackerStore
       DeploymentPreference:
         Alarms:
           Fn::If:
@@ -7038,13 +7039,21 @@ Resources:
           - Effect: Allow
             Action:
               - sqs:SendMessage
-            Resource: !GetAtt SendInactiveWarningEmailDeadLetterQueue.Arn
+            Resource:
+              - !GetAtt SendInactiveWarningEmailDeadLetterQueue.Arn
+              - !GetAtt NotificationQueue.Arn
+          - Effect: Allow
+            Action:
+              - dynamodb:UpdateItem
+            Resource:
+              - !GetAtt InactiveAccountTrackerStore.Arn
           - Effect: Allow
             Action:
               - kms:Decrypt
               - kms:GenerateDataKey*
             Resource:
               - !GetAtt QueueKmsKey.Arn
+              - !GetAtt DatabaseKmsKey.Arn
           - Effect: Allow
             Action:
               - "cloudwatch:PutMetricData"

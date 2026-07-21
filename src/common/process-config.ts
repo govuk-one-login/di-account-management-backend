@@ -4,6 +4,7 @@ export type ProcessConfig = Record<string, {
   queueUrlEnvVar: string;
   daysToDeletion: number[];
   allowedStatuses: InactiveAccountStatus[],
+  targetStatus?: InactiveAccountStatus,
   notificationType?: string
 }>;
 
@@ -12,12 +13,14 @@ export const processConfig: ProcessConfig = {
     queueUrlEnvVar: "WARNING_30_DAY_NOTIFICATION_QUEUE_URL",
     daysToDeletion: [30],
     allowedStatuses: ["pending"],
+    targetStatus: "30DayWarningSent",
     notificationType: "INACTIVE_ACCOUNT_WARNING_30_DAY"
   },
   Warning7Day: {
     queueUrlEnvVar: "WARNING_7_DAY_NOTIFICATION_QUEUE_URL",
     daysToDeletion: [7],
     allowedStatuses: ["pending", "30DayWarningSent"],
+    targetStatus: "7DayWarningSent",
     notificationType: "INACTIVE_ACCOUNT_WARNING_7_DAY"
   },
   DeleteAccount: {

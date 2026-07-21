@@ -2,6 +2,8 @@ import { Context, SQSEvent } from "aws-lambda";
 import { Logger } from "@aws-lambda-powertools/logger";
 import { MetricUnit } from "@aws-lambda-powertools/metrics";
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { DynamoDBDocumentClient, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import assert from "node:assert/strict";
 import { initMetrics } from "./common/metrics.js";
 import { processConfig } from "./common/process-config.js";
@@ -10,6 +12,8 @@ import { getEnvironmentVariable } from "./common/utils.js";
 const logger = new Logger();
 const metrics = initMetrics("send-inactive-warning-email");
 const sqsClient = new SQSClient();
+const dynamoClient = new DynamoDBClient({});
+const dynamoDocClient = DynamoDBDocumentClient.from(dynamoClient);
 
 export const handler = async (
   event: SQSEvent,
@@ -18,6 +22,7 @@ export const handler = async (
   logger.addContext(context);
 
   const notificationQueueUrl = getEnvironmentVariable("NOTIFICATION_QUEUE_URL");
+  const tableName = getEnvironmentVariable("INACTIVE_ACCOUNT_TRACKER_TABLE_NAME");
 
   for (const record of event.Records) {
     const body = JSON.parse(record.body);
@@ -40,6 +45,11 @@ export const handler = async (
       `No notification type configured for process ${body.processName}`
     );
 
+    assert(
+      process.targetStatus,
+      `No target status configured for process ${body.processName}`
+    );
+
     const message = {
       notificationType: process.notificationType,
       emailAddress: body.emailAddress,
@@ -53,10 +63,27 @@ export const handler = async (
       })
     );
 
+    await dynamoDocClient.send(
+      new UpdateCommand({
+        TableName: tableName,
+        Key: {
+          dateForDeletion: body.dateForDeletion,
+          commonSubjectId: body.commonSubjectId,
+        },
+        UpdateExpression: "SET #status = :status, statusLastUpdated = :timestamp",
+        ExpressionAttributeNames: { "#status": "status" },
+        ExpressionAttributeValues: {
+          ":status": process.targetStatus,
+          ":timestamp": new Date().toISOString(),
+        },
+      })
+    );
+
     logger.info("Successfully enqueued inactive account warning notification", {
       commonSubjectId: body.commonSubjectId,
       processName: body.processName,
       notificationType: process.notificationType,
+      targetStatus: process.targetStatus,
     });
     metrics.addMetric("notificationEnqueued", MetricUnit.Count, 1);
   }

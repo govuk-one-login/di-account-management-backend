@@ -15,7 +15,7 @@ vi.mock("../common/metrics.js", () => ({
   initMetrics: mockInitMetrics,
 }));
 
-import { handler } from "../send-inactive-warning-email.js";
+import { handler } from "../process-inactive-account.js";
 
 const sqsMock = mockClient(SQSClient);
 const dynamoMock = mockClient(DynamoDBDocumentClient);
@@ -39,7 +39,7 @@ const buildSqsEvent = (bodies: object[]): SQSEvent => ({
   })),
 });
 
-describe("send-inactive-warning-email handler", () => {
+describe("process-inactive-account handler", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     sqsMock.reset();

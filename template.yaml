@@ -6954,14 +6954,14 @@ Resources:
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
 
-  SendInactiveWarningEmailFunction:
+  ProcessInactiveAccountFunction:
     DependsOn:
-      - SendInactiveWarningEmailFunctionLogGroup
+      - ProcessInactiveAccountFunctionLogGroup
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub ${Environment}-${AWS::StackName}-send-inactive-warning-email
+      FunctionName: !Sub ${Environment}-${AWS::StackName}-process-inactive-account
       CodeUri: src
-      Handler: send-inactive-warning-email.handler
+      Handler: process-inactive-account.handler
       PackageType: Zip
       Events:
         30DayNotificationEvent:
@@ -6974,8 +6974,8 @@ Resources:
             Queue: !GetAtt 7DayNotificationQueue.Arn
       DeadLetterQueue:
         Type: SQS
-        TargetArn: !GetAtt SendInactiveWarningEmailDeadLetterQueue.Arn
-      Role: !GetAtt SendInactiveWarningEmailRole.Arn
+        TargetArn: !GetAtt ProcessInactiveAccountDeadLetterQueue.Arn
+      Role: !GetAtt ProcessInactiveAccountRole.Arn
       Environment:
         Variables:
           NODE_OPTIONS: --enable-source-maps
@@ -6985,7 +6985,7 @@ Resources:
         Alarms:
           Fn::If:
             - IsNotDevelopmentOrDemo
-            - - !Ref SendInactiveWarningEmailFunctionSuccessRate
+            - - !Ref ProcessInactiveAccountFunctionSuccessRate
             - - !Ref AWS::NoValue
     Metadata:
       BuildMethod: esbuild
@@ -6997,11 +6997,11 @@ Resources:
         Target: "es2022"
         Sourcemap: true
         EntryPoints:
-          - send-inactive-warning-email.ts
+          - process-inactive-account.ts
         Banner:
           - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
 
-  SendInactiveWarningEmailRole:
+  ProcessInactiveAccountRole:
     Type: AWS::IAM::Role
     Properties:
       PermissionsBoundary: !If
@@ -7011,7 +7011,7 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
-        - !Ref SendInactiveWarningEmailPolicy
+        - !Ref ProcessInactiveAccountPolicy
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -7022,7 +7022,7 @@ Resources:
             Action:
               - "sts:AssumeRole"
 
-  SendInactiveWarningEmailPolicy:
+  ProcessInactiveAccountPolicy:
     Type: AWS::IAM::ManagedPolicy
     Properties:
       PolicyDocument:
@@ -7040,7 +7040,7 @@ Resources:
             Action:
               - sqs:SendMessage
             Resource:
-              - !GetAtt SendInactiveWarningEmailDeadLetterQueue.Arn
+              - !GetAtt ProcessInactiveAccountDeadLetterQueue.Arn
               - !GetAtt NotificationQueue.Arn
           - Effect: Allow
             Action:
@@ -7059,7 +7059,7 @@ Resources:
               - "cloudwatch:PutMetricData"
             Resource: "*"
 
-  SendInactiveWarningEmailDeadLetterQueue:
+  ProcessInactiveAccountDeadLetterQueue:
     Type: AWS::SQS::Queue
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
@@ -7067,22 +7067,22 @@ Resources:
       MessageRetentionPeriod: 1209600
       KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
 
-  SendInactiveWarningEmailFunctionLogGroup:
+  ProcessInactiveAccountFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-send-inactive-warning-email"
+      LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-process-inactive-account"
       RetentionInDays: 30
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
-  SendInactiveWarningEmailCSLSSubscription:
+  ProcessInactiveAccountCSLSSubscription:
     Condition: ExportLogsToSplunk
     Type: AWS::Logs::SubscriptionFilter
     Properties:
       DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
       FilterPattern: ""
-      LogGroupName: !Ref SendInactiveWarningEmailFunctionLogGroup
+      LogGroupName: !Ref ProcessInactiveAccountFunctionLogGroup
 
-  SendInactiveWarningEmailFunctionSuccessRate:
+  ProcessInactiveAccountFunctionSuccessRate:
     Type: AWS::CloudWatch::Alarm
     Properties:
       AlarmName:
@@ -7091,7 +7091,7 @@ Resources:
           [
             !Ref AWS::StackName,
             !Ref Environment,
-            SendInactiveWarningEmailFunctionSuccessRate,
+            ProcessInactiveAccountFunctionSuccessRate,
           ],
         ]
       Metrics:
@@ -7102,7 +7102,7 @@ Resources:
               MetricName: Errors
               Dimensions:
                 - Name: FunctionName
-                  Value: !Ref SendInactiveWarningEmailFunction
+                  Value: !Ref ProcessInactiveAccountFunction
             Period: 300
             Stat: Sum
           ReturnData: false
@@ -7113,7 +7113,7 @@ Resources:
               MetricName: Invocations
               Dimensions:
                 - Name: FunctionName
-                  Value: !Ref SendInactiveWarningEmailFunction
+                  Value: !Ref ProcessInactiveAccountFunction
             Period: 300
             Stat: Sum
           ReturnData: false

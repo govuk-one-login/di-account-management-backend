@@ -10,7 +10,7 @@ import { processConfig } from "./common/process-config.js";
 import { getEnvironmentVariable } from "./common/utils.js";
 
 const logger = new Logger();
-const metrics = initMetrics("send-inactive-warning-email");
+const metrics = initMetrics("process-inactive-account");
 const sqsClient = new SQSClient();
 const dynamoClient = new DynamoDBClient({});
 const dynamoDocClient = DynamoDBDocumentClient.from(dynamoClient);

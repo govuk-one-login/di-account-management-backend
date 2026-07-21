@@ -268,7 +268,9 @@ Mappings:
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "2b3170b5-159e-457f-a282-f30f6006dc32"
       NOTIFYTEMPLATEIDS: |
         {
-          "GLOBAL_LOGOUT": "a92761ef-213b-4fb6-a53c-5912a931c159"
+          "GLOBAL_LOGOUT": "a92761ef-213b-4fb6-a53c-5912a931c159",
+          "INACTIVE_ACCOUNT_WARNING_30_DAY": "2891a677-8273-4704-8521-db8190405ba3",
+          "INACTIVE_ACCOUNT_WARNING_7_DAY": "d665bcf9-4dc3-45cb-af35-a5757912bd10"
         }
     dev:
       OLHCLIENTID: "oneLoginHome"
@@ -276,7 +278,9 @@ Mappings:
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "2b3170b5-159e-457f-a282-f30f6006dc32"
       NOTIFYTEMPLATEIDS: |
         {
-          "GLOBAL_LOGOUT": "a92761ef-213b-4fb6-a53c-5912a931c159"
+          "GLOBAL_LOGOUT": "a92761ef-213b-4fb6-a53c-5912a931c159",
+          "INACTIVE_ACCOUNT_WARNING_30_DAY": "2891a677-8273-4704-8521-db8190405ba3",
+          "INACTIVE_ACCOUNT_WARNING_7_DAY": "d665bcf9-4dc3-45cb-af35-a5757912bd10"
         }
     build:
       OLHCLIENTID: "oneLoginHome"
@@ -284,7 +288,9 @@ Mappings:
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "2b3170b5-159e-457f-a282-f30f6006dc32"
       NOTIFYTEMPLATEIDS: |
         {
-          "GLOBAL_LOGOUT": "a92761ef-213b-4fb6-a53c-5912a931c159"
+          "GLOBAL_LOGOUT": "a92761ef-213b-4fb6-a53c-5912a931c159",
+          "INACTIVE_ACCOUNT_WARNING_30_DAY": "2891a677-8273-4704-8521-db8190405ba3",
+          "INACTIVE_ACCOUNT_WARNING_7_DAY": "d665bcf9-4dc3-45cb-af35-a5757912bd10"
         }
     staging:
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.staging.publishing.service.gov.uk"
@@ -292,7 +298,9 @@ Mappings:
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "2b3170b5-159e-457f-a282-f30f6006dc32"
       NOTIFYTEMPLATEIDS: |
         {
-          "GLOBAL_LOGOUT": "a92761ef-213b-4fb6-a53c-5912a931c159"
+          "GLOBAL_LOGOUT": "a92761ef-213b-4fb6-a53c-5912a931c159",
+          "INACTIVE_ACCOUNT_WARNING_30_DAY": "bfc551ea-4c23-4765-bdf5-df29173d54a8",
+          "INACTIVE_ACCOUNT_WARNING_7_DAY": "af7393e6-1231-47f3-98fc-172a1b2e2367"
         }
     integration:
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.integration.publishing.service.gov.uk"
@@ -300,7 +308,9 @@ Mappings:
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "0674c6e3-219c-4e3a-b04c-3786bac7f228"
       NOTIFYTEMPLATEIDS: |
         {
-          "GLOBAL_LOGOUT": "fb33515d-41cb-40df-93c2-e1bf76c3672a"
+          "GLOBAL_LOGOUT": "fb33515d-41cb-40df-93c2-e1bf76c3672a",
+          "INACTIVE_ACCOUNT_WARNING_30_DAY": "bfc551ea-4c23-4765-bdf5-df29173d54a8",
+          "INACTIVE_ACCOUNT_WARNING_7_DAY": "af7393e6-1231-47f3-98fc-172a1b2e2367"
         }
     production:
       OLHCLIENTID: "KcKmx2g1GH6ersWFvzMi1bhehq4"
@@ -308,7 +318,9 @@ Mappings:
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "0674c6e3-219c-4e3a-b04c-3786bac7f228"
       NOTIFYTEMPLATEIDS: |
         {
-          "GLOBAL_LOGOUT": "fb33515d-41cb-40df-93c2-e1bf76c3672a"
+          "GLOBAL_LOGOUT": "fb33515d-41cb-40df-93c2-e1bf76c3672a",
+          "INACTIVE_ACCOUNT_WARNING_30_DAY": "7cd0d104-a108-4d07-8a09-3a49435e580b",
+          "INACTIVE_ACCOUNT_WARNING_7_DAY": "65517b6d-4fab-4756-8da1-c0960df8a1da"
         }
 
   AccountInterventionsService:
@@ -6929,6 +6941,179 @@ Resources:
               Dimensions:
                 - Name: FunctionName
                   Value: !Ref QueryAndDispatchInactiveAccountsFunction
+            Period: 300
+            Stat: Sum
+          ReturnData: false
+        - Id: successRate
+          Expression: "1 - (errors / invocations)"
+          Label: "Success Rate"
+          ReturnData: true
+      Threshold: 0.95
+      ComparisonOperator: LessThanThreshold
+      EvaluationPeriods: 1
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+
+  ProcessInactiveAccountFunction:
+    DependsOn:
+      - ProcessInactiveAccountFunctionLogGroup
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${Environment}-${AWS::StackName}-process-inactive-account
+      CodeUri: src
+      Handler: process-inactive-account.handler
+      PackageType: Zip
+      Events:
+        30DayNotificationEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt 30DayNotificationQueue.Arn
+        7DayNotificationEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt 7DayNotificationQueue.Arn
+      DeadLetterQueue:
+        Type: SQS
+        TargetArn: !GetAtt ProcessInactiveAccountDeadLetterQueue.Arn
+      Role: !GetAtt ProcessInactiveAccountRole.Arn
+      Environment:
+        Variables:
+          NODE_OPTIONS: --enable-source-maps
+          NOTIFICATION_QUEUE_URL: !Ref NotificationQueue
+          INACTIVE_ACCOUNT_TRACKER_TABLE_NAME: !Ref InactiveAccountTrackerStore
+      DeploymentPreference:
+        Alarms:
+          Fn::If:
+            - IsNotDevelopmentOrDemo
+            - - !Ref ProcessInactiveAccountFunctionSuccessRate
+            - - !Ref AWS::NoValue
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Format: "esm"
+        OutExtension:
+          - .js=.mjs
+        Target: "es2022"
+        Sourcemap: true
+        EntryPoints:
+          - process-inactive-account.ts
+        Banner:
+          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
+
+  ProcessInactiveAccountRole:
+    Type: AWS::IAM::Role
+    Properties:
+      PermissionsBoundary: !If
+        - UsePermissionsBoundary
+        - !Ref PermissionsBoundary
+        - !Ref AWS::NoValue
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+        - !Ref ProcessInactiveAccountPolicy
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+
+  ProcessInactiveAccountPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - sqs:ReceiveMessage
+              - sqs:DeleteMessage
+              - sqs:GetQueueAttributes
+            Resource:
+              - !GetAtt 30DayNotificationQueue.Arn
+              - !GetAtt 7DayNotificationQueue.Arn
+          - Effect: Allow
+            Action:
+              - sqs:SendMessage
+            Resource:
+              - !GetAtt ProcessInactiveAccountDeadLetterQueue.Arn
+              - !GetAtt NotificationQueue.Arn
+          - Effect: Allow
+            Action:
+              - dynamodb:UpdateItem
+            Resource:
+              - !GetAtt InactiveAccountTrackerStore.Arn
+          - Effect: Allow
+            Action:
+              - kms:Decrypt
+              - kms:GenerateDataKey*
+            Resource:
+              - !GetAtt QueueKmsKey.Arn
+              - !GetAtt DatabaseKmsKey.Arn
+          - Effect: Allow
+            Action:
+              - "cloudwatch:PutMetricData"
+            Resource: "*"
+
+  ProcessInactiveAccountDeadLetterQueue:
+    Type: AWS::SQS::Queue
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      MessageRetentionPeriod: 1209600
+      KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
+
+  ProcessInactiveAccountFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-process-inactive-account"
+      RetentionInDays: 30
+      KmsKeyId: !GetAtt LoggingKmsKey.Arn
+
+  ProcessInactiveAccountCSLSSubscription:
+    Condition: ExportLogsToSplunk
+    Type: AWS::Logs::SubscriptionFilter
+    Properties:
+      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
+      FilterPattern: ""
+      LogGroupName: !Ref ProcessInactiveAccountFunctionLogGroup
+
+  ProcessInactiveAccountFunctionSuccessRate:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            ProcessInactiveAccountFunctionSuccessRate,
+          ],
+        ]
+      Metrics:
+        - Id: errors
+          MetricStat:
+            Metric:
+              Namespace: AWS/Lambda
+              MetricName: Errors
+              Dimensions:
+                - Name: FunctionName
+                  Value: !Ref ProcessInactiveAccountFunction
+            Period: 300
+            Stat: Sum
+          ReturnData: false
+        - Id: invocations
+          MetricStat:
+            Metric:
+              Namespace: AWS/Lambda
+              MetricName: Invocations
+              Dimensions:
+                - Name: FunctionName
+                  Value: !Ref ProcessInactiveAccountFunction
             Period: 300
             Stat: Sum
           ReturnData: false

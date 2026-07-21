@@ -19,6 +19,8 @@ const addNotificationFailedMetric = (failureReason: string) => {
 
 enum NotificationType {
   GLOBAL_LOGOUT = "GLOBAL_LOGOUT",
+  INACTIVE_ACCOUNT_WARNING_30_DAY = "INACTIVE_ACCOUNT_WARNING_30_DAY",
+  INACTIVE_ACCOUNT_WARNING_7_DAY = "INACTIVE_ACCOUNT_WARNING_7_DAY",
 }
 
 const missingContentPlaceholder = "-";
@@ -73,6 +75,60 @@ const messageSchema = v.variant("notificationType", [
             timeStyle: "short",
             timeZone: "Europe/London",
           }).format(new Date(input.loggedOutAt)),
+        },
+      };
+    })
+  ),
+  v.pipe(
+    v.object({
+      notificationType: v.literal(NotificationType.INACTIVE_ACCOUNT_WARNING_30_DAY),
+      emailAddress: v.pipe(v.string(), v.email()),
+      dateForDeletion: v.string(),
+    }),
+    v.transform((input) => {
+      const deletionDate = new Date(input.dateForDeletion);
+
+      return {
+        emailAddress: input.emailAddress,
+        notificationType: input.notificationType,
+
+        personalisation: {
+          email: input.emailAddress,
+          deletionDate_en: new Intl.DateTimeFormat("en-gb", {
+            dateStyle: "long",
+            timeZone: "Europe/London",
+          }).format(deletionDate),
+          deletionDate_cy: new Intl.DateTimeFormat("cy-gb", {
+            dateStyle: "long",
+            timeZone: "Europe/London",
+          }).format(deletionDate),
+        },
+      };
+    })
+  ),
+  v.pipe(
+    v.object({
+      notificationType: v.literal(NotificationType.INACTIVE_ACCOUNT_WARNING_7_DAY),
+      emailAddress: v.pipe(v.string(), v.email()),
+      dateForDeletion: v.string(),
+    }),
+    v.transform((input) => {
+      const deletionDate = new Date(input.dateForDeletion);
+
+      return {
+        emailAddress: input.emailAddress,
+        notificationType: input.notificationType,
+
+        personalisation: {
+          email: input.emailAddress,
+          deletionDate_en: new Intl.DateTimeFormat("en-gb", {
+            dateStyle: "long",
+            timeZone: "Europe/London",
+          }).format(deletionDate),
+          deletionDate_cy: new Intl.DateTimeFormat("cy-gb", {
+            dateStyle: "long",
+            timeZone: "Europe/London",
+          }).format(deletionDate),
         },
       };
     })

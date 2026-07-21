@@ -5,21 +5,10 @@
       "service-tag": "home",
       "quality-gates": [
         {
-          "check-types": ["unit", "new feature", "regression"],
-          "provider": "GitHub",
-          "phase": "pre-merge",
-          "config": {
-            "file": ".github/workflows/local-tests-unit.yaml",
-            "path": "jobs.local-tests-unit",
-            "name": "Local tests (unit)"
-          }
-        },
-        {
           "check-types": [
+            "code quality",
             "code style and linting",
-            "secret scanning",
-            "vulnerability detection",
-            "code quality"
+            "secret scanning"
           ],
           "provider": "GitHub",
           "phase": "pre-merge",
@@ -27,6 +16,16 @@
             "file": ".github/workflows/lint.yaml",
             "path": "jobs.lint",
             "name": "Lint"
+          }
+        },
+        {
+          "check-types": ["vulnerability detection"],
+          "provider": "GitHub",
+          "phase": "pre-merge",
+          "config": {
+            "file": ".github/workflows/dependency-review.yaml",
+            "path": "jobs.dependency-review",
+            "name": "Dependency Review"
           }
         },
         {
@@ -40,7 +39,17 @@
           "config": {
             "file": ".github/workflows/sonarcloud.yaml",
             "path": "jobs.sonarcloud_home_backend",
-            "name": "SonarCloud"
+            "name": "home_backend"
+          }
+        },
+        {
+          "check-types": ["new feature", "regression", "unit"],
+          "provider": "GitHub",
+          "phase": "pre-merge",
+          "config": {
+            "file": ".github/workflows/local-tests-unit.yaml",
+            "path": "jobs.local-tests-unit",
+            "name": "Local tests (unit)"
           }
         },
         {
@@ -54,12 +63,20 @@
           }
         },
         {
-          "check-types": ["unit", "new feature", "regression"],
+          "check-types": ["new feature", "regression", "unit"],
           "provider": "GitHub",
           "phase": "pre-upload",
           "config": {
             "file": ".github/workflows/sam-app-post-merge-actions.yaml",
             "path": "jobs.deploy"
+          }
+        },
+        {
+          "check-types": ["integration", "regression"],
+          "provider": "Stack Orchestrator",
+          "phase": "build",
+          "config": {
+            "file": "post-deploy-tests.Dockerfile"
           }
         }
       ]

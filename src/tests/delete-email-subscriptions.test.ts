@@ -80,7 +80,15 @@ describe("handler", () => {
     await expect(handler(TEST_SNS_EVENT, {} as Context)).rejects.toThrow("deleteEmailSubscription FAIL");
     expect(deleteEmailSubscriptionMock).toHaveBeenCalledTimes(3);
     expect(mockLogger.warn).toHaveBeenCalledWith(
-      "Attempt to delete email subscription has failed. Retrying"
+      "deleteEmailSubscription failed (attempt 1 out of 3)."
+    );
+
+    expect(mockLogger.warn).toHaveBeenCalledWith(
+      "deleteEmailSubscription failed (attempt 2 out of 3)."
+    );
+
+    expect(mockLogger.warn).toHaveBeenCalledWith(
+      "deleteEmailSubscription failed (attempt 3 out of 3)."
     );
   });
 });

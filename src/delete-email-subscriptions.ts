@@ -5,26 +5,9 @@ import {
   deleteEmailSubscription,
   validateUserData,
 } from "./delete-email-subscriptions-utils.js";
+import { retryFunction } from "./common/retry-function.js";
 
 const logger = new Logger();
-
-const retryDeleteEmailSubscription = async (
-  userData: UserData
-): Promise<void> => {
-  const retries = 3;
-  for (let attempt = 1; attempt <= retries; attempt++) {
-    try {
-      await deleteEmailSubscription(userData);
-      return;
-    } catch (error) {
-      if (attempt === retries) {
-        throw error;
-      }
-      logger.warn("Attempt to delete email subscription has failed. Retrying");
-      await new Promise((resolve) => setTimeout(resolve, 300));
-    }
-  }
-};
 
 export const handler = async (
   event: SNSEvent,
@@ -39,7 +22,10 @@ export const handler = async (
         );
         const userData: UserData = JSON.parse(record.Sns.Message);
         validateUserData(userData);
-        await retryDeleteEmailSubscription(userData);
+        await retryFunction(
+          () => deleteEmailSubscription(userData),
+          { functionName: "deleteEmailSubscription" }
+        );
         logger.info(
           `finished processing message with ID: ${record.Sns.MessageId}`
         );

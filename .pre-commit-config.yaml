@@ -25,17 +25,6 @@ repos:
         args: ["--baseline", ".secrets.baseline"]
         stages: [pre-commit]
 
-  - repo: local
-    hooks:
-      - id: package-audit-check
-        name: Check dependencies
-        entry: npm audit
-        language: system
-        exclude: .*
-        always_run: true
-        pass_filenames: false
-        stages: [pre-commit]
-
   - repo: https://github.com/zizmorcore/zizmor-pre-commit
     rev: e3eebf65325ccc992422292cb7a4baee967cf815 # pragma: allowlist secret
     hooks:

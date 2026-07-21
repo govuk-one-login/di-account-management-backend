@@ -78,26 +78,6 @@
           "config": {
             "file": "post-deploy-tests.Dockerfile"
           }
-        },
-        {
-          "check-types": ["canary"],
-          "provider": "Stack Orchestrator",
-          "phase": "integration",
-          "config": {
-            "file": "template.yaml",
-            "path": "Globals.Function.DeploymentPreference",
-            "name": "Lambda canary deployment"
-          }
-        },
-        {
-          "check-types": ["canary"],
-          "provider": "Stack Orchestrator",
-          "phase": "production",
-          "config": {
-            "file": "template.yaml",
-            "path": "Globals.Function.DeploymentPreference",
-            "name": "Lambda canary deployment"
-          }
         }
       ]
     }

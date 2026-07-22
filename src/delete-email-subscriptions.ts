@@ -5,6 +5,7 @@ import {
   deleteEmailSubscription,
   validateUserData,
 } from "./delete-email-subscriptions-utils.js";
+import { retryFunction } from "./common/retry-function.js";
 
 const logger = new Logger();
 
@@ -21,7 +22,10 @@ export const handler = async (
         );
         const userData: UserData = JSON.parse(record.Sns.Message);
         validateUserData(userData);
-        await deleteEmailSubscription(userData);
+        await retryFunction(
+          () => deleteEmailSubscription(userData),
+          { functionName: "deleteEmailSubscription" }
+        );
         logger.info(
           `finished processing message with ID: ${record.Sns.MessageId}`
         );

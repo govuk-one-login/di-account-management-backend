@@ -3159,7 +3159,6 @@ Resources:
           Properties:
             BatchSize: 1
             Stream: !GetAtt RawEventsStore.StreamArn
-            Enabled: !If [IsDevelopment, true, false]
             DestinationConfig:
               OnFailure:
                 Destination: !GetAtt UpdateInactiveAccountTrackerDeadLetterQueue.Arn
@@ -4126,7 +4125,6 @@ Resources:
   ####################################
 
   DeleteUserNotificationsSubscription:
-    Condition: IsDevelopment
     DependsOn: DeleteUserNotificationsFunctionAliaslive
     Type: AWS::SNS::Subscription
     Properties:
@@ -4198,7 +4196,6 @@ Resources:
           - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
 
   DeleteUserNotificationsLambdaInvokePermission:
-    Condition: IsDevelopment
     DependsOn: DeleteUserNotificationsFunctionAliaslive
     Type: AWS::Lambda::Permission
     Properties:
@@ -4451,7 +4448,6 @@ Resources:
   ####################################
 
   DeleteInactiveAccountTrackerSubscription:
-    Condition: IsDevelopment
     DependsOn: DeleteInactiveAccountTrackerFunctionAliaslive
     Type: AWS::SNS::Subscription
     Properties:
@@ -4523,7 +4519,6 @@ Resources:
           - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
 
   DeleteInactiveAccountTrackerLambdaInvokePermission:
-    Condition: IsDevelopment
     DependsOn: DeleteInactiveAccountTrackerFunctionAliaslive
     Type: AWS::Lambda::Permission
     Properties:
@@ -6736,19 +6731,16 @@ Resources:
           Properties:
             Schedule: "cron(0 9 * * ? *)"
             Input: '{"processName": "Warning30Day"}'
-            Enabled: !If [IsDevelopment, true, false]
         Warning7DayScheduleEvent:
           Type: Schedule
           Properties:
             Schedule: "cron(0 9 * * ? *)"
             Input: '{"processName": "Warning7Day"}'
-            Enabled: !If [IsDevelopment, true, false]
         AccountDeletionScheduleEvent:
           Type: Schedule
           Properties:
             Schedule: "cron(0 9 * * ? *)"
             Input: '{"processName": "DeleteAccount"}'
-            Enabled: !If [IsDevelopment, true, false]
 
       DeadLetterQueue:
         Type: SQS

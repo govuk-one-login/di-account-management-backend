@@ -1,21 +1,16 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, QueryCommand } from "@aws-sdk/lib-dynamodb";
-import {
-  CloudWatchClient,
-  PutMetricDataCommand,
-  type MetricDatum,
-} from "@aws-sdk/client-cloudwatch";
 import { Logger } from "@aws-lambda-powertools/logger";
+import { MetricUnit } from "@aws-lambda-powertools/metrics";
+import { initMetrics } from "./common/metrics.js";
 import { getEnvironmentVariable } from "./common/utils.js";
 
 const logger = new Logger();
+const metrics = initMetrics("inactive-account-deletion-forecast");
 const dynamoClient = new DynamoDBClient({});
 const dynamoDocClient = DynamoDBDocumentClient.from(dynamoClient);
-const cloudWatchClient = new CloudWatchClient({});
 
 const FORECAST_DAYS = 180;
-const CW_BATCH_SIZE = 20;
-const METRIC_NAMESPACE = "account-management-backend";
 const METRIC_NAME = "InactiveAccountsScheduledForDeletion";
 
 export const buildDates = (fromDate: Date, days: number): string[] =>
@@ -50,19 +45,6 @@ export const countAccountsForDate = async (
   return count;
 };
 
-export const publishMetrics = async (
-  metrics: MetricDatum[]
-): Promise<void> => {
-  for (let i = 0; i < metrics.length; i += CW_BATCH_SIZE) {
-    await cloudWatchClient.send(
-      new PutMetricDataCommand({
-        Namespace: METRIC_NAMESPACE,
-        MetricData: metrics.slice(i, i + CW_BATCH_SIZE),
-      })
-    );
-  }
-};
-
 export const handler = async (): Promise<void> => {
   const tableName = getEnvironmentVariable("TABLE_NAME");
   const dates = buildDates(new Date(), FORECAST_DAYS);
@@ -71,14 +53,11 @@ export const handler = async (): Promise<void> => {
     dates.map((date) => countAccountsForDate(tableName, date))
   );
 
-  const metrics: MetricDatum[] = dates.map((date, i) => ({
-    MetricName: METRIC_NAME,
-    Dimensions: [{ Name: "DateForDeletion", Value: date }],
-    Value: counts[i],
-    Unit: "Count",
-  }));
-
-  await publishMetrics(metrics);
+  dates.forEach((date, i) => {
+    const singleMetric = metrics.singleMetric();
+    singleMetric.addDimension("DateForDeletion", date);
+    singleMetric.addMetric(METRIC_NAME, MetricUnit.Count, counts[i]);
+  });
 
   logger.info(`Published deletion forecast for ${dates.length} dates`);
 };

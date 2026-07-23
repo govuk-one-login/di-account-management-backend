@@ -1,19 +1,13 @@
 import { vi, describe, test, expect, beforeEach, afterEach } from "vitest";
 import { DynamoDBDocumentClient, QueryCommand } from "@aws-sdk/lib-dynamodb";
-import {
-  CloudWatchClient,
-  PutMetricDataCommand,
-} from "@aws-sdk/client-cloudwatch";
 import { mockClient } from "aws-sdk-client-mock";
 import {
   buildDates,
   countAccountsForDate,
-  publishMetrics,
   handler,
 } from "../inactive-account-deletion-forecast.js";
 
 const dynamoMock = mockClient(DynamoDBDocumentClient);
-const cloudWatchMock = mockClient(CloudWatchClient);
 
 describe("buildDates", () => {
   test("returns the correct number of dates starting from tomorrow", () => {
@@ -74,59 +68,9 @@ describe("countAccountsForDate", () => {
   });
 });
 
-describe("publishMetrics", () => {
-  beforeEach(() => {
-    cloudWatchMock.reset();
-  });
-
-  test("sends a single batch when metrics <= 20", async () => {
-    cloudWatchMock.on(PutMetricDataCommand).resolves({});
-
-    const metrics = Array.from({ length: 20 }, (_, i) => ({
-      MetricName: "InactiveAccountsScheduledForDeletion",
-      Dimensions: [{ Name: "DateForDeletion", Value: `2026-0${(i % 9) + 1}-01` }],
-      Value: i,
-      Unit: "Count" as const,
-    }));
-
-    await publishMetrics(metrics);
-    expect(cloudWatchMock.commandCalls(PutMetricDataCommand)).toHaveLength(1);
-  });
-
-  test("batches metrics in groups of 20", async () => {
-    cloudWatchMock.on(PutMetricDataCommand).resolves({});
-
-    const metrics = Array.from({ length: 45 }, (_, i) => ({
-      MetricName: "InactiveAccountsScheduledForDeletion",
-      Dimensions: [{ Name: "DateForDeletion", Value: `2026-01-${String(i + 1).padStart(2, "0")}` }],
-      Value: i,
-      Unit: "Count" as const,
-    }));
-
-    await publishMetrics(metrics);
-    expect(cloudWatchMock.commandCalls(PutMetricDataCommand)).toHaveLength(3);
-  });
-
-  test("throws on CloudWatch error", async () => {
-    cloudWatchMock.on(PutMetricDataCommand).rejects(new Error("CW failure"));
-
-    await expect(
-      publishMetrics([
-        {
-          MetricName: "InactiveAccountsScheduledForDeletion",
-          Dimensions: [{ Name: "DateForDeletion", Value: "2026-06-01" }],
-          Value: 1,
-          Unit: "Count",
-        },
-      ])
-    ).rejects.toThrow("CW failure");
-  });
-});
-
 describe("handler", () => {
   beforeEach(() => {
     dynamoMock.reset();
-    cloudWatchMock.reset();
     process.env.TABLE_NAME = "inactive-accounts-table";
   });
 
@@ -135,17 +79,15 @@ describe("handler", () => {
     delete process.env.TABLE_NAME;
   });
 
-  test("queries 180 dates and publishes metrics in batches", async () => {
+  test("queries 180 dates and publishes metrics", async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-01-01T00:00:00.000Z"));
 
     dynamoMock.on(QueryCommand).resolves({ Count: 10 });
-    cloudWatchMock.on(PutMetricDataCommand).resolves({});
 
     await handler();
 
     expect(dynamoMock.commandCalls(QueryCommand)).toHaveLength(180);
-    expect(cloudWatchMock.commandCalls(PutMetricDataCommand)).toHaveLength(9); // ceil(180/20)
 
     vi.useRealTimers();
   });
@@ -162,12 +104,5 @@ describe("handler", () => {
     dynamoMock.on(QueryCommand).rejects(new Error("DynamoDB down"));
 
     await expect(handler()).rejects.toThrow("DynamoDB down");
-  });
-
-  test("throws loudly on CloudWatch error", async () => {
-    dynamoMock.on(QueryCommand).resolves({ Count: 5 });
-    cloudWatchMock.on(PutMetricDataCommand).rejects(new Error("CW down"));
-
-    await expect(handler()).rejects.toThrow("CW down");
   });
 });

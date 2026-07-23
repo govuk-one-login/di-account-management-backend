@@ -7215,10 +7215,6 @@ Resources:
               - kms:GenerateDataKey*
             Resource:
               - !GetAtt QueueKmsKey.Arn
-          - Effect: Allow
-            Action:
-              - cloudwatch:PutMetricData
-            Resource: "*"
 
   InactiveAccountDeletionForecastFunctionLogGroup:
     Type: AWS::Logs::LogGroup

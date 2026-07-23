@@ -3159,14 +3159,13 @@ Resources:
           Properties:
             BatchSize: 1
             Stream: !GetAtt RawEventsStore.StreamArn
-            Enabled: !If [IsDevelopment, true, false]
             DestinationConfig:
               OnFailure:
                 Destination: !GetAtt UpdateInactiveAccountTrackerDeadLetterQueue.Arn
             StartingPosition: LATEST
             FilterCriteria:
               Filters:
-                - Pattern: '{ "eventName": ["INSERT"], "dynamodb": { "NewImage": { "event": { "M": { "event_name": { "S": ["AUTH_AUTH_CODE_ISSUED"] } } } } } }'
+                - Pattern: '{ "eventName": ["INSERT"], "dynamodb": { "NewImage": { "event": { "M": { "event_name": { "S": ["AUTH_TOKEN_SENT_TO_ORCHESTRATION"] } } } } } }'
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt UpdateInactiveAccountTrackerDeadLetterQueue.Arn

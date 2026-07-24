@@ -7119,6 +7119,119 @@ Resources:
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
 
+  #########################################
+  # Inactive Account Deletion Forecast
+  #########################################
+
+  InactiveAccountDeletionForecastFunction:
+    Type: AWS::Serverless::Function
+    DependsOn:
+      - InactiveAccountDeletionForecastFunctionLogGroup
+    Properties:
+      FunctionName: !Sub ${Environment}-${AWS::StackName}-inactive-account-deletion-forecast
+      CodeUri: src
+      PackageType: Zip
+      Timeout: 300
+      Events:
+        DailySchedule:
+          Type: Schedule
+          Properties:
+            Schedule: "cron(0 6 * * ? *)"
+            Enabled: !If [IsDevelopment, true, false]
+      DeadLetterQueue:
+        Type: SQS
+        TargetArn: !GetAtt InactiveAccountDeletionForecastDeadLetterQueue.Arn
+      Handler: inactive-account-deletion-forecast.handler
+      Role: !GetAtt InactiveAccountDeletionForecastRole.Arn
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref InactveAccountTrackerStoreTableName
+          NODE_OPTIONS: --enable-source-maps
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Format: "esm"
+        OutExtension:
+          - .js=.mjs
+        Target: "es2022"
+        Sourcemap: true
+        EntryPoints:
+          - inactive-account-deletion-forecast.ts
+        Banner:
+          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
+
+  InactiveAccountDeletionForecastRole:
+    Type: AWS::IAM::Role
+    Properties:
+      PermissionsBoundary: !If
+        - UsePermissionsBoundary
+        - !Ref PermissionsBoundary
+        - !Ref AWS::NoValue
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+        - !Ref InactiveAccountDeletionForecastPolicy
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+
+  InactiveAccountDeletionForecastPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - sqs:SendMessage
+            Resource: !GetAtt InactiveAccountDeletionForecastDeadLetterQueue.Arn
+          - Effect: Allow
+            Action:
+              - dynamodb:Query
+            Resource:
+              - !GetAtt InactiveAccountTrackerStore.Arn
+          - Effect: Allow
+            Action:
+              - kms:Decrypt
+            Resource:
+              - !GetAtt DatabaseKmsKey.Arn
+          - Effect: Allow
+            Action:
+              - kms:GenerateDataKey*
+            Resource:
+              - !GetAtt QueueKmsKey.Arn
+
+  InactiveAccountDeletionForecastFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-inactive-account-deletion-forecast"
+      RetentionInDays: 30
+      KmsKeyId: !GetAtt LoggingKmsKey.Arn
+
+  InactiveAccountDeletionForecastCSLSSubscription:
+    Condition: ExportLogsToSplunk
+    Type: AWS::Logs::SubscriptionFilter
+    Properties:
+      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
+      FilterPattern: ""
+      LogGroupName: !Ref InactiveAccountDeletionForecastFunctionLogGroup
+
+  InactiveAccountDeletionForecastDeadLetterQueue:
+    Type: AWS::SQS::Queue
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      MessageRetentionPeriod: 1209600
+      KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
+
+
 Outputs:
   GeneratorKey:
     Description: A generator key for generating a plaintext data key

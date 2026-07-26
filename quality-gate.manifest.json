@@ -1,5 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/govuk-one-login/quality-gates/refs/tags/v0.16.0/schemas/schema.json",
+  "$schema": "https://raw.githubusercontent.com/govuk-one-login/quality-gates/refs/tags/v0.17.0/schemas/schema.json",
   "services": [
     {
       "product": "One-Login-Home",
@@ -9,10 +9,6 @@
         {
           "phase": "pre-merge",
           "provider": "GitHub",
-          "config": {
-            "file": ".github/workflows/lint-and-test-lambdas.yaml",
-            "path": "$.jobs.lint_and_test"
-          },
           "checks": [
             {
               "name": "unit",
@@ -24,41 +20,35 @@
             {
               "name": "code style and linting"
             }
-          ]
+          ],
+          "file": ".github/workflows/lint-and-test-lambdas.yaml",
+          "path": "$.jobs.lint_and_test"
         },
         {
           "phase": "pre-merge",
           "provider": "GitHub",
-          "config": {
-            "file": ".github/workflows/checkov.yml",
-            "path": "$.jobs.checkov"
-          },
           "checks": [
             {
               "name": "code quality"
             }
-          ]
+          ],
+          "file": ".github/workflows/checkov.yml",
+          "path": "$.jobs.checkov"
         },
         {
           "phase": "pre-merge",
           "provider": "GitHub",
-          "config": {
-            "file": ".github/workflows/detect-secrets.yaml",
-            "path": "$.jobs.detect-secrets"
-          },
           "checks": [
             {
               "name": "secret scanning"
             }
-          ]
+          ],
+          "file": ".github/workflows/detect-secrets.yaml",
+          "path": "$.jobs.detect-secrets"
         },
         {
           "phase": "pre-merge",
           "provider": "GitHub",
-          "config": {
-            "file": ".github/workflows/sonarcloud.yaml",
-            "path": "$.jobs.sonarcloud_home_backend"
-          },
           "checks": [
             {
               "name": "code quality"
@@ -69,15 +59,13 @@
             {
               "name": "vulnerability detection"
             }
-          ]
+          ],
+          "file": ".github/workflows/sonarcloud.yaml",
+          "path": "$.jobs.sonarcloud_home_backend"
         },
         {
           "phase": "pre-merge",
           "provider": "GitHub",
-          "config": {
-            "file": ".github/workflows/pre-merge.yaml",
-            "path": "$.jobs.test"
-          },
           "checks": [
             {
               "name": "integration",
@@ -85,15 +73,13 @@
                 "regression"
               ]
             }
-          ]
+          ],
+          "file": ".github/workflows/pre-merge.yaml",
+          "path": "$.jobs.test"
         },
         {
           "phase": "pre-upload",
           "provider": "GitHub",
-          "config": {
-            "file": ".github/workflows/sam-app-post-merge-actions.yaml",
-            "path": "$.jobs.deploy"
-          },
           "checks": [
             {
               "name": "unit",
@@ -102,7 +88,9 @@
                 "regression"
               ]
             }
-          ]
+          ],
+          "file": ".github/workflows/sam-app-post-merge-actions.yaml",
+          "path": "$.jobs.deploy"
         }
       ]
     }

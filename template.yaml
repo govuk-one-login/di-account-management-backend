@@ -7136,7 +7136,7 @@ Resources:
     DependsOn:
       - InactiveAccountDeletionForecastFunctionLogGroup
     Properties:
-      FunctionName: !Sub ${Environment}-${AWS::StackName}-inactive-account-deletion-forecast
+      FunctionName: !Sub ${Environment}-${AWS::StackName}-inactive-acc-del-forecast
       CodeUri: src
       PackageType: Zip
       Timeout: 300
@@ -7219,7 +7219,7 @@ Resources:
   InactiveAccountDeletionForecastFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-inactive-account-deletion-forecast"
+      LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-inactive-acc-del-forecast"
       RetentionInDays: 30
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 

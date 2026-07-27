@@ -77,6 +77,15 @@ export const handler = async (
     event.Records.map(async (record) => {
       try {
         const txmaEvent: TxmaEvent = JSON.parse(record.body);
+
+        // TODO: Remove once AUTH_TOKEN_SENT_TO_ORCHESTRATION backlog is cleared
+        if (txmaEvent.event_name === "AUTH_TOKEN_SENT_TO_ORCHESTRATION") {
+          logger.info(
+            "Ignoring AUTH_TOKEN_SENT_TO_ORCHESTRATION event - temporary measure to clear backlog"
+          );
+          return;
+        }
+
         validateTxmaEventBody(txmaEvent);
         await writeRawTxmaEvent(txmaEvent);
       } catch (error) {

@@ -75,18 +75,25 @@ export const handler = async (
       return;
     }
 
-    const publicSubjectId = txmaEvent.user?.public_subject_id ?? currentTrackerRecord?.publicSubjectId;
+    const publicSubjectId = txmaEvent.user?.public_subject_id ?? currentTrackerRecord?.publicSubjectId ?? "";
+    const now = new Date().toISOString();
+    const isNewLatestDate = new Date(txmaEvent.timestamp * 1000) > (currentTrackerRecord ? new Date(currentTrackerRecord.userLastActive) : new Date(0));
 
     const newItem: InactiveAccountTrackerRecord = {
       commonSubjectId: userId,
-      ...(publicSubjectId && { publicSubjectId }),
+      publicSubjectId,
       userLastActive: latestDate.toISOString(),
+      userLastActiveSource: txmaEvent.event_name,
+      ...(txmaEvent.event_id && { userLastActiveSourceId: txmaEvent.event_id }),
+      userLastActiveUpdated: isNewLatestDate ? now : (currentTrackerRecord?.userLastActiveUpdated ?? now),
       dateForDeletion: getDateForDeletion(latestDate),
       emailAddress: email,
+      emailAddressSource: txmaEvent.event_name,
+      ...(txmaEvent.event_id && { emailAddressSourceId: txmaEvent.event_id }),
+      emailAddressLastUpdated: txmaEvent.user?.email ? now : (currentTrackerRecord?.emailAddressLastUpdated ?? now),
       status: 'pending',
-      statusLastUpdated: new Date().toISOString(),
-      source: "txma_audit_event",
-      sourceId: txmaEvent.event_id,
+      statusLastUpdated: now,
+      hasSetupMfa: currentTrackerRecord?.hasSetupMfa ?? false,
     }
 
     const transactionItems: TransactionItems = [

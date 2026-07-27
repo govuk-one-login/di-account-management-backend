@@ -55,7 +55,7 @@ describe("UpdateInactiveAccountTracker handler", () => {
         expect.objectContaining({
           Put: expect.objectContaining({
             TableName: "test-table",
-            Item: expect.objectContaining({ commonSubjectId: "qwerty", status: "pending", source: "txma_audit_event", sourceId: "event_id" }),
+            Item: expect.objectContaining({ commonSubjectId: "qwerty", status: "pending", userLastActiveSource: "AUTH_AUTH_CODE_ISSUED", userLastActiveSourceId: "event_id", emailAddressSource: "AUTH_AUTH_CODE_ISSUED", emailAddressSourceId: "event_id" }),
           }),
         }),
       ]),
@@ -322,7 +322,7 @@ describe("UpdateInactiveAccountTracker handler", () => {
     });
   });
 
-  test("omits publicSubjectId from tracker record when absent from both event and existing record", async () => {
+  test("sets publicSubjectId to empty string when absent from both event and existing record", async () => {
     dynamoMock.on(QueryCommand).resolves({ Items: [] });
     dynamoMock.on(TransactWriteCommand).resolves({});
     const recordWithoutPublicSubjectId = {
@@ -345,7 +345,7 @@ describe("UpdateInactiveAccountTracker handler", () => {
       TransactItems: expect.arrayContaining([
         expect.objectContaining({
           Put: expect.objectContaining({
-            Item: expect.not.objectContaining({ publicSubjectId: expect.anything() }),
+            Item: expect.objectContaining({ publicSubjectId: "" }),
           }),
         }),
       ]),

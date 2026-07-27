@@ -4,6 +4,18 @@ import { SendMessageCommand, SQSClient } from "@aws-sdk/client-sqs";
 import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
 import { mockClient } from "aws-sdk-client-mock";
 
+const mockLogger = vi.hoisted(() => ({
+  info: vi.fn(),
+  addContext: vi.fn(),
+}));
+
+vi.mock("@aws-lambda-powertools/logger", () => ({
+  Logger: class {
+    info = mockLogger.info;
+    addContext = mockLogger.addContext;
+  },
+}));
+
 import {
   handler,
   validateTxmaEventBody,
@@ -264,6 +276,65 @@ describe("handler", () => {
         remove_at: 2878106,
       },
     });
+  });
+});
+
+describe("handler ignores AUTH_TOKEN_SENT_TO_ORCHESTRATION events", () => {
+  beforeEach(() => {
+    dynamoMock.reset();
+    process.env.TABLE_NAME = "TABLE_NAME";
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  test("does not write to DynamoDB and logs info when event_name is AUTH_TOKEN_SENT_TO_ORCHESTRATION", async () => {
+    const ignoredEvent: SQSEvent = {
+      Records: [
+        {
+          ...TEST_SQS_RECORD,
+          body: JSON.stringify({
+            ...makeTxmaEvent(),
+            event_name: "AUTH_TOKEN_SENT_TO_ORCHESTRATION",
+          }),
+        },
+      ],
+    };
+    await handler(ignoredEvent, {} as Context);
+    expect(dynamoMock.commandCalls(PutCommand).length).toEqual(0);
+    expect(mockLogger.info).toHaveBeenCalledWith(
+      "Ignoring AUTH_TOKEN_SENT_TO_ORCHESTRATION event - temporary measure to clear backlog"
+    );
+  });
+
+  test("processes other events normally alongside ignored events", async () => {
+    vi.spyOn(Date, "now").mockImplementation(() => TIMESTAMP);
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-expect-error
+    vi.spyOn(crypto, "randomUUID").mockImplementation(() => UUID);
+
+    const mixedEvent: SQSEvent = {
+      Records: [
+        {
+          ...TEST_SQS_RECORD,
+          body: JSON.stringify({
+            ...makeTxmaEvent(),
+            event_name: "AUTH_TOKEN_SENT_TO_ORCHESTRATION",
+          }),
+        },
+        {
+          ...TEST_SQS_RECORD,
+          body: JSON.stringify(makeTxmaEvent()),
+        },
+      ],
+    };
+    await handler(mixedEvent, {} as Context);
+    expect(dynamoMock.commandCalls(PutCommand).length).toEqual(1);
+    expect(mockLogger.info).toHaveBeenCalledTimes(1);
+
+    vi.spyOn(Date, "now").mockRestore();
+    vi.spyOn(crypto, "randomUUID").mockRestore();
   });
 });
 

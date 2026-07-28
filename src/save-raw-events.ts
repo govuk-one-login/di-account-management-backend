@@ -89,10 +89,10 @@ export const handler = async (
       try {
         const txmaEvent: TxmaEvent = JSON.parse(record.body);
 
-        // TODO: Remove once AUTH_TOKEN_SENT_TO_ORCHESTRATION backlog is cleared
-        if (txmaEvent.event_name === "AUTH_TOKEN_SENT_TO_ORCHESTRATION") {
+        // TODO: Remove once backlog of failing events is cleared
+        if (txmaEvent.event_name === "AUTH_TOKEN_SENT_TO_ORCHESTRATION" || txmaEvent.event_name === "AUTH_DELETE_ACCOUNT" || txmaEvent.event_name === "AUTH_UPDATE_EMAIL")  {
           logger.info(
-            "Ignoring AUTH_TOKEN_SENT_TO_ORCHESTRATION event - temporary measure to clear backlog"
+            `Ignoring ${txmaEvent.event_name} event - temporary measure to clear backlog`
           );
           return;
         }

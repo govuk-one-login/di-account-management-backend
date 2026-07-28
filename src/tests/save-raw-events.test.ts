@@ -279,7 +279,7 @@ describe("handler", () => {
   });
 });
 
-describe("handler ignores AUTH_TOKEN_SENT_TO_ORCHESTRATION events", () => {
+describe("handler ignores events which are temporarily skipped", () => {
   beforeEach(() => {
     dynamoMock.reset();
     process.env.TABLE_NAME = "TABLE_NAME";
@@ -305,6 +305,44 @@ describe("handler ignores AUTH_TOKEN_SENT_TO_ORCHESTRATION events", () => {
     expect(dynamoMock.commandCalls(PutCommand).length).toEqual(0);
     expect(mockLogger.info).toHaveBeenCalledWith(
       "Ignoring AUTH_TOKEN_SENT_TO_ORCHESTRATION event - temporary measure to clear backlog"
+    );
+  });
+
+  test("does not write to DynamoDB and logs info when event_name is AUTH_DELETE_ACCOUNT", async () => {
+    const ignoredEvent: SQSEvent = {
+      Records: [
+        {
+          ...TEST_SQS_RECORD,
+          body: JSON.stringify({
+            ...makeTxmaEvent(),
+            event_name: "AUTH_DELETE_ACCOUNT",
+          }),
+        },
+      ],
+    };
+    await handler(ignoredEvent, {} as Context);
+    expect(dynamoMock.commandCalls(PutCommand).length).toEqual(0);
+    expect(mockLogger.info).toHaveBeenCalledWith(
+      "Ignoring AUTH_DELETE_ACCOUNT event - temporary measure to clear backlog"
+    );
+  });
+
+  test("does not write to DynamoDB and logs info when event_name is AUTH_UPDATE_EMAIL", async () => {
+    const ignoredEvent: SQSEvent = {
+      Records: [
+        {
+          ...TEST_SQS_RECORD,
+          body: JSON.stringify({
+            ...makeTxmaEvent(),
+            event_name: "AUTH_UPDATE_EMAIL",
+          }),
+        },
+      ],
+    };
+    await handler(ignoredEvent, {} as Context);
+    expect(dynamoMock.commandCalls(PutCommand).length).toEqual(0);
+    expect(mockLogger.info).toHaveBeenCalledWith(
+      "Ignoring AUTH_UPDATE_EMAIL event - temporary measure to clear backlog"
     );
   });
 

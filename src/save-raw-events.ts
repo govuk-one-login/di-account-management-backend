@@ -53,8 +53,8 @@ export const validateTxmaEventBody = (txmaEvent: TxmaEvent): void => {
     validateUser(txmaEvent.user);
   } else {
     logger.info("Could not validate TxmaEvent context", {
-      typeofTimestamp: typeof txmaEvent.timestamp,
-      typeofEventName: typeof txmaEvent.event_name,
+      timestamp: txmaEvent.timestamp,
+      eventName: txmaEvent.event_name,
       typeofClientId: typeof txmaEvent.client_id,
       typeofUser: typeof txmaEvent.user,
     });

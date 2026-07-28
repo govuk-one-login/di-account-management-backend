@@ -34,6 +34,11 @@ const getTTLDate = (): number => {
 
 export const validateUser = (user: UserData): void => {
   if (!user.user_id || !user.session_id) {
+    logger.info("Could not validate User context", {
+      typeofUser: typeof user,
+      typeofUserUserId: typeof user.user_id,
+      typeofUserSessionId: typeof user.session_id,
+    });
     throw new Error("Could not validate User");
   }
 };
@@ -47,6 +52,12 @@ export const validateTxmaEventBody = (txmaEvent: TxmaEvent): void => {
   ) {
     validateUser(txmaEvent.user);
   } else {
+    logger.info("Could not validate TxmaEvent context", {
+      timestamp: txmaEvent.timestamp,
+      eventName: txmaEvent.event_name,
+      typeofClientId: typeof txmaEvent.client_id,
+      typeofUser: typeof txmaEvent.user,
+    });
     throw new Error("Could not validate TxmaEvent");
   }
 };
@@ -92,7 +103,8 @@ export const handler = async (
         throw new Error(
           `Unable to save raw events for message with ID: ${record.messageId}, ${
             (error as Error).message
-          }`, { cause: error }
+          }`,
+          { cause: error }
         );
       }
     })

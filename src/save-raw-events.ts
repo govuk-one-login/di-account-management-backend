@@ -21,6 +21,12 @@ const dynamoDocClient = DynamoDBDocumentClient.from(
 );
 const logger = new Logger();
 
+const ALLOWED_EVENT_NAMES = new Set([
+  "AUTH_AUTH_CODE_ISSUED",
+  "AUTH_IPV_AUTHORISATION_REQUESTED",
+  "AUTH_IPV_SUCCESSFUL_IDENTITY_RESPONSE_RECEIVED",
+]);
+
 const getEventId = (): string => {
   return crypto.randomUUID();
 };
@@ -89,10 +95,9 @@ export const handler = async (
       try {
         const txmaEvent: TxmaEvent = JSON.parse(record.body);
 
-        // TODO: Remove once backlog of failing events is cleared
-        if (txmaEvent.event_name === "AUTH_TOKEN_SENT_TO_ORCHESTRATION" || txmaEvent.event_name === "AUTH_DELETE_ACCOUNT" || txmaEvent.event_name === "AUTH_UPDATE_EMAIL")  {
+        if (!ALLOWED_EVENT_NAMES.has(txmaEvent.event_name as string)) {
           logger.info(
-            `Ignoring ${txmaEvent.event_name} event - temporary measure to clear backlog`
+            `Ignoring ${txmaEvent.event_name} event - not in allowlist`
           );
           return;
         }

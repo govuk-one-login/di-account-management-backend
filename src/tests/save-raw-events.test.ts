@@ -279,7 +279,7 @@ describe("handler", () => {
   });
 });
 
-describe("handler ignores events which are temporarily skipped", () => {
+describe("handler only saves allowlisted events", () => {
   beforeEach(() => {
     dynamoMock.reset();
     process.env.TABLE_NAME = "TABLE_NAME";
@@ -289,7 +289,32 @@ describe("handler ignores events which are temporarily skipped", () => {
     vi.clearAllMocks();
   });
 
-  test("does not write to DynamoDB and logs info when event_name is AUTH_TOKEN_SENT_TO_ORCHESTRATION", async () => {
+  test.each([
+    "AUTH_AUTH_CODE_ISSUED",
+    "AUTH_IPV_AUTHORISATION_REQUESTED",
+    "AUTH_IPV_SUCCESSFUL_IDENTITY_RESPONSE_RECEIVED",
+  ])("writes to DynamoDB when event_name is %s", async (allowedEventName) => {
+    vi.spyOn(Date, "now").mockImplementation(() => TIMESTAMP);
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-expect-error
+    vi.spyOn(crypto, "randomUUID").mockImplementation(() => UUID);
+
+    const allowedEvent: SQSEvent = {
+      Records: [
+        {
+          ...TEST_SQS_RECORD,
+          body: JSON.stringify({
+            ...makeTxmaEvent(),
+            event_name: allowedEventName,
+          }),
+        },
+      ],
+    };
+    await handler(allowedEvent, {} as Context);
+    expect(dynamoMock.commandCalls(PutCommand).length).toEqual(1);
+  });
+
+  test("does not write to DynamoDB and logs info when event_name is not in the allowlist", async () => {
     const ignoredEvent: SQSEvent = {
       Records: [
         {
@@ -304,18 +329,18 @@ describe("handler ignores events which are temporarily skipped", () => {
     await handler(ignoredEvent, {} as Context);
     expect(dynamoMock.commandCalls(PutCommand).length).toEqual(0);
     expect(mockLogger.info).toHaveBeenCalledWith(
-      "Ignoring AUTH_TOKEN_SENT_TO_ORCHESTRATION event - temporary measure to clear backlog"
+      "Ignoring AUTH_TOKEN_SENT_TO_ORCHESTRATION event - not in allowlist"
     );
   });
 
-  test("does not write to DynamoDB and logs info when event_name is AUTH_DELETE_ACCOUNT", async () => {
+  test("does not write to DynamoDB and logs info when event_name is missing", async () => {
     const ignoredEvent: SQSEvent = {
       Records: [
         {
           ...TEST_SQS_RECORD,
           body: JSON.stringify({
             ...makeTxmaEvent(),
-            event_name: "AUTH_DELETE_ACCOUNT",
+            event_name: undefined,
           }),
         },
       ],
@@ -323,30 +348,11 @@ describe("handler ignores events which are temporarily skipped", () => {
     await handler(ignoredEvent, {} as Context);
     expect(dynamoMock.commandCalls(PutCommand).length).toEqual(0);
     expect(mockLogger.info).toHaveBeenCalledWith(
-      "Ignoring AUTH_DELETE_ACCOUNT event - temporary measure to clear backlog"
+      "Ignoring undefined event - not in allowlist"
     );
   });
 
-  test("does not write to DynamoDB and logs info when event_name is AUTH_UPDATE_EMAIL", async () => {
-    const ignoredEvent: SQSEvent = {
-      Records: [
-        {
-          ...TEST_SQS_RECORD,
-          body: JSON.stringify({
-            ...makeTxmaEvent(),
-            event_name: "AUTH_UPDATE_EMAIL",
-          }),
-        },
-      ],
-    };
-    await handler(ignoredEvent, {} as Context);
-    expect(dynamoMock.commandCalls(PutCommand).length).toEqual(0);
-    expect(mockLogger.info).toHaveBeenCalledWith(
-      "Ignoring AUTH_UPDATE_EMAIL event - temporary measure to clear backlog"
-    );
-  });
-
-  test("processes other events normally alongside ignored events", async () => {
+  test("processes allowlisted events normally alongside dropped events", async () => {
     vi.spyOn(Date, "now").mockImplementation(() => TIMESTAMP);
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-expect-error
@@ -370,9 +376,6 @@ describe("handler ignores events which are temporarily skipped", () => {
     await handler(mixedEvent, {} as Context);
     expect(dynamoMock.commandCalls(PutCommand).length).toEqual(1);
     expect(mockLogger.info).toHaveBeenCalledTimes(1);
-
-    vi.spyOn(Date, "now").mockRestore();
-    vi.spyOn(crypto, "randomUUID").mockRestore();
   });
 });
 

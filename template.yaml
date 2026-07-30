@@ -877,6 +877,7 @@ Resources:
               - !GetAtt TxMAInputDummyQueue.Arn
               - !FindInMap [InputQueue, !Ref Environment, QueueArn]
             BatchSize: 100
+            MaximumBatchingWindowInSeconds: 10
             FunctionResponseTypes:
               - ReportBatchItemFailures
       DeadLetterQueue:

@@ -45,7 +45,15 @@ export const validateUser = (user: UserData): void => {
       typeofUserUserId: typeof user.user_id,
       typeofUserSessionId: typeof user.session_id,
     });
-    throw new Error("Could not validate User");
+    const missingFields: string[] = [];
+
+    if (!user.user_id) {
+      missingFields.push(`user_id is ${user.user_id}`);
+    }
+    if (!user.session_id) {
+      missingFields.push(`session_id is ${user.session_id}`);
+    }
+    throw new Error(`Could not validate User: ${missingFields.join(", ")}`);
   }
 };
 
@@ -58,13 +66,18 @@ export const validateTxmaEventBody = (txmaEvent: TxmaEvent): void => {
   ) {
     validateUser(txmaEvent.user);
   } else {
+    const missingFields: string[] = [];
+    if (!txmaEvent.timestamp) missingFields.push(`txmaEvent.timestamp is ${txmaEvent.timestamp}`);
+    if (!txmaEvent.event_name) missingFields.push(`txmaEvent.event_name is ${txmaEvent.event_name}`);
+    if (!txmaEvent.client_id) missingFields.push(`txmaEvent.client_id is ${txmaEvent.client_id}`);
+    if (!txmaEvent.user) missingFields.push(`txmaEvent.user is ${txmaEvent.user}`);
     logger.info("Could not validate TxmaEvent context", {
       timestamp: txmaEvent.timestamp,
       eventName: txmaEvent.event_name,
       typeofClientId: typeof txmaEvent.client_id,
       typeofUser: typeof txmaEvent.user,
     });
-    throw new Error("Could not validate TxmaEvent");
+    throw new Error(`Could not validate TxmaEvent with id ${txmaEvent.event_id} and name ${txmaEvent.event_name}: ${missingFields.join(", ")}`);
   }
 };
 

@@ -6,12 +6,14 @@ import { mockClient } from "aws-sdk-client-mock";
 
 const mockLogger = vi.hoisted(() => ({
   info: vi.fn(),
+  error: vi.fn(),
   addContext: vi.fn(),
 }));
 
 vi.mock("@aws-lambda-powertools/logger", () => ({
   Logger: class {
     info = mockLogger.info;
+    error = mockLogger.error;
     addContext = mockLogger.addContext;
   },
 }));
@@ -265,7 +267,7 @@ describe("handler", () => {
   });
 
   test("Adds raw event to the table", async () => {
-    await handler(TEST_SQS_EVENT, {} as Context);
+    const result = await handler(TEST_SQS_EVENT, {} as Context);
     expect(dynamoMock.commandCalls(PutCommand).length).toEqual(1);
     expect(dynamoMock).toHaveReceivedCommandWith(PutCommand, {
       TableName: process.env.TABLE_NAME,
@@ -276,6 +278,7 @@ describe("handler", () => {
         remove_at: 2878106,
       },
     });
+    expect(result).toEqual({ batchItemFailures: [] });
   });
 });
 
@@ -393,15 +396,16 @@ describe("handler error handling", () => {
     vi.clearAllMocks();
   });
 
-  test("logs the error message", async () => {
-    let errorMessage;
-    try {
-      await handler(TEST_SQS_EVENT, {} as Context);
-    } catch (error) {
-      errorMessage = (error as Error).message;
-    }
-    expect(errorMessage).toContain(
-      "Unable to save raw events for message with ID: 19dd0b57-b21e-4ac1-bd88-01bbb068cb78, mock error"
+  test("logs the error and returns the failed message ID in batchItemFailures", async () => {
+    const result = await handler(TEST_SQS_EVENT, {} as Context);
+    expect(mockLogger.error).toHaveBeenCalledWith(
+      "Unable to save raw events for message with ID: 19dd0b57-b21e-4ac1-bd88-01bbb068cb78",
+      expect.objectContaining({ error: expect.anything() })
     );
+    expect(result).toEqual({
+      batchItemFailures: [
+        { itemIdentifier: "19dd0b57-b21e-4ac1-bd88-01bbb068cb78" },
+      ],
+    });
   });
 });

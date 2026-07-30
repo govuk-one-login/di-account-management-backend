@@ -1,4 +1,4 @@
-import { Context, SQSEvent } from "aws-lambda";
+import { Context, SQSBatchResponse, SQSEvent } from "aws-lambda";
 import crypto from "node:crypto";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import {
@@ -88,8 +88,10 @@ export const writeRawTxmaEvent = async (
 export const handler = async (
   event: SQSEvent,
   context: Context
-): Promise<void> => {
+): Promise<SQSBatchResponse> => {
   logger.addContext(context);
+  const batchItemFailures: { itemIdentifier: string }[] = [];
+
   await Promise.all(
     event.Records.map(async (record) => {
       try {
@@ -105,13 +107,14 @@ export const handler = async (
         validateTxmaEventBody(txmaEvent);
         await writeRawTxmaEvent(txmaEvent);
       } catch (error) {
-        throw new Error(
-          `Unable to save raw events for message with ID: ${record.messageId}, ${
-            (error as Error).message
-          }`,
-          { cause: error }
+        logger.error(
+          `Unable to save raw events for message with ID: ${record.messageId}`,
+          { error }
         );
+        batchItemFailures.push({ itemIdentifier: record.messageId });
       }
     })
   );
+
+  return { batchItemFailures };
 };

@@ -867,6 +867,7 @@ Resources:
       CodeUri: src
       PackageType: Zip
       MemorySize: 220
+      Timeout: 30
       Events:
         InputQueue:
           Type: SQS
@@ -875,6 +876,9 @@ Resources:
               - UseInternalEvents
               - !GetAtt TxMAInputDummyQueue.Arn
               - !FindInMap [InputQueue, !Ref Environment, QueueArn]
+            BatchSize: 100
+            FunctionResponseTypes:
+              - ReportBatchItemFailures
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt SaveRawEventsDeadLetterQueue.Arn

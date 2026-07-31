@@ -31,9 +31,18 @@ const getCurrentRecordForUser = async (userId: string, tableName: string): Promi
 }
 
 const getLatestDate = (txmaEvent: TxmaEvent, trackerRecord: InactiveAccountTrackerRecord | null) => {
+  let timestamp = txmaEvent.timestamp;
+
+  // some txma events timestamps are in milliseconds when they should be in seconds.
+  // if the timestamp is over 13 digits it is essentially guaranteed to be in milliseconds. 
+  // 13 digit millisecond timestamps started 9 September 2001.
+  if (timestamp.toString().length >= 13) {
+    timestamp = Math.floor(timestamp / 1000);
+  }
+
   // if the timestamp on the audit event is older than the last active timestamp we have for the user
   // we should keep the existing date as it means the events have been receieved out of order
-  const eventDate = new Date(txmaEvent.timestamp * 1000);
+  const eventDate = new Date(timestamp * 1000);
   const trackerDate = trackerRecord ? new Date(trackerRecord.userLastActive) : new Date(0);
 
   return eventDate > trackerDate ? eventDate : trackerDate;

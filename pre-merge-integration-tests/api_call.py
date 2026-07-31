@@ -248,6 +248,31 @@ def test_auth_code_issued_creates_activity_log():
         delete_item(USER_SERVICES_TABLE, {'user_id': user_id})
 
 
+def test_unknown_event_is_silently_dropped():
+    """An event with an unrecognised event_name should not produce any
+    downstream records."""
+    user_id = generate_user_id("unknown-event")
+    event_id = generate_event_id()
+
+    send_message(QUEUE_URL, {
+        "event_name": "FABRICATED_EVENT_NAME",
+        "event_id": event_id,
+        "user": {
+            "user_id": user_id,
+            "session_id": "7340477f-74da-46d4-9400-d22ae518da3a"
+        },
+        "client_id": "vehicleOperatorLicense",
+        "timestamp": 1730800548523,
+    })
+
+    assert_no_item(
+        ACTIVITY_LOG_TABLE,
+        Key('user_id').eq(user_id) & Key('event_id').eq(event_id),
+        wait=10,
+        description=f"activity log for unknown event user {user_id}",
+    )
+
+
 # --- Main ---
 
 if __name__ == "__main__":
@@ -263,6 +288,12 @@ if __name__ == "__main__":
     run_test(
         "AUTH_AUTH_CODE_ISSUED creates activity log entry",
         test_auth_code_issued_creates_activity_log,
+        results,
+    )
+
+    run_test(
+        "Unknown event is silently dropped (no activity log)",
+        test_unknown_event_is_silently_dropped,
         results,
     )
 

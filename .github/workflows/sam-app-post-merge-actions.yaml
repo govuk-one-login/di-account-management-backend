@@ -37,7 +37,7 @@ jobs:
         working-directory: ./
 
       - name: Set up Python 3.9
-        uses: actions/setup-python@d27e3f3d7c64b4bbf8e4abfb9b63b83e846e0435 # pin@v4
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # pin@v4
         with:
           python-version: "3.9"
 

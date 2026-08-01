@@ -43,7 +43,7 @@
     "knip": "^6.25.0",
     "lint-staged": "^17.0.8",
     "prettier": "^3.9.4",
-    "typescript": "^6.0.3",
+    "typescript": "^7.0.2",
     "typescript-eslint": "^8.63.0",
     "vitest": "^4.1.5"
   },

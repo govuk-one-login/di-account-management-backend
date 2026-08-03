@@ -5993,6 +5993,21 @@ Resources:
               Resource:
                 - "*"
             - !Ref AWS::NoValue
+          - !If
+            - "UseExternalEvents"
+            - Effect: Allow
+              Principal:
+                Service: !Sub "dynamodb.${AWS::Region}.amazonaws.com"
+              Action:
+                - kms:Decrypt
+                - kms:GenerateDataKey*
+                - kms:ReEncrypt*
+              Resource:
+                - "*"
+              Condition:
+                StringEquals:
+                  kms:CallerAccount: !FindInMap [AuthenticationAccounts, !Ref Environment, "AccountNumber"]
+            - !Ref AWS::NoValue
 
   DatabaseKmsKeyAlias:
     Type: AWS::KMS::Alias

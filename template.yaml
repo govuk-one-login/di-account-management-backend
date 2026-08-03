@@ -5973,6 +5973,26 @@ Resources:
               - kms:*
             Resource:
               - "*"
+          - !If
+            - "UseExternalEvents"
+            - Effect: Allow
+              Principal:
+                AWS: !Join
+                  - ""
+                  - - "arn:aws:iam::"
+                    - !FindInMap [
+                        AuthenticationAccounts,
+                        !Ref Environment,
+                        "AccountNumber",
+                      ]
+                    - ":root"
+              Action:
+                - kms:Decrypt
+                - kms:GenerateDataKey*
+                - kms:ReEncrypt*
+              Resource:
+                - "*"
+            - !Ref AWS::NoValue
 
   DatabaseKmsKeyAlias:
     Type: AWS::KMS::Alias

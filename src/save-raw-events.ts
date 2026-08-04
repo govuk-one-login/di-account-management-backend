@@ -38,7 +38,8 @@ const getTTLDate = (): number => {
   return expirationTime;
 };
 
-export const validateUser = (user: UserData): void => {
+export const validateUser = (event: TxmaEvent): void => {
+  const user:UserData = event.user;
   if (!user.user_id || !user.session_id) {
     logger.info("Could not validate User context", {
       typeofUser: typeof user,
@@ -53,7 +54,7 @@ export const validateUser = (user: UserData): void => {
     if (!user.session_id) {
       missingFields.push(`session_id is ${user.session_id}`);
     }
-    throw new Error(`Could not validate User: ${missingFields.join(", ")}`);
+    throw new Error(`Could not validate User for event_name ${event.event_name} with event_id ${event.event_id}: ${missingFields.join(", ")}`);
   }
 };
 
@@ -64,7 +65,7 @@ export const validateTxmaEventBody = (txmaEvent: TxmaEvent): void => {
     txmaEvent.client_id &&
     txmaEvent.user
   ) {
-    validateUser(txmaEvent.user);
+    validateUser(txmaEvent);
   } else {
     const missingFields: string[] = [];
     if (!txmaEvent.timestamp) missingFields.push(`txmaEvent.timestamp is ${txmaEvent.timestamp}`);

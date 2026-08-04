@@ -413,6 +413,39 @@ def test_auth_code_issued_validation_failures(test_id):
     run_validation_failure_tests(test_id, "AUTH_AUTH_CODE_ISSUED")
 
 
+# --- Tests: AUTH_IPV_AUTHORISATION_REQUESTED (success) ---
+
+def test_ipv_auth_requested_full_pipeline(test_id):
+    """AUTH_IPV_AUTHORISATION_REQUESTED should create activity log
+    but NOT update user services."""
+    user_id = generate_user_id("ipv-req-full")
+    event_id = generate_event_id()
+    client_id = "vehicleOperatorLicense"
+
+    try:
+        send_message(QUEUE_URL, make_event("AUTH_IPV_AUTHORISATION_REQUESTED", event_id,
+            user={"user_id": user_id, "session_id": "session-ipv-req"},
+            client_id=client_id), test_id=test_id)
+
+        activity = assert_item_exists(ACTIVITY_LOG_TABLE,
+            Key('user_id').eq(user_id) & Key('event_id').eq(event_id),
+            timeout=30, description="activity log", test_id=test_id)
+
+        user_svc = dynamodb.Table(USER_SERVICES_TABLE).get_item(
+            Key={"user_id": user_id}).get('Item')
+        assert user_svc is None, \
+            f"Expected no user_services entry but found one: {user_svc}"
+    finally:
+        delete_item(ACTIVITY_LOG_TABLE, {'event_id': event_id, 'user_id': user_id}, test_id=test_id)
+
+
+# --- Tests: AUTH_IPV_AUTHORISATION_REQUESTED (validation failures) ---
+
+def test_ipv_auth_requested_validation_failures(test_id):
+    """All malformed AUTH_IPV_AUTHORISATION_REQUESTED variants should be rejected."""
+    run_validation_failure_tests(test_id, "AUTH_IPV_AUTHORISATION_REQUESTED")
+
+
 # --- Main ---
 
 if __name__ == "__main__":
@@ -429,6 +462,9 @@ if __name__ == "__main__":
         # AUTH_AUTH_CODE_ISSUED
         ("aci-full", test_auth_code_issued_full_pipeline),
         ("aci-validation", test_auth_code_issued_validation_failures),
+        # AUTH_IPV_AUTHORISATION_REQUESTED
+        ("ipv-req-full", test_ipv_auth_requested_full_pipeline),
+        ("ipv-req-validation", test_ipv_auth_requested_validation_failures),
         # General
         ("auth-code-issued", test_auth_code_issued_creates_activity_log),
         ("unknown-event-dropped", test_unknown_event_is_silently_dropped),

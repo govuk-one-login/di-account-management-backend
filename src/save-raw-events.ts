@@ -92,10 +92,27 @@ export const handler = async (
   logger.addContext(context);
   const batchItemFailures: { itemIdentifier: string }[] = [];
 
+  logger.info("DEBUG: handler invoked", {
+    recordCount: event.Records.length,
+  });
+
   await Promise.all(
     event.Records.map(async (record) => {
       try {
         const txmaEvent: TxmaEvent = JSON.parse(record.body);
+
+        logger.info("DEBUG: received event", {
+          messageId: record.messageId,
+          event_name: txmaEvent.event_name,
+          event_id: txmaEvent.event_id,
+          user_id: txmaEvent.user?.user_id,
+          session_id: txmaEvent.user?.session_id,
+          client_id: txmaEvent.client_id,
+          timestamp: txmaEvent.timestamp,
+          hasUser: txmaEvent.user !== undefined && txmaEvent.user !== null,
+          rawBodyLength: record.body.length,
+          allTopLevelKeys: Object.keys(txmaEvent),
+        });
 
         if (!ALLOWED_EVENT_NAMES.has(txmaEvent.event_name as string)) {
           logger.info(
@@ -105,7 +122,20 @@ export const handler = async (
         }
 
         validateTxmaEventBody(txmaEvent);
+
+        logger.info("DEBUG: validation passed, writing to DynamoDB", {
+          event_name: txmaEvent.event_name,
+          event_id: txmaEvent.event_id,
+          user_id: txmaEvent.user?.user_id,
+        });
+
         await writeRawTxmaEvent(txmaEvent);
+
+        logger.info("DEBUG: successfully written to DynamoDB", {
+          event_name: txmaEvent.event_name,
+          event_id: txmaEvent.event_id,
+          user_id: txmaEvent.user?.user_id,
+        });
       } catch (error) {
         logger.error(
           `Unable to save raw events for message with ID: ${record.messageId}`,
@@ -115,6 +145,10 @@ export const handler = async (
       }
     })
   );
+
+  logger.info("DEBUG: handler complete", {
+    batchItemFailureCount: batchItemFailures.length,
+  });
 
   return { batchItemFailures };
 };

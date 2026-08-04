@@ -74,19 +74,50 @@ export const handler = async (
   logger.addContext(context);
   const { Records } = event;
   const OUTPUT_QUEUE_URL = getEnvironmentVariable("OUTPUT_QUEUE_URL");
+
+  logger.info("DEBUG format-activity-log: handler invoked", {
+    recordCount: Records.length,
+  });
+
   await Promise.all(
     Records.map(async (record) => {
       try {
         const txmaEvent = unmarshall(
           record.dynamodb?.NewImage?.event.M as Record<string, AttributeValue>
         ) as TxmaEvent;
+
+        logger.info("DEBUG format-activity-log: processing record", {
+          event_name: txmaEvent.event_name,
+          event_id: txmaEvent.event_id,
+          user_id: txmaEvent.user?.user_id,
+          client_id: txmaEvent.client_id,
+          isAllowed: allowedTxmaEvents.includes(txmaEvent.event_name),
+        });
+
         if (allowedTxmaEvents.includes(txmaEvent.event_name)) {
           validateTxmaEventBody(txmaEvent);
+
+          logger.info("DEBUG format-activity-log: validation passed", {
+            event_id: txmaEvent.event_id,
+            user_id: txmaEvent.user?.user_id,
+          });
+
           const formattedRecord = formatIntoActivityLogEntry(txmaEvent);
+
+          logger.info("DEBUG format-activity-log: sending to write queue", {
+            event_id: formattedRecord.event_id,
+            user_id: formattedRecord.user_id,
+            event_type: formattedRecord.event_type,
+          });
+
           await sendSqsMessage(
             JSON.stringify(formattedRecord),
             OUTPUT_QUEUE_URL
           );
+
+          logger.info("DEBUG format-activity-log: sent successfully", {
+            event_id: formattedRecord.event_id,
+          });
         } else {
           logger.info(
             `DB stream sent a ${txmaEvent.event_name} event. Ignoring.`

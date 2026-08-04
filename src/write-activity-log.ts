@@ -47,11 +47,31 @@ export const handler = async (
   context: Context
 ): Promise<void> => {
   logger.addContext(context);
+
+  logger.info("DEBUG write-activity-log: handler invoked", {
+    recordCount: event.Records.length,
+  });
+
   await Promise.all(
     event.Records.map(async (record) => {
       try {
         const activityLogEntry: ActivityLogEntry = JSON.parse(record.body);
+
+        logger.info("DEBUG write-activity-log: processing record", {
+          event_id: activityLogEntry.event_id,
+          user_id: activityLogEntry.user_id,
+          event_type: activityLogEntry.event_type,
+          session_id: activityLogEntry.session_id,
+          client_id: activityLogEntry.client_id,
+        });
+
         validateActivityLogEntry(activityLogEntry);
+
+        logger.info("DEBUG write-activity-log: validation passed, encrypting", {
+          event_id: activityLogEntry.event_id,
+          user_id: activityLogEntry.user_id,
+        });
+
         const encryptedActivityLog: EncryptedActivityLogEntry = {
           event_id: activityLogEntry.event_id,
           event_type: await encryptData(
@@ -65,6 +85,11 @@ export const handler = async (
           reported_suspicious: activityLogEntry.reported_suspicious,
         };
         await writeActivityLogEntry(encryptedActivityLog);
+
+        logger.info("DEBUG write-activity-log: written to DynamoDB", {
+          event_id: activityLogEntry.event_id,
+          user_id: activityLogEntry.user_id,
+        });
       } catch (error) {
         throw new Error(
           `Unable to write activity log for message with ID: ${record.messageId}, ${

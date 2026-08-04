@@ -166,6 +166,32 @@ describe("validateUser", () => {
       validateUser(txmaEvent);
     }).toThrow(new Error(`Could not validate User for event_name AUTH_AUTH_CODE_ISSUED with event_id ab12345a-a12b-3ced-ef12-12a3b4cd5678: session_id is null`));
   });
+
+  test("does not throw when session_id is missing for AUTH_TOKEN_SENT_TO_ORCHESTRATION", () => {
+    const tokenSentEvent = {
+      ...makeTxmaEvent(),
+      event_name: "AUTH_TOKEN_SENT_TO_ORCHESTRATION",
+      user: { user_id: user.user_id },
+    };
+    const txmaEvent = JSON.parse(JSON.stringify(tokenSentEvent));
+
+    expect(() => {
+      validateUser(txmaEvent);
+    }).not.toThrow();
+  });
+
+  test("still throws when user_id is missing for AUTH_TOKEN_SENT_TO_ORCHESTRATION", () => {
+    const tokenSentEvent = {
+      ...makeTxmaEvent(),
+      event_name: "AUTH_TOKEN_SENT_TO_ORCHESTRATION",
+      user: {},
+    };
+    const txmaEvent = JSON.parse(JSON.stringify(tokenSentEvent));
+
+    expect(() => {
+      validateUser(txmaEvent);
+    }).toThrow(new Error(`Could not validate User for event_name AUTH_TOKEN_SENT_TO_ORCHESTRATION with event_id ab12345a-a12b-3ced-ef12-12a3b4cd5678: user_id is undefined`));
+  });
 });
 
 describe("validateTxmaEventBody", () => {
@@ -342,6 +368,7 @@ describe("handler only saves allowlisted events", () => {
     "AUTH_AUTH_CODE_ISSUED",
     "AUTH_IPV_AUTHORISATION_REQUESTED",
     "AUTH_IPV_SUCCESSFUL_IDENTITY_RESPONSE_RECEIVED",
+    "AUTH_TOKEN_SENT_TO_ORCHESTRATION",
   ])("writes to DynamoDB when event_name is %s", async (allowedEventName) => {
     vi.spyOn(Date, "now").mockImplementation(() => TIMESTAMP);
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -363,6 +390,28 @@ describe("handler only saves allowlisted events", () => {
     expect(dynamoMock.commandCalls(PutCommand).length).toEqual(1);
   });
 
+  test("writes to DynamoDB when event_name is AUTH_TOKEN_SENT_TO_ORCHESTRATION and user has no session_id", async () => {
+    vi.spyOn(Date, "now").mockImplementation(() => TIMESTAMP);
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-expect-error
+    vi.spyOn(crypto, "randomUUID").mockImplementation(() => UUID);
+
+    const tokenSentEvent: SQSEvent = {
+      Records: [
+        {
+          ...TEST_SQS_RECORD,
+          body: JSON.stringify({
+            ...makeTxmaEvent(),
+            event_name: "AUTH_TOKEN_SENT_TO_ORCHESTRATION",
+            user: { user_id: user.user_id },
+          }),
+        },
+      ],
+    };
+    await handler(tokenSentEvent, {} as Context);
+    expect(dynamoMock.commandCalls(PutCommand).length).toEqual(1);
+  });
+
   test("does not write to DynamoDB and logs info when event_name is not in the allowlist", async () => {
     const ignoredEvent: SQSEvent = {
       Records: [
@@ -370,7 +419,7 @@ describe("handler only saves allowlisted events", () => {
           ...TEST_SQS_RECORD,
           body: JSON.stringify({
             ...makeTxmaEvent(),
-            event_name: "AUTH_TOKEN_SENT_TO_ORCHESTRATION",
+            event_name: "AUTH_OTHER_RANDOM_EVENT",
           }),
         },
       ],
@@ -378,7 +427,7 @@ describe("handler only saves allowlisted events", () => {
     await handler(ignoredEvent, {} as Context);
     expect(dynamoMock.commandCalls(PutCommand).length).toEqual(0);
     expect(mockLogger.info).toHaveBeenCalledWith(
-      "Ignoring AUTH_TOKEN_SENT_TO_ORCHESTRATION event - not in allowlist"
+      "Ignoring AUTH_OTHER_RANDOM_EVENT event - not in allowlist"
     );
   });
 
@@ -413,7 +462,7 @@ describe("handler only saves allowlisted events", () => {
           ...TEST_SQS_RECORD,
           body: JSON.stringify({
             ...makeTxmaEvent(),
-            event_name: "AUTH_TOKEN_SENT_TO_ORCHESTRATION",
+            event_name: "AUTH_OTHER_RANDOM_EVENT",
           }),
         },
         {

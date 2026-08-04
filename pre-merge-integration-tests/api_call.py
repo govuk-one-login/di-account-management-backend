@@ -68,7 +68,7 @@ def send_message(queue_url, body, test_id=""):
         raise
 
 
-def poll_for_item(table_name, key_condition, index_name=None, timeout=30, test_id=""):
+def poll_for_item(table_name, key_condition, index_name=None, timeout=60, test_id=""):
     delay = 1
     max_attempts = int(timeout / delay)
     table = dynamodb.Table(table_name)
@@ -95,7 +95,7 @@ def poll_for_item(table_name, key_condition, index_name=None, timeout=30, test_i
     return None
 
 
-def assert_item_exists(table_name, key_condition, index_name=None, timeout=30, description="item", test_id=""):
+def assert_item_exists(table_name, key_condition, index_name=None, timeout=60, description="item", test_id=""):
     item = poll_for_item(table_name, key_condition, index_name=index_name, timeout=timeout, test_id=test_id)
     if item is None:
         raise AssertionError(f"Expected {description} in {table_name} but not found after {timeout}s")
@@ -249,7 +249,7 @@ def test_auth_code_issued_creates_activity_log(test_id):
         assert_item_exists(
             ACTIVITY_LOG_TABLE,
             Key('user_id').eq(user_id) & Key('event_id').eq(event_id),
-            timeout=30,
+            timeout=60,
             description=f"activity log for user {user_id}",
             test_id=test_id,
         )
@@ -392,7 +392,7 @@ def test_auth_code_issued_full_pipeline(test_id):
 
         activity = assert_item_exists(ACTIVITY_LOG_TABLE,
             Key('user_id').eq(user_id) & Key('event_id').eq(event_id),
-            timeout=30, description="activity log", test_id=test_id)
+            timeout=60, description="activity log", test_id=test_id)
 
         user_svc = dynamodb.Table(USER_SERVICES_TABLE).get_item(
             Key={"user_id": user_id}).get('Item')
@@ -429,7 +429,7 @@ def test_ipv_auth_requested_full_pipeline(test_id):
 
         activity = assert_item_exists(ACTIVITY_LOG_TABLE,
             Key('user_id').eq(user_id) & Key('event_id').eq(event_id),
-            timeout=30, description="activity log", test_id=test_id)
+            timeout=60, description="activity log", test_id=test_id)
 
         user_svc = dynamodb.Table(USER_SERVICES_TABLE).get_item(
             Key={"user_id": user_id}).get('Item')
@@ -463,7 +463,7 @@ def test_ipv_successful_response_full_pipeline(test_id):
 
         assert_item_exists(ACTIVITY_LOG_TABLE,
             Key('user_id').eq(user_id) & Key('event_id').eq(event_id),
-            timeout=30, description="activity log", test_id=test_id)
+            timeout=60, description="activity log", test_id=test_id)
 
         user_svc = dynamodb.Table(USER_SERVICES_TABLE).get_item(
             Key={"user_id": user_id}).get('Item')

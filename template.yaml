@@ -2839,20 +2839,6 @@ Resources:
       CodeUri: src
       PackageType: Zip
       MemorySize: 230
-      Events:
-        DynamoStream:
-          Type: DynamoDB
-          Properties:
-            BatchSize: 1
-            Stream: !GetAtt RawEventsStore.StreamArn
-            Enabled: true
-            DestinationConfig:
-              OnFailure:
-                Destination: !GetAtt FormatActivityLogDeadLetterQueue.Arn
-            StartingPosition: LATEST
-            FilterCriteria:
-              Filters:
-                - Pattern: '{ "eventName": ["INSERT"], "dynamodb": { "NewImage": { "event": { "M": { "event_name": { "S": ["AUTH_AUTH_CODE_ISSUED", "AUTH_IPV_AUTHORISATION_REQUESTED", "AUTH_IPV_SUCCESSFUL_IDENTITY_RESPONSE_RECEIVED"] } } } } } }'
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt FormatActivityLogDeadLetterQueue.Arn

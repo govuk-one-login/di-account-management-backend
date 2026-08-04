@@ -62,6 +62,7 @@ export const validateTxmaEventBody = (txmaEvent: TxmaEvent): void => {
   if (
     txmaEvent.timestamp &&
     txmaEvent.event_name &&
+    txmaEvent.event_id &&
     txmaEvent.client_id &&
     txmaEvent.user
   ) {
@@ -70,11 +71,13 @@ export const validateTxmaEventBody = (txmaEvent: TxmaEvent): void => {
     const missingFields: string[] = [];
     if (!txmaEvent.timestamp) missingFields.push(`txmaEvent.timestamp is ${txmaEvent.timestamp}`);
     if (!txmaEvent.event_name) missingFields.push(`txmaEvent.event_name is ${txmaEvent.event_name}`);
+    if (!txmaEvent.event_id) missingFields.push(`txmaEvent.event_id is ${txmaEvent.event_id}`);
     if (!txmaEvent.client_id) missingFields.push(`txmaEvent.client_id is ${txmaEvent.client_id}`);
     if (!txmaEvent.user) missingFields.push(`txmaEvent.user is ${txmaEvent.user}`);
     logger.info("Could not validate TxmaEvent context", {
       timestamp: txmaEvent.timestamp,
       eventName: txmaEvent.event_name,
+      eventId: txmaEvent.event_id,
       typeofClientId: typeof txmaEvent.client_id,
       typeofUser: typeof txmaEvent.user,
     });

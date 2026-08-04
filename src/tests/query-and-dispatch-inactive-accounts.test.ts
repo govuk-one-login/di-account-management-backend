@@ -16,10 +16,16 @@ const sqsMock = mockClient(SQSClient);
 const mockRecord = {
   dateForDeletion: "2026-06-20",
   commonSubjectId: "user-1",
+  publicSubjectId: "public-subject-1",
   emailAddress: "test@example.com",
   userLastActive: "2021-06-20T00:00:00.000Z",
+  userLastActiveSource: "AUTH_AUTH_CODE_ISSUED",
+  userLastActiveUpdated: "2026-01-01T00:00:00.000Z",
+  emailAddressSource: "AUTH_AUTH_CODE_ISSUED",
+  emailAddressLastUpdated: "2026-01-01T00:00:00.000Z",
   status: "pending",
   statusLastUpdated: "2026-01-01T00:00:00.000Z",
+  hasSetupMfa: false,
 };
 
 describe("validateEvent", () => {

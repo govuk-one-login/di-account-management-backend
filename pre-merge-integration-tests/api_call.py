@@ -36,6 +36,23 @@ def generate_event_id():
     return str(uuid.uuid4())
 
 
+def make_event(event_name=None, event_id=None, user=None,
+               client_id="vehicleOperatorLicense", timestamp=1730800548523):
+    """Build a TxMA event payload, omitting keys with None values."""
+    event = {}
+    if event_name is not None:
+        event["event_name"] = event_name
+    if event_id is not None:
+        event["event_id"] = event_id
+    if client_id is not None:
+        event["client_id"] = client_id
+    if timestamp is not None:
+        event["timestamp"] = timestamp
+    if user is not None:
+        event["user"] = user
+    return event
+
+
 def send_message(queue_url, body, test_id=""):
     message_body = json.dumps(body) if isinstance(body, dict) else body
     log(test_id, "Sending message to queue")
@@ -85,29 +102,31 @@ def assert_item_exists(table_name, key_condition, index_name=None, timeout=30, d
     return item
 
 
+def assert_no_item_immediate(table_name, key_condition, index_name=None, description="item", test_id=""):
+    """Assert no item exists without waiting (caller handles the wait)."""
+    table = dynamodb.Table(table_name)
+    try:
+        query_params = {'KeyConditionExpression': key_condition}
+        if index_name:
+            query_params['IndexName'] = index_name
+        response = table.query(**query_params)
+        items = response.get('Items', [])
+        if items:
+            raise AssertionError(
+                f"Expected no {description} in {table_name} but found {len(items)} item(s): {items[0]}")
+        log(test_id, f"Confirmed: no {description} found")
+    except ClientError as e:
+        log(test_id, f"Query error: {e.response['Error']['Message']}")
+        raise
+
+
 # The wait time assumes max Lambda processing time is under 10s.
 # If the architecture changes (e.g. Step Functions), this may need increasing.
 def assert_no_item(table_name, key_condition, index_name=None, wait=10, description="item", test_id=""):
     log(test_id, f"Waiting {wait}s before checking absence of {description}...")
     time.sleep(wait)
-    table = dynamodb.Table(table_name)
-    try:
-        query_params = {
-            'KeyConditionExpression': key_condition,
-        }
-        if index_name:
-            query_params['IndexName'] = index_name
-
-        response = table.query(**query_params)
-        items = response.get('Items', [])
-        if items:
-            raise AssertionError(
-                f"Expected no {description} in {table_name} but found {len(items)} item(s): {items[0]}"
-            )
-        log(test_id, f"Confirmed: no {description} found")
-    except ClientError as e:
-        log(test_id, f"Query error during assert_no_item: {e.response['Error']['Message']}")
-        raise
+    assert_no_item_immediate(table_name, key_condition, index_name=index_name,
+                             description=description, test_id=test_id)
 
 
 def delete_item(table_name, key, test_id=""):
@@ -264,6 +283,136 @@ def test_unknown_event_is_silently_dropped(test_id):
     )
 
 
+# --- Validation failure test helper ---
+
+def make_validation_failure_cases(event_name, test_id):
+    """Generate all validation failure payloads for an event type.
+    Returns list of (label, payload, key_condition) tuples."""
+    cases = []
+
+    uid = generate_user_id(f"{test_id}/no-event_name")
+    eid = generate_event_id()
+    cases.append(("no event_name", make_event(event_id=eid,
+        user={"user_id": uid, "session_id": "s"}),
+        Key('user_id').eq(uid) & Key('event_id').eq(eid)))
+
+    uid = generate_user_id(f"{test_id}/no-event_id")
+    cases.append(("no event_id", make_event(event_name,
+        user={"user_id": uid, "session_id": "s"}),
+        None))
+
+    uid = generate_user_id(f"{test_id}/no-timestamp")
+    eid = generate_event_id()
+    cases.append(("no timestamp", make_event(event_name, eid,
+        user={"user_id": uid, "session_id": "s"}, timestamp=None),
+        Key('user_id').eq(uid) & Key('event_id').eq(eid)))
+
+    uid = generate_user_id(f"{test_id}/no-client_id")
+    eid = generate_event_id()
+    cases.append(("no client_id", make_event(event_name, eid,
+        user={"user_id": uid, "session_id": "s"}, client_id=None),
+        Key('user_id').eq(uid) & Key('event_id').eq(eid)))
+
+    eid = generate_event_id()
+    cases.append(("no user.user_id", make_event(event_name, eid,
+        user={"session_id": "s"}),
+        None))
+
+    uid = generate_user_id(f"{test_id}/no-user.session_id")
+    eid = generate_event_id()
+    cases.append(("no user.session_id", make_event(event_name, eid,
+        user={"user_id": uid}),
+        Key('user_id').eq(uid) & Key('event_id').eq(eid)))
+
+    eid = generate_event_id()
+    cases.append(("no user object", make_event(event_name, eid, user=None),
+        None))
+
+    return cases
+
+
+def run_validation_failure_tests(test_id, event_name):
+    """Send all malformed variants of an event, wait once, then assert
+    none of them produced an activity log entry."""
+    cases = make_validation_failure_cases(event_name, test_id)
+
+    # Send all malformed events
+    for label, payload, _ in cases:
+        send_message(QUEUE_URL, payload, test_id=f"{test_id}/{label}")
+
+    # Wait once for all to be processed (or rejected)
+    log(test_id, "Waiting 10s for all events to be processed/rejected...")
+    time.sleep(10)
+
+    # Assert absence for each case that has a queryable key condition
+    failures = []
+    for label, _, key_condition in cases:
+        if key_condition is not None:
+            try:
+                assert_no_item_immediate(ACTIVITY_LOG_TABLE,
+                    key_condition,
+                    description=f"activity log ({label})",
+                    test_id=f"{test_id}/{label}")
+            except AssertionError as e:
+                failures.append(f"{label}: {e}")
+        else:
+            log(f"{test_id}/{label}",
+                "No queryable key - relying on DLQ for rejection")
+
+    if failures:
+        raise AssertionError(
+            f"{len(failures)} validation case(s) unexpectedly produced records: "
+            + "; ".join(failures))
+
+
+# --- Tests: AUTH_AUTH_CODE_ISSUED (success) ---
+
+def test_auth_code_issued_full_pipeline(test_id):
+    """AUTH_AUTH_CODE_ISSUED with only TxMA-delivered fields should create
+    activity log and update user services."""
+    user_id = generate_user_id("aci-full")
+    event_id = generate_event_id()
+    client_id = "vehicleOperatorLicense"
+    timestamp = 1730800548523
+
+    dynamodb.Table(USER_SERVICES_TABLE).put_item(Item={
+        "user_id": user_id,
+        "services": [{
+            "client_id": client_id,
+            "count_successful_logins": 1,
+            "last_accessed": 1700000000000,
+            "last_accessed_pretty": "14 November 2023"
+        }]
+    })
+
+    try:
+        send_message(QUEUE_URL, make_event("AUTH_AUTH_CODE_ISSUED", event_id,
+            user={"user_id": user_id, "session_id": "session-full-pipeline"},
+            client_id=client_id, timestamp=timestamp), test_id=test_id)
+
+        activity = assert_item_exists(ACTIVITY_LOG_TABLE,
+            Key('user_id').eq(user_id) & Key('event_id').eq(event_id),
+            timeout=30, description="activity log", test_id=test_id)
+
+        user_svc = dynamodb.Table(USER_SERVICES_TABLE).get_item(
+            Key={"user_id": user_id}).get('Item')
+        assert user_svc is not None, "user_services entry not found"
+        svc = next((s for s in user_svc['services'] if s['client_id'] == client_id), None)
+        assert svc is not None, f"Service {client_id} not found in user_services"
+        assert svc['count_successful_logins'] == 2, \
+            f"Expected count 2, got {svc['count_successful_logins']}"
+    finally:
+        delete_item(ACTIVITY_LOG_TABLE, {'event_id': event_id, 'user_id': user_id}, test_id=test_id)
+        delete_item(USER_SERVICES_TABLE, {'user_id': user_id}, test_id=test_id)
+
+
+# --- Tests: AUTH_AUTH_CODE_ISSUED (validation failures) ---
+
+def test_auth_code_issued_validation_failures(test_id):
+    """All malformed AUTH_AUTH_CODE_ISSUED variants should be rejected."""
+    run_validation_failure_tests(test_id, "AUTH_AUTH_CODE_ISSUED")
+
+
 # --- Main ---
 
 if __name__ == "__main__":
@@ -277,6 +426,10 @@ if __name__ == "__main__":
     results = TestResults()
 
     test_cases = [
+        # AUTH_AUTH_CODE_ISSUED
+        ("aci-full", test_auth_code_issued_full_pipeline),
+        ("aci-validation", test_auth_code_issued_validation_failures),
+        # General
         ("auth-code-issued", test_auth_code_issued_creates_activity_log),
         ("unknown-event-dropped", test_unknown_event_is_silently_dropped),
     ]

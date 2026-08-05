@@ -245,6 +245,17 @@ describe("validateTxmaEventBody", () => {
       validateTxmaEventBody(txmaEvent);
     }).toThrow();
   });
+  test("throws error when event_id is missing", () => {
+    const txmaEvent = JSON.parse(
+      JSON.stringify({
+        ...TEST_TXMA_EVENT,
+        event_id: undefined,
+      })
+    );
+    expect(() => {
+      validateTxmaEventBody(txmaEvent);
+    }).toThrow();
+  });
 });
 
 describe("validateUser", () => {

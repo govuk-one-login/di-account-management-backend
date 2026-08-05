@@ -76,7 +76,40 @@ describe("update-user-email", () => {
     });
   });
 
-  it("updates the emailAddress field when a record is found", async () => {
+  it("uses event_timestamp_ms for emailAddressLastUpdated when present", async () => {
+    dynamoMock.on(QueryCommand).resolves({
+      Items: [{ dateForDeletion: "2031-06-30", commonSubjectId: "test-user-id" }],
+    });
+    dynamoMock.on(UpdateCommand).resolves({});
+
+    const msTimestamp = 1666169856123;
+    const eventWithMs = {
+      Records: [{
+        dynamodb: {
+          NewImage: {
+            event: {
+              M: {
+                event_name: { S: "AUTH_UPDATE_EMAIL" },
+                timestamp: { N: "1666169856" },
+                event_timestamp_ms: { N: msTimestamp.toString() },
+                user: { M: { user_id: { S: "test-user-id" }, email: { S: "new-email@example.com" } } },
+              },
+            },
+          },
+        },
+      }],
+    } as unknown as DynamoDBStreamEvent;
+
+    await handler(eventWithMs, {} as Context);
+
+    expect(dynamoMock).toHaveReceivedCommandWith(UpdateCommand, {
+      ExpressionAttributeValues: expect.objectContaining({
+        ":lastUpdated": new Date(msTimestamp).toISOString(),
+      }),
+    });
+  });
+
+  it("updates email address fields when a record is found", async () => {
     dynamoMock.on(QueryCommand).resolves({
       Items: [{ dateForDeletion: "2031-06-30", commonSubjectId: "test-user-id", emailAddress: "old@example.com" }],
     });
@@ -90,8 +123,48 @@ describe("update-user-email", () => {
         dateForDeletion: "2031-06-30",
         commonSubjectId: "test-user-id",
       },
-      UpdateExpression: "SET emailAddress = :email",
-      ExpressionAttributeValues: { ":email": "new-email@example.com" },
+      UpdateExpression: "SET emailAddress = :email, emailAddressSource = :source, emailAddressLastUpdated = :lastUpdated",
+      ExpressionAttributeValues: {
+        ":email": "new-email@example.com",
+        ":source": "AUTH_UPDATE_EMAIL",
+        ":lastUpdated": new Date(1666169856 * 1000).toISOString(),
+      },
+    });
+  });
+
+  it("includes emailAddressSourceId in update when event_id is present", async () => {
+    dynamoMock.on(QueryCommand).resolves({
+      Items: [{ dateForDeletion: "2031-06-30", commonSubjectId: "test-user-id" }],
+    });
+    dynamoMock.on(UpdateCommand).resolves({});
+
+    const eventWithId = {
+      Records: [{
+        dynamodb: {
+          NewImage: {
+            event: {
+              M: {
+                event_id: { S: "test-event-id" },
+                event_name: { S: "AUTH_UPDATE_EMAIL" },
+                timestamp: { N: "1666169856" },
+                user: { M: { user_id: { S: "test-user-id" }, email: { S: "new-email@example.com" } } },
+              },
+            },
+          },
+        },
+      }],
+    } as unknown as DynamoDBStreamEvent;
+
+    await handler(eventWithId, {} as Context);
+
+    expect(dynamoMock).toHaveReceivedCommandWith(UpdateCommand, {
+      UpdateExpression: "SET emailAddress = :email, emailAddressSource = :source, emailAddressLastUpdated = :lastUpdated, emailAddressSourceId = :sourceId",
+      ExpressionAttributeValues: {
+        ":email": "new-email@example.com",
+        ":source": "AUTH_UPDATE_EMAIL",
+        ":lastUpdated": new Date(1666169856 * 1000).toISOString(),
+        ":sourceId": "test-event-id",
+      },
     });
   });
 

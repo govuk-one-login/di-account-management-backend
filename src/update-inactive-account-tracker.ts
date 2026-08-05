@@ -109,10 +109,20 @@ const processRecord = async (
     return;
   }
 
-  const email = txmaEvent.user?.email ?? currentTrackerRecord?.emailAddress ?? "";
+  const eventDateTime = new Date(txmaEvent.event_timestamp_ms ?? (txmaEvent.timestamp * 1000)).toISOString();
+
+  const newEmailAddress = (() => {
+    if (txmaEvent.user?.email && txmaEvent.user.email !== currentTrackerRecord?.emailAddress) {
+      return txmaEvent.user.email;
+    }
+  })();
+  const emailAddress = newEmailAddress ?? currentTrackerRecord?.emailAddress ?? "";
+  const emailAddressSource = newEmailAddress ? txmaEvent.event_name : (currentTrackerRecord?.emailAddressSource ?? "");
+  const emailAddressSourceId = newEmailAddress ? txmaEvent.event_id : currentTrackerRecord?.emailAddressSourceId;
+  const emailAddressLastUpdated = newEmailAddress ? eventDateTime : (currentTrackerRecord?.emailAddressLastUpdated ?? "");
+
   const latestDate = getLatestDate(txmaEvent, currentTrackerRecord);
   const publicSubjectId = txmaEvent.user?.public_subject_id ?? currentTrackerRecord?.publicSubjectId ?? "";
-  const now = new Date().toISOString();
   const isNewLatestDate = new Date(txmaEvent.timestamp * 1000) > (currentTrackerRecord ? new Date(currentTrackerRecord.userLastActive) : new Date(0));
 
   const newItem: InactiveAccountTrackerRecord = {
@@ -121,14 +131,14 @@ const processRecord = async (
     userLastActive: latestDate.toISOString(),
     userLastActiveSource: txmaEvent.event_name,
     ...(txmaEvent.event_id && { userLastActiveSourceId: txmaEvent.event_id }),
-    userLastActiveUpdated: isNewLatestDate ? now : (currentTrackerRecord?.userLastActiveUpdated ?? now),
+    userLastActiveUpdated: isNewLatestDate ? eventDateTime : (currentTrackerRecord?.userLastActiveUpdated ?? eventDateTime),
     dateForDeletion: getDateForDeletion(latestDate),
-    emailAddress: email,
-    emailAddressSource: txmaEvent.event_name,
-    ...(txmaEvent.event_id && { emailAddressSourceId: txmaEvent.event_id }),
-    emailAddressLastUpdated: txmaEvent.user?.email ? now : (currentTrackerRecord?.emailAddressLastUpdated ?? now),
+    emailAddress,
+    emailAddressSource,
+    emailAddressSourceId,
+    emailAddressLastUpdated,
     status: 'pending',
-    statusLastUpdated: now,
+    statusLastUpdated: eventDateTime,
     hasSetupMfa: currentTrackerRecord?.hasSetupMfa ?? false,
   };
 

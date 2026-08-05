@@ -2,7 +2,11 @@ import { vi, describe, it, expect, beforeEach, afterEach } from "vitest";
 import { Context, DynamoDBStreamEvent } from "aws-lambda";
 import { Logger } from "@aws-lambda-powertools/logger";
 import { mockClient } from "aws-sdk-client-mock";
-import { DynamoDBDocumentClient, QueryCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
+import {
+  DynamoDBDocumentClient,
+  QueryCommand,
+  UpdateCommand,
+} from "@aws-sdk/lib-dynamodb";
 import { handler } from "../update-user-email.js";
 
 const dynamoMock = mockClient(DynamoDBDocumentClient);
@@ -14,7 +18,8 @@ describe("update-user-email", () => {
     .mockImplementation(() => undefined);
 
   beforeEach(() => {
-    process.env.INACTIVE_ACCOUNT_TRACKER_TABLE_NAME = "test-inactive-tracker-table";
+    process.env.INACTIVE_ACCOUNT_TRACKER_TABLE_NAME =
+      "test-inactive-tracker-table";
     dynamoMock.reset();
   });
 
@@ -23,10 +28,7 @@ describe("update-user-email", () => {
     delete process.env.INACTIVE_ACCOUNT_TRACKER_TABLE_NAME;
   });
 
-  const createEvent = (
-    userId?: string,
-    email?: string
-  ): DynamoDBStreamEvent =>
+  const createEvent = (userId?: string, email?: string): DynamoDBStreamEvent =>
     ({
       Records: [
         {
@@ -63,10 +65,17 @@ describe("update-user-email", () => {
   });
 
   it("queries the CommonSubjectIdIndex with the user_id", async () => {
-    dynamoMock.on(QueryCommand).resolves({ Items: [{ dateForDeletion: "2031-06-30", commonSubjectId: "test-user-id" }] });
+    dynamoMock.on(QueryCommand).resolves({
+      Items: [
+        { dateForDeletion: "2031-06-30", commonSubjectId: "test-user-id" },
+      ],
+    });
     dynamoMock.on(UpdateCommand).resolves({});
 
-    await handler(createEvent("test-user-id", "new-email@example.com"), {} as Context);
+    await handler(
+      createEvent("test-user-id", "new-email@example.com"),
+      {} as Context
+    );
 
     expect(dynamoMock).toHaveReceivedCommandWith(QueryCommand, {
       TableName: "test-inactive-tracker-table",
@@ -76,13 +85,22 @@ describe("update-user-email", () => {
     });
   });
 
-  it("updates the emailAddress field when a record is found", async () => {
+  it("updates email address fields when a record is found", async () => {
     dynamoMock.on(QueryCommand).resolves({
-      Items: [{ dateForDeletion: "2031-06-30", commonSubjectId: "test-user-id", emailAddress: "old@example.com" }],
+      Items: [
+        {
+          dateForDeletion: "2031-06-30",
+          commonSubjectId: "test-user-id",
+          emailAddress: "old@example.com",
+        },
+      ],
     });
     dynamoMock.on(UpdateCommand).resolves({});
 
-    await handler(createEvent("test-user-id", "new-email@example.com"), {} as Context);
+    await handler(
+      createEvent("test-user-id", "new-email@example.com"),
+      {} as Context
+    );
 
     expect(dynamoMock).toHaveReceivedCommandWith(UpdateCommand, {
       TableName: "test-inactive-tracker-table",
@@ -90,15 +108,69 @@ describe("update-user-email", () => {
         dateForDeletion: "2031-06-30",
         commonSubjectId: "test-user-id",
       },
-      UpdateExpression: "SET emailAddress = :email",
-      ExpressionAttributeValues: { ":email": "new-email@example.com" },
+      UpdateExpression:
+        "SET emailAddress = :email, emailAddressSource = :source, emailAddressLastUpdated = :lastUpdated",
+      ExpressionAttributeValues: {
+        ":email": "new-email@example.com",
+        ":source": "AUTH_UPDATE_EMAIL",
+        ":lastUpdated": new Date(1666169856 * 1000).toISOString(),
+      },
+    });
+  });
+
+  it("includes emailAddressSourceId in update when event_id is present", async () => {
+    dynamoMock.on(QueryCommand).resolves({
+      Items: [
+        { dateForDeletion: "2031-06-30", commonSubjectId: "test-user-id" },
+      ],
+    });
+    dynamoMock.on(UpdateCommand).resolves({});
+
+    const eventWithId = {
+      Records: [
+        {
+          dynamodb: {
+            NewImage: {
+              event: {
+                M: {
+                  event_id: { S: "test-event-id" },
+                  event_name: { S: "AUTH_UPDATE_EMAIL" },
+                  timestamp: { N: "1666169856" },
+                  user: {
+                    M: {
+                      user_id: { S: "test-user-id" },
+                      email: { S: "new-email@example.com" },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      ],
+    } as unknown as DynamoDBStreamEvent;
+
+    await handler(eventWithId, {} as Context);
+
+    expect(dynamoMock).toHaveReceivedCommandWith(UpdateCommand, {
+      UpdateExpression:
+        "SET emailAddress = :email, emailAddressSource = :source, emailAddressLastUpdated = :lastUpdated, emailAddressSourceId = :sourceId",
+      ExpressionAttributeValues: {
+        ":email": "new-email@example.com",
+        ":source": "AUTH_UPDATE_EMAIL",
+        ":lastUpdated": new Date(1666169856 * 1000).toISOString(),
+        ":sourceId": "test-event-id",
+      },
     });
   });
 
   it("does not update when no record is found for the user", async () => {
     dynamoMock.on(QueryCommand).resolves({ Items: [] });
 
-    await handler(createEvent("test-user-id", "new-email@example.com"), {} as Context);
+    await handler(
+      createEvent("test-user-id", "new-email@example.com"),
+      {} as Context
+    );
 
     expect(dynamoMock).not.toHaveReceivedCommand(UpdateCommand);
     expect(loggerWarnMock).toHaveBeenCalledWith(
@@ -108,9 +180,14 @@ describe("update-user-email", () => {
   });
 
   it("processes multiple records in a single event", async () => {
-    dynamoMock.on(QueryCommand)
-      .resolvesOnce({ Items: [{ dateForDeletion: "2031-06-30", commonSubjectId: "user-1" }] })
-      .resolvesOnce({ Items: [{ dateForDeletion: "2031-07-15", commonSubjectId: "user-2" }] });
+    dynamoMock
+      .on(QueryCommand)
+      .resolvesOnce({
+        Items: [{ dateForDeletion: "2031-06-30", commonSubjectId: "user-1" }],
+      })
+      .resolvesOnce({
+        Items: [{ dateForDeletion: "2031-07-15", commonSubjectId: "user-2" }],
+      });
     dynamoMock.on(UpdateCommand).resolves({});
 
     const multiRecordEvent = {
@@ -164,7 +241,12 @@ describe("update-user-email", () => {
     delete process.env.INACTIVE_ACCOUNT_TRACKER_TABLE_NAME;
 
     await expect(
-      handler(createEvent("test-user-id", "new-email@example.com"), {} as Context)
-    ).rejects.toThrow('Environment variable "INACTIVE_ACCOUNT_TRACKER_TABLE_NAME" is not set.');
+      handler(
+        createEvent("test-user-id", "new-email@example.com"),
+        {} as Context
+      )
+    ).rejects.toThrow(
+      'Environment variable "INACTIVE_ACCOUNT_TRACKER_TABLE_NAME" is not set.'
+    );
   });
 });

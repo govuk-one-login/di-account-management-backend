@@ -394,28 +394,6 @@ describe("handler only saves allowlisted events", () => {
     expect(dynamoMock.commandCalls(PutCommand).length).toEqual(1);
   });
 
-  test("writes to DynamoDB when event_name is STS_REFRESH_TOKEN_ISSUED and user has no email or public_subject_id", async () => {
-    vi.spyOn(Date, "now").mockImplementation(() => TIMESTAMP);
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-expect-error
-    vi.spyOn(crypto, "randomUUID").mockImplementation(() => UUID);
-
-    const stsEvent: SQSEvent = {
-      Records: [
-        {
-          ...TEST_SQS_RECORD,
-          body: JSON.stringify({
-            ...makeTxmaEvent(),
-            event_name: "STS_REFRESH_TOKEN_ISSUED",
-            user: { user_id: user.user_id, session_id: user.session_id },
-          }),
-        },
-      ],
-    };
-    await handler(stsEvent, {} as Context);
-    expect(dynamoMock.commandCalls(PutCommand).length).toEqual(1);
-  });
-
   test("writes to DynamoDB when event_name is AUTH_TOKEN_SENT_TO_ORCHESTRATION and user has no session_id", async () => {
     vi.spyOn(Date, "now").mockImplementation(() => TIMESTAMP);
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment

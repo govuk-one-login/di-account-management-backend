@@ -667,9 +667,10 @@ Resources:
                 Resource: !GetAtt InactiveAccountTrackerStore.Arn
               - Effect: Allow
                 Action:
+                  - kms:Encrypt
                   - kms:Decrypt
                   - kms:GenerateDataKey*
-                  - kms:ReEncrypt*
+                  - kms:DescribeKey
                 Resource: !GetAtt DatabaseKmsKey.Arn
 
   InactiveAccountTrackerStoreCrossAccountRoleArnParameter:
@@ -6030,9 +6031,10 @@ Resources:
                       ]
                     - ":root"
               Action:
+                - kms:Encrypt
                 - kms:Decrypt
                 - kms:GenerateDataKey*
-                - kms:ReEncrypt*
+                - kms:DescribeKey
               Resource:
                 - "*"
             - !Ref AWS::NoValue

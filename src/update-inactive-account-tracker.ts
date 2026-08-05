@@ -1,29 +1,20 @@
 import { Context, DynamoDBStreamEvent } from "aws-lambda";
 import { AttributeValue, DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
-import {
-  DynamoDBDocumentClient,
-  QueryCommand,
-  TransactWriteCommand,
-} from "@aws-sdk/lib-dynamodb";
+import { DynamoDBDocumentClient, QueryCommand, TransactWriteCommand } from "@aws-sdk/lib-dynamodb";
 import { TxmaEvent } from "./common/model.js";
 import { getEnvironmentVariable } from "./common/utils.js";
 import { Logger } from "@aws-lambda-powertools/logger";
 import type { InactiveAccountTrackerRecord } from "./common/model.ts";
-import assert from "node:assert/strict";
+import assert from 'node:assert/strict';
 
 const logger = new Logger();
 const dynamoClient = new DynamoDBClient({});
 const dynamoDocClient = DynamoDBDocumentClient.from(dynamoClient);
 
-type TransactionItems = ConstructorParameters<
-  typeof TransactWriteCommand
->[0]["TransactItems"];
+type TransactionItems = ConstructorParameters<typeof TransactWriteCommand>[0]['TransactItems']
 
-const getCurrentRecordForUser = async (
-  userId: string,
-  tableName: string
-): Promise<InactiveAccountTrackerRecord | null> => {
+const getCurrentRecordForUser = async (userId: string, tableName: string): Promise<InactiveAccountTrackerRecord | null> => {
   const response = await dynamoDocClient.send(
     new QueryCommand({
       IndexName: "CommonSubjectIdIndex",
@@ -34,24 +25,16 @@ const getCurrentRecordForUser = async (
   );
 
   assert(response.Items !== undefined, "Query response is missing Items");
-  assert(
-    response.Items.length < 2,
-    `found more than one inactivity tracker record for ${userId}`
-  );
+  assert(response.Items.length < 2, `found more than one inactivity tracker record for ${userId}`)
 
-  return response.Items.length > 0
-    ? (response.Items[0] as InactiveAccountTrackerRecord)
-    : null;
-};
+  return response.Items.length > 0 ? response.Items[0] as InactiveAccountTrackerRecord : null;
+}
 
-const getLatestDate = (
-  txmaEvent: TxmaEvent,
-  trackerRecord: InactiveAccountTrackerRecord | null
-) => {
+const getLatestDate = (txmaEvent: TxmaEvent, trackerRecord: InactiveAccountTrackerRecord | null) => {
   let timestamp = txmaEvent.timestamp;
 
   // some txma events timestamps are in milliseconds when they should be in seconds.
-  // if the timestamp is over 13 digits it is essentially guaranteed to be in milliseconds.
+  // if the timestamp is over 13 digits it is essentially guaranteed to be in milliseconds. 
   // 13 digit millisecond timestamps started 9 September 2001.
   if (timestamp.toString().length >= 13) {
     timestamp = Math.floor(timestamp / 1000);
@@ -60,18 +43,16 @@ const getLatestDate = (
   // if the timestamp on the audit event is older than the last active timestamp we have for the user
   // we should keep the existing date as it means the events have been receieved out of order
   const eventDate = new Date(timestamp * 1000);
-  const trackerDate = trackerRecord
-    ? new Date(trackerRecord.userLastActive)
-    : new Date(0);
+  const trackerDate = trackerRecord ? new Date(trackerRecord.userLastActive) : new Date(0);
 
   return eventDate > trackerDate ? eventDate : trackerDate;
-};
+}
 
 const getDateForDeletion = (latestDate: Date): string => {
   const deletionDate = new Date(latestDate);
   deletionDate.setFullYear(deletionDate.getFullYear() + 5);
   return deletionDate.toISOString().split("T")[0];
-};
+}
 
 const buildTransactionItems = (
   tableName: string,
@@ -83,28 +64,14 @@ const buildTransactionItems = (
   txmaEvent: TxmaEvent
 ): TransactionItems => {
   const items: TransactionItems = [
-    {
-      Put: {
-        TableName: tableName,
-        Item: newItem as unknown as Record<string, unknown>,
-      },
-    },
+    { Put: { TableName: tableName, Item: newItem as unknown as Record<string, unknown> } },
   ];
 
-  if (
-    currentTrackerRecord &&
-    currentTrackerRecord.dateForDeletion !== newItem.dateForDeletion
-  ) {
+  if (currentTrackerRecord && currentTrackerRecord.dateForDeletion !== newItem.dateForDeletion) {
     // if the dates are the same, then we don't need to delete the old record as
     // it would have been updated in place by the Put command
     items.push({
-      Delete: {
-        TableName: tableName,
-        Key: {
-          dateForDeletion: currentTrackerRecord.dateForDeletion,
-          commonSubjectId: userId,
-        },
-      },
+      Delete: { TableName: tableName, Key: { dateForDeletion: currentTrackerRecord.dateForDeletion, commonSubjectId: userId } }
     });
   }
 
@@ -137,45 +104,26 @@ const processRecord = async (
 
   const currentTrackerRecord = await getCurrentRecordForUser(userId, tableName);
 
-  if (currentTrackerRecord?.status === "deleting") {
+  if (currentTrackerRecord?.status === 'deleting') {
     logger.warn(`AUTH_EVENT_ON_DELETING_ACCOUNT ${userId}`);
     return;
   }
 
-  const eventDateTime = new Date(
-    txmaEvent.event_timestamp_ms ?? txmaEvent.timestamp * 1000
-  ).toISOString();
+  const eventDateTime = new Date(txmaEvent.event_timestamp_ms ?? (txmaEvent.timestamp * 1000)).toISOString();
 
   const newEmailAddress = (() => {
-    if (
-      txmaEvent.user?.email &&
-      txmaEvent.user.email !== currentTrackerRecord?.emailAddress
-    ) {
+    if (txmaEvent.user?.email && txmaEvent.user.email !== currentTrackerRecord?.emailAddress) {
       return txmaEvent.user.email;
     }
   })();
-  const emailAddress =
-    newEmailAddress ?? currentTrackerRecord?.emailAddress ?? "";
-  const emailAddressSource = newEmailAddress
-    ? txmaEvent.event_name
-    : (currentTrackerRecord?.emailAddressSource ?? "");
-  const emailAddressSourceId = newEmailAddress
-    ? txmaEvent.event_id
-    : currentTrackerRecord?.emailAddressSourceId;
-  const emailAddressLastUpdated = newEmailAddress
-    ? eventDateTime
-    : (currentTrackerRecord?.emailAddressLastUpdated ?? "");
+  const emailAddress = newEmailAddress ?? currentTrackerRecord?.emailAddress ?? "";
+  const emailAddressSource = newEmailAddress ? txmaEvent.event_name : (currentTrackerRecord?.emailAddressSource ?? "");
+  const emailAddressSourceId = newEmailAddress ? txmaEvent.event_id : currentTrackerRecord?.emailAddressSourceId;
+  const emailAddressLastUpdated = newEmailAddress ? eventDateTime : (currentTrackerRecord?.emailAddressLastUpdated ?? "");
 
   const latestDate = getLatestDate(txmaEvent, currentTrackerRecord);
-  const publicSubjectId =
-    txmaEvent.user?.public_subject_id ??
-    currentTrackerRecord?.publicSubjectId ??
-    "";
-  const isNewLatestDate =
-    new Date(txmaEvent.timestamp * 1000) >
-    (currentTrackerRecord
-      ? new Date(currentTrackerRecord.userLastActive)
-      : new Date(0));
+  const publicSubjectId = txmaEvent.user?.public_subject_id ?? currentTrackerRecord?.publicSubjectId ?? "";
+  const isNewLatestDate = new Date(txmaEvent.timestamp * 1000) > (currentTrackerRecord ? new Date(currentTrackerRecord.userLastActive) : new Date(0));
 
   const newItem: InactiveAccountTrackerRecord = {
     commonSubjectId: userId,
@@ -183,40 +131,25 @@ const processRecord = async (
     userLastActive: latestDate.toISOString(),
     userLastActiveSource: txmaEvent.event_name,
     ...(txmaEvent.event_id && { userLastActiveSourceId: txmaEvent.event_id }),
-    userLastActiveUpdated: isNewLatestDate
-      ? eventDateTime
-      : (currentTrackerRecord?.userLastActiveUpdated ?? eventDateTime),
+    userLastActiveUpdated: isNewLatestDate ? eventDateTime : (currentTrackerRecord?.userLastActiveUpdated ?? eventDateTime),
     dateForDeletion: getDateForDeletion(latestDate),
     emailAddress,
     emailAddressSource,
     emailAddressSourceId,
     emailAddressLastUpdated,
-    status: "pending",
+    status: 'pending',
     statusLastUpdated: eventDateTime,
     hasSetupMfa: currentTrackerRecord?.hasSetupMfa ?? false,
   };
 
-  const transactionItems = buildTransactionItems(
-    tableName,
-    userNotificationsTableName,
-    olhClientId,
-    userId,
-    newItem,
-    currentTrackerRecord,
-    txmaEvent
-  );
+  const transactionItems = buildTransactionItems(tableName, userNotificationsTableName, olhClientId, userId, newItem, currentTrackerRecord, txmaEvent);
 
   try {
-    await dynamoDocClient.send(
-      new TransactWriteCommand({ TransactItems: transactionItems })
-    );
+    await dynamoDocClient.send(new TransactWriteCommand({ TransactItems: transactionItems }));
   } catch (error) {
-    throw new Error(
-      `Failed to update inactive account tracker for user ${userId} ${error}`,
-      {
-        cause: error,
-      }
-    );
+    throw new Error(`Failed to update inactive account tracker for user ${userId} ${error}`, {
+      cause: error
+    });
   }
 };
 
@@ -226,12 +159,8 @@ export const handler = async (
 ): Promise<void> => {
   logger.addContext(context);
 
-  const tableName = getEnvironmentVariable(
-    "INACTIVE_ACCOUNT_TRACKER_TABLE_NAME"
-  );
-  const userNotificationsTableName = getEnvironmentVariable(
-    "USER_NOTIFICATIONS_TABLE_NAME"
-  );
+  const tableName = getEnvironmentVariable("INACTIVE_ACCOUNT_TRACKER_TABLE_NAME");
+  const userNotificationsTableName = getEnvironmentVariable("USER_NOTIFICATIONS_TABLE_NAME");
   const olhClientId = getEnvironmentVariable("OLH_CLIENT_ID");
 
   for (const record of event.Records) {
@@ -239,11 +168,6 @@ export const handler = async (
       record.dynamodb?.NewImage?.event.M as Record<string, AttributeValue>
     ) as TxmaEvent;
 
-    await processRecord(
-      txmaEvent,
-      tableName,
-      userNotificationsTableName,
-      olhClientId
-    );
+    await processRecord(txmaEvent, tableName, userNotificationsTableName, olhClientId);
   }
 };

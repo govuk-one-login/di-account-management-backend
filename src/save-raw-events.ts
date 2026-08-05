@@ -25,7 +25,12 @@ const ALLOWED_EVENT_NAMES = new Set([
   "AUTH_AUTH_CODE_ISSUED",
   "AUTH_IPV_AUTHORISATION_REQUESTED",
   "AUTH_IPV_SUCCESSFUL_IDENTITY_RESPONSE_RECEIVED",
+  "AUTH_TOKEN_SENT_TO_ORCHESTRATION",
 ]);
+
+// AUTH_TOKEN_SENT_TO_ORCHESTRATION has no session_id in its schema, as the
+// authentication session is already over by the time the token is exchanged.
+const EVENTS_WITHOUT_SESSION_ID = new Set(["AUTH_TOKEN_SENT_TO_ORCHESTRATION"]);
 
 const getEventId = (): string => {
   return crypto.randomUUID();
@@ -40,7 +45,9 @@ const getTTLDate = (): number => {
 
 export const validateUser = (event: TxmaEvent): void => {
   const user:UserData = event.user;
-  if (!user.user_id || !user.session_id) {
+  const requiresSessionId = !EVENTS_WITHOUT_SESSION_ID.has(event.event_name);
+
+  if (!user.user_id || (requiresSessionId && !user.session_id)) {
     logger.info("Could not validate User context", {
       typeofUser: typeof user,
       typeofUserUserId: typeof user.user_id,
@@ -51,7 +58,7 @@ export const validateUser = (event: TxmaEvent): void => {
     if (!user.user_id) {
       missingFields.push(`user_id is ${user.user_id}`);
     }
-    if (!user.session_id) {
+    if (requiresSessionId && !user.session_id) {
       missingFields.push(`session_id is ${user.session_id}`);
     }
     throw new Error(`Could not validate User for event_name ${event.event_name} with event_id ${event.event_id}: ${missingFields.join(", ")}`);

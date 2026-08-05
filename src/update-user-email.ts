@@ -1,7 +1,11 @@
 import { Context, DynamoDBStreamEvent } from "aws-lambda";
 import { AttributeValue, DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
-import { DynamoDBDocumentClient, QueryCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
+import {
+  DynamoDBDocumentClient,
+  QueryCommand,
+  UpdateCommand,
+} from "@aws-sdk/lib-dynamodb";
 import { TxmaEvent } from "./common/model.js";
 import { getEnvironmentVariable } from "./common/utils.js";
 import { Logger } from "@aws-lambda-powertools/logger";
@@ -16,7 +20,9 @@ export const handler = async (
 ): Promise<void> => {
   logger.addContext(context);
 
-  const tableName = getEnvironmentVariable("INACTIVE_ACCOUNT_TRACKER_TABLE_NAME");
+  const tableName = getEnvironmentVariable(
+    "INACTIVE_ACCOUNT_TRACKER_TABLE_NAME"
+  );
 
   for (const record of event.Records) {
     const txmaEvent = unmarshall(
@@ -48,13 +54,17 @@ export const handler = async (
     );
 
     if (!queryResponse.Items || queryResponse.Items.length === 0) {
-      logger.warn("No inactive account tracker record found for user", { userId });
+      logger.warn("No inactive account tracker record found for user", {
+        userId,
+      });
       return;
     }
 
     const trackerRecord = queryResponse.Items[0];
 
-    const eventDateTime = new Date(txmaEvent.timestamp * 1000).toISOString();
+    const eventDateTime = new Date(
+      txmaEvent.event_timestamp_ms ?? txmaEvent.timestamp * 1000
+    ).toISOString();
 
     await dynamoDocClient.send(
       new UpdateCommand({
@@ -75,6 +85,9 @@ export const handler = async (
       })
     );
 
-    logger.info("Successfully updated email address in inactive account tracker", { userId });
+    logger.info(
+      "Successfully updated email address in inactive account tracker",
+      { userId }
+    );
   }
 };

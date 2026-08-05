@@ -439,6 +439,27 @@ describe("UpdateInactiveAccountTracker handler", () => {
     expect(loggerWarnMock).toHaveBeenCalledWith("AUTH_EVENT_NO_EMAIL for userId qwerty");
   });
 
+  test("uses event_timestamp_ms for eventDateTime when present", async () => {
+    dynamoMock.on(QueryCommand).resolves({ Items: [] });
+    dynamoMock.on(TransactWriteCommand).resolves({});
+    const msTimestamp = 1711929600123;
+    const streamRecord = generateDynamoStreamRecord("test-client");
+    if (streamRecord.dynamodb?.NewImage?.event?.M) {
+      streamRecord.dynamodb.NewImage.event.M.event_timestamp_ms = { N: msTimestamp.toString() };
+    }
+    const event: DynamoDBStreamEvent = { Records: [streamRecord] };
+    await handler(event, {} as Context);
+    expect(dynamoMock).toHaveReceivedCommandWith(TransactWriteCommand, {
+      TransactItems: expect.arrayContaining([
+        expect.objectContaining({
+          Put: expect.objectContaining({
+            Item: expect.objectContaining({ statusLastUpdated: new Date(msTimestamp).toISOString() }),
+          }),
+        }),
+      ]),
+    });
+  });
+
   test("sets statusLastUpdated to the event timestamp", async () => {
     dynamoMock.on(QueryCommand).resolves({ Items: [] });
     dynamoMock.on(TransactWriteCommand).resolves({});

@@ -370,6 +370,9 @@ describe("handler only saves allowlisted events", () => {
     "AUTH_IPV_SUCCESSFUL_IDENTITY_RESPONSE_RECEIVED",
     "AUTH_TOKEN_SENT_TO_ORCHESTRATION",
     "AUTH_UPDATE_EMAIL",
+    "AUTH_CODE_VERIFIED",
+    "AUTH_PASSKEY_VERIFICATION_SUCCESSFUL",
+    "STS_REFRESH_TOKEN_ISSUED",
   ])("writes to DynamoDB when event_name is %s", async (allowedEventName) => {
     vi.spyOn(Date, "now").mockImplementation(() => TIMESTAMP);
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment

@@ -3170,7 +3170,7 @@ Resources:
             StartingPosition: LATEST
             FilterCriteria:
               Filters:
-                - Pattern: '{ "eventName": ["INSERT"], "dynamodb": { "NewImage": { "event": { "M": { "event_name": { "S": ["AUTH_TOKEN_SENT_TO_ORCHESTRATION"] } } } } } }'
+                - Pattern: '{ "eventName": ["INSERT"], "dynamodb": { "NewImage": { "event": { "M": { "event_name": { "S": ["AUTH_TOKEN_SENT_TO_ORCHESTRATION", "AUTH_CODE_VERIFIED", "AUTH_PASSKEY_VERIFICATION_SUCCESSFUL", "STS_REFRESH_TOKEN_ISSUED"] } } } } } }'
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt UpdateInactiveAccountTrackerDeadLetterQueue.Arn

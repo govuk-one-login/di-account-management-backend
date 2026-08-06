@@ -1,8 +1,8 @@
 import { getSecret } from "@aws-lambda-powertools/parameters/secrets";
-import { normalizeAPIGatewayProxyEventHandlerWrapper } from "./common/normalizeAPIGatewayProxyEventHandlerWrapper/index.js";
 import { APIGatewayProxyHandler } from "./common/types.js";
 import { Logger } from "@aws-lambda-powertools/logger";
 import assert from "node:assert";
+import { normalizeAPIGatewayProxyEventHandlerWrapper } from "./common/normalizeAPIGatewayProxyEventHandlerWrapper.js";
 
 const logger = new Logger();
 

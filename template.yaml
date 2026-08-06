@@ -7243,7 +7243,6 @@ Resources:
     Type: AWS::Serverless::HttpApi
     Properties:
       StageName: !Ref Environment
-      AlwaysDeploy: true
       AccessLogSettings:
         Format: >-
           {

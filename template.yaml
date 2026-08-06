@@ -7280,6 +7280,22 @@ Resources:
           ResourcePath: /*
           HttpMethod: "*"
 
+  PublicApiGatewayHealthCheck:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref PublicApiGateway
+      ResourceId: !GetAtt PublicApiGateway.RootResourceId
+      HttpMethod: GET
+      AuthorizationType: NONE
+      Integration:
+        Type: MOCK
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+        IntegrationResponses:
+          - StatusCode: 200
+      MethodResponses:
+        - StatusCode: 200
+
   PublicApiGatewayAccessLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -7351,6 +7367,18 @@ Resources:
       ActionsEnabled: false
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+
+  #########################################
+  # Notify callback infra
+  #########################################
+
+  NotifyCallbackSecret:
+    Type: AWS::SecretsManager::Secret
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      KmsKeyId: !Ref SecretsKmsKey
+      SecretString: set-me
 
 Outputs:
   GeneratorKey:

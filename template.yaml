@@ -7362,7 +7362,7 @@ Resources:
     UpdateReplacePolicy: Retain
     Properties:
       KmsKeyId: !Ref SecretsKmsKey
-      SecretString: set-me
+      SecretString: set-me # pragma: allowlist secret
 
   NotiftyCallbackLambda:
     Type: AWS::Serverless::Function

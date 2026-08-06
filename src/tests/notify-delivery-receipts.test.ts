@@ -19,7 +19,7 @@ const makeEvent = (headers: Record<string, string>): APIGatewayProxyEvent =>
 
 describe("handler", () => {
   beforeEach(() => {
-    process.env.NOTIFY_DELIVERY_RECEIPTS_SECRET_ARN = "mock-secret-arn";
+    process.env.NOTIFY_DELIVERY_RECEIPTS_SECRET_ARN = "mock-secret-arn"; // pragma: allowlist secret
   });
 
   afterEach(() => {

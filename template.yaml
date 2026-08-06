@@ -7367,7 +7367,6 @@ Resources:
   NotifyDeliveryReceiptsLambda:
     Type: AWS::Serverless::Function
     Properties:
-      Runtime: nodejs24.x
       VpcConfig:
         SubnetIds:
           - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdA
@@ -7408,7 +7407,7 @@ Resources:
         Format: "esm"
         OutExtension:
           - .js=.mjs
-        Target: "es2024"
+        Target: "es2022"
         Sourcemap: true
         Banner:
           - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url); # Required in order to use AWS Lambda Powertools

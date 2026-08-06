@@ -380,7 +380,7 @@ describe("UpdateInactiveAccountTracker handler", () => {
 
   test("updates emailAddressSource, emailAddressSourceId and emailAddressLastUpdated when email changes", async () => {
     dynamoMock.on(QueryCommand).resolves({
-      Items: [{ commonSubjectId: "qwerty", dateForDeletion: "1978-11-29", userLastActive: "1970-01-01T00:00:00.000Z", emailAddress: "old@email.com", emailAddressSource: "AUTH_PREVIOUS_EVENT", emailAddressSourceId: "old-event-id", emailAddressLastUpdated: "2020-01-01T00:00:00.000Z", status: "pending", statusLastUpdated: "" }],
+      Items: [{ commonSubjectId: "qwerty", dateForDeletion: "1978-11-29", userLastActive: "1970-01-01T00:00:00.000Z", emailAddress: "old@email.com", emailAddressSource: "AUTH_PREVIOUS_EVENT", emailAddressSourceId: "old-event-id", emailAddressLastUpdated: "1970-01-01T00:00:00.000Z", status: "pending", statusLastUpdated: "" }],
     });
     dynamoMock.on(TransactWriteCommand).resolves({});
     // generateDynamoStreamRecord uses timestamp = 123456789 seconds => 1973-11-29T21:33:09.000Z
@@ -572,4 +572,98 @@ describe("UpdateInactiveAccountTracker handler", () => {
       ]),
     });
   });
+
+  test("updates email address when event timestamp is newer than emailAddressLastUpdated", async () => {
+    dynamoMock.on(QueryCommand).resolves({
+      Items: [{ 
+        commonSubjectId: "asdf", 
+        dateForDeletion: "1975-01-01", 
+        userLastActive: "1970-01-01T00:16:40.000Z", 
+        status: "pending", 
+        emailAddress: "old-email@example.com", 
+        emailAddressLastUpdated: "1970-01-01T00:16:40.000Z",
+        statusLastUpdated: "" 
+      }],
+    });
+    dynamoMock.on(TransactWriteCommand).resolves({});
+
+    const event: DynamoDBStreamEvent = { Records: [generateDynamoStreamRecord("test-client")] };
+    if (event.Records[0].dynamodb?.NewImage?.event?.M) {
+      event.Records[0].dynamodb.NewImage.event.M.timestamp = { N: "1666769858" };
+      event.Records[0].dynamodb.NewImage.event.M.event_name = { S: "NEWER_EMAIL_EVENT" };
+      event.Records[0].dynamodb.NewImage.event.M.event_id = { S: "newre" };
+      event.Records[0].dynamodb.NewImage.event.M.user = { 
+        M: { 
+          user_id: { S: "test_id" }, 
+          email: { S: "test_newer_email@example.com" } 
+        } 
+      };
+    }
+
+    await handler(event, {} as Context);
+
+    expect(dynamoMock).toHaveReceivedCommandWith(TransactWriteCommand, {
+      TransactItems: expect.arrayContaining([
+        expect.objectContaining({
+          Put: expect.objectContaining({
+            Item: expect.objectContaining({ 
+              emailAddress: "test_newer_email@example.com",
+              emailAddressSource: "NEWER_EMAIL_EVENT",
+              emailAddressSourceId: "newre",
+              emailAddressLastUpdated: "2022-10-26T07:37:38.000Z"
+            }),
+          }),
+        }),
+      ]),
+    });
+  });
+
+  test("does not update email address when event timestamp is older than emailAddressLastUpdated", async () => {
+    dynamoMock.on(QueryCommand).resolves({
+      Items: [{ 
+        commonSubjectId: "asdf", 
+        dateForDeletion: "1975-01-01", 
+        userLastActive: "1970-01-01T00:33:20.000Z", 
+        status: "pending", 
+        emailAddress: "current-and-newest-email@example.com", 
+        emailAddressSource: "FRESH_EVENT",
+        emailAddressSourceId: "current-and-newestest",
+        emailAddressLastUpdated: "1970-01-01T00:33:20.000Z",
+        statusLastUpdated: "" 
+      }],
+    });
+    dynamoMock.on(TransactWriteCommand).resolves({});
+
+    const event: DynamoDBStreamEvent = { Records: [generateDynamoStreamRecord("test-client")] };
+    
+    if (event.Records[0].dynamodb?.NewImage?.event?.M) {
+      event.Records[0].dynamodb.NewImage.event.M.timestamp = { N: "1000" };
+      event.Records[0].dynamodb.NewImage.event.M.event_name = { S: "STALE_OUT_OF_ORDER_EVENT" };
+      event.Records[0].dynamodb.NewImage.event.M.event_id = { S: "stale_id" };
+      event.Records[0].dynamodb.NewImage.event.M.user = { 
+        M: { 
+          user_id: { S: "asdf" }, 
+          email: { S: "old-email@example.com" } 
+        } 
+      };
+    }
+
+    await handler(event, {} as Context);
+
+    expect(dynamoMock).toHaveReceivedCommandWith(TransactWriteCommand, {
+      TransactItems: expect.arrayContaining([
+        expect.objectContaining({
+          Put: expect.objectContaining({
+            Item: expect.objectContaining({ 
+              emailAddress: "current-and-newest-email@example.com",
+              emailAddressSource: "FRESH_EVENT",
+              emailAddressSourceId: "current-and-newestest",
+              emailAddressLastUpdated: "1970-01-01T00:33:20.000Z"
+            }),
+          }),
+        }),
+      ]),
+    });
+  });
+
 });

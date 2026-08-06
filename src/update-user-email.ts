@@ -56,25 +56,38 @@ export const handler = async (
 
     const eventDateTime = new Date(txmaEvent.event_timestamp_ms ?? (txmaEvent.timestamp * 1000)).toISOString();
 
-    await dynamoDocClient.send(
-      new UpdateCommand({
-        TableName: tableName,
-        Key: {
-          dateForDeletion: trackerRecord.dateForDeletion,
-          commonSubjectId: userId,
-        },
-        UpdateExpression:
-          "SET emailAddress = :email, emailAddressSource = :source, emailAddressLastUpdated = :lastUpdated" +
-          (txmaEvent.event_id ? ", emailAddressSourceId = :sourceId" : ""),
-        ExpressionAttributeValues: {
-          ":email": newEmail,
-          ":source": txmaEvent.event_name,
-          ":lastUpdated": eventDateTime,
-          ...(txmaEvent.event_id && { ":sourceId": txmaEvent.event_id }),
-        },
-      })
-    );
-
-    logger.info("Successfully updated email address in inactive account tracker", { userId });
+    try {
+      await dynamoDocClient.send(
+        new UpdateCommand({
+          TableName: tableName,
+          Key: {
+            dateForDeletion: trackerRecord.dateForDeletion,
+            commonSubjectId: userId,
+          },
+          UpdateExpression:
+            "SET emailAddress = :email, emailAddressSource = :source, emailAddressLastUpdated = :lastUpdated" +
+            (txmaEvent.event_id ? ", emailAddressSourceId = :sourceId" : ""),
+          ConditionExpression:
+            "attribute_not_exists(emailAddressLastUpdated) OR emailAddressLastUpdated < :lastUpdated",
+          ExpressionAttributeValues: {
+            ":email": newEmail,
+            ":source": txmaEvent.event_name,
+            ":lastUpdated": eventDateTime,
+            ...(txmaEvent.event_id && { ":sourceId": txmaEvent.event_id }),
+          },
+        })
+      );
+      logger.info("Successfully updated email address in inactive account tracker", { userId });
+    } catch (error) {
+      const err = error as Error;
+      if (err.name === "ConditionalCheckFailedException") {
+        logger.warn("An email update event with a newer timestamp has already been processed.", {
+          userId,
+          incomingTimestamp: eventDateTime,
+        });
+      } else {
+        throw err;
+      }
+    }
   }
 };

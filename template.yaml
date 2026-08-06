@@ -6042,7 +6042,7 @@ Resources:
             - "UseExternalEvents"
             - Effect: Allow
               Principal:
-                Service: !Sub "dynamodb.${AWS::Region}.amazonaws.com"
+                Service: "dynamodb.amazonaws.com"
               Action:
                 - kms:Decrypt
                 - kms:GenerateDataKey*

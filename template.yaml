@@ -7364,7 +7364,7 @@ Resources:
       KmsKeyId: !Ref SecretsKmsKey
       SecretString: set-me # pragma: allowlist secret
 
-  NotiftyCallbackLambda:
+  NotifyDeliveryReceiptsLambda:
     Type: AWS::Serverless::Function
     Properties:
       Runtime: nodejs24.x
@@ -7380,7 +7380,7 @@ Resources:
       #  - !Ref ApiTokenLambdaAvailabilityAlarm
       # - !Ref ApiTokenLambdaLogErrorAlarm
       LoggingConfig:
-        LogGroup: !Ref NotiftyCallbackLambdaLogGroup
+        LogGroup: !Ref NotifyDeliveryReceiptsLambdaLogGroup
       Handler: notify-delivery-receipts.handler
       Environment:
         Variables:
@@ -7415,7 +7415,7 @@ Resources:
         EntryPoints:
           - notify-delivery-receipts.ts
 
-  NotiftyCallbackLambdaLogGroup:
+  NotifyDeliveryReceiptsLambdaLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-notify-delivery-receipts"

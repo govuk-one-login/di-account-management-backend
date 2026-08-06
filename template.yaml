@@ -7235,6 +7235,116 @@ Resources:
       MessageRetentionPeriod: 1209600
       KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
 
+  #########################################
+  # Public API infra
+  #########################################
+
+  PublicApiGateway:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      StageName: !Ref Environment
+      AlwaysDeploy: true
+      AccessLogSettings:
+        Format: >-
+          {
+          "requestId": "$context.requestId",
+          "requestTime": "$context.requestTime",
+          "requestTimeEpoch": "$context.requestTimeEpoch",
+          "httpMethod": "$context.httpMethod",
+          "domainName": "$context.domainName",
+          "path": "$context.path",
+          "routeKey": "$context.routeKey",
+          "protocol": "$context.protocol",
+          "status": "$context.status",
+          "responseLength": "$context.responseLength",
+          "responseLatency": "$context.responseLatency",
+          "authorizerLatency": "$context.authorizer.latency",
+          "integrationStatus": "$context.integrationStatus",
+          "integrationLatency": "$context.integrationLatency",
+          "integrationErrorMessage": "$context.integrationErrorMessage",
+          "errorMessage": "$context.error.message",
+          "errorResponseType": "$context.error.responseType",
+          "xrayTraceId": "$context.xrayTraceId",
+          "tlsVersion": "$context.tlsVersion",
+          "cipherSuite": "$context.cipherSuite"    
+          }
+        DestinationArn: !GetAtt PublicApiGatewayAccessLogGroup.Arn
+      DefaultRouteSettings:
+        DetailedMetricsEnabled: true
+
+  PublicApiGatewayAccessLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/apigateway/${PublicApiGateway}/${Environment}"
+      RetentionInDays: 30
+      KmsKeyId: !GetAtt LoggingKmsKey.Arn
+
+  PublicApiGateway5XXErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: "AMB API Gateway is returning 5XX server errors "
+      Namespace: AWS/ApiGatewayV2
+      MetricName: 5XXError
+      Dimensions:
+        - Name: ApiId
+          Value: !Ref PublicApiGateway
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 5
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/HighAlertNotificationTopic/ARN}}"
+
+  PublicApiGatewayHighLatencyAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: "AMB API Gateway is experiencing high latency"
+      Namespace: AWS/ApiGatewayV2
+      MetricName: Latency
+      Dimensions:
+        - Name: ApiId
+          Value: !Ref PublicApiGateway
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 5000
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+
+  PublicApiGatewayTrafficAnomalyAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: IsProduction
+    Properties:
+      AlarmDescription: "AMB API Gateway traffic has dropped significantly below expected levels"
+      Metrics:
+        - Id: traffic
+          MetricStat:
+            Metric:
+              Namespace: AWS/ApiGatewayV2
+              MetricName: Count
+              Dimensions:
+                - Name: ApiId
+                  Value: !Ref PublicApiGateway
+            Period: 300
+            Stat: Sum
+          ReturnData: true
+        - Id: band
+          Expression: ANOMALY_DETECTION_BAND(traffic, 2)
+          ReturnData: true
+      ComparisonOperator: LessThanLowerThreshold
+      ThresholdMetricId: band
+      EvaluationPeriods: 3
+      DatapointsToAlarm: 3
+      TreatMissingData: notBreaching
+      ActionsEnabled: false
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+
+
 Outputs:
   GeneratorKey:
     Description: A generator key for generating a plaintext data key

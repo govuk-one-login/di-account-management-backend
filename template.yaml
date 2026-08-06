@@ -7240,10 +7240,12 @@ Resources:
   #########################################
 
   PublicApiGateway:
-    Type: AWS::Serverless::HttpApi
+    Type: AWS::Serverless::Api
     Properties:
       StageName: !Ref Environment
-      AccessLogSettings:
+      AlwaysDeploy: true
+      TracingEnabled: true
+      AccessLogSetting:
         Format: >-
           {
           "requestId": "$context.requestId",
@@ -7252,24 +7254,26 @@ Resources:
           "httpMethod": "$context.httpMethod",
           "domainName": "$context.domainName",
           "path": "$context.path",
-          "routeKey": "$context.routeKey",
           "protocol": "$context.protocol",
           "status": "$context.status",
           "responseLength": "$context.responseLength",
           "responseLatency": "$context.responseLatency",
           "authorizerLatency": "$context.authorizer.latency",
-          "integrationStatus": "$context.integrationStatus",
           "integrationLatency": "$context.integrationLatency",
           "integrationErrorMessage": "$context.integrationErrorMessage",
           "errorMessage": "$context.error.message",
           "errorResponseType": "$context.error.responseType",
+          "validationErrorString": "$context.error.validationErrorString",
           "xrayTraceId": "$context.xrayTraceId",
           "tlsVersion": "$context.tlsVersion",
           "cipherSuite": "$context.cipherSuite"    
           }
         DestinationArn: !GetAtt PublicApiGatewayAccessLogGroup.Arn
-      DefaultRouteSettings:
-        DetailedMetricsEnabled: true
+      MethodSettings:
+        - MetricsEnabled: true
+          CacheDataEncrypted: true
+          ResourcePath: /*
+          HttpMethod: "*"
 
   PublicApiGatewayAccessLogGroup:
     Type: AWS::Logs::LogGroup
@@ -7282,10 +7286,10 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Properties:
       AlarmDescription: "AMB API Gateway is returning 5XX server errors "
-      Namespace: AWS/ApiGatewayV2
+      Namespace: AWS/ApiGateway
       MetricName: 5XXError
       Dimensions:
-        - Name: ApiId
+        - Name: ApiName
           Value: !Ref PublicApiGateway
       Statistic: Sum
       Period: 300
@@ -7300,10 +7304,10 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Properties:
       AlarmDescription: "AMB API Gateway is experiencing high latency"
-      Namespace: AWS/ApiGatewayV2
+      Namespace: AWS/ApiGateway
       MetricName: Latency
       Dimensions:
-        - Name: ApiId
+        - Name: ApiName
           Value: !Ref PublicApiGateway
       Statistic: Average
       Period: 300
@@ -7323,10 +7327,10 @@ Resources:
         - Id: traffic
           MetricStat:
             Metric:
-              Namespace: AWS/ApiGatewayV2
+              Namespace: AWS/ApiGateway
               MetricName: Count
               Dimensions:
-                - Name: ApiId
+                - Name: ApiName
                   Value: !Ref PublicApiGateway
             Period: 300
             Stat: Sum

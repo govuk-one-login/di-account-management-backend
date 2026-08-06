@@ -7280,22 +7280,6 @@ Resources:
           ResourcePath: /*
           HttpMethod: "*"
 
-  PublicApiGatewayHealthCheck:
-    Type: AWS::ApiGateway::Method
-    Properties:
-      RestApiId: !Ref PublicApiGateway
-      ResourceId: !GetAtt PublicApiGateway.RootResourceId
-      HttpMethod: GET
-      AuthorizationType: NONE
-      Integration:
-        Type: MOCK
-        RequestTemplates:
-          application/json: '{"statusCode": 200}'
-        IntegrationResponses:
-          - StatusCode: 200
-      MethodResponses:
-        - StatusCode: 200
-
   PublicApiGatewayAccessLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -7369,16 +7353,74 @@ Resources:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
 
   #########################################
-  # Notify callback infra
+  # Notify delivery receipts infra
   #########################################
 
-  NotifyCallbackSecret:
+  NotifyDeliveryReceiptsSecret:
     Type: AWS::SecretsManager::Secret
     DeletionPolicy: Retain
     UpdateReplacePolicy: Retain
     Properties:
       KmsKeyId: !Ref SecretsKmsKey
       SecretString: set-me
+
+  NotiftyCallbackLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: nodejs24.x
+      VpcConfig:
+        SubnetIds:
+          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdA
+          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdB
+      # TODO
+      DeploymentPreference:
+        Alarms:
+          - !Ref ApiTokenLambdaErrorsAlarm
+          - !Ref ApiTokenLambdaThrottlesAlarm
+          - !Ref ApiTokenLambdaAvailabilityAlarm
+          - !Ref ApiTokenLambdaLogErrorAlarm
+      LoggingConfig:
+        LogGroup: !Ref NotiftyCallbackLambdaLogGroup
+      Handler: notify-delivery-receipts.handler
+      Environment:
+        Variables:
+          NOTIFY_DELIVERY_RECEIPTS_SECRET_ARN: !Ref NotifyDeliveryReceiptsSecret
+      Policies:
+        - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
+        - Statement:
+            - Effect: Allow
+              Action: secretsmanager:GetSecretValue
+              Resource: !Ref NotifyDeliveryReceiptsSecret
+            - Effect: Allow
+              Action: kms:Decrypt
+              Resource: !GetAtt SecretsKmsKey.Arn
+      Events:
+        DeliveryReceipts:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PublicApiGateway
+            Path: /notify/delivery-receipts
+            Method: POST
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Format: "esm"
+        OutExtension:
+          - .js=.mjs
+        Target: "es2024"
+        Sourcemap: true
+        Banner:
+          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url); # Required in order to use AWS Lambda Powertools
+        EntryPoints:
+          - notify-delivery-receipts.ts
+
+  NotiftyCallbackLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-notify-delivery-receipts"
+      RetentionInDays: 30
+      KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
 Outputs:
   GeneratorKey:

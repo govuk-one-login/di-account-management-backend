@@ -7239,9 +7239,13 @@ Resources:
   # Public API infra
   #########################################
 
-  # checkov:skip=CKV_AWS_120: response caching is not wanted
   PublicApiGateway:
     Type: AWS::Serverless::Api
+    Metadata:
+      checkov:
+        skip:
+          - id: "CKV_AWS_120"
+            comment: "We don't want to cache reponses"
     Properties:
       StageName: !Ref Environment
       AlwaysDeploy: true

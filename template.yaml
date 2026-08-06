@@ -7239,6 +7239,7 @@ Resources:
   # Public API infra
   #########################################
 
+  # checkov:skip=CKV_AWS_120: response caching is not wanted
   PublicApiGateway:
     Type: AWS::Serverless::Api
     Properties:
@@ -7346,7 +7347,6 @@ Resources:
       ActionsEnabled: false
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
-
 
 Outputs:
   GeneratorKey:

@@ -181,7 +181,7 @@ jobs:
       - name: Run testing script
         env:
           SQS_QUEUE_ARN: ${{ secrets.RawEventsQueue }}
-          PUBLIC_API_BASE_URL: ${{ secrets.PublicApiBaseUrl }}
-          NOTIFY_DELIVERY_RECEIPTS_SECRET_ARN: ${{ secrets.NotifyDeliveryReceiptsSecretArn }}
+          PUBLIC_API_BASE_URL: ${{ secrets.TEST_PUBLIC_API_BASE_URL }}
+          NOTIFY_DELIVERY_RECEIPTS_SECRET_ARN: ${{ secrets.TEST_NOTIFY_DELIVERY_RECEIPTS_SECRET_ARN }}
         run: |
           python3 $GITHUB_WORKSPACE/pre-merge-integration-tests/api_call.py

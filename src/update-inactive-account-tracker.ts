@@ -30,7 +30,7 @@ const getCurrentRecordForUser = async (userId: string, tableName: string): Promi
   return response.Items.length > 0 ? response.Items[0] as InactiveAccountTrackerRecord : null;
 }
 
-const getLatestDate = (txmaEvent: TxmaEvent, trackerRecord: InactiveAccountTrackerRecord | null) => {
+const getEventDate = (txmaEvent: TxmaEvent): Date => {
   let timestamp = txmaEvent.timestamp;
 
   // some txma events timestamps are in milliseconds when they should be in seconds.
@@ -40,9 +40,11 @@ const getLatestDate = (txmaEvent: TxmaEvent, trackerRecord: InactiveAccountTrack
     timestamp = Math.floor(timestamp / 1000);
   }
 
-  // if the timestamp on the audit event is older than the last active timestamp we have for the user
-  // we should keep the existing date as it means the events have been receieved out of order
-  const eventDate = new Date(timestamp * 1000);
+  return new Date(timestamp * 1000);
+}
+
+const getLatestDate = (txmaEvent: TxmaEvent, trackerRecord: InactiveAccountTrackerRecord | null) => {
+  const eventDate = getEventDate(txmaEvent);
   const trackerDate = trackerRecord ? new Date(trackerRecord.userLastActive) : new Date(0);
 
   return eventDate > trackerDate ? eventDate : trackerDate;
@@ -110,12 +112,19 @@ const processRecord = async (
   }
 
   const eventDateTime = new Date(txmaEvent.event_timestamp_ms ?? (txmaEvent.timestamp * 1000)).toISOString();
+  const currentEventDate = getEventDate(txmaEvent);
+
+  const emailLastUpdatedDate = currentTrackerRecord?.emailAddressLastUpdated 
+    ? new Date(currentTrackerRecord.emailAddressLastUpdated) 
+    : new Date(0);
+  const eventHasNewerEmailLastUpdated = currentEventDate > emailLastUpdatedDate;
 
   const newEmailAddress = (() => {
-    if (txmaEvent.user?.email && txmaEvent.user.email !== currentTrackerRecord?.emailAddress) {
+    if (txmaEvent.user?.email && eventHasNewerEmailLastUpdated && txmaEvent.user.email !== currentTrackerRecord?.emailAddress) {
       return txmaEvent.user.email;
     }
   })();
+
   const emailAddress = newEmailAddress ?? currentTrackerRecord?.emailAddress ?? "";
   const emailAddressSource = newEmailAddress ? txmaEvent.event_name : (currentTrackerRecord?.emailAddressSource ?? "");
   const emailAddressSourceId = newEmailAddress ? txmaEvent.event_id : currentTrackerRecord?.emailAddressSourceId;
@@ -123,7 +132,7 @@ const processRecord = async (
 
   const latestDate = getLatestDate(txmaEvent, currentTrackerRecord);
   const publicSubjectId = txmaEvent.user?.public_subject_id ?? currentTrackerRecord?.publicSubjectId ?? "";
-  const isNewLatestDate = new Date(txmaEvent.timestamp * 1000) > (currentTrackerRecord ? new Date(currentTrackerRecord.userLastActive) : new Date(0));
+  const isNewLatestDate = currentEventDate > (currentTrackerRecord ? new Date(currentTrackerRecord.userLastActive) : new Date(0));
 
   const newItem: InactiveAccountTrackerRecord = {
     commonSubjectId: userId,

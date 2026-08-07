@@ -240,4 +240,92 @@ describe("update-user-email", () => {
       handler(createEvent("test-user-id", "new-email@example.com"), {} as Context)
     ).rejects.toThrow('Environment variable "INACTIVE_ACCOUNT_TRACKER_TABLE_NAME" is not set.');
   });
+
+  it("updates email when incoming email is newer", async () => {
+    dynamoMock.on(QueryCommand).resolves({
+      Items: [{ 
+        dateForDeletion: "2031-06-30", 
+        commonSubjectId: "test-user-id",
+        emailAddress: "previous-email@example.com",
+        emailAddressSource: "AUTH_UPDATE_EMAIL",
+        emailAddressLastUpdated: "2022-10-19T10:00:00.000Z"
+      }],
+    });
+    dynamoMock.on(UpdateCommand).resolves({});
+
+    const explicitTimestampEvent = {
+      Records: [{
+        dynamodb: {
+          NewImage: {
+            event: {
+              M: {
+                event_name: { S: "AUTH_UPDATE_EMAIL" },
+                timestamp: { N: "1666769858" },
+                user: { M: { user_id: { S: "test-user-id" }, email: { S: "new-email@example.com" } } },
+              },
+            },
+          },
+        },
+      }],
+    } as unknown as DynamoDBStreamEvent;
+
+    await handler(explicitTimestampEvent, {} as Context);
+
+    expect(dynamoMock).toHaveReceivedCommandWith(UpdateCommand, {
+      TableName: "test-inactive-tracker-table",
+      Key: {
+        dateForDeletion: "2031-06-30",
+        commonSubjectId: "test-user-id",
+      },
+      ConditionExpression: "attribute_not_exists(emailAddressLastUpdated) OR emailAddressLastUpdated < :lastUpdated",
+      ExpressionAttributeValues: expect.objectContaining({
+        ":lastUpdated": new Date(1666769858 * 1000).toISOString(),
+      }),
+    });
+  });
+
+  it("logs for an out-of-order event", async () => {
+    dynamoMock.on(QueryCommand).resolves({
+      Items: [{ 
+        dateForDeletion: "2031-06-30", 
+        commonSubjectId: "test-user-id",
+        emailAddress: "newer-email@example.com",
+        emailAddressSource: "AUTH_UPDATE_EMAIL",
+        emailAddressLastUpdated: "2022-10-19T10:20:00.000Z"
+      }],
+    });
+    
+    const conditionalCheckError = new Error("The conditional request failed");
+    conditionalCheckError.name = "ConditionalCheckFailedException";
+    dynamoMock.on(UpdateCommand).rejects(conditionalCheckError);
+
+    const outOfOrderEvent = {
+      Records: [{
+        dynamodb: {
+          NewImage: {
+            event: {
+              M: {
+                event_name: { S: "AUTH_UPDATE_EMAIL" },
+                timestamp: { N: "1666169000" },
+                user: { M: { user_id: { S: "test-user-id" }, email: { S: "stale-email@example.com" } } },
+              },
+            },
+          },
+        },
+      }],
+    } as unknown as DynamoDBStreamEvent;
+
+    await expect(
+      handler(outOfOrderEvent, {} as Context)
+    ).resolves.not.toThrow();
+
+    expect(loggerWarnMock).toHaveBeenCalledWith(
+      "An email update event with a newer timestamp has already been processed.",
+      {
+        userId: "test-user-id",
+        incomingTimestamp: new Date(1666169000 * 1000).toISOString(),
+      }
+    );
+  });
+
 });

@@ -614,7 +614,7 @@ Resources:
           Projection:
             ProjectionType: ALL
       BillingMode: PAY_PER_REQUEST
-      TableName: !Ref InactveAccountTrackerStoreTableName
+      TableName: !Ref InactveAccountTrackerStoreTableName      
       KeySchema:
         - AttributeName: dateForDeletion
           KeyType: HASH
@@ -938,7 +938,7 @@ Resources:
         Alarms:
           Fn::If:
             - IsNotDevelopmentOrDemo
-            - - !Ref AWS::NoValue
+            - - !Ref SaveRawEventsFunctionSuccessRate
             - - !Ref AWS::NoValue
     Metadata:
       BuildMethod: esbuild
@@ -3227,7 +3227,11 @@ Resources:
           INACTIVE_ACCOUNT_TRACKER_TABLE_NAME: !Ref InactveAccountTrackerStoreTableName
           USER_NOTIFICATIONS_TABLE_NAME: !Ref UserNotificationsTableName
           OLH_CLIENT_ID:
-            !FindInMap [EnvironmentVariables, !Ref Environment, OLHCLIENTID]
+            !FindInMap [
+              EnvironmentVariables,
+              !Ref Environment,
+              OLHCLIENTID,
+            ]
       DeploymentPreference:
         Alarms:
           Fn::If:
@@ -4248,8 +4252,7 @@ Resources:
       Principal: sns.amazonaws.com
       SourceArn:
         Ref: UserAccountDeletionTopic
-      FunctionName:
-        !Join [":", [!GetAtt DeleteUserNotificationsFunction.Arn, live]]
+      FunctionName: !Join [":", [!GetAtt DeleteUserNotificationsFunction.Arn, live]]
 
   DeleteUserNotificationsRole:
     Type: AWS::IAM::Role
@@ -4497,8 +4500,7 @@ Resources:
     DependsOn: DeleteInactiveAccountTrackerFunctionAliaslive
     Type: AWS::SNS::Subscription
     Properties:
-      Endpoint:
-        !Join [":", [!GetAtt DeleteInactiveAccountTrackerFunction.Arn, live]]
+      Endpoint: !Join [":", [!GetAtt DeleteInactiveAccountTrackerFunction.Arn, live]]
       Protocol: lambda
       RedrivePolicy:
         deadLetterTargetArn: !GetAtt DeleteInactiveAccountTrackerSubscriptionDeadLetterQueue.Arn
@@ -4573,8 +4575,7 @@ Resources:
       Principal: sns.amazonaws.com
       SourceArn:
         Ref: UserAccountDeletionTopic
-      FunctionName:
-        !Join [":", [!GetAtt DeleteInactiveAccountTrackerFunction.Arn, live]]
+      FunctionName: !Join [":", [!GetAtt DeleteInactiveAccountTrackerFunction.Arn, live]]
 
   DeleteInactiveAccountTrackerRole:
     Type: AWS::IAM::Role
@@ -7314,6 +7315,7 @@ Resources:
     Properties:
       MessageRetentionPeriod: 1209600
       KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
+
 
 Outputs:
   GeneratorKey:

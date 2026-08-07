@@ -7372,13 +7372,14 @@ Resources:
         SubnetIds:
           - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdA
           - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdB
-      # TODO
-      #DeploymentPreference:
-      #Alarms:
-      #  - !Ref ApiTokenLambdaErrorsAlarm
-      #  - !Ref ApiTokenLambdaThrottlesAlarm
-      #  - !Ref ApiTokenLambdaAvailabilityAlarm
-      # - !Ref ApiTokenLambdaLogErrorAlarm
+      DeploymentPreference:
+        Alarms:
+          Fn::If:
+            - IsNotDevelopmentOrDemo
+            - - !Ref NotifyDeliveryReceiptsLambdaErrorsAlarm
+              - !Ref NotifyDeliveryReceiptsLambdaThrottlesAlarm
+              - !Ref NotifyDeliveryReceiptsLambdaLogErrorAlarm
+            - - !Ref AWS::NoValue
       LoggingConfig:
         LogGroup: !Ref NotifyDeliveryReceiptsLambdaLogGroup
       Handler: notify-delivery-receipts.handler
@@ -7421,6 +7422,88 @@ Resources:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-notify-delivery-receipts"
       RetentionInDays: 30
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
+
+  NotifyDeliveryReceiptsLambdaErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: "AMB Notify delivery receipts lambda is producing invocation errors"
+      Namespace: !Sub "${AWS::StackName}/NotifyDeliveryReceiptsLambda"
+      MetricName: Errors
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref NotifyDeliveryReceiptsLambda
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 3
+      DatapointsToAlarm: 3
+      Threshold: 3
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/HighAlertNotificationTopic/ARN}}"
+
+  NotifyDeliveryReceiptsLambdaLambdaLogErrorMetricFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref NotifyDeliveryReceiptsLambdaLogGroup
+      FilterPattern: '{ $.level = "ERROR" || $.level = "CRITICAL" }'
+      MetricTransformations:
+        - MetricNamespace: !Sub "${AWS::StackName}/NotifyDeliveryReceiptsLambda"
+          MetricName: ErrorAndCriticalLogCount
+          MetricValue: "1"
+          DefaultValue: 0
+
+  NotifyDeliveryReceiptsLambdaLogErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: "AMB Notify delivery receipts lambda is logging ERROR or CRITICAL level messages at an elevated rate"
+      Namespace: !Sub "${AWS::StackName}/NotifyDeliveryReceiptsLambda"
+      MetricName: ErrorAndCriticalLogCount
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 3
+      DatapointsToAlarm: 3
+      Threshold: 3
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/HighAlertNotificationTopic/ARN}}"         
+
+  NotifyDeliveryReceiptsLambdaThrottlesAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      Namespace: !Sub "${AWS::StackName}/NotifyDeliveryReceiptsLambda"
+      MetricName: Throttles
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref NotifyDeliveryReceiptsLambda
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 5
+      DatapointsToAlarm: 5
+      Threshold: 0
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/HighAlertNotificationTopic/ARN}}"
+
+  NotifyDeliveryReceiptsLambdaDurationAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      Namespace: !Sub "${AWS::StackName}/NotifyDeliveryReceiptsLambda"
+      MetricName: Duration
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref NotifyDeliveryReceiptsLambda
+      ExtendedStatistic: p90
+      Period: 60
+      EvaluationPeriods: 15
+      DatapointsToAlarm: 15
+      Threshold: 1000
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
 
 Outputs:
   GeneratorKey:

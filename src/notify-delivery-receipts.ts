@@ -13,7 +13,7 @@ export const handler: APIGatewayProxyHandler =
 
       return {
         statusCode: 403,
-        body: "TODO1 remove body value",
+        body: "",
       };
     }
 
@@ -30,12 +30,12 @@ export const handler: APIGatewayProxyHandler =
 
       return {
         statusCode: 403,
-        body: "TODO2 remove body value",
+        body: "",
       };
     }
 
     return {
       statusCode: 200,
-      body: "TODO3 remove body value",
+      body: "",
     };
   });

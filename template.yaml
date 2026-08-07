@@ -7324,35 +7324,6 @@ Resources:
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
 
-  PublicApiGatewayTrafficAnomalyAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Condition: IsProduction
-    Properties:
-      AlarmDescription: "AMB API Gateway traffic has dropped significantly below expected levels"
-      Metrics:
-        - Id: traffic
-          MetricStat:
-            Metric:
-              Namespace: AWS/ApiGateway
-              MetricName: Count
-              Dimensions:
-                - Name: ApiName
-                  Value: !Ref PublicApiGateway
-            Period: 300
-            Stat: Sum
-          ReturnData: true
-        - Id: band
-          Expression: ANOMALY_DETECTION_BAND(traffic, 2)
-          ReturnData: true
-      ComparisonOperator: LessThanLowerThreshold
-      ThresholdMetricId: band
-      EvaluationPeriods: 3
-      DatapointsToAlarm: 3
-      TreatMissingData: notBreaching
-      ActionsEnabled: false
-      AlarmActions:
-        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
-
   #########################################
   # Notify delivery receipts infra
   #########################################

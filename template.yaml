@@ -138,6 +138,7 @@ Conditions:
 
 Globals:
   Function:
+    CodeUri: src
     Environment:
       Variables:
         AWS_LAMBDA_EXEC_WRAPPER: /opt/dynatrace

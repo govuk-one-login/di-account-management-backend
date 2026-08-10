@@ -138,6 +138,7 @@ Conditions:
 
 Globals:
   Function:
+    CodeUri: src
     Environment:
       Variables:
         AWS_LAMBDA_EXEC_WRAPPER: /opt/dynatrace
@@ -637,6 +638,50 @@ Resources:
         SSEEnabled: true
         SSEType: KMS
         KMSMasterKeyId: !GetAtt DatabaseKmsKey.Arn
+
+  InactiveAccountTrackerStoreCrossAccountRole:
+    Type: AWS::IAM::Role
+    Condition: UseExternalEvents
+    Properties:
+      PermissionsBoundary: !If
+        - UsePermissionsBoundary
+        - !Ref PermissionsBoundary
+        - !Ref AWS::NoValue
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub
+                - "arn:aws:iam::${AccountId}:root"
+                - AccountId: !FindInMap [AuthenticationAccounts, !Ref Environment, AccountNumber]
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: InactiveAccountTrackerStoreWritePolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:PutItem
+                  - dynamodb:BatchWriteItem
+                Resource: !GetAtt InactiveAccountTrackerStore.Arn
+              - Effect: Allow
+                Action:
+                  - kms:Encrypt
+                  - kms:Decrypt
+                  - kms:GenerateDataKey*
+                  - kms:DescribeKey
+                Resource: !GetAtt DatabaseKmsKey.Arn
+
+  InactiveAccountTrackerStoreCrossAccountRoleArnParameter:
+    Type: AWS::SSM::Parameter
+    Condition: UseExternalEvents
+    Properties:
+      Description: The ARN of the cross-account role for the authentication account to write to the InactiveAccountTrackerStore
+      Name: !Sub "/${AWS::StackName}/IAM/InactiveAccountTrackerStoreCrossAccountRole/ARN"
+      Type: String
+      Value: !GetAtt InactiveAccountTrackerStoreCrossAccountRole.Arn
 
   ######################################
   # User Notifications store
@@ -5978,6 +6023,42 @@ Resources:
               - kms:*
             Resource:
               - "*"
+          - !If
+            - "UseExternalEvents"
+            - Effect: Allow
+              Principal:
+                AWS: !Join
+                  - ""
+                  - - "arn:aws:iam::"
+                    - !FindInMap [
+                        AuthenticationAccounts,
+                        !Ref Environment,
+                        "AccountNumber",
+                      ]
+                    - ":root"
+              Action:
+                - kms:Encrypt
+                - kms:Decrypt
+                - kms:GenerateDataKey*
+                - kms:DescribeKey
+              Resource:
+                - "*"
+            - !Ref AWS::NoValue
+          - !If
+            - "UseExternalEvents"
+            - Effect: Allow
+              Principal:
+                Service: "dynamodb.amazonaws.com"
+              Action:
+                - kms:Decrypt
+                - kms:GenerateDataKey*
+                - kms:ReEncrypt*
+              Resource:
+                - "*"
+              Condition:
+                StringEquals:
+                  kms:CallerAccount: !FindInMap [AuthenticationAccounts, !Ref Environment, "AccountNumber"]
+            - !Ref AWS::NoValue
 
   DatabaseKmsKeyAlias:
     Type: AWS::KMS::Alias
@@ -7235,6 +7316,246 @@ Resources:
       MessageRetentionPeriod: 1209600
       KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
 
+  #########################################
+  # Public API infra
+  #########################################
+
+  PublicApiGateway:
+    Type: AWS::Serverless::Api
+    Metadata:
+      checkov:
+        skip:
+          - id: "CKV_AWS_120"
+            comment: "We don't want to cache reponses"
+    Properties:
+      StageName: !Ref Environment
+      AlwaysDeploy: true
+      TracingEnabled: true
+      AccessLogSetting:
+        Format: >-
+          {
+          "requestId": "$context.requestId",
+          "requestTime": "$context.requestTime",
+          "requestTimeEpoch": "$context.requestTimeEpoch",
+          "httpMethod": "$context.httpMethod",
+          "domainName": "$context.domainName",
+          "path": "$context.path",
+          "protocol": "$context.protocol",
+          "status": "$context.status",
+          "responseLength": "$context.responseLength",
+          "responseLatency": "$context.responseLatency",
+          "authorizerLatency": "$context.authorizer.latency",
+          "integrationLatency": "$context.integrationLatency",
+          "integrationErrorMessage": "$context.integrationErrorMessage",
+          "errorMessage": "$context.error.message",
+          "errorResponseType": "$context.error.responseType",
+          "validationErrorString": "$context.error.validationErrorString",
+          "xrayTraceId": "$context.xrayTraceId",
+          "tlsVersion": "$context.tlsVersion",
+          "cipherSuite": "$context.cipherSuite"    
+          }
+        DestinationArn: !GetAtt PublicApiGatewayAccessLogGroup.Arn
+      MethodSettings:
+        - MetricsEnabled: true
+          CacheDataEncrypted: true
+          ResourcePath: /*
+          HttpMethod: "*"
+
+  PublicApiGatewayAccessLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/apigateway/${PublicApiGateway}/${Environment}"
+      RetentionInDays: 30
+      KmsKeyId: !GetAtt LoggingKmsKey.Arn
+
+  PublicApiGateway5XXErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: "AMB API Gateway is returning 5XX server errors "
+      Namespace: AWS/ApiGateway
+      MetricName: 5XXError
+      Dimensions:
+        - Name: ApiName
+          Value: !Ref PublicApiGateway
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 5
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/HighAlertNotificationTopic/ARN}}"
+
+  PublicApiGatewayHighLatencyAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: "AMB API Gateway is experiencing high latency"
+      Namespace: AWS/ApiGateway
+      MetricName: Latency
+      Dimensions:
+        - Name: ApiName
+          Value: !Ref PublicApiGateway
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 5000
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+
+  #########################################
+  # Notify delivery receipts infra
+  #########################################
+
+  NotifyDeliveryReceiptsSecret:
+    Type: AWS::SecretsManager::Secret
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      KmsKeyId: !Ref SecretsKmsKey
+      SecretString: set-me # pragma: allowlist secret
+
+  NotifyDeliveryReceiptsLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      VpcConfig:
+        SubnetIds:
+          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdA
+          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdB
+      DeploymentPreference:
+        Alarms:
+          Fn::If:
+            - IsNotDevelopmentOrDemo
+            - - !Ref NotifyDeliveryReceiptsLambdaErrorsAlarm
+              - !Ref NotifyDeliveryReceiptsLambdaThrottlesAlarm
+              - !Ref NotifyDeliveryReceiptsLambdaLogErrorAlarm
+            - - !Ref AWS::NoValue
+      LoggingConfig:
+        LogGroup: !Ref NotifyDeliveryReceiptsLambdaLogGroup
+      Handler: notify-delivery-receipts.handler
+      Environment:
+        Variables:
+          NOTIFY_DELIVERY_RECEIPTS_SECRET_ARN: !Ref NotifyDeliveryReceiptsSecret
+      Policies:
+        - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
+        - Statement:
+            - Effect: Allow
+              Action: secretsmanager:GetSecretValue
+              Resource: !Ref NotifyDeliveryReceiptsSecret
+            - Effect: Allow
+              Action: kms:Decrypt
+              Resource: !GetAtt SecretsKmsKey.Arn
+      Events:
+        DeliveryReceipts:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PublicApiGateway
+            Path: /notify/delivery-receipts
+            Method: POST
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Format: "esm"
+        OutExtension:
+          - .js=.mjs
+        Target: "es2022"
+        Sourcemap: true
+        Banner:
+          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url); # Required in order to use AWS Lambda Powertools
+        EntryPoints:
+          - notify-delivery-receipts.ts
+
+  NotifyDeliveryReceiptsLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-notify-delivery-receipts"
+      RetentionInDays: 30
+      KmsKeyId: !GetAtt LoggingKmsKey.Arn
+
+  NotifyDeliveryReceiptsLambdaErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: "AMB Notify delivery receipts lambda is producing invocation errors"
+      Namespace: !Sub "${AWS::StackName}/NotifyDeliveryReceiptsLambda"
+      MetricName: Errors
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref NotifyDeliveryReceiptsLambda
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 3
+      DatapointsToAlarm: 3
+      Threshold: 3
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/HighAlertNotificationTopic/ARN}}"
+
+  NotifyDeliveryReceiptsLambdaLambdaLogErrorMetricFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref NotifyDeliveryReceiptsLambdaLogGroup
+      FilterPattern: '{ $.level = "ERROR" || $.level = "CRITICAL" }'
+      MetricTransformations:
+        - MetricNamespace: !Sub "${AWS::StackName}/NotifyDeliveryReceiptsLambda"
+          MetricName: ErrorAndCriticalLogCount
+          MetricValue: "1"
+          DefaultValue: 0
+
+  NotifyDeliveryReceiptsLambdaLogErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: "AMB Notify delivery receipts lambda is logging ERROR or CRITICAL level messages at an elevated rate"
+      Namespace: !Sub "${AWS::StackName}/NotifyDeliveryReceiptsLambda"
+      MetricName: ErrorAndCriticalLogCount
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 3
+      DatapointsToAlarm: 3
+      Threshold: 3
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/HighAlertNotificationTopic/ARN}}"         
+
+  NotifyDeliveryReceiptsLambdaThrottlesAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      Namespace: !Sub "${AWS::StackName}/NotifyDeliveryReceiptsLambda"
+      MetricName: Throttles
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref NotifyDeliveryReceiptsLambda
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 5
+      DatapointsToAlarm: 5
+      Threshold: 0
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/HighAlertNotificationTopic/ARN}}"
+
+  NotifyDeliveryReceiptsLambdaDurationAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      Namespace: !Sub "${AWS::StackName}/NotifyDeliveryReceiptsLambda"
+      MetricName: Duration
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref NotifyDeliveryReceiptsLambda
+      ExtendedStatistic: p90
+      Period: 60
+      EvaluationPeriods: 15
+      DatapointsToAlarm: 15
+      Threshold: 1000
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+
 Outputs:
   GeneratorKey:
     Description: A generator key for generating a plaintext data key
@@ -7246,6 +7567,12 @@ Outputs:
     Value: !GetAtt WrapperKey.Arn
     Export:
       Name: !Sub "${AWS::StackName}-WrappingKey"
+  InactiveAccountTrackerStoreCrossAccountRoleArn:
+    Condition: UseExternalEvents
+    Description: The ARN of the cross-account role for the authentication account to write to the InactiveAccountTrackerStore
+    Value: !GetAtt InactiveAccountTrackerStoreCrossAccountRole.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-InactiveAccountTrackerStoreCrossAccountRoleArn"
 
 # NOTES
 #

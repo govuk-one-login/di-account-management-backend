@@ -7144,6 +7144,10 @@ Resources:
           Type: SQS
           Properties:
             Queue: !GetAtt 7DayNotificationQueue.Arn
+        DeleteAccountEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt AccountDeletionProcessQueue.Arn
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt ProcessInactiveAccountDeadLetterQueue.Arn

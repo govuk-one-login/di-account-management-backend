@@ -6567,7 +6567,8 @@ Resources:
           Properties:
             Queue: !GetAtt NotificationQueue.Arn
             BatchSize: 3
-            MaximumConcurrency: 1
+            ScalingConfig:
+              MaximumConcurrency: 1
             FunctionResponseTypes:
               - ReportBatchItemFailures
       Handler: notification-service.handler

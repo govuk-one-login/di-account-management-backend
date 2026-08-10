@@ -4,7 +4,7 @@ import { Logger } from "@aws-lambda-powertools/logger";
 import { mockClient } from "aws-sdk-client-mock";
 import { DynamoDBDocumentClient, GetCommand, QueryCommand, TransactWriteCommand } from "@aws-sdk/lib-dynamodb";
 import { handler } from "../update-inactive-account-tracker.js";
-import { generateDynamoStreamRecord, timestamp } from "./testFixtures.js";
+import { generateDynamoStreamRecord, timestamp, txmaEventId } from "./testFixtures.js";
 
 const dynamoMock = mockClient(DynamoDBDocumentClient);
 
@@ -55,7 +55,7 @@ describe("UpdateInactiveAccountTracker handler", () => {
         expect.objectContaining({
           Put: expect.objectContaining({
             TableName: "test-table",
-            Item: expect.objectContaining({ commonSubjectId: "qwerty", status: "pending", source: "txma_audit_event", sourceId: "event_id" }),
+            Item: expect.objectContaining({ commonSubjectId: "qwerty", status: "pending", userLastActiveSource: "AUTH_AUTH_CODE_ISSUED", userLastActiveSourceId: "event_id", emailAddressSource: "AUTH_AUTH_CODE_ISSUED", emailAddressSourceId: "event_id" }),
           }),
         }),
       ]),
@@ -193,6 +193,7 @@ describe("UpdateInactiveAccountTracker handler", () => {
           event: {
             M: {
               client_id: { S: "test-client" },
+              timestamp: { N: "1711929600" },
               user: {
                 M: {
                   user_id: { S: "qwerty" },
@@ -230,6 +231,7 @@ describe("UpdateInactiveAccountTracker handler", () => {
           event: {
             M: {
               client_id: { S: "test-client" },
+              timestamp: { N: "1711929600" },
               user: {
                 M: {
                   user_id: { S: "qwerty" }
@@ -322,7 +324,7 @@ describe("UpdateInactiveAccountTracker handler", () => {
     });
   });
 
-  test("omits publicSubjectId from tracker record when absent from both event and existing record", async () => {
+  test("sets publicSubjectId to empty string when absent from both event and existing record", async () => {
     dynamoMock.on(QueryCommand).resolves({ Items: [] });
     dynamoMock.on(TransactWriteCommand).resolves({});
     const recordWithoutPublicSubjectId = {
@@ -345,7 +347,56 @@ describe("UpdateInactiveAccountTracker handler", () => {
       TransactItems: expect.arrayContaining([
         expect.objectContaining({
           Put: expect.objectContaining({
-            Item: expect.not.objectContaining({ publicSubjectId: expect.anything() }),
+            Item: expect.objectContaining({ publicSubjectId: "" }),
+          }),
+        }),
+      ]),
+    });
+  });
+
+  test("preserves emailAddressSource and emailAddressSourceId from existing record when email is unchanged", async () => {
+    dynamoMock.on(QueryCommand).resolves({
+      Items: [{ commonSubjectId: "qwerty", dateForDeletion: "1978-11-29", userLastActive: "1970-01-01T00:00:00.000Z", emailAddress: "foo@bar.com", emailAddressSource: "AUTH_PREVIOUS_EVENT", emailAddressSourceId: "old-event-id", emailAddressLastUpdated: "2020-01-01T00:00:00.000Z", status: "pending", statusLastUpdated: "" }],
+    });
+    dynamoMock.on(TransactWriteCommand).resolves({});
+    // generateDynamoStreamRecord includes email: "foo@bar.com" which matches the existing record
+    const event: DynamoDBStreamEvent = { Records: [generateDynamoStreamRecord("test-client")] };
+    await handler(event, {} as Context);
+    expect(dynamoMock).toHaveReceivedCommandWith(TransactWriteCommand, {
+      TransactItems: expect.arrayContaining([
+        expect.objectContaining({
+          Put: expect.objectContaining({
+            Item: expect.objectContaining({
+              emailAddress: "foo@bar.com",
+              emailAddressSource: "AUTH_PREVIOUS_EVENT",
+              emailAddressSourceId: "old-event-id",
+              emailAddressLastUpdated: "2020-01-01T00:00:00.000Z",
+            }),
+          }),
+        }),
+      ]),
+    });
+  });
+
+  test("updates emailAddressSource, emailAddressSourceId and emailAddressLastUpdated when email changes", async () => {
+    dynamoMock.on(QueryCommand).resolves({
+      Items: [{ commonSubjectId: "qwerty", dateForDeletion: "1978-11-29", userLastActive: "1970-01-01T00:00:00.000Z", emailAddress: "old@email.com", emailAddressSource: "AUTH_PREVIOUS_EVENT", emailAddressSourceId: "old-event-id", emailAddressLastUpdated: "2020-01-01T00:00:00.000Z", status: "pending", statusLastUpdated: "" }],
+    });
+    dynamoMock.on(TransactWriteCommand).resolves({});
+    // generateDynamoStreamRecord uses timestamp = 123456789 seconds => 1973-11-29T21:33:09.000Z
+    const expectedEventDateTime = new Date(timestamp * 1000).toISOString();
+    const event: DynamoDBStreamEvent = { Records: [generateDynamoStreamRecord("test-client")] };
+    await handler(event, {} as Context);
+    expect(dynamoMock).toHaveReceivedCommandWith(TransactWriteCommand, {
+      TransactItems: expect.arrayContaining([
+        expect.objectContaining({
+          Put: expect.objectContaining({
+            Item: expect.objectContaining({
+              emailAddress: "foo@bar.com",
+              emailAddressSource: "AUTH_AUTH_CODE_ISSUED",
+              emailAddressSourceId: txmaEventId,
+              emailAddressLastUpdated: expectedEventDateTime,
+            }),
           }),
         }),
       ]),
@@ -362,6 +413,7 @@ describe("UpdateInactiveAccountTracker handler", () => {
           event: {
             M: {
               client_id: { S: "test-client" },
+              timestamp: { N: "1711929600" },
               user: {
                 M: {
                   user_id: { S: "qwerty" }
@@ -385,5 +437,139 @@ describe("UpdateInactiveAccountTracker handler", () => {
       ]),
     });
     expect(loggerWarnMock).toHaveBeenCalledWith("AUTH_EVENT_NO_EMAIL for userId qwerty");
+  });
+
+  test("uses event_timestamp_ms for eventDateTime when present", async () => {
+    dynamoMock.on(QueryCommand).resolves({ Items: [] });
+    dynamoMock.on(TransactWriteCommand).resolves({});
+    const msTimestamp = 1711929600123;
+    const streamRecord = generateDynamoStreamRecord("test-client");
+    if (streamRecord.dynamodb?.NewImage?.event?.M) {
+      streamRecord.dynamodb.NewImage.event.M.event_timestamp_ms = { N: msTimestamp.toString() };
+    }
+    const event: DynamoDBStreamEvent = { Records: [streamRecord] };
+    await handler(event, {} as Context);
+    expect(dynamoMock).toHaveReceivedCommandWith(TransactWriteCommand, {
+      TransactItems: expect.arrayContaining([
+        expect.objectContaining({
+          Put: expect.objectContaining({
+            Item: expect.objectContaining({ statusLastUpdated: new Date(msTimestamp).toISOString() }),
+          }),
+        }),
+      ]),
+    });
+  });
+
+  test("sets statusLastUpdated to the event timestamp", async () => {
+    dynamoMock.on(QueryCommand).resolves({ Items: [] });
+    dynamoMock.on(TransactWriteCommand).resolves({});
+    const expectedEventDateTime = new Date(timestamp * 1000).toISOString();
+    const event: DynamoDBStreamEvent = { Records: [generateDynamoStreamRecord("test-client")] };
+    await handler(event, {} as Context);
+    expect(dynamoMock).toHaveReceivedCommandWith(TransactWriteCommand, {
+      TransactItems: expect.arrayContaining([
+        expect.objectContaining({
+          Put: expect.objectContaining({
+            Item: expect.objectContaining({ statusLastUpdated: expectedEventDateTime }),
+          }),
+        }),
+      ]),
+    });
+  });
+
+  test("sets userLastActiveUpdated to the event timestamp when event is newer", async () => {
+    dynamoMock.on(QueryCommand).resolves({ Items: [] });
+    dynamoMock.on(TransactWriteCommand).resolves({});
+    const expectedEventDateTime = new Date(timestamp * 1000).toISOString();
+    const event: DynamoDBStreamEvent = { Records: [generateDynamoStreamRecord("test-client")] };
+    await handler(event, {} as Context);
+    expect(dynamoMock).toHaveReceivedCommandWith(TransactWriteCommand, {
+      TransactItems: expect.arrayContaining([
+        expect.objectContaining({
+          Put: expect.objectContaining({
+            Item: expect.objectContaining({ userLastActiveUpdated: expectedEventDateTime }),
+          }),
+        }),
+      ]),
+    });
+  });
+
+  test("preserves userLastActiveUpdated from existing record when event is older", async () => {
+    const existingLastActiveUpdated = "2099-01-01T00:00:00.000Z";
+    const futureDate = new Date(Date.now() + 86400000).toISOString();
+    dynamoMock.on(QueryCommand).resolves({
+      Items: [{ commonSubjectId: "qwerty", dateForDeletion: "2099-01-01", userLastActive: futureDate, userLastActiveUpdated: existingLastActiveUpdated, status: "pending", emailAddress: "x", statusLastUpdated: "" }],
+    });
+    dynamoMock.on(TransactWriteCommand).resolves({});
+    const event: DynamoDBStreamEvent = { Records: [generateDynamoStreamRecord("test-client")] };
+    await handler(event, {} as Context);
+    expect(dynamoMock).toHaveReceivedCommandWith(TransactWriteCommand, {
+      TransactItems: expect.arrayContaining([
+        expect.objectContaining({
+          Put: expect.objectContaining({
+            Item: expect.objectContaining({ userLastActiveUpdated: existingLastActiveUpdated }),
+          }),
+        }),
+      ]),
+    });
+  });
+
+  test("converts historic millisecond timestamps to seconds", async () => {
+    const msTimestamp = 1711929600000; 
+    const expectedLastActive = "2024-04-01T00:00:00.000Z";
+    const expectedDeletionDate = "2029-04-01";
+
+    const streamRecord = generateDynamoStreamRecord("test-client");
+    if (streamRecord.dynamodb?.NewImage?.event?.M) {
+      streamRecord.dynamodb.NewImage.event.M.timestamp = { N: msTimestamp.toString() };
+    }
+
+    dynamoMock.on(QueryCommand).resolves({ Items: [] });
+    dynamoMock.on(TransactWriteCommand).resolves({});
+
+    const event: DynamoDBStreamEvent = { Records: [streamRecord] };
+    await handler(event, {} as Context);
+
+    expect(dynamoMock).toHaveReceivedCommandWith(TransactWriteCommand, {
+      TransactItems: expect.arrayContaining([
+        expect.objectContaining({
+          Put: expect.objectContaining({
+            TableName: "test-table",
+            Item: expect.objectContaining({ 
+              userLastActive: expectedLastActive,
+              dateForDeletion: expectedDeletionDate
+            }),
+          }),
+        }),
+      ]),
+    });
+  });
+
+  test("leaves valid second-based timestamps untouched", async () => {
+    const secondsTimestamp = 1711929600; 
+    const expectedLastActive = "2024-04-01T00:00:00.000Z";
+
+    const streamRecord = generateDynamoStreamRecord("test-client");
+    if (streamRecord.dynamodb?.NewImage?.event?.M) {
+      streamRecord.dynamodb.NewImage.event.M.timestamp = { N: secondsTimestamp.toString() };
+    }
+
+    dynamoMock.on(QueryCommand).resolves({ Items: [] });
+    dynamoMock.on(TransactWriteCommand).resolves({});
+
+    const event: DynamoDBStreamEvent = { Records: [streamRecord] };
+    await handler(event, {} as Context);
+
+    expect(dynamoMock).toHaveReceivedCommandWith(TransactWriteCommand, {
+      TransactItems: expect.arrayContaining([
+        expect.objectContaining({
+          Put: expect.objectContaining({
+            Item: expect.objectContaining({ 
+              userLastActive: expectedLastActive 
+            }),
+          }),
+        }),
+      ]),
+    });
   });
 });

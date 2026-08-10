@@ -31,9 +31,18 @@ const getCurrentRecordForUser = async (userId: string, tableName: string): Promi
 }
 
 const getLatestDate = (txmaEvent: TxmaEvent, trackerRecord: InactiveAccountTrackerRecord | null) => {
+  let timestamp = txmaEvent.timestamp;
+
+  // some txma events timestamps are in milliseconds when they should be in seconds.
+  // if the timestamp is over 13 digits it is essentially guaranteed to be in milliseconds. 
+  // 13 digit millisecond timestamps started 9 September 2001.
+  if (timestamp.toString().length >= 13) {
+    timestamp = Math.floor(timestamp / 1000);
+  }
+
   // if the timestamp on the audit event is older than the last active timestamp we have for the user
   // we should keep the existing date as it means the events have been receieved out of order
-  const eventDate = new Date(txmaEvent.timestamp * 1000);
+  const eventDate = new Date(timestamp * 1000);
   const trackerDate = trackerRecord ? new Date(trackerRecord.userLastActive) : new Date(0);
 
   return eventDate > trackerDate ? eventDate : trackerDate;
@@ -44,6 +53,105 @@ const getDateForDeletion = (latestDate: Date): string => {
   deletionDate.setFullYear(deletionDate.getFullYear() + 5);
   return deletionDate.toISOString().split("T")[0];
 }
+
+const buildTransactionItems = (
+  tableName: string,
+  userNotificationsTableName: string,
+  olhClientId: string,
+  userId: string,
+  newItem: InactiveAccountTrackerRecord,
+  currentTrackerRecord: InactiveAccountTrackerRecord | null,
+  txmaEvent: TxmaEvent
+): TransactionItems => {
+  const items: TransactionItems = [
+    { Put: { TableName: tableName, Item: newItem as unknown as Record<string, unknown> } },
+  ];
+
+  if (currentTrackerRecord && currentTrackerRecord.dateForDeletion !== newItem.dateForDeletion) {
+    // if the dates are the same, then we don't need to delete the old record as
+    // it would have been updated in place by the Put command
+    items.push({
+      Delete: { TableName: tableName, Key: { dateForDeletion: currentTrackerRecord.dateForDeletion, commonSubjectId: userId } }
+    });
+  }
+
+  if (txmaEvent.client_id !== olhClientId) {
+    // if the user logs in to a different RP, then we won't show them the account kept notificaton
+    // when they log in to Home
+    items.push({
+      Delete: {
+        TableName: userNotificationsTableName,
+        Key: { internalCommonSubjectId: userId },
+      },
+    });
+  }
+
+  return items;
+};
+
+const processRecord = async (
+  txmaEvent: TxmaEvent,
+  tableName: string,
+  userNotificationsTableName: string,
+  olhClientId: string
+): Promise<void> => {
+  const userId = txmaEvent.user?.user_id;
+  assert(userId !== undefined, "user_id is undefined in the event");
+
+  if (txmaEvent.user?.email === undefined) {
+    logger.warn(`AUTH_EVENT_NO_EMAIL for userId ${userId}`);
+  }
+
+  const currentTrackerRecord = await getCurrentRecordForUser(userId, tableName);
+
+  if (currentTrackerRecord?.status === 'deleting') {
+    logger.warn(`AUTH_EVENT_ON_DELETING_ACCOUNT ${userId}`);
+    return;
+  }
+
+  const eventDateTime = new Date(txmaEvent.event_timestamp_ms ?? (txmaEvent.timestamp * 1000)).toISOString();
+
+  const newEmailAddress = (() => {
+    if (txmaEvent.user?.email && txmaEvent.user.email !== currentTrackerRecord?.emailAddress) {
+      return txmaEvent.user.email;
+    }
+  })();
+  const emailAddress = newEmailAddress ?? currentTrackerRecord?.emailAddress ?? "";
+  const emailAddressSource = newEmailAddress ? txmaEvent.event_name : (currentTrackerRecord?.emailAddressSource ?? "");
+  const emailAddressSourceId = newEmailAddress ? txmaEvent.event_id : currentTrackerRecord?.emailAddressSourceId;
+  const emailAddressLastUpdated = newEmailAddress ? eventDateTime : (currentTrackerRecord?.emailAddressLastUpdated ?? "");
+
+  const latestDate = getLatestDate(txmaEvent, currentTrackerRecord);
+  const publicSubjectId = txmaEvent.user?.public_subject_id ?? currentTrackerRecord?.publicSubjectId ?? "";
+  const isNewLatestDate = new Date(txmaEvent.timestamp * 1000) > (currentTrackerRecord ? new Date(currentTrackerRecord.userLastActive) : new Date(0));
+
+  const newItem: InactiveAccountTrackerRecord = {
+    commonSubjectId: userId,
+    publicSubjectId,
+    userLastActive: latestDate.toISOString(),
+    userLastActiveSource: txmaEvent.event_name,
+    ...(txmaEvent.event_id && { userLastActiveSourceId: txmaEvent.event_id }),
+    userLastActiveUpdated: isNewLatestDate ? eventDateTime : (currentTrackerRecord?.userLastActiveUpdated ?? eventDateTime),
+    dateForDeletion: getDateForDeletion(latestDate),
+    emailAddress,
+    emailAddressSource,
+    emailAddressSourceId,
+    emailAddressLastUpdated,
+    status: 'pending',
+    statusLastUpdated: eventDateTime,
+    hasSetupMfa: currentTrackerRecord?.hasSetupMfa ?? false,
+  };
+
+  const transactionItems = buildTransactionItems(tableName, userNotificationsTableName, olhClientId, userId, newItem, currentTrackerRecord, txmaEvent);
+
+  try {
+    await dynamoDocClient.send(new TransactWriteCommand({ TransactItems: transactionItems }));
+  } catch (error) {
+    throw new Error(`Failed to update inactive account tracker for user ${userId} ${error}`, {
+      cause: error
+    });
+  }
+};
 
 export const handler = async (
   event: DynamoDBStreamEvent,
@@ -59,65 +167,7 @@ export const handler = async (
     const txmaEvent = unmarshall(
       record.dynamodb?.NewImage?.event.M as Record<string, AttributeValue>
     ) as TxmaEvent;
-    
-    const userId = txmaEvent.user?.user_id;
-    assert(userId !== undefined, "user_id is undefined in the event");
-    if (txmaEvent.user?.email === undefined) {
-      logger.warn(`AUTH_EVENT_NO_EMAIL for userId ${userId}`)
-    }
-    
-    const currentTrackerRecord = await getCurrentRecordForUser(userId, tableName);
-    const email = txmaEvent.user?.email ?? currentTrackerRecord?.emailAddress ?? "";
-    const latestDate = getLatestDate(txmaEvent, currentTrackerRecord);
 
-    if (currentTrackerRecord?.status === 'deleting') {
-      logger.warn(`AUTH_EVENT_ON_DELETING_ACCOUNT ${userId}`)
-      return;
-    }
-
-    const publicSubjectId = txmaEvent.user?.public_subject_id ?? currentTrackerRecord?.publicSubjectId;
-
-    const newItem: InactiveAccountTrackerRecord = {
-      commonSubjectId: userId,
-      ...(publicSubjectId && { publicSubjectId }),
-      userLastActive: latestDate.toISOString(),
-      dateForDeletion: getDateForDeletion(latestDate),
-      emailAddress: email,
-      status: 'pending',
-      statusLastUpdated: new Date().toISOString(),
-      source: "txma_audit_event",
-      sourceId: txmaEvent.event_id,
-    }
-
-    const transactionItems: TransactionItems = [
-      { Put: { TableName: tableName, Item: newItem as unknown as Record<string, unknown> } },
-    ];
-
-    if (currentTrackerRecord && currentTrackerRecord.dateForDeletion !== newItem.dateForDeletion) {
-      // if the dates are the same, then we don't need to delete the old record as
-      // it would have been updated in place by the Put command
-      transactionItems.push({
-        Delete: { TableName: tableName, Key: { dateForDeletion: currentTrackerRecord.dateForDeletion, commonSubjectId: userId } }
-      });
-    }
-
-    if (txmaEvent.client_id !== olhClientId) {
-      // if the user logs in to a different RP, then we won't show them the account kept notificaton
-      // when they log in to Home
-      transactionItems.push({
-        Delete: {
-          TableName: userNotificationsTableName,
-          Key: { internalCommonSubjectId: userId },
-        },
-      });
-    }
-
-    try {
-      await dynamoDocClient.send(new TransactWriteCommand({ TransactItems: transactionItems }));
-    } catch (error) {
-      throw new Error(`Failed to update inactive account tracker for user ${userId} ${error}`, {
-        cause: error
-      });
-    }
+    await processRecord(txmaEvent, tableName, userNotificationsTableName, olhClientId);
   }
 };

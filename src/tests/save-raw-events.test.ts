@@ -6,12 +6,14 @@ import { mockClient } from "aws-sdk-client-mock";
 
 const mockLogger = vi.hoisted(() => ({
   info: vi.fn(),
+  error: vi.fn(),
   addContext: vi.fn(),
 }));
 
 vi.mock("@aws-lambda-powertools/logger", () => ({
   Logger: class {
     info = mockLogger.info;
+    error = mockLogger.error;
     addContext = mockLogger.addContext;
   },
 }));
@@ -98,11 +100,17 @@ describe("writeRawTxmaEvent", () => {
 });
 
 describe("validateUser", () => {
-  test("throws error when user is is missing", () => {
+  test("throws error when user data is missing", () => {
     const inValidUser = JSON.parse(JSON.stringify({}));
+    const invalidTxmaEvent = {
+      ...makeTxmaEvent(),
+      user: inValidUser,
+    };
+    const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
+
     expect(() => {
-      validateUser(inValidUser);
-    }).toThrow(new Error(`Could not validate User`));
+      validateUser(txmaEvent);
+    }).toThrow(new Error(`Could not validate User for event_name AUTH_AUTH_CODE_ISSUED with event_id ab12345a-a12b-3ced-ef12-12a3b4cd5678: user_id is undefined, session_id is undefined`));
   });
 
   test("throws error when user_id key is missing", () => {
@@ -112,9 +120,15 @@ describe("validateUser", () => {
         user_id: undefined,
       })
     );
+    const invalidTxmaEvent = {
+      ...makeTxmaEvent(),
+      user: inValidUser,
+    };
+    const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
+
     expect(() => {
-      validateUser(inValidUser);
-    }).toThrow(new Error(`Could not validate User`));
+      validateUser(txmaEvent);
+    }).toThrow(new Error(`Could not validate User for event_name AUTH_AUTH_CODE_ISSUED with event_id ab12345a-a12b-3ced-ef12-12a3b4cd5678: user_id is undefined`));
   });
 
   test("throws error when session_id key is missing", () => {
@@ -124,9 +138,15 @@ describe("validateUser", () => {
         session_id: undefined,
       })
     );
+    const invalidTxmaEvent = {
+      ...makeTxmaEvent(),
+      user: inValidUser,
+    };
+    const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
+
     expect(() => {
-      validateUser(inValidUser);
-    }).toThrow(new Error(`Could not validate User`));
+      validateUser(txmaEvent);
+    }).toThrow(new Error(`Could not validate User for event_name AUTH_AUTH_CODE_ISSUED with event_id ab12345a-a12b-3ced-ef12-12a3b4cd5678: session_id is undefined`));
   });
 
   test("throws error when session_id value is null", () => {
@@ -136,9 +156,41 @@ describe("validateUser", () => {
         session_id: null,
       })
     );
+    const invalidTxmaEvent = {
+      ...makeTxmaEvent(),
+      user: inValidUser,
+    };
+    const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
+
     expect(() => {
-      validateUser(inValidUser);
-    }).toThrow(new Error(`Could not validate User`));
+      validateUser(txmaEvent);
+    }).toThrow(new Error(`Could not validate User for event_name AUTH_AUTH_CODE_ISSUED with event_id ab12345a-a12b-3ced-ef12-12a3b4cd5678: session_id is null`));
+  });
+
+  test("does not throw when session_id is missing for AUTH_TOKEN_SENT_TO_ORCHESTRATION", () => {
+    const tokenSentEvent = {
+      ...makeTxmaEvent(),
+      event_name: "AUTH_TOKEN_SENT_TO_ORCHESTRATION",
+      user: { user_id: user.user_id },
+    };
+    const txmaEvent = JSON.parse(JSON.stringify(tokenSentEvent));
+
+    expect(() => {
+      validateUser(txmaEvent);
+    }).not.toThrow();
+  });
+
+  test("still throws when user_id is missing for AUTH_TOKEN_SENT_TO_ORCHESTRATION", () => {
+    const tokenSentEvent = {
+      ...makeTxmaEvent(),
+      event_name: "AUTH_TOKEN_SENT_TO_ORCHESTRATION",
+      user: {},
+    };
+    const txmaEvent = JSON.parse(JSON.stringify(tokenSentEvent));
+
+    expect(() => {
+      validateUser(txmaEvent);
+    }).toThrow(new Error(`Could not validate User for event_name AUTH_TOKEN_SENT_TO_ORCHESTRATION with event_id ab12345a-a12b-3ced-ef12-12a3b4cd5678: user_id is undefined`));
   });
 });
 
@@ -155,7 +207,7 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrow(new Error(`Could not validate TxmaEvent`));
+    }).toThrow(new Error(`Could not validate TxmaEvent with id ${txmaEvent.event_id} and name ${txmaEvent.event_name}: txmaEvent.client_id is undefined`));
   });
 
   test("throws error when client_id value is null", () => {
@@ -166,7 +218,7 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrow(new Error(`Could not validate TxmaEvent`));
+    }).toThrow(new Error(`Could not validate TxmaEvent with id ${txmaEvent.event_id} and name ${txmaEvent.event_name}: txmaEvent.client_id is null`));
   });
 
   test("throws error when timestamp key is missing", () => {
@@ -177,7 +229,7 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrow(new Error(`Could not validate TxmaEvent`));
+    }).toThrow(new Error(`Could not validate TxmaEvent with id ${txmaEvent.event_id} and name ${txmaEvent.event_name}: txmaEvent.timestamp is undefined`));
   });
 
   test("throws error when timestamp value is null", () => {
@@ -188,7 +240,7 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrow(new Error(`Could not validate TxmaEvent`));
+    }).toThrow(new Error(`Could not validate TxmaEvent with id ${txmaEvent.event_id} and name ${txmaEvent.event_name}: txmaEvent.timestamp is null`));
   });
 
   test("throws error when event_name key is missing", () => {
@@ -199,7 +251,7 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrow(new Error(`Could not validate TxmaEvent`));
+    }).toThrow(new Error(`Could not validate TxmaEvent with id ${txmaEvent.event_id} and name ${txmaEvent.event_name}: txmaEvent.event_name is undefined`));
   });
 
   test("throws error when event name value is null", () => {
@@ -210,7 +262,29 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrow(new Error(`Could not validate TxmaEvent`));
+    }).toThrow(new Error(`Could not validate TxmaEvent with id ${txmaEvent.event_id} and name ${txmaEvent.event_name}: txmaEvent.event_name is null`));
+  });
+
+  test("throws error when event_id key is missing", () => {
+    const invalidTxmaEvent = {
+      ...makeTxmaEvent(),
+      event_id: undefined,
+    };
+    const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
+    expect(() => {
+      validateTxmaEventBody(txmaEvent);
+    }).toThrow(new Error(`Could not validate TxmaEvent with id ${txmaEvent.event_id} and name ${txmaEvent.event_name}: txmaEvent.event_id is undefined`));
+  });
+
+  test("throws error when event_id value is null", () => {
+    const invalidTxmaEvent = {
+      ...makeTxmaEvent(),
+      event_id: null,
+    };
+    const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
+    expect(() => {
+      validateTxmaEventBody(txmaEvent);
+    }).toThrow(new Error(`Could not validate TxmaEvent with id ${txmaEvent.event_id} and name ${txmaEvent.event_name}: txmaEvent.event_id is null`));
   });
 
   test("throws error when user key is missing", () => {
@@ -221,7 +295,7 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrow(new Error(`Could not validate TxmaEvent`));
+    }).toThrow(new Error(`Could not validate TxmaEvent with id ${txmaEvent.event_id} and name ${txmaEvent.event_name}: txmaEvent.user is undefined`));
   });
 
   test("throws error when user_id key is missing", () => {
@@ -232,18 +306,18 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrow(new Error(`Could not validate User`));
+    }).toThrow(new Error(`Could not validate User for event_name AUTH_AUTH_CODE_ISSUED with event_id ab12345a-a12b-3ced-ef12-12a3b4cd5678: user_id is undefined, session_id is undefined`));
   });
 
   test("throws error when user_id value is null", () => {
     const invalidTxmaEvent = {
       ...makeTxmaEvent(),
-      user: { user_id: null },
+      user: { user_id: null, session_id: "test" },
     };
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrow(new Error(`Could not validate User`));
+    }).toThrow(new Error(`Could not validate User for event_name AUTH_AUTH_CODE_ISSUED with event_id ab12345a-a12b-3ced-ef12-12a3b4cd5678: user_id is null`));
   });
 });
 
@@ -265,7 +339,7 @@ describe("handler", () => {
   });
 
   test("Adds raw event to the table", async () => {
-    await handler(TEST_SQS_EVENT, {} as Context);
+    const result = await handler(TEST_SQS_EVENT, {} as Context);
     expect(dynamoMock.commandCalls(PutCommand).length).toEqual(1);
     expect(dynamoMock).toHaveReceivedCommandWith(PutCommand, {
       TableName: process.env.TABLE_NAME,
@@ -276,10 +350,11 @@ describe("handler", () => {
         remove_at: 2878106,
       },
     });
+    expect(result).toEqual({ batchItemFailures: [] });
   });
 });
 
-describe("handler ignores AUTH_TOKEN_SENT_TO_ORCHESTRATION events", () => {
+describe("handler only saves allowlisted events", () => {
   beforeEach(() => {
     dynamoMock.reset();
     process.env.TABLE_NAME = "TABLE_NAME";
@@ -289,14 +364,66 @@ describe("handler ignores AUTH_TOKEN_SENT_TO_ORCHESTRATION events", () => {
     vi.clearAllMocks();
   });
 
-  test("does not write to DynamoDB and logs info when event_name is AUTH_TOKEN_SENT_TO_ORCHESTRATION", async () => {
-    const ignoredEvent: SQSEvent = {
+  test.each([
+    "AUTH_AUTH_CODE_ISSUED",
+    "AUTH_IPV_AUTHORISATION_REQUESTED",
+    "AUTH_IPV_SUCCESSFUL_IDENTITY_RESPONSE_RECEIVED",
+    "AUTH_TOKEN_SENT_TO_ORCHESTRATION",
+    "AUTH_UPDATE_EMAIL",
+    "AUTH_CODE_VERIFIED",
+    "AUTH_PASSKEY_VERIFICATION_SUCCESSFUL",
+    "STS_REFRESH_TOKEN_ISSUED",
+  ])("writes to DynamoDB when event_name is %s", async (allowedEventName) => {
+    vi.spyOn(Date, "now").mockImplementation(() => TIMESTAMP);
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-expect-error
+    vi.spyOn(crypto, "randomUUID").mockImplementation(() => UUID);
+
+    const allowedEvent: SQSEvent = {
+      Records: [
+        {
+          ...TEST_SQS_RECORD,
+          body: JSON.stringify({
+            ...makeTxmaEvent(),
+            event_name: allowedEventName,
+          }),
+        },
+      ],
+    };
+    await handler(allowedEvent, {} as Context);
+    expect(dynamoMock.commandCalls(PutCommand).length).toEqual(1);
+  });
+
+  test("writes to DynamoDB when event_name is AUTH_TOKEN_SENT_TO_ORCHESTRATION and user has no session_id", async () => {
+    vi.spyOn(Date, "now").mockImplementation(() => TIMESTAMP);
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-expect-error
+    vi.spyOn(crypto, "randomUUID").mockImplementation(() => UUID);
+
+    const tokenSentEvent: SQSEvent = {
       Records: [
         {
           ...TEST_SQS_RECORD,
           body: JSON.stringify({
             ...makeTxmaEvent(),
             event_name: "AUTH_TOKEN_SENT_TO_ORCHESTRATION",
+            user: { user_id: user.user_id },
+          }),
+        },
+      ],
+    };
+    await handler(tokenSentEvent, {} as Context);
+    expect(dynamoMock.commandCalls(PutCommand).length).toEqual(1);
+  });
+
+  test("does not write to DynamoDB and logs info when event_name is not in the allowlist", async () => {
+    const ignoredEvent: SQSEvent = {
+      Records: [
+        {
+          ...TEST_SQS_RECORD,
+          body: JSON.stringify({
+            ...makeTxmaEvent(),
+            event_name: "AUTH_OTHER_RANDOM_EVENT",
           }),
         },
       ],
@@ -304,11 +431,30 @@ describe("handler ignores AUTH_TOKEN_SENT_TO_ORCHESTRATION events", () => {
     await handler(ignoredEvent, {} as Context);
     expect(dynamoMock.commandCalls(PutCommand).length).toEqual(0);
     expect(mockLogger.info).toHaveBeenCalledWith(
-      "Ignoring AUTH_TOKEN_SENT_TO_ORCHESTRATION event - temporary measure to clear backlog"
+      "Ignoring AUTH_OTHER_RANDOM_EVENT event - not in allowlist"
     );
   });
 
-  test("processes other events normally alongside ignored events", async () => {
+  test("does not write to DynamoDB and logs info when event_name is missing", async () => {
+    const ignoredEvent: SQSEvent = {
+      Records: [
+        {
+          ...TEST_SQS_RECORD,
+          body: JSON.stringify({
+            ...makeTxmaEvent(),
+            event_name: undefined,
+          }),
+        },
+      ],
+    };
+    await handler(ignoredEvent, {} as Context);
+    expect(dynamoMock.commandCalls(PutCommand).length).toEqual(0);
+    expect(mockLogger.info).toHaveBeenCalledWith(
+      "Ignoring undefined event - not in allowlist"
+    );
+  });
+
+  test("processes allowlisted events normally alongside dropped events", async () => {
     vi.spyOn(Date, "now").mockImplementation(() => TIMESTAMP);
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-expect-error
@@ -320,7 +466,7 @@ describe("handler ignores AUTH_TOKEN_SENT_TO_ORCHESTRATION events", () => {
           ...TEST_SQS_RECORD,
           body: JSON.stringify({
             ...makeTxmaEvent(),
-            event_name: "AUTH_TOKEN_SENT_TO_ORCHESTRATION",
+            event_name: "AUTH_OTHER_RANDOM_EVENT",
           }),
         },
         {
@@ -332,9 +478,6 @@ describe("handler ignores AUTH_TOKEN_SENT_TO_ORCHESTRATION events", () => {
     await handler(mixedEvent, {} as Context);
     expect(dynamoMock.commandCalls(PutCommand).length).toEqual(1);
     expect(mockLogger.info).toHaveBeenCalledTimes(1);
-
-    vi.spyOn(Date, "now").mockRestore();
-    vi.spyOn(crypto, "randomUUID").mockRestore();
   });
 });
 
@@ -352,15 +495,16 @@ describe("handler error handling", () => {
     vi.clearAllMocks();
   });
 
-  test("logs the error message", async () => {
-    let errorMessage;
-    try {
-      await handler(TEST_SQS_EVENT, {} as Context);
-    } catch (error) {
-      errorMessage = (error as Error).message;
-    }
-    expect(errorMessage).toContain(
-      "Unable to save raw events for message with ID: 19dd0b57-b21e-4ac1-bd88-01bbb068cb78, mock error"
+  test("logs the error and returns the failed message ID in batchItemFailures", async () => {
+    const result = await handler(TEST_SQS_EVENT, {} as Context);
+    expect(mockLogger.error).toHaveBeenCalledWith(
+      "Unable to save raw events for message with ID: 19dd0b57-b21e-4ac1-bd88-01bbb068cb78",
+      expect.objectContaining({ error: expect.anything() })
     );
+    expect(result).toEqual({
+      batchItemFailures: [
+        { itemIdentifier: "19dd0b57-b21e-4ac1-bd88-01bbb068cb78" },
+      ],
+    });
   });
 });

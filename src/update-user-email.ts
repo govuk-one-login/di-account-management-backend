@@ -54,6 +54,8 @@ export const handler = async (
 
     const trackerRecord = queryResponse.Items[0];
 
+    const eventDateTime = new Date(txmaEvent.event_timestamp_ms ?? (txmaEvent.timestamp * 1000)).toISOString();
+
     await dynamoDocClient.send(
       new UpdateCommand({
         TableName: tableName,
@@ -61,8 +63,15 @@ export const handler = async (
           dateForDeletion: trackerRecord.dateForDeletion,
           commonSubjectId: userId,
         },
-        UpdateExpression: "SET emailAddress = :email",
-        ExpressionAttributeValues: { ":email": newEmail },
+        UpdateExpression:
+          "SET emailAddress = :email, emailAddressSource = :source, emailAddressLastUpdated = :lastUpdated" +
+          (txmaEvent.event_id ? ", emailAddressSourceId = :sourceId" : ""),
+        ExpressionAttributeValues: {
+          ":email": newEmail,
+          ":source": txmaEvent.event_name,
+          ":lastUpdated": eventDateTime,
+          ...(txmaEvent.event_id && { ":sourceId": txmaEvent.event_id }),
+        },
       })
     );
 

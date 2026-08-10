@@ -1,17 +1,18 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, QueryCommand } from "@aws-sdk/lib-dynamodb";
+import {
+  DynamoDBDocumentClient,
+  QueryCommand,
+  PutCommand,
+} from "@aws-sdk/lib-dynamodb";
 import { Logger } from "@aws-lambda-powertools/logger";
-import { MetricUnit } from "@aws-lambda-powertools/metrics";
-import { initMetrics } from "./common/metrics.js";
 import { getEnvironmentVariable } from "./common/utils.js";
 
 const logger = new Logger();
-const metrics = initMetrics("inactive-account-deletion-forecast");
 const dynamoClient = new DynamoDBClient({});
 const dynamoDocClient = DynamoDBDocumentClient.from(dynamoClient);
 
 const FORECAST_DAYS = 180;
-const METRIC_NAME = "InactiveAccountsScheduledForDeletion";
+const TTL_SECONDS = 365 * 24 * 60 * 60;
 
 export const buildDates = (fromDate: Date, days: number): string[] =>
   Array.from({ length: days }, (_, i) => {
@@ -47,17 +48,30 @@ export const countAccountsForDate = async (
 
 export const handler = async (): Promise<void> => {
   const tableName = getEnvironmentVariable("TABLE_NAME");
+  const forecastTableName = getEnvironmentVariable("FORECAST_TABLE_NAME");
   const dates = buildDates(new Date(), FORECAST_DAYS);
+  const forecastedAt = new Date().toISOString();
+  const ttl = Math.floor(Date.now() / 1000) + TTL_SECONDS;
 
   const counts = await Promise.all(
     dates.map((date) => countAccountsForDate(tableName, date))
   );
 
-  dates.forEach((date, i) => {
-    const singleMetric = metrics.singleMetric();
-    singleMetric.addDimension("DateForDeletion", date);
-    singleMetric.addMetric(METRIC_NAME, MetricUnit.Count, counts[i]);
-  });
+  await Promise.all(
+    dates.map((date, i) =>
+      dynamoDocClient.send(
+        new PutCommand({
+          TableName: forecastTableName,
+          Item: {
+            dateForDeletion: date,
+            forecastedAt,
+            accountsToDelete: counts[i],
+            ttl,
+          },
+        })
+      )
+    )
+  );
 
-  logger.info(`Published deletion forecast for ${dates.length} dates`);
+  logger.info(`Saved deletion forecast for ${dates.length} dates`);
 };

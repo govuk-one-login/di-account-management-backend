@@ -12,7 +12,7 @@ import {
 
 const metrics = initMetrics("notify-delivery-receipts");
 
-export const deliveryReceiptSchema = v.pipe(
+const deliveryReceiptSchema = v.pipe(
   v.string(),
   v.parseJson(),
   v.object({

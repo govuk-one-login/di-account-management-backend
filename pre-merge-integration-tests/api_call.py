@@ -5,15 +5,19 @@ import threading
 import boto3
 import os
 import sys
+import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from botocore.exceptions import ClientError
 from boto3.dynamodb.conditions import Key
 
 sqs = boto3.client('sqs')
 dynamodb = boto3.resource('dynamodb')
+secretsmanager = boto3.client('secretsmanager')
 
 # Note: env var is named SQS_QUEUE_ARN but contains a Queue URL (pre-existing CI config)
 QUEUE_URL = os.getenv('SQS_QUEUE_ARN')
+PUBLIC_API_BASE_URL = os.getenv('PUBLIC_API_BASE_URL', '').rstrip('/')
+NOTIFY_DELIVERY_RECEIPTS_SECRET_ARN = os.getenv('NOTIFY_DELIVERY_RECEIPTS_SECRET_ARN')
 ACTIVITY_LOG_TABLE = 'activity_log'
 USER_SERVICES_TABLE = 'user_services'
 INACTIVE_ACCOUNT_TRACKER_TABLE = 'inactive_account_tracker_store'
@@ -194,6 +198,18 @@ def run_tests_parallel(test_cases, results, max_workers=5):
             future.result()
 
 
+# --- HTTP helpers ---
+
+def http_post(url, body, headers=None, test_id=""):
+    data = json.dumps(body).encode() if isinstance(body, dict) else body.encode()
+    req = urllib.request.Request(url, data=data, headers=headers or {}, method='POST')
+    try:
+        with urllib.request.urlopen(req) as resp:
+            return resp.status, resp.read().decode()
+    except urllib.error.HTTPError as e:
+        return e.code, e.read().decode()
+
+
 # --- Tests ---
 
 def test_auth_code_issued_creates_activity_log(test_id):
@@ -264,6 +280,34 @@ def test_unknown_event_is_silently_dropped(test_id):
     )
 
 
+def test_notify_delivery_receipts_no_auth(test_id):
+    """Request without Authorization header should return 403."""
+    url = f"{PUBLIC_API_BASE_URL}/notify/delivery-receipts"
+    status, _ = http_post(url, {}, test_id=test_id)
+    if status != 403:
+        raise AssertionError(f"Expected 403, got {status}")
+    log(test_id, f"Got expected 403")
+
+
+def test_notify_delivery_receipts_wrong_token(test_id):
+    """Request with an incorrect bearer token should return 403."""
+    url = f"{PUBLIC_API_BASE_URL}/notify/delivery-receipts"
+    status, _ = http_post(url, {}, headers={"Authorization": "Bearer wrong-token"}, test_id=test_id)
+    if status != 403:
+        raise AssertionError(f"Expected 403, got {status}")
+    log(test_id, f"Got expected 403")
+
+
+def test_notify_delivery_receipts_valid_token(test_id):
+    """Request with the correct bearer token should return 200."""
+    secret = secretsmanager.get_secret_value(SecretId=NOTIFY_DELIVERY_RECEIPTS_SECRET_ARN)['SecretString']
+    url = f"{PUBLIC_API_BASE_URL}/notify/delivery-receipts"
+    status, _ = http_post(url, {}, headers={"Authorization": f"Bearer {secret}"}, test_id=test_id)
+    if status != 200:
+        raise AssertionError(f"Expected 200, got {status}")
+    log(test_id, f"Got expected 200")
+
+
 # --- Main ---
 
 if __name__ == "__main__":
@@ -280,6 +324,15 @@ if __name__ == "__main__":
         ("auth-code-issued", test_auth_code_issued_creates_activity_log),
         ("unknown-event-dropped", test_unknown_event_is_silently_dropped),
     ]
+
+    if PUBLIC_API_BASE_URL and NOTIFY_DELIVERY_RECEIPTS_SECRET_ARN:
+        test_cases += [
+            ("notify-delivery-receipts-no-auth", test_notify_delivery_receipts_no_auth),
+            ("notify-delivery-receipts-wrong-token", test_notify_delivery_receipts_wrong_token),
+            ("notify-delivery-receipts-valid-token", test_notify_delivery_receipts_valid_token),
+        ]
+    else:
+        print("WARNING: PUBLIC_API_BASE_URL or NOTIFY_DELIVERY_RECEIPTS_SECRET_ARN not set, skipping notify/delivery-receipts tests")
 
     run_tests_parallel(test_cases, results)
 

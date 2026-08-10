@@ -216,10 +216,13 @@ describe("process-inactive-account handler", () => {
     await expect(handler(event, {} as Context)).rejects.toThrow("DynamoDB update failed");
   });
 
-  test("throws when process has no target status configured", async () => {
+  test("skips notification but still updates status and sends to target queue when notificationType is not configured", async () => {
+    process.env.ACCOUNT_DELETION_QUEUE_URL = "https://sqs.eu-west-2.amazonaws.com/123456789012/AccountDeletionQueue";
+
     const event = buildSqsEvent([
       {
         commonSubjectId: "user-123",
+        publicSubjectId: "public-123",
         emailAddress: "test@example.com",
         dateForDeletion: "2026-08-15",
         processName: "DeleteAccount",
@@ -227,8 +230,55 @@ describe("process-inactive-account handler", () => {
       },
     ]);
 
-    await expect(handler(event, {} as Context)).rejects.toThrow(
-      "No notification type configured for process DeleteAccount"
-    );
+    await handler(event, {} as Context);
+
+    expect(sqsMock).toHaveReceivedCommandTimes(SendMessageCommand, 1);
+    expect(sqsMock).toHaveReceivedCommandWith(SendMessageCommand, {
+      QueueUrl: "https://sqs.eu-west-2.amazonaws.com/123456789012/AccountDeletionQueue",
+      MessageBody: JSON.stringify({
+        publicSubjectId: "public-123",
+        commonSubjectId: "user-123",
+      }),
+    });
+    expect(dynamoMock).toHaveReceivedCommandWith(UpdateCommand, {
+      TableName: "test-inactive-tracker-table",
+      Key: {
+        dateForDeletion: "2026-08-15",
+        commonSubjectId: "user-123",
+      },
+      UpdateExpression: "SET #status = :status, statusLastUpdated = :timestamp",
+      ExpressionAttributeNames: { "#status": "status" },
+      ExpressionAttributeValues: {
+        ":status": "deleting",
+        ":timestamp": expect.any(String),
+      },
+    });
+    expect(mockMetrics.addMetric).not.toHaveBeenCalledWith("notificationEnqueued", expect.anything(), 1);
+    expect(mockMetrics.publishStoredMetrics).toHaveBeenCalledTimes(1);
+  });
+
+  test("does not send to target queue when targetQueueUrlEnvVar is not configured", async () => {
+    const event = buildSqsEvent([
+      {
+        commonSubjectId: "user-123",
+        publicSubjectId: "public-123",
+        emailAddress: "test@example.com",
+        dateForDeletion: "2026-08-15",
+        processName: "Warning30Day",
+        status: "pending",
+      },
+    ]);
+
+    await handler(event, {} as Context);
+
+    expect(sqsMock).toHaveReceivedCommandTimes(SendMessageCommand, 1);
+    expect(sqsMock).toHaveReceivedCommandWith(SendMessageCommand, {
+      QueueUrl: "https://sqs.eu-west-2.amazonaws.com/123456789012/NotificationQueue",
+      MessageBody: JSON.stringify({
+        notificationType: "INACTIVE_ACCOUNT_WARNING_30_DAY",
+        emailAddress: "test@example.com",
+        dateForDeletion: "2026-08-15",
+      }),
+    });
   });
 });

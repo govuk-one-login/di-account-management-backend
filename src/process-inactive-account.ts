@@ -41,27 +41,36 @@ export const handler = async (
     }
 
     assert(
-      process.notificationType,
-      `No notification type configured for process ${body.processName}`
-    );
-
-    assert(
       process.targetStatus,
       `No target status configured for process ${body.processName}`
     );
 
-    const message = {
-      notificationType: process.notificationType,
-      emailAddress: body.emailAddress,
-      dateForDeletion: body.dateForDeletion,
-    };
+    if (process.notificationType) {
+      const message = {
+        notificationType: process.notificationType,
+        emailAddress: body.emailAddress,
+        dateForDeletion: body.dateForDeletion,
+      };
 
-    await sqsClient.send(
-      new SendMessageCommand({
-        QueueUrl: notificationQueueUrl,
-        MessageBody: JSON.stringify(message),
-      })
-    );
+      await sqsClient.send(
+        new SendMessageCommand({
+          QueueUrl: notificationQueueUrl,
+          MessageBody: JSON.stringify(message),
+        })
+      );
+
+      logger.info("Successfully enqueued inactive account warning notification", {
+        commonSubjectId: body.commonSubjectId,
+        processName: body.processName,
+        notificationType: process.notificationType,
+      });
+      metrics.addMetric("notificationEnqueued", MetricUnit.Count, 1);
+    } else {
+      logger.info("No notificationType configured, skipping notification", {
+        commonSubjectId: body.commonSubjectId,
+        processName: body.processName,
+      });
+    }
 
     await dynamoDocClient.send(
       new UpdateCommand({
@@ -79,13 +88,32 @@ export const handler = async (
       })
     );
 
-    logger.info("Successfully enqueued inactive account warning notification", {
+    if (process.targetQueueUrlEnvVar) {
+      const targetQueueUrl = getEnvironmentVariable(process.targetQueueUrlEnvVar);
+      const targetMessage = {
+        publicSubjectId: body.publicSubjectId,
+        commonSubjectId: body.commonSubjectId,
+      };
+
+      await sqsClient.send(
+        new SendMessageCommand({
+          QueueUrl: targetQueueUrl,
+          MessageBody: JSON.stringify(targetMessage),
+        })
+      );
+
+      logger.info("Successfully enqueued message to target queue", {
+        commonSubjectId: body.commonSubjectId,
+        processName: body.processName,
+        targetQueueUrlEnvVar: process.targetQueueUrlEnvVar,
+      });
+    }
+
+    logger.info("Successfully processed inactive account", {
       commonSubjectId: body.commonSubjectId,
       processName: body.processName,
-      notificationType: process.notificationType,
       targetStatus: process.targetStatus,
     });
-    metrics.addMetric("notificationEnqueued", MetricUnit.Count, 1);
   }
 
   metrics.publishStoredMetrics();

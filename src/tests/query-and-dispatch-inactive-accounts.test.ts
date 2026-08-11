@@ -9,6 +9,7 @@ import {
   queryAccountsByDate,
 } from "../query-and-dispatch-inactive-accounts.js";
 import type { Context } from "aws-lambda";
+import type { InactiveAccountTrackerRecord } from "../common/model.js";
 
 const dynamoMock = mockClient(DynamoDBDocumentClient);
 const sqsMock = mockClient(SQSClient);
@@ -64,7 +65,7 @@ describe("queryAccountsByDate", () => {
     dynamoMock.reset();
   });
 
-  test("paginates through all results", async () => {
+  test("yields pages across paginated results", async () => {
     dynamoMock
       .on(QueryCommand)
       .resolvesOnce({
@@ -76,16 +77,23 @@ describe("queryAccountsByDate", () => {
         LastEvaluatedKey: undefined,
       });
 
-    const results = await queryAccountsByDate("table", "2026-06-20");
-    expect(results).toHaveLength(2);
+    const pages: InactiveAccountTrackerRecord[][] = [];
+    for await (const page of queryAccountsByDate("table", "2026-06-20")) {
+      pages.push(page);
+    }
+    expect(pages).toHaveLength(2);
+    expect(pages.flat()).toHaveLength(2);
     expect(dynamoMock.commandCalls(QueryCommand)).toHaveLength(2);
   });
 
-  test("returns empty array when no results", async () => {
+  test("yields nothing when no results", async () => {
     dynamoMock.on(QueryCommand).resolves({ Items: [] });
 
-    const results = await queryAccountsByDate("table", "2026-06-20");
-    expect(results).toHaveLength(0);
+    const pages: InactiveAccountTrackerRecord[][] = [];
+    for await (const page of queryAccountsByDate("table", "2026-06-20")) {
+      pages.push(page);
+    }
+    expect(pages).toHaveLength(0);
   });
 });
 
@@ -115,12 +123,27 @@ describe("handler", () => {
     ).rejects.toThrow("Unknown processName: unknown");
   });
 
-  test("propagates SQS errors", async () => {
+  test("logs error and continues when one SQS send fails", async () => {
+    const record2 = { ...mockRecord, commonSubjectId: "user-2" };
+    dynamoMock.on(QueryCommand).resolves({ Items: [mockRecord, record2] });
+    sqsMock
+      .on(SendMessageCommand)
+      .rejectsOnce(new Error("SQS failure"))
+      .resolves({});
+
+    await expect(
+      handler({ processName: "Warning30Day" }, {} as Context)
+    ).resolves.toBeUndefined();
+
+    expect(sqsMock.commandCalls(SendMessageCommand)).toHaveLength(2);
+  });
+
+  test("does not throw when all SQS sends fail", async () => {
     dynamoMock.on(QueryCommand).resolves({ Items: [mockRecord] });
     sqsMock.on(SendMessageCommand).rejects(new Error("SQS failure"));
 
     await expect(
       handler({ processName: "Warning30Day" }, {} as Context)
-    ).rejects.toThrow("SQS failure");
+    ).resolves.toBeUndefined();
   });
 });

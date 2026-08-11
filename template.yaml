@@ -7213,6 +7213,7 @@ Resources:
             Resource:
               - !GetAtt 30DayNotificationQueue.Arn
               - !GetAtt 7DayNotificationQueue.Arn
+              - !GetAtt AccountDeletionProcessQueue.Arn 
           - Effect: Allow
             Action:
               - sqs:SendMessage

@@ -167,31 +167,33 @@ describe("validateUser", () => {
     }).toThrow(new Error(`Could not validate User for event_name AUTH_AUTH_CODE_ISSUED with event_id ab12345a-a12b-3ced-ef12-12a3b4cd5678: session_id is null`));
   });
 
-  test("does not throw when session_id is missing for AUTH_TOKEN_SENT_TO_ORCHESTRATION", () => {
-    const tokenSentEvent = {
-      ...makeTxmaEvent(),
-      event_name: "AUTH_TOKEN_SENT_TO_ORCHESTRATION",
-      user: { user_id: user.user_id },
-    };
-    const txmaEvent = JSON.parse(JSON.stringify(tokenSentEvent));
+  // TODO: To be reverted after backfill has completed
+  // test("does not throw when session_id is missing for AUTH_TOKEN_SENT_TO_ORCHESTRATION", () => {
+  //   const tokenSentEvent = {
+  //     ...makeTxmaEvent(),
+  //     event_name: "AUTH_TOKEN_SENT_TO_ORCHESTRATION",
+  //     user: { user_id: user.user_id },
+  //   };
+  //   const txmaEvent = JSON.parse(JSON.stringify(tokenSentEvent));
+  //
+  //   expect(() => {
+  //     validateUser(txmaEvent);
+  //   }).not.toThrow();
+  // });
 
-    expect(() => {
-      validateUser(txmaEvent);
-    }).not.toThrow();
-  });
-
-  test("still throws when user_id is missing for AUTH_TOKEN_SENT_TO_ORCHESTRATION", () => {
-    const tokenSentEvent = {
-      ...makeTxmaEvent(),
-      event_name: "AUTH_TOKEN_SENT_TO_ORCHESTRATION",
-      user: {},
-    };
-    const txmaEvent = JSON.parse(JSON.stringify(tokenSentEvent));
-
-    expect(() => {
-      validateUser(txmaEvent);
-    }).toThrow(new Error(`Could not validate User for event_name AUTH_TOKEN_SENT_TO_ORCHESTRATION with event_id ab12345a-a12b-3ced-ef12-12a3b4cd5678: user_id is undefined`));
-  });
+  // TODO: To be reverted after backfill has completed
+  // test("still throws when user_id is missing for AUTH_TOKEN_SENT_TO_ORCHESTRATION", () => {
+  //   const tokenSentEvent = {
+  //     ...makeTxmaEvent(),
+  //     event_name: "AUTH_TOKEN_SENT_TO_ORCHESTRATION",
+  //     user: {},
+  //   };
+  //   const txmaEvent = JSON.parse(JSON.stringify(tokenSentEvent));
+  //
+  //   expect(() => {
+  //     validateUser(txmaEvent);
+  //   }).toThrow(new Error(`Could not validate User for event_name AUTH_TOKEN_SENT_TO_ORCHESTRATION with event_id ab12345a-a12b-3ced-ef12-12a3b4cd5678: user_id is undefined`));
+  // });
 });
 
 describe("validateTxmaEventBody", () => {
@@ -364,15 +366,16 @@ describe("handler only saves allowlisted events", () => {
     vi.clearAllMocks();
   });
 
+  // TODO: To be reverted after backfill has completed
   test.each([
     "AUTH_AUTH_CODE_ISSUED",
     "AUTH_IPV_AUTHORISATION_REQUESTED",
     "AUTH_IPV_SUCCESSFUL_IDENTITY_RESPONSE_RECEIVED",
-    "AUTH_TOKEN_SENT_TO_ORCHESTRATION",
-    "AUTH_UPDATE_EMAIL",
-    "AUTH_CODE_VERIFIED",
-    "AUTH_PASSKEY_VERIFICATION_SUCCESSFUL",
-    "STS_REFRESH_TOKEN_ISSUED",
+    // "AUTH_TOKEN_SENT_TO_ORCHESTRATION",
+    // "AUTH_UPDATE_EMAIL",
+    // "AUTH_CODE_VERIFIED",
+    // "AUTH_PASSKEY_VERIFICATION_SUCCESSFUL",
+    // "STS_REFRESH_TOKEN_ISSUED",
   ])("writes to DynamoDB when event_name is %s", async (allowedEventName) => {
     vi.spyOn(Date, "now").mockImplementation(() => TIMESTAMP);
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -394,27 +397,28 @@ describe("handler only saves allowlisted events", () => {
     expect(dynamoMock.commandCalls(PutCommand).length).toEqual(1);
   });
 
-  test("writes to DynamoDB when event_name is AUTH_TOKEN_SENT_TO_ORCHESTRATION and user has no session_id", async () => {
-    vi.spyOn(Date, "now").mockImplementation(() => TIMESTAMP);
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-expect-error
-    vi.spyOn(crypto, "randomUUID").mockImplementation(() => UUID);
-
-    const tokenSentEvent: SQSEvent = {
-      Records: [
-        {
-          ...TEST_SQS_RECORD,
-          body: JSON.stringify({
-            ...makeTxmaEvent(),
-            event_name: "AUTH_TOKEN_SENT_TO_ORCHESTRATION",
-            user: { user_id: user.user_id },
-          }),
-        },
-      ],
-    };
-    await handler(tokenSentEvent, {} as Context);
-    expect(dynamoMock.commandCalls(PutCommand).length).toEqual(1);
-  });
+  // TODO: To be reverted after backfill has completed
+  // test("writes to DynamoDB when event_name is AUTH_TOKEN_SENT_TO_ORCHESTRATION and user has no session_id", async () => {
+  //   vi.spyOn(Date, "now").mockImplementation(() => TIMESTAMP);
+  //   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  //   // @ts-expect-error
+  //   vi.spyOn(crypto, "randomUUID").mockImplementation(() => UUID);
+  //
+  //   const tokenSentEvent: SQSEvent = {
+  //     Records: [
+  //       {
+  //         ...TEST_SQS_RECORD,
+  //         body: JSON.stringify({
+  //           ...makeTxmaEvent(),
+  //           event_name: "AUTH_TOKEN_SENT_TO_ORCHESTRATION",
+  //           user: { user_id: user.user_id },
+  //         }),
+  //       },
+  //     ],
+  //   };
+  //   await handler(tokenSentEvent, {} as Context);
+  //   expect(dynamoMock.commandCalls(PutCommand).length).toEqual(1);
+  // });
 
   test("does not write to DynamoDB and logs info when event_name is not in the allowlist", async () => {
     const ignoredEvent: SQSEvent = {

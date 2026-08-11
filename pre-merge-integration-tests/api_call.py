@@ -298,11 +298,33 @@ def test_notify_delivery_receipts_wrong_token(test_id):
     log(test_id, f"Got expected 403")
 
 
-def test_notify_delivery_receipts_valid_token(test_id):
-    """Request with the correct bearer token should return 200."""
+def test_notify_delivery_receipts_invalid_body(test_id):
+    """Request with correct token but invalid body should return 400."""
     secret = secretsmanager.get_secret_value(SecretId=NOTIFY_DELIVERY_RECEIPTS_SECRET_ARN)['SecretString']
     url = f"{PUBLIC_API_BASE_URL}/notify/delivery-receipts"
     status, _ = http_post(url, {}, headers={"Authorization": f"Bearer {secret}"}, test_id=test_id)
+    if status != 400:
+        raise AssertionError(f"Expected 400, got {status}")
+    log(test_id, f"Got expected 400")
+
+
+def test_notify_delivery_receipts_valid_body(test_id):
+    """Request with correct token and valid body should return 200."""
+    secret = secretsmanager.get_secret_value(SecretId=NOTIFY_DELIVERY_RECEIPTS_SECRET_ARN)['SecretString']
+    url = f"{PUBLIC_API_BASE_URL}/notify/delivery-receipts"
+    body = {
+        "id": str(uuid.uuid4()),
+        "reference": "12345678",
+        "to": "hello@gov.uk",
+        "status": "delivered",
+        "created_at": "2017-05-14T12:15:30.000000Z",
+        "completed_at": "2017-05-14T12:15:30.000000Z",
+        "sent_at": "2017-05-14T12:15:30.000000Z",
+        "notification_type": "email",
+        "template_id": str(uuid.uuid4()),
+        "template_version": 1,
+    }
+    status, _ = http_post(url, body, headers={"Authorization": f"Bearer {secret}"}, test_id=test_id)
     if status != 200:
         raise AssertionError(f"Expected 200, got {status}")
     log(test_id, f"Got expected 200")
@@ -329,7 +351,8 @@ if __name__ == "__main__":
         test_cases += [
             ("notify-delivery-receipts-no-auth", test_notify_delivery_receipts_no_auth),
             ("notify-delivery-receipts-wrong-token", test_notify_delivery_receipts_wrong_token),
-            ("notify-delivery-receipts-valid-token", test_notify_delivery_receipts_valid_token),
+            ("notify-delivery-receipts-invalid-body", test_notify_delivery_receipts_invalid_body),
+            ("notify-delivery-receipts-valid-body", test_notify_delivery_receipts_valid_body),
         ]
     else:
         print("WARNING: PUBLIC_API_BASE_URL or NOTIFY_DELIVERY_RECEIPTS_SECRET_ARN not set, skipping notify/delivery-receipts tests")

@@ -1,6 +1,6 @@
 import { vi, describe, test, expect, beforeEach, afterEach } from "vitest";
 import { DynamoDBDocumentClient, QueryCommand } from "@aws-sdk/lib-dynamodb";
-import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
+import { SQSClient, SendMessageBatchCommand } from "@aws-sdk/client-sqs";
 import { mockClient } from "aws-sdk-client-mock";
 import {
   handler,
@@ -114,7 +114,7 @@ describe("handler", () => {
 
     await handler({ processName: "Warning30Day" }, {} as Context);
 
-    expect(sqsMock.commandCalls(SendMessageCommand)).toHaveLength(0);
+    expect(sqsMock.commandCalls(SendMessageBatchCommand)).toHaveLength(0);
   });
 
   test("throws on invalid processName", async () => {
@@ -123,27 +123,28 @@ describe("handler", () => {
     ).rejects.toThrow("Unknown processName: unknown");
   });
 
-  test("logs error and continues when one SQS send fails", async () => {
-    const record2 = { ...mockRecord, commonSubjectId: "user-2" };
-    dynamoMock.on(QueryCommand).resolves({ Items: [mockRecord, record2] });
-    sqsMock
-      .on(SendMessageCommand)
-      .rejectsOnce(new Error("SQS failure"))
-      .resolves({});
+  test("logs error and continues when batch send throws", async () => {
+    dynamoMock.on(QueryCommand).resolves({ Items: [mockRecord] });
+    sqsMock.on(SendMessageBatchCommand).rejects(new Error("SQS failure"));
 
     await expect(
       handler({ processName: "Warning30Day" }, {} as Context)
     ).resolves.toBeUndefined();
 
-    expect(sqsMock.commandCalls(SendMessageCommand)).toHaveLength(2);
+    expect(sqsMock.commandCalls(SendMessageBatchCommand)).toHaveLength(1);
   });
 
-  test("does not throw when all SQS sends fail", async () => {
+  test("logs partial failures returned in batch response", async () => {
     dynamoMock.on(QueryCommand).resolves({ Items: [mockRecord] });
-    sqsMock.on(SendMessageCommand).rejects(new Error("SQS failure"));
+    sqsMock.on(SendMessageBatchCommand).resolves({
+      Failed: [{ Id: "0", Code: "InternalError", SenderFault: false }],
+      Successful: [],
+    });
 
     await expect(
       handler({ processName: "Warning30Day" }, {} as Context)
     ).resolves.toBeUndefined();
+
+    expect(sqsMock.commandCalls(SendMessageBatchCommand)).toHaveLength(1);
   });
 });

@@ -1,7 +1,7 @@
 import { Context } from "aws-lambda";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, QueryCommand } from "@aws-sdk/lib-dynamodb";
-import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
+import { SQSClient, SendMessageBatchCommand } from "@aws-sdk/client-sqs";
 import { Logger } from "@aws-lambda-powertools/logger";
 import { getEnvironmentVariable } from "./common/utils.js";
 import type { InactiveAccountTrackerRecord } from "./common/model.js";
@@ -73,19 +73,32 @@ export const handler = async (
     for await (const page of queryAccountsByDate(tableName, targetDate)) {
       const eligible = page.filter((record) => allowedStatuses.includes(record.status));
 
-      for (const record of eligible) {
-        try {
-          await sqsClient.send(
-            new SendMessageCommand({
-              QueueUrl: queueUrl,
-              MessageBody: JSON.stringify({ ...record, processName: event.processName }),
-            })
-          );
-          dispatched++;
-        } catch (err) {
-          logger.error(`Failed to dispatch account ${record.commonSubjectId}`, { err });
-        }
+      const chunks = [];
+      for (let i = 0; i < eligible.length; i += 10) {
+        chunks.push(eligible.slice(i, i + 10));
       }
+
+      await Promise.all(
+        chunks.map(async (chunk) => {
+          try {
+            const result = await sqsClient.send(
+              new SendMessageBatchCommand({
+                QueueUrl: queueUrl,
+                Entries: chunk.map((record, i) => ({
+                  Id: String(i),
+                  MessageBody: JSON.stringify({ ...record, processName: event.processName }),
+                })),
+              })
+            );
+            dispatched += chunk.length - (result.Failed?.length ?? 0);
+            for (const failure of result.Failed ?? []) {
+              logger.error(`Failed to dispatch account in batch`, { failure });
+            }
+          } catch (err) {
+            logger.error(`Failed to send batch`, { err });
+          }
+        })
+      );
     }
   }
 

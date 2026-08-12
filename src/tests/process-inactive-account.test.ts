@@ -11,8 +11,14 @@ const mockMetrics = vi.hoisted(() => ({
 }));
 const mockInitMetrics = vi.hoisted(() => vi.fn(() => mockMetrics));
 
+const mockGetAisStatus = vi.hoisted(() => vi.fn());
+
 vi.mock("../common/metrics.js", () => ({
   initMetrics: mockInitMetrics,
+}));
+
+vi.mock("../common/account-interventions-service-client.js", () => ({
+  getAisStatus: mockGetAisStatus,
 }));
 
 import { handler } from "../process-inactive-account.js";
@@ -46,6 +52,15 @@ describe("process-inactive-account handler", () => {
     dynamoMock.reset();
     sqsMock.on(SendMessageCommand).resolves({ MessageId: "test-message-id" });
     dynamoMock.on(UpdateCommand).resolves({});
+
+    mockGetAisStatus.mockResolvedValue({
+      state: {
+        blocked: false,
+        suspended: false,
+        reproveIdentity: false,
+        resetPassword: false,
+      },
+    });
 
     process.env.NOTIFICATION_QUEUE_URL = "https://sqs.eu-west-2.amazonaws.com/123456789012/NotificationQueue";
     process.env.INACTIVE_ACCOUNT_TRACKER_TABLE_NAME = "test-inactive-tracker-table";
@@ -141,6 +156,80 @@ describe("process-inactive-account handler", () => {
 
     expect(sqsMock).not.toHaveReceivedCommand(SendMessageCommand);
     expect(dynamoMock).not.toHaveReceivedCommand(UpdateCommand);
+  });
+
+  test("skips processing when user is blocked in AIS", async () => {
+    mockGetAisStatus.mockResolvedValue({
+      state: {
+        blocked: true,
+        suspended: false,
+        reproveIdentity: false,
+        resetPassword: false,
+      },
+    });
+
+    const event = buildSqsEvent([
+      {
+        commonSubjectId: "blocked-user-123",
+        emailAddress: "blocked@example.com",
+        dateForDeletion: "2026-08-15",
+        processName: "Warning30Day",
+        status: "pending",
+      },
+    ]);
+
+    await handler(event, {} as Context);
+
+    expect(mockGetAisStatus).toHaveBeenCalledWith("blocked-user-123");
+    expect(sqsMock).not.toHaveReceivedCommand(SendMessageCommand);
+    expect(dynamoMock).not.toHaveReceivedCommand(UpdateCommand);
+    expect(mockMetrics.addMetric).not.toHaveBeenCalled();
+  });
+
+  test("skips blocked user but processes non-blocked user in same batch", async () => {
+    mockGetAisStatus
+      .mockResolvedValueOnce({
+        state: { blocked: true, suspended: false, reproveIdentity: false, resetPassword: false },
+      })
+      .mockResolvedValueOnce({
+        state: { blocked: false, suspended: false, reproveIdentity: false, resetPassword: false },
+      });
+
+    const event = buildSqsEvent([
+      {
+        commonSubjectId: "blocked-user",
+        emailAddress: "blocked@example.com",
+        dateForDeletion: "2026-08-15",
+        processName: "Warning30Day",
+        status: "pending",
+      },
+      {
+        commonSubjectId: "active-user",
+        emailAddress: "active@example.com",
+        dateForDeletion: "2026-08-20",
+        processName: "Warning30Day",
+        status: "pending",
+      },
+    ]);
+
+    await handler(event, {} as Context);
+
+    expect(mockGetAisStatus).toHaveBeenCalledTimes(2);
+    expect(sqsMock).toHaveReceivedCommandTimes(SendMessageCommand, 1);
+    expect(dynamoMock).toHaveReceivedCommandTimes(UpdateCommand, 1);
+    expect(dynamoMock).toHaveReceivedCommandWith(UpdateCommand, {
+      TableName: "test-inactive-tracker-table",
+      Key: {
+        dateForDeletion: "2026-08-20",
+        commonSubjectId: "active-user",
+      },
+      UpdateExpression: "SET #status = :status, statusLastUpdated = :timestamp",
+      ExpressionAttributeNames: { "#status": "status" },
+      ExpressionAttributeValues: {
+        ":status": "30DayWarningSent",
+        ":timestamp": expect.any(String),
+      },
+    });
   });
 
   test("processes multiple records from a batch", async () => {

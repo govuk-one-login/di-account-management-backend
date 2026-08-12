@@ -8,6 +8,7 @@ import assert from "node:assert/strict";
 import { initMetrics } from "./common/metrics.js";
 import { processConfig } from "./common/process-config.js";
 import { getEnvironmentVariable } from "./common/utils.js";
+import { getAisStatus } from "./common/account-interventions-service-client.js";
 
 const logger = new Logger();
 const metrics = initMetrics("process-inactive-account");
@@ -32,6 +33,15 @@ export const handler = async (
       commonSubjectId: body.commonSubjectId,
       processName: body.processName,
     });
+
+    const aisStatus = await getAisStatus(body.commonSubjectId);
+    if (aisStatus.state.blocked) {
+      logger.info("User is blocked, skipping processing", {
+        commonSubjectId: body.commonSubjectId,
+        processName: body.processName,
+      });
+      continue;
+    }
 
     assert(process, `Process configuration not found for ${body.processName}`);
 

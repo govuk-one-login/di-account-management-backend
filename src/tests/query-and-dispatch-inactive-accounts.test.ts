@@ -1,6 +1,6 @@
 import { vi, describe, test, expect, beforeEach, afterEach } from "vitest";
 import { DynamoDBDocumentClient, QueryCommand } from "@aws-sdk/lib-dynamodb";
-import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
+import { SQSClient, SendMessageBatchCommand } from "@aws-sdk/client-sqs";
 import { mockClient } from "aws-sdk-client-mock";
 import {
   handler,
@@ -9,6 +9,7 @@ import {
   queryAccountsByDate,
 } from "../query-and-dispatch-inactive-accounts.js";
 import type { Context } from "aws-lambda";
+import type { InactiveAccountTrackerRecord } from "../common/model.js";
 
 const dynamoMock = mockClient(DynamoDBDocumentClient);
 const sqsMock = mockClient(SQSClient);
@@ -64,7 +65,7 @@ describe("queryAccountsByDate", () => {
     dynamoMock.reset();
   });
 
-  test("paginates through all results", async () => {
+  test("yields pages across paginated results", async () => {
     dynamoMock
       .on(QueryCommand)
       .resolvesOnce({
@@ -76,16 +77,23 @@ describe("queryAccountsByDate", () => {
         LastEvaluatedKey: undefined,
       });
 
-    const results = await queryAccountsByDate("table", "2026-06-20");
-    expect(results).toHaveLength(2);
+    const pages: InactiveAccountTrackerRecord[][] = [];
+    for await (const page of queryAccountsByDate("table", "2026-06-20")) {
+      pages.push(page);
+    }
+    expect(pages).toHaveLength(2);
+    expect(pages.flat()).toHaveLength(2);
     expect(dynamoMock.commandCalls(QueryCommand)).toHaveLength(2);
   });
 
-  test("returns empty array when no results", async () => {
+  test("yields nothing when no results", async () => {
     dynamoMock.on(QueryCommand).resolves({ Items: [] });
 
-    const results = await queryAccountsByDate("table", "2026-06-20");
-    expect(results).toHaveLength(0);
+    const pages: InactiveAccountTrackerRecord[][] = [];
+    for await (const page of queryAccountsByDate("table", "2026-06-20")) {
+      pages.push(page);
+    }
+    expect(pages).toHaveLength(0);
   });
 });
 
@@ -106,7 +114,7 @@ describe("handler", () => {
 
     await handler({ processName: "Warning30Day" }, {} as Context);
 
-    expect(sqsMock.commandCalls(SendMessageCommand)).toHaveLength(0);
+    expect(sqsMock.commandCalls(SendMessageBatchCommand)).toHaveLength(0);
   });
 
   test("throws on invalid processName", async () => {
@@ -115,12 +123,28 @@ describe("handler", () => {
     ).rejects.toThrow("Unknown processName: unknown");
   });
 
-  test("propagates SQS errors", async () => {
+  test("logs error and continues when batch send throws", async () => {
     dynamoMock.on(QueryCommand).resolves({ Items: [mockRecord] });
-    sqsMock.on(SendMessageCommand).rejects(new Error("SQS failure"));
+    sqsMock.on(SendMessageBatchCommand).rejects(new Error("SQS failure"));
 
     await expect(
       handler({ processName: "Warning30Day" }, {} as Context)
-    ).rejects.toThrow("SQS failure");
+    ).resolves.toBeUndefined();
+
+    expect(sqsMock.commandCalls(SendMessageBatchCommand)).toHaveLength(1);
+  });
+
+  test("logs partial failures returned in batch response", async () => {
+    dynamoMock.on(QueryCommand).resolves({ Items: [mockRecord] });
+    sqsMock.on(SendMessageBatchCommand).resolves({
+      Failed: [{ Id: "0", Code: "InternalError", SenderFault: false }],
+      Successful: [],
+    });
+
+    await expect(
+      handler({ processName: "Warning30Day" }, {} as Context)
+    ).resolves.toBeUndefined();
+
+    expect(sqsMock.commandCalls(SendMessageBatchCommand)).toHaveLength(1);
   });
 });

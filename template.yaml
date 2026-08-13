@@ -367,6 +367,7 @@ Mappings:
       notifyApiKeySecretArn: arn:aws:secretsmanager:eu-west-2:654654326096:secret:/account-mgmt-backend/notify-api-key-rUzQp4
       publishingApiKeyArn: arn:aws:secretsmanager:eu-west-2:654654326096:secret:/account-mgmt-frontend/Config/Publishing/API/Key-BVQ1hM
       publishingApiKeyVersionId: "2c654686-68a5-459d-005a-39689b8b6937"
+      accountInterventionsServiceApiUrl: https://ais-stub.home.dev.account.gov.uk/v1
       notifyDontSendEmailsTo: "^(perftest.+?@digital.cabinet-office.gov.uk)|(testuser@test.null.local)$"
     dev:
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
@@ -379,6 +380,7 @@ Mappings:
       notifyApiKeySecretArn: arn:aws:secretsmanager:eu-west-2:985326104449:secret:/account-mgmt-backend/notify-api-key-4P84y7
       publishingApiKeyArn: arn:aws:secretsmanager:eu-west-2:985326104449:secret:/account-mgmt-frontend/Config/Publishing/API/Key-FecC4U
       publishingApiKeyVersionId: "1795b84e-bda5-449e-b7de-172aeded65de"
+      accountInterventionsServiceApiUrl: https://ais-stub.home.dev.account.gov.uk/v1
       notifyDontSendEmailsTo: "^(perftest.+?@digital.cabinet-office.gov.uk)|(testuser@test.null.local)$"
     build:
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
@@ -391,6 +393,7 @@ Mappings:
       notifyApiKeySecretArn: arn:aws:secretsmanager:eu-west-2:301577035144:secret:/account-mgmt-backend/notify-api-key-8vHJMb
       publishingApiKeyArn: arn:aws:secretsmanager:eu-west-2:301577035144:secret:/account-mgmt-frontend/Config/Publishing/API/Key-BnpEHJ
       publishingApiKeyVersionId: "b6b498c9-64d7-4655-a6cc-828aa82f0136"
+      accountInterventionsServiceApiUrl: https://ais-stub.home.build.account.gov.uk/v1
       notifyDontSendEmailsTo: "^(perftest.+?@digital.cabinet-office.gov.uk)|(testuser@test.null.local)$"
     staging:
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
@@ -403,6 +406,7 @@ Mappings:
       notifyApiKeySecretArn: arn:aws:secretsmanager:eu-west-2:539729775994:secret:/account-mgmt-backend/notify-api-key-lSCNeM
       publishingApiKeyArn: arn:aws:secretsmanager:eu-west-2:539729775994:secret:/account-mgmt-frontend/Config/Publishing/API/Key-ubkHIz
       publishingApiKeyVersionId: "1fec2ee5-a02c-41e5-9227-185ac11bc1eb"
+      accountInterventionsServiceApiUrl: https://vjdj6kjrj2.execute-api.eu-west-2.amazonaws.com/v1
       notifyDontSendEmailsTo: "^(perftest.+?@digital.cabinet-office.gov.uk)|(testuser@test.null.local)$"
     integration:
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
@@ -415,6 +419,7 @@ Mappings:
       notifyApiKeySecretArn: arn:aws:secretsmanager:eu-west-2:666500506359:secret:/account-mgmt-backend/notify-api-key-nvDui4
       publishingApiKeyArn: arn:aws:secretsmanager:eu-west-2:666500506359:secret:/account-mgmt-frontend/Config/Publishing/API/Key-qWrhy3
       publishingApiKeyVersionId: "279a0631-b5c2-4224-94bf-b8d94bda588b"
+      accountInterventionsServiceApiUrl: https://65zhj32bjb.execute-api.eu-west-2.amazonaws.com/v1
       notifyDontSendEmailsTo: "^(perftest.+?@digital.cabinet-office.gov.uk)|(testuser@test.null.local)$"
     production:
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceProductionVariables
@@ -427,6 +432,7 @@ Mappings:
       notifyApiKeySecretArn: arn:aws:secretsmanager:eu-west-2:026991849909:secret:/account-mgmt-backend/notify-api-key-Ve4Yk1
       publishingApiKeyArn: arn:aws:secretsmanager:eu-west-2:026991849909:secret:/account-mgmt-frontend/Config/Publishing/API/Key-3ZxzC4
       publishingApiKeyVersionId: "a95cff2e-397a-4103-a032-864e0727e618"
+      accountInterventionsServiceApiUrl: https://ruz07ekh4b.execute-api.eu-west-2.amazonaws.com/v1
       notifyDontSendEmailsTo: "^(perftest.+?@digital.cabinet-office.gov.uk)|(testuser@test.null.local)$"
 
 Resources:
@@ -7217,6 +7223,11 @@ Resources:
           NOTIFICATION_QUEUE_URL: !Ref NotificationQueue
           INACTIVE_ACCOUNT_TRACKER_TABLE_NAME: !Ref InactiveAccountTrackerStore
           ACCOUNT_DELETION_QUEUE_URL: !Ref AccountDeletionQueue
+          ACCOUNT_INTERVENTIONS_SERVICE_API_URL: !FindInMap [
+            EnvironmentConfiguration,
+            !Ref Environment,
+            accountInterventionsServiceApiUrl,
+          ]
       DeploymentPreference:
         Alarms:
           Fn::If:

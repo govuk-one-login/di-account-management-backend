@@ -16,7 +16,6 @@ const InterventionStatusResponseSchema = v.object({
   state: AccountStateSchema,
 });
 
-export type AccountState = v.InferOutput<typeof AccountStateSchema>;
 export type InterventionStatusResponse = v.InferOutput<
   typeof InterventionStatusResponseSchema
 >;

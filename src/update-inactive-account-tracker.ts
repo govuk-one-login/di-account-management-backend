@@ -25,12 +25,17 @@ const getCurrentRecordForUser = async (userId: string, tableName: string): Promi
   );
 
   assert(response.Items !== undefined, "Query response is missing Items");
-  assert(response.Items.length < 2, `found more than one inactivity tracker record for ${userId}`)
+  assert(response.Items.length < 2, `found more than one inactivity tracker record for ${userId}`);
 
   return response.Items.length > 0 ? response.Items[0] as InactiveAccountTrackerRecord : null;
-}
+};
 
-const getLatestDate = (txmaEvent: TxmaEvent, trackerRecord: InactiveAccountTrackerRecord | null) => {
+const getEventDate = (txmaEvent: TxmaEvent): Date => {
+  // Use explicit millisecond timestamp if available
+  if (txmaEvent.event_timestamp_ms) {
+    return new Date(txmaEvent.event_timestamp_ms);
+  }
+
   let timestamp = txmaEvent.timestamp;
 
   // some txma events timestamps are in milliseconds when they should be in seconds.
@@ -40,19 +45,19 @@ const getLatestDate = (txmaEvent: TxmaEvent, trackerRecord: InactiveAccountTrack
     timestamp = Math.floor(timestamp / 1000);
   }
 
-  // if the timestamp on the audit event is older than the last active timestamp we have for the user
-  // we should keep the existing date as it means the events have been receieved out of order
-  const eventDate = new Date(timestamp * 1000);
-  const trackerDate = trackerRecord ? new Date(trackerRecord.userLastActive) : new Date(0);
+  return new Date(timestamp * 1000);
+};
 
+const getLatestDate = (eventDate: Date, trackerRecord: InactiveAccountTrackerRecord | null): Date => {
+  const trackerDate = trackerRecord ? new Date(trackerRecord.userLastActive) : new Date(0);
   return eventDate > trackerDate ? eventDate : trackerDate;
-}
+};
 
 const getDateForDeletion = (latestDate: Date): string => {
   const deletionDate = new Date(latestDate);
   deletionDate.setFullYear(deletionDate.getFullYear() + 5);
   return deletionDate.toISOString().split("T")[0];
-}
+};
 
 const buildTransactionItems = (
   tableName: string,
@@ -89,6 +94,36 @@ const buildTransactionItems = (
   return items;
 };
 
+const getNewItemDetails = (
+  txmaEvent: TxmaEvent,
+  currentTrackerRecord: InactiveAccountTrackerRecord | null,
+  eventDate: Date,
+  eventDateTime: string
+) => {
+  const isNewLatestDate = eventDate > (currentTrackerRecord ? new Date(currentTrackerRecord.userLastActive) : new Date(0));
+  
+  const recordedEmailLastUpdatedDate = currentTrackerRecord?.emailAddressLastUpdated 
+    ? new Date(currentTrackerRecord.emailAddressLastUpdated) 
+    : new Date(0);
+    
+  const eventHasNewerEmailLastUpdated = eventDate > recordedEmailLastUpdatedDate;
+  
+  const newEmailAddress = (() => {
+    if (txmaEvent.user?.email && eventHasNewerEmailLastUpdated && txmaEvent.user.email !== currentTrackerRecord?.emailAddress) {
+      return txmaEvent.user.email;
+    }
+  })();
+
+  return {
+    emailAddress: newEmailAddress ?? currentTrackerRecord?.emailAddress ?? "",
+    emailAddressSource: newEmailAddress ? txmaEvent.event_name : (currentTrackerRecord?.emailAddressSource ?? ""),
+    emailAddressSourceId: newEmailAddress ? txmaEvent.event_id : currentTrackerRecord?.emailAddressSourceId,
+    emailAddressLastUpdated: newEmailAddress ? eventDateTime : (currentTrackerRecord?.emailAddressLastUpdated ?? ""),
+    userLastActiveUpdated: isNewLatestDate ? eventDateTime : (currentTrackerRecord?.userLastActiveUpdated ?? eventDateTime),
+    publicSubjectId: txmaEvent.user?.public_subject_id ?? currentTrackerRecord?.publicSubjectId ?? "",
+  };
+};
+
 const processRecord = async (
   txmaEvent: TxmaEvent,
   tableName: string,
@@ -109,34 +144,19 @@ const processRecord = async (
     return;
   }
 
-  const eventDateTime = new Date(txmaEvent.event_timestamp_ms ?? (txmaEvent.timestamp * 1000)).toISOString();
+  const eventDate = getEventDate(txmaEvent);
+  const eventDateTime = eventDate.toISOString();
 
-  const newEmailAddress = (() => {
-    if (txmaEvent.user?.email && txmaEvent.user.email !== currentTrackerRecord?.emailAddress) {
-      return txmaEvent.user.email;
-    }
-  })();
-  const emailAddress = newEmailAddress ?? currentTrackerRecord?.emailAddress ?? "";
-  const emailAddressSource = newEmailAddress ? txmaEvent.event_name : (currentTrackerRecord?.emailAddressSource ?? "");
-  const emailAddressSourceId = newEmailAddress ? txmaEvent.event_id : currentTrackerRecord?.emailAddressSourceId;
-  const emailAddressLastUpdated = newEmailAddress ? eventDateTime : (currentTrackerRecord?.emailAddressLastUpdated ?? "");
-
-  const latestDate = getLatestDate(txmaEvent, currentTrackerRecord);
-  const publicSubjectId = txmaEvent.user?.public_subject_id ?? currentTrackerRecord?.publicSubjectId ?? "";
-  const isNewLatestDate = new Date(txmaEvent.timestamp * 1000) > (currentTrackerRecord ? new Date(currentTrackerRecord.userLastActive) : new Date(0));
+  const latestDate = getLatestDate(eventDate, currentTrackerRecord);
+  const properties = getNewItemDetails(txmaEvent, currentTrackerRecord, eventDate, eventDateTime);
 
   const newItem: InactiveAccountTrackerRecord = {
     commonSubjectId: userId,
-    publicSubjectId,
     userLastActive: latestDate.toISOString(),
     userLastActiveSource: txmaEvent.event_name,
     ...(txmaEvent.event_id && { userLastActiveSourceId: txmaEvent.event_id }),
-    userLastActiveUpdated: isNewLatestDate ? eventDateTime : (currentTrackerRecord?.userLastActiveUpdated ?? eventDateTime),
     dateForDeletion: getDateForDeletion(latestDate),
-    emailAddress,
-    emailAddressSource,
-    emailAddressSourceId,
-    emailAddressLastUpdated,
+    ...properties,
     status: 'pending',
     statusLastUpdated: eventDateTime,
     hasSetupMfa: currentTrackerRecord?.hasSetupMfa ?? false,

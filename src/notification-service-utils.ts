@@ -189,6 +189,7 @@ export const processNotification = async (
     personalisation: Record<string, string>;
   } = messageParsed.output;
 
+  const reference = randomUUID();
   const templateId = notifyTemplateIds[message.notificationType];
   if (!templateId) {
     const errorName = "Template ID not found";
@@ -201,6 +202,20 @@ export const processNotification = async (
     return;
   }
 
+   if (
+    process.env["NOTIFY_DONT_SEND_EMAILS_TO"] &&
+    new RegExp(process.env["NOTIFY_DONT_SEND_EMAILS_TO"], "i").test(
+      message.emailAddress
+    )
+  ) {
+    logger.info("test_email_address_detected", {
+      reference: reference,
+      templateId,
+      notificationType: message.notificationType,
+    });
+    return;
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let sendResult: any;
   try {
@@ -209,7 +224,7 @@ export const processNotification = async (
       message.emailAddress,
       {
         personalisation: message.personalisation,
-        reference: randomUUID(),
+        reference: reference,
       }
     );
   } catch (error) {

@@ -463,6 +463,38 @@ describe("processNotification", () => {
       })
     );
   });
+
+  it("should return early if NOTIFY_DONT_SEND_EMAILS_TO matches the recipient email", async () => {
+    process.env.NOTIFY_DONT_SEND_EMAILS_TO = "example\\.com$";
+    mockSetUpNotifyClient.mockResolvedValue({ sendEmail: mockSendEmail });
+
+    await processNotification(mockRecord, batchItemFailures);
+
+    expect(mockLogger.info).toHaveBeenCalledWith("test_email_address_detected", {
+      reference: "test-uuid",
+      templateId: "template-id",
+      notificationType: "GLOBAL_LOGOUT",
+    });
+    expect(mockSendEmail).not.toHaveBeenCalled();
+    expect(mockLogger.error).not.toHaveBeenCalled();
+    expect(batchItemFailures).toEqual([]);
+  });
+
+  it("should send email normally email does not match NOTIFY_DONT_SEND_EMAILS_TO", async () => {
+    process.env.NOTIFY_DONT_SEND_EMAILS_TO = "block-this\\.com$";
+    mockSetUpNotifyClient.mockResolvedValue({ sendEmail: mockSendEmail });
+
+    await processNotification(mockRecord, batchItemFailures);
+
+    expect(mockLogger.info).not.toHaveBeenCalledWith("test_email_address_detected", expect.any(Object));
+    expect(mockSendEmail).toHaveBeenCalledWith(
+      "template-id",
+      "test@example.com",
+      expect.any(Object)
+    );
+    expect(mockLogger.info).toHaveBeenCalledWith("Successfully sent a notification", expect.any(Object));
+    expect(batchItemFailures).toEqual([]);
+  });
 });
 
 describe("handler", () => {

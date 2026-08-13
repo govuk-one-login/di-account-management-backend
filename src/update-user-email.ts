@@ -1,4 +1,4 @@
-import { Context, DynamoDBStreamEvent } from "aws-lambda";
+import { Context, DynamoDBStreamEvent, DynamoDBRecord } from "aws-lambda";
 import { AttributeValue, DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
 import { DynamoDBDocumentClient, QueryCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
@@ -10,52 +10,45 @@ const logger = new Logger();
 const dynamoClient = new DynamoDBClient({});
 const dynamoDocClient = DynamoDBDocumentClient.from(dynamoClient);
 
-export const handler = async (
-  event: DynamoDBStreamEvent,
-  context: Context
-): Promise<void> => {
-  logger.addContext(context);
+const handleRecord = async (record: DynamoDBRecord, tableName: string): Promise<void> => {
+  const txmaEvent = unmarshall(
+    record.dynamodb?.NewImage?.event.M as Record<string, AttributeValue>
+  ) as TxmaEvent;
 
-  const tableName = getEnvironmentVariable("INACTIVE_ACCOUNT_TRACKER_TABLE_NAME");
+  const userId = txmaEvent.user?.user_id;
+  if (!userId) {
+    throw new Error("user_id is missing from the event");
+  }
 
-  for (const record of event.Records) {
-    const txmaEvent = unmarshall(
-      record.dynamodb?.NewImage?.event.M as Record<string, AttributeValue>
-    ) as TxmaEvent;
+  const newEmail = txmaEvent.user?.email;
+  if (!newEmail) {
+    throw new Error("email is missing from the event");
+  }
 
-    const userId = txmaEvent.user?.user_id;
-    if (!userId) {
-      throw new Error("user_id is missing from the event");
-    }
+  logger.info("Processing email update event", {
+    userId,
+    eventName: txmaEvent.event_name,
+  });
 
-    const newEmail = txmaEvent.user?.email;
-    if (!newEmail) {
-      throw new Error("email is missing from the event");
-    }
+  const queryResponse = await dynamoDocClient.send(
+    new QueryCommand({
+      IndexName: "CommonSubjectIdIndex",
+      TableName: tableName,
+      KeyConditionExpression: "commonSubjectId = :uid",
+      ExpressionAttributeValues: { ":uid": userId },
+    })
+  );
 
-    logger.info("Processing email update event", {
-      userId,
-      eventName: txmaEvent.event_name,
-    });
+  if (!queryResponse.Items || queryResponse.Items.length === 0) {
+    logger.warn("No inactive account tracker record found for user", { userId });
+    return;
+  }
 
-    const queryResponse = await dynamoDocClient.send(
-      new QueryCommand({
-        IndexName: "CommonSubjectIdIndex",
-        TableName: tableName,
-        KeyConditionExpression: "commonSubjectId = :uid",
-        ExpressionAttributeValues: { ":uid": userId },
-      })
-    );
+  const trackerRecord = queryResponse.Items[0];
 
-    if (!queryResponse.Items || queryResponse.Items.length === 0) {
-      logger.warn("No inactive account tracker record found for user", { userId });
-      return;
-    }
+  const eventDateTime = new Date(txmaEvent.event_timestamp_ms ?? (txmaEvent.timestamp * 1000)).toISOString();
 
-    const trackerRecord = queryResponse.Items[0];
-
-    const eventDateTime = new Date(txmaEvent.event_timestamp_ms ?? (txmaEvent.timestamp * 1000)).toISOString();
-
+  try {
     await dynamoDocClient.send(
       new UpdateCommand({
         TableName: tableName,
@@ -66,6 +59,8 @@ export const handler = async (
         UpdateExpression:
           "SET emailAddress = :email, emailAddressSource = :source, emailAddressLastUpdated = :lastUpdated" +
           (txmaEvent.event_id ? ", emailAddressSourceId = :sourceId" : ""),
+        ConditionExpression:
+          "attribute_not_exists(emailAddressLastUpdated) OR emailAddressLastUpdated < :lastUpdated",
         ExpressionAttributeValues: {
           ":email": newEmail,
           ":source": txmaEvent.event_name,
@@ -74,7 +69,29 @@ export const handler = async (
         },
       })
     );
-
     logger.info("Successfully updated email address in inactive account tracker", { userId });
+  } catch (error) {
+    const err = error as Error;
+    if (err.name === "ConditionalCheckFailedException") {
+      logger.warn("An email update event with a newer timestamp has already been processed.", {
+        userId,
+        incomingTimestamp: eventDateTime,
+      });
+    } else {
+      throw err;
+    }
+  }
+}
+
+export const handler = async (
+  event: DynamoDBStreamEvent,
+  context: Context
+): Promise<void> => {
+  logger.addContext(context);
+
+  const tableName = getEnvironmentVariable("INACTIVE_ACCOUNT_TRACKER_TABLE_NAME");
+
+  for (const record of event.Records) {
+    await handleRecord(record, tableName);
   }
 };

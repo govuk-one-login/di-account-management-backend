@@ -1,5 +1,9 @@
 import { vi, describe, test, expect, beforeEach, afterEach } from "vitest";
-import { DynamoDBDocumentClient, QueryCommand } from "@aws-sdk/lib-dynamodb";
+import {
+  DynamoDBDocumentClient,
+  QueryCommand,
+  PutCommand,
+} from "@aws-sdk/lib-dynamodb";
 import { mockClient } from "aws-sdk-client-mock";
 import {
   buildDates,
@@ -43,7 +47,10 @@ describe("countAccountsForDate", () => {
       .on(QueryCommand)
       .resolvesOnce({
         Count: 100,
-        LastEvaluatedKey: { dateForDeletion: "2026-06-01", commonSubjectId: "x" },
+        LastEvaluatedKey: {
+          dateForDeletion: "2026-06-01",
+          commonSubjectId: "x",
+        },
       })
       .resolvesOnce({ Count: 50 });
 
@@ -62,9 +69,9 @@ describe("countAccountsForDate", () => {
   test("throws on DynamoDB error", async () => {
     dynamoMock.on(QueryCommand).rejects(new Error("DynamoDB failure"));
 
-    await expect(countAccountsForDate("my-table", "2026-06-01")).rejects.toThrow(
-      "DynamoDB failure"
-    );
+    await expect(
+      countAccountsForDate("my-table", "2026-06-01")
+    ).rejects.toThrow("DynamoDB failure");
   });
 });
 
@@ -72,22 +79,32 @@ describe("handler", () => {
   beforeEach(() => {
     dynamoMock.reset();
     process.env.TABLE_NAME = "inactive-accounts-table";
+    process.env.FORECAST_TABLE_NAME = "forecast-table";
   });
 
   afterEach(() => {
     vi.clearAllMocks();
     delete process.env.TABLE_NAME;
+    delete process.env.FORECAST_TABLE_NAME;
   });
 
-  test("queries 180 dates and publishes metrics", async () => {
+  test("queries 180 dates and writes forecast records", async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-01-01T00:00:00.000Z"));
 
     dynamoMock.on(QueryCommand).resolves({ Count: 10 });
+    dynamoMock.on(PutCommand).resolves({});
 
     await handler();
 
     expect(dynamoMock.commandCalls(QueryCommand)).toHaveLength(180);
+    expect(dynamoMock.commandCalls(PutCommand)).toHaveLength(180);
+
+    const firstPut = dynamoMock.commandCalls(PutCommand)[0].args[0].input;
+    expect(firstPut.Item?.dateForDeletion).toBe("2026-01-02");
+    expect(firstPut.Item?.forecastedAt).toBe("2026-01-01T00:00:00.000Z");
+    expect(firstPut.Item?.accountsToDelete).toBe(10);
+    expect(firstPut.Item?.ttl).toBeTypeOf("number");
 
     vi.useRealTimers();
   });
@@ -97,6 +114,14 @@ describe("handler", () => {
 
     await expect(handler()).rejects.toThrow(
       'Environment variable "TABLE_NAME" is not set.'
+    );
+  });
+
+  test("throws when FORECAST_TABLE_NAME is not set", async () => {
+    delete process.env.FORECAST_TABLE_NAME;
+
+    await expect(handler()).rejects.toThrow(
+      'Environment variable "FORECAST_TABLE_NAME" is not set.'
     );
   });
 

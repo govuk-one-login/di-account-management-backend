@@ -25,12 +25,17 @@ const getCurrentRecordForUser = async (userId: string, tableName: string): Promi
   );
 
   assert(response.Items !== undefined, "Query response is missing Items");
-  assert(response.Items.length < 2, `found more than one inactivity tracker record for ${userId}`)
+  assert(response.Items.length < 2, `found more than one inactivity tracker record for ${userId}`);
 
   return response.Items.length > 0 ? response.Items[0] as InactiveAccountTrackerRecord : null;
-}
+};
 
 const getEventDate = (txmaEvent: TxmaEvent): Date => {
+  // Use explicit millisecond timestamp if available
+  if (txmaEvent.event_timestamp_ms) {
+    return new Date(txmaEvent.event_timestamp_ms);
+  }
+
   let timestamp = txmaEvent.timestamp;
 
   // some txma events timestamps are in milliseconds when they should be in seconds.
@@ -41,20 +46,18 @@ const getEventDate = (txmaEvent: TxmaEvent): Date => {
   }
 
   return new Date(timestamp * 1000);
-}
+};
 
-const getLatestDate = (txmaEvent: TxmaEvent, trackerRecord: InactiveAccountTrackerRecord | null) => {
-  const eventDate = getEventDate(txmaEvent);
+const getLatestDate = (eventDate: Date, trackerRecord: InactiveAccountTrackerRecord | null): Date => {
   const trackerDate = trackerRecord ? new Date(trackerRecord.userLastActive) : new Date(0);
-
   return eventDate > trackerDate ? eventDate : trackerDate;
-}
+};
 
 const getDateForDeletion = (latestDate: Date): string => {
   const deletionDate = new Date(latestDate);
   deletionDate.setFullYear(deletionDate.getFullYear() + 5);
   return deletionDate.toISOString().split("T")[0];
-}
+};
 
 const buildTransactionItems = (
   tableName: string,
@@ -94,17 +97,17 @@ const buildTransactionItems = (
 const getNewItemDetails = (
   txmaEvent: TxmaEvent,
   currentTrackerRecord: InactiveAccountTrackerRecord | null,
+  eventDate: Date,
   eventDateTime: string
 ) => {
-  const txmaEventDate = getEventDate(txmaEvent); 
-  const isNewLatestDate = txmaEventDate > (currentTrackerRecord ? new Date(currentTrackerRecord.userLastActive) : new Date(0));
-  // emailAddressLastUpdated should always be present on InactiveAccountTrackerRecord but this accounts for currentTrackerRecord possibly being null
+  const isNewLatestDate = eventDate > (currentTrackerRecord ? new Date(currentTrackerRecord.userLastActive) : new Date(0));
+  
   const recordedEmailLastUpdatedDate = currentTrackerRecord?.emailAddressLastUpdated 
     ? new Date(currentTrackerRecord.emailAddressLastUpdated) 
     : new Date(0);
     
-  // if the event has an email with a newer emailAddressLastUpdated than currentTrackerRecord, set email address to the one from the event
-  const eventHasNewerEmailLastUpdated = txmaEventDate > recordedEmailLastUpdatedDate;
+  const eventHasNewerEmailLastUpdated = eventDate > recordedEmailLastUpdatedDate;
+  
   const newEmailAddress = (() => {
     if (txmaEvent.user?.email && eventHasNewerEmailLastUpdated && txmaEvent.user.email !== currentTrackerRecord?.emailAddress) {
       return txmaEvent.user.email;
@@ -141,11 +144,12 @@ const processRecord = async (
     return;
   }
 
-  const eventDateTime = new Date(txmaEvent.event_timestamp_ms ?? (txmaEvent.timestamp * 1000)).toISOString();
+  const eventDate = getEventDate(txmaEvent);
+  const eventDateTime = eventDate.toISOString();
 
-  const latestDate = getLatestDate(txmaEvent, currentTrackerRecord);
+  const latestDate = getLatestDate(eventDate, currentTrackerRecord);
+  const properties = getNewItemDetails(txmaEvent, currentTrackerRecord, eventDate, eventDateTime);
 
-  const properties = getNewItemDetails(txmaEvent, currentTrackerRecord, eventDateTime);
   const newItem: InactiveAccountTrackerRecord = {
     commonSubjectId: userId,
     userLastActive: latestDate.toISOString(),

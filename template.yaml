@@ -393,7 +393,7 @@ Mappings:
       notifyApiKeySecretArn: arn:aws:secretsmanager:eu-west-2:301577035144:secret:/account-mgmt-backend/notify-api-key-8vHJMb
       publishingApiKeyArn: arn:aws:secretsmanager:eu-west-2:301577035144:secret:/account-mgmt-frontend/Config/Publishing/API/Key-BnpEHJ
       publishingApiKeyVersionId: "b6b498c9-64d7-4655-a6cc-828aa82f0136"
-      accountInterventionsServiceApiUrl: https://ais-stub.home.dev.account.gov.uk/v1
+      accountInterventionsServiceApiUrl: https://ais-stub.home.build.account.gov.uk/v1
       notifyDontSendEmailsTo: "^(perftest.+?@digital.cabinet-office.gov.uk)|(testuser@test.null.local)$"
     staging:
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables

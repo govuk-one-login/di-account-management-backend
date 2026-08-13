@@ -699,7 +699,12 @@ Resources:
             Principal:
               AWS: !Sub
                 - "arn:aws:iam::${AccountId}:root"
-                - AccountId: !FindInMap [AuthenticationAccounts, !Ref Environment, AccountNumber]
+                - AccountId:
+                    !FindInMap [
+                      AuthenticationAccounts,
+                      !Ref Environment,
+                      AccountNumber,
+                    ]
             Action: sts:AssumeRole
       Policies:
         - PolicyName: InactiveAccountTrackerStoreWritePolicy
@@ -4974,6 +4979,7 @@ Resources:
       Handler: bulk-delete-inactive-account-tracker.handler
       Role: !GetAtt BulkDeleteInactiveAccountTrackerRole.Arn
       Timeout: 900
+      MemorySize: 256
       ReservedConcurrentExecutions: 1
       Environment:
         Variables:
@@ -6281,7 +6287,12 @@ Resources:
                 - "*"
               Condition:
                 StringEquals:
-                  kms:CallerAccount: !FindInMap [AuthenticationAccounts, !Ref Environment, "AccountNumber"]
+                  kms:CallerAccount:
+                    !FindInMap [
+                      AuthenticationAccounts,
+                      !Ref Environment,
+                      "AccountNumber",
+                    ]
             - !Ref AWS::NoValue
 
   DatabaseKmsKeyAlias:
@@ -7344,7 +7355,7 @@ Resources:
             Resource:
               - !GetAtt 30DayNotificationQueue.Arn
               - !GetAtt 7DayNotificationQueue.Arn
-              - !GetAtt AccountDeletionProcessQueue.Arn 
+              - !GetAtt AccountDeletionProcessQueue.Arn
           - Effect: Allow
             Action:
               - sqs:SendMessage
@@ -7758,7 +7769,7 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       TreatMissingData: notBreaching
       AlarmActions:
-        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/HighAlertNotificationTopic/ARN}}"         
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/HighAlertNotificationTopic/ARN}}"
 
   NotifyDeliveryReceiptsLambdaThrottlesAlarm:
     Type: AWS::CloudWatch::Alarm

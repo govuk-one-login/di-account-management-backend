@@ -5017,7 +5017,7 @@ Resources:
       - BulkDeleteInactiveAccountTrackerFunctionLogGroup
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub ${Environment}-${AWS::StackName}-bulk-delete-inactive-account-tracker
+      FunctionName: !Sub ${AWS::StackName}-bulk-delete-inactive-account-tracker
       CodeUri: src
       PackageType: Zip
       Handler: bulk-delete-inactive-account-tracker.handler

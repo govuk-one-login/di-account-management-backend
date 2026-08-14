@@ -124,11 +124,17 @@ const getNewItemDetails = (
   };
 };
 
+const isBeforeBackfillThreshold = (eventDate: Date, backfillCompleteDatetime: string): boolean => {
+  if (!backfillCompleteDatetime) return false;
+  return eventDate < new Date(backfillCompleteDatetime);
+};
+
 const processRecord = async (
   txmaEvent: TxmaEvent,
   tableName: string,
   userNotificationsTableName: string,
-  olhClientId: string
+  olhClientId: string,
+  backfillCompleteDatetime: string
 ): Promise<void> => {
   const userId = txmaEvent.user?.user_id;
   assert(userId !== undefined, "user_id is undefined in the event");
@@ -145,6 +151,12 @@ const processRecord = async (
   }
 
   const eventDate = getEventDate(txmaEvent);
+
+  if (isBeforeBackfillThreshold(eventDate, backfillCompleteDatetime) && !currentTrackerRecord) {
+    logger.info(`BACKFILL_EVENT_SKIPPED_NO_EXISTING_RECORD for userId ${userId}`);
+    return;
+  }
+
   const eventDateTime = eventDate.toISOString();
 
   const latestDate = getLatestDate(eventDate, currentTrackerRecord);
@@ -182,12 +194,13 @@ export const handler = async (
   const tableName = getEnvironmentVariable("INACTIVE_ACCOUNT_TRACKER_TABLE_NAME");
   const userNotificationsTableName = getEnvironmentVariable("USER_NOTIFICATIONS_TABLE_NAME");
   const olhClientId = getEnvironmentVariable("OLH_CLIENT_ID");
+  const backfillCompleteDatetime = process.env["AUTH_BACKFILL_COMPLETE_DATETIME"] ?? "";
 
   for (const record of event.Records) {
     const txmaEvent = unmarshall(
       record.dynamodb?.NewImage?.event.M as Record<string, AttributeValue>
     ) as TxmaEvent;
 
-    await processRecord(txmaEvent, tableName, userNotificationsTableName, olhClientId);
+    await processRecord(txmaEvent, tableName, userNotificationsTableName, olhClientId, backfillCompleteDatetime);
   }
 };

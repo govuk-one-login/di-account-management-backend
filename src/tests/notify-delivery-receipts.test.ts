@@ -2,10 +2,18 @@ import { vi, describe, test, expect, beforeEach, afterEach } from "vitest";
 import { handler } from "../notify-delivery-receipts.js";
 import { getSecret } from "@aws-lambda-powertools/parameters/secrets";
 import { APIGatewayProxyEvent, Context } from "aws-lambda";
+import { mockClient } from "aws-sdk-client-mock";
+import {
+  DynamoDBDocumentClient,
+  QueryCommand,
+  UpdateCommand,
+} from "@aws-sdk/lib-dynamodb";
 
 vi.mock("@aws-lambda-powertools/parameters/secrets", () => ({
   getSecret: vi.fn(),
 }));
+
+const dynamoMock = mockClient(DynamoDBDocumentClient);
 
 const mockLogger = vi.hoisted(() => ({
   info: vi.fn(),
@@ -61,10 +69,13 @@ const makeEvent = (
 describe("handler", () => {
   beforeEach(() => {
     process.env.NOTIFY_DELIVERY_RECEIPTS_SECRET_ARN = "mock-secret-arn"; // pragma: allowlist secret
+    process.env.INACTIVE_ACCOUNT_TRACKER_TABLE_NAME = "mock-tracker-table";
+    dynamoMock.reset();
   });
 
   afterEach(() => {
     delete process.env.NOTIFY_DELIVERY_RECEIPTS_SECRET_ARN;
+    delete process.env.INACTIVE_ACCOUNT_TRACKER_TABLE_NAME;
     vi.clearAllMocks();
   });
 
@@ -175,5 +186,113 @@ describe("handler", () => {
         sent_at: null,
       }
     );
+  });
+
+  test("marks matching inactive account tracker rows as having undeliverable email on permanent-failure", async () => {
+    mockGetSecret.mockResolvedValue("correct-token");
+    dynamoMock.on(QueryCommand).resolves({
+      Items: [
+        { dateForDeletion: "2025-01-01", commonSubjectId: "subject-1" },
+        { dateForDeletion: "2025-02-01", commonSubjectId: "subject-2" },
+      ],
+    });
+    dynamoMock.on(UpdateCommand).resolves({});
+
+    const body = JSON.stringify({
+      ...JSON.parse(validBody),
+      status: "permanent-failure",
+    });
+    const result = await handler(
+      makeEvent({ Authorization: "Bearer correct-token" }, body),
+      {} as Context
+    );
+
+    expect(result.statusCode).toBe(200);
+    expect(dynamoMock).toHaveReceivedCommandWith(QueryCommand, {
+      TableName: "mock-tracker-table",
+      IndexName: "EmailAddressIndex",
+      KeyConditionExpression: "emailAddress = :email",
+      ExpressionAttributeValues: { ":email": "hello@gov.uk" },
+    });
+    expect(dynamoMock.commandCalls(UpdateCommand).length).toBe(2);
+    expect(dynamoMock).toHaveReceivedCommandWith(UpdateCommand, {
+      TableName: "mock-tracker-table",
+      Key: { dateForDeletion: "2025-01-01", commonSubjectId: "subject-1" },
+      UpdateExpression:
+        "SET hasUndeliverableEmailAddress = :hasUndeliverableEmailAddress",
+      ExpressionAttributeValues: { ":hasUndeliverableEmailAddress": true },
+    });
+    expect(dynamoMock).toHaveReceivedCommandWith(UpdateCommand, {
+      TableName: "mock-tracker-table",
+      Key: { dateForDeletion: "2025-02-01", commonSubjectId: "subject-2" },
+      UpdateExpression:
+        "SET hasUndeliverableEmailAddress = :hasUndeliverableEmailAddress",
+      ExpressionAttributeValues: { ":hasUndeliverableEmailAddress": true },
+    });
+    expect(mockLogger.info).toHaveBeenCalledWith(
+      "Undeliverable email notification handled",
+      {
+        id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+        reference: "12345678",
+        status: "permanent-failure",
+        notification_type: "email",
+        template_id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+        created_at: "2017-05-14T12:15:30.000000Z",
+        completed_at: "2017-05-14T12:15:30.000000Z",
+        sent_at: "2017-05-14T12:15:30.000000Z",
+      }
+    );
+  });
+
+  test("does not query dynamo when notification_type is not email", async () => {
+    mockGetSecret.mockResolvedValue("correct-token");
+    const body = JSON.stringify({
+      ...JSON.parse(validBody),
+      status: "permanent-failure",
+      notification_type: "sms",
+    });
+    await handler(
+      makeEvent({ Authorization: "Bearer correct-token" }, body),
+      {} as Context
+    );
+    expect(dynamoMock.commandCalls(QueryCommand).length).toBe(0);
+  });
+
+  test("does not query dynamo when status is not permanent-failure", async () => {
+    mockGetSecret.mockResolvedValue("correct-token");
+    await handler(
+      makeEvent({ Authorization: "Bearer correct-token" }, validBody),
+      {} as Context
+    );
+    expect(dynamoMock.commandCalls(QueryCommand).length).toBe(0);
+  });
+
+  test("throws when INACTIVE_ACCOUNT_TRACKER_TABLE_NAME is not set on permanent-failure", async () => {
+    delete process.env.INACTIVE_ACCOUNT_TRACKER_TABLE_NAME;
+    mockGetSecret.mockResolvedValue("correct-token");
+    const body = JSON.stringify({
+      ...JSON.parse(validBody),
+      status: "permanent-failure",
+    });
+    await expect(
+      handler(
+        makeEvent({ Authorization: "Bearer correct-token" }, body),
+        {} as Context
+      )
+    ).rejects.toThrow("INACTIVE_ACCOUNT_TRACKER_TABLE_NAME not set");
+  });
+
+  test("does not call UpdateCommand when query returns no items", async () => {
+    mockGetSecret.mockResolvedValue("correct-token");
+    dynamoMock.on(QueryCommand).resolves({ Items: [] });
+    const body = JSON.stringify({
+      ...JSON.parse(validBody),
+      status: "permanent-failure",
+    });
+    await handler(
+      makeEvent({ Authorization: "Bearer correct-token" }, body),
+      {} as Context
+    );
+    expect(dynamoMock.commandCalls(UpdateCommand).length).toBe(0);
   });
 });

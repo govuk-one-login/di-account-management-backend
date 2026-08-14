@@ -688,10 +688,18 @@ Resources:
           AttributeType: S
         - AttributeName: commonSubjectId
           AttributeType: S
+        - AttributeName: emailAddress
+          AttributeType: S
       GlobalSecondaryIndexes:
         - IndexName: CommonSubjectIdIndex
           KeySchema:
             - AttributeName: commonSubjectId
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+        - IndexName: EmailAddressIndex
+          KeySchema:
+            - AttributeName: emailAddress
               KeyType: HASH
           Projection:
             ProjectionType: ALL
@@ -7640,6 +7648,7 @@ Resources:
       Environment:
         Variables:
           NOTIFY_DELIVERY_RECEIPTS_SECRET_ARN: !Ref NotifyDeliveryReceiptsSecret
+          INACTIVE_ACCOUNT_TRACKER_TABLE_NAME: !Ref InactveAccountTrackerStoreTableName
       Policies:
         - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
         - Statement:
@@ -7649,6 +7658,19 @@ Resources:
             - Effect: Allow
               Action: kms:Decrypt
               Resource: !GetAtt SecretsKmsKey.Arn
+            - Effect: Allow
+              Action:
+                - dynamodb:Query
+              Resource: !Sub "${InactiveAccountTrackerStore.Arn}/index/EmailAddressIndex"
+            - Effect: Allow
+              Action:
+                - dynamodb:UpdateItem
+              Resource: !GetAtt InactiveAccountTrackerStore.Arn
+            - Effect: Allow
+              Action:
+                - kms:Decrypt
+                - kms:GenerateDataKey*
+              Resource: !GetAtt DatabaseKmsKey.Arn
       Events:
         DeliveryReceipts:
           Type: Api

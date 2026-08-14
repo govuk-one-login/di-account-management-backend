@@ -9,8 +9,16 @@ import {
   initMetrics,
   metricsAPIGatewayProxyHandlerWrapper,
 } from "./common/metrics.js";
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import {
+  DynamoDBDocumentClient,
+  QueryCommand,
+  UpdateCommand,
+} from "@aws-sdk/lib-dynamodb";
 
 const metrics = initMetrics("notify-delivery-receipts");
+const dynamoClient = new DynamoDBClient({});
+const dynamoDocClient = DynamoDBDocumentClient.from(dynamoClient);
 
 const deliveryReceiptSchema = v.pipe(
   v.string(),
@@ -35,6 +43,66 @@ const deliveryReceiptSchema = v.pipe(
 );
 
 const logger = new Logger();
+
+const handleUndeliverableEmail = async (
+  deliveryReceipt: v.InferOutput<typeof deliveryReceiptSchema>
+) => {
+  assert.ok(
+    process.env["INACTIVE_ACCOUNT_TRACKER_TABLE_NAME"],
+    "INACTIVE_ACCOUNT_TRACKER_TABLE_NAME not set"
+  );
+
+  const {
+    id,
+    reference,
+    status,
+    notification_type,
+    template_id,
+    created_at,
+    completed_at,
+    sent_at,
+    to,
+  } = deliveryReceipt;
+
+  const inactiveAccountTrackerResult = await dynamoDocClient.send(
+    new QueryCommand({
+      TableName: process.env["INACTIVE_ACCOUNT_TRACKER_TABLE_NAME"],
+      IndexName: "EmailAddressIndex",
+      KeyConditionExpression: "emailAddress = :email",
+      ExpressionAttributeValues: { ":email": to },
+    })
+  );
+
+  await Promise.all(
+    (inactiveAccountTrackerResult.Items ?? []).map((item) =>
+      dynamoDocClient.send(
+        new UpdateCommand({
+          TableName: process.env["INACTIVE_ACCOUNT_TRACKER_TABLE_NAME"],
+          Key: {
+            dateForDeletion: item.dateForDeletion,
+            commonSubjectId: item.commonSubjectId,
+          },
+          UpdateExpression:
+            "SET hasUndeliverableEmailAddress = :hasUndeliverableEmailAddress",
+          ExpressionAttributeValues: {
+            ":hasUndeliverableEmailAddress": true,
+          },
+        })
+      )
+    )
+  );
+
+  logger.info("Undeliverable email notification handled", {
+    id,
+    reference,
+    status,
+    notification_type,
+    template_id,
+    created_at,
+    completed_at,
+    sent_at,
+  });
+};
 
 export const handler: APIGatewayProxyHandler =
   normalizeAPIGatewayProxyEventHandlerWrapper(
@@ -106,6 +174,10 @@ export const handler: APIGatewayProxyHandler =
         completed_at,
         sent_at,
       });
+
+      if (notification_type === "email" && status === "permanent-failure") {
+        await handleUndeliverableEmail(parsedBody.output);
+      }
 
       return {
         statusCode: 200,

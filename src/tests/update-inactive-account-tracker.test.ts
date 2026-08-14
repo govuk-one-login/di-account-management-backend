@@ -29,6 +29,7 @@ describe("UpdateInactiveAccountTracker handler", () => {
     delete process.env.INACTIVE_ACCOUNT_TRACKER_TABLE_NAME;
     delete process.env.USER_NOTIFICATIONS_TABLE_NAME;
     delete process.env.OLH_CLIENT_ID;
+    delete process.env.AUTH_BACKFILL_COMPLETE_DATETIME;
   });
 
   test("queries CommonSubjectIdIndex with user_id", async () => {
@@ -663,6 +664,50 @@ describe("UpdateInactiveAccountTracker handler", () => {
           }),
         }),
       ]),
+    });
+  });
+
+  describe("backfill threshold", () => {
+    // timestamp fixture = 123456789 seconds = 1973-11-29T21:33:09.000Z
+    const beforeThreshold = "1974-01-01T00:00:00.000Z";
+    const afterThreshold = "1973-01-01T00:00:00.000Z";
+
+    test("skips event before threshold when no existing record", async () => {
+      process.env.AUTH_BACKFILL_COMPLETE_DATETIME = beforeThreshold;
+      dynamoMock.on(QueryCommand).resolves({ Items: [] });
+      const event: DynamoDBStreamEvent = { Records: [generateDynamoStreamRecord("test-client")] };
+      await handler(event, {} as Context);
+      expect(dynamoMock).not.toHaveReceivedCommand(TransactWriteCommand);
+      expect(loggerInfoMock).toHaveBeenCalledWith("BACKFILL_EVENT_SKIPPED_NO_EXISTING_RECORD for userId qwerty");
+    });
+
+    test("updates existing record when event is before threshold", async () => {
+      process.env.AUTH_BACKFILL_COMPLETE_DATETIME = beforeThreshold;
+      dynamoMock.on(QueryCommand).resolves({
+        Items: [{ commonSubjectId: "qwerty", dateForDeletion: "1978-11-29", userLastActive: "1970-01-01T00:00:00.000Z", status: "pending", emailAddress: "x", statusLastUpdated: "" }],
+      });
+      dynamoMock.on(TransactWriteCommand).resolves({});
+      const event: DynamoDBStreamEvent = { Records: [generateDynamoStreamRecord("test-client")] };
+      await handler(event, {} as Context);
+      expect(dynamoMock).toHaveReceivedCommand(TransactWriteCommand);
+    });
+
+    test("creates new record when event is after threshold and no existing record", async () => {
+      process.env.AUTH_BACKFILL_COMPLETE_DATETIME = afterThreshold;
+      dynamoMock.on(QueryCommand).resolves({ Items: [] });
+      dynamoMock.on(TransactWriteCommand).resolves({});
+      const event: DynamoDBStreamEvent = { Records: [generateDynamoStreamRecord("test-client")] };
+      await handler(event, {} as Context);
+      expect(dynamoMock).toHaveReceivedCommand(TransactWriteCommand);
+    });
+
+    test("creates new record when threshold is not configured", async () => {
+      process.env.AUTH_BACKFILL_COMPLETE_DATETIME = "";
+      dynamoMock.on(QueryCommand).resolves({ Items: [] });
+      dynamoMock.on(TransactWriteCommand).resolves({});
+      const event: DynamoDBStreamEvent = { Records: [generateDynamoStreamRecord("test-client")] };
+      await handler(event, {} as Context);
+      expect(dynamoMock).toHaveReceivedCommand(TransactWriteCommand);
     });
   });
 

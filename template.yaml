@@ -783,6 +783,29 @@ Resources:
       Type: String
       Value: !GetAtt InactiveAccountTrackerStoreCrossAccountRole.Arn
 
+  InactiveAccountTrackerStoreResourcePolicy:
+    Type: AWS::DynamoDB::ResourcePolicy
+    Condition: UseExternalEvents
+    Properties:
+      TableName: !Ref InactiveAccountTrackerStore
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AllowAuthAccountBatchWrite
+            Effect: Allow
+            Principal:
+              AWS: !Sub
+                - "arn:aws:iam::${AccountId}:root"
+                - AccountId:
+                    !FindInMap [
+                      AuthenticationAccounts,
+                      !Ref Environment,
+                      AccountNumber,
+                    ]
+            Action:
+              - dynamodb:BatchWriteItem
+            Resource: !GetAtt InactiveAccountTrackerStore.Arn
+
   ######################################
   # User Notifications store
   ######################################

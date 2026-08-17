@@ -734,18 +734,16 @@ Resources:
         SSEType: KMS
         KMSMasterKeyId: !GetAtt DatabaseKmsKey.Arn
 
-  InactiveAccountTrackerStoreCrossAccountRole:
-    Type: AWS::IAM::Role
+  InactiveAccountTrackerStoreResourcePolicy:
+    Type: AWS::DynamoDB::ResourcePolicy
     Condition: UseExternalEvents
     Properties:
-      PermissionsBoundary: !If
-        - UsePermissionsBoundary
-        - !Ref PermissionsBoundary
-        - !Ref AWS::NoValue
-      AssumeRolePolicyDocument:
+      TableName: !Ref InactiveAccountTrackerStore
+      PolicyDocument:
         Version: "2012-10-17"
         Statement:
-          - Effect: Allow
+          - Sid: AllowAuthAccountBatchWrite
+            Effect: Allow
             Principal:
               AWS: !Sub
                 - "arn:aws:iam::${AccountId}:root"
@@ -755,33 +753,9 @@ Resources:
                       !Ref Environment,
                       AccountNumber,
                     ]
-            Action: sts:AssumeRole
-      Policies:
-        - PolicyName: InactiveAccountTrackerStoreWritePolicy
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: Allow
-                Action:
-                  - dynamodb:PutItem
-                  - dynamodb:BatchWriteItem
-                Resource: !GetAtt InactiveAccountTrackerStore.Arn
-              - Effect: Allow
-                Action:
-                  - kms:Encrypt
-                  - kms:Decrypt
-                  - kms:GenerateDataKey*
-                  - kms:DescribeKey
-                Resource: !GetAtt DatabaseKmsKey.Arn
-
-  InactiveAccountTrackerStoreCrossAccountRoleArnParameter:
-    Type: AWS::SSM::Parameter
-    Condition: UseExternalEvents
-    Properties:
-      Description: The ARN of the cross-account role for the authentication account to write to the InactiveAccountTrackerStore
-      Name: !Sub "/${AWS::StackName}/IAM/InactiveAccountTrackerStoreCrossAccountRole/ARN"
-      Type: String
-      Value: !GetAtt InactiveAccountTrackerStoreCrossAccountRole.Arn
+            Action:
+              - dynamodb:BatchWriteItem
+            Resource: !GetAtt InactiveAccountTrackerStore.Arn
 
   ######################################
   # User Notifications store
@@ -3425,7 +3399,11 @@ Resources:
           OLH_CLIENT_ID:
             !FindInMap [EnvironmentVariables, !Ref Environment, OLHCLIENTID]
           AUTH_BACKFILL_COMPLETE_DATETIME:
-            !FindInMap [EnvironmentVariables, !Ref Environment, AUTHBACKFILLCOMPLETEDATETIME]
+            !FindInMap [
+              EnvironmentVariables,
+              !Ref Environment,
+              AUTHBACKFILLCOMPLETEDATETIME,
+            ]
       DeploymentPreference:
         Alarms:
           Fn::If:
@@ -7358,11 +7336,12 @@ Resources:
           NOTIFICATION_QUEUE_URL: !Ref NotificationQueue
           INACTIVE_ACCOUNT_TRACKER_TABLE_NAME: !Ref InactiveAccountTrackerStore
           ACCOUNT_DELETION_QUEUE_URL: !Ref AccountDeletionQueue
-          ACCOUNT_INTERVENTIONS_SERVICE_API_URL: !FindInMap [
-            EnvironmentConfiguration,
-            !Ref Environment,
-            accountInterventionsServiceApiUrl,
-          ]
+          ACCOUNT_INTERVENTIONS_SERVICE_API_URL:
+            !FindInMap [
+              EnvironmentConfiguration,
+              !Ref Environment,
+              accountInterventionsServiceApiUrl,
+            ]
       DeploymentPreference:
         Alarms:
           Fn::If:
@@ -7895,12 +7874,6 @@ Outputs:
     Value: !GetAtt WrapperKey.Arn
     Export:
       Name: !Sub "${AWS::StackName}-WrappingKey"
-  InactiveAccountTrackerStoreCrossAccountRoleArn:
-    Condition: UseExternalEvents
-    Description: The ARN of the cross-account role for the authentication account to write to the InactiveAccountTrackerStore
-    Value: !GetAtt InactiveAccountTrackerStoreCrossAccountRole.Arn
-    Export:
-      Name: !Sub "${AWS::StackName}-InactiveAccountTrackerStoreCrossAccountRoleArn"
 
 # NOTES
 #

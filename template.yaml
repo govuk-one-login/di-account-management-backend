@@ -733,12 +733,11 @@ Resources:
         SSEEnabled: true
         SSEType: KMS
         KMSMasterKeyId: !GetAtt DatabaseKmsKey.Arn
-      ResourcePolicy:
-        PolicyDocument:
-          Version: "2012-10-17"
-          Statement:
-            - !If
-              - UseExternalEvents
+      ResourcePolicy: !If
+        - UseExternalEvents
+        - PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
               - Sid: AllowAuthAccountBatchWrite
                 Effect: Allow
                 Principal:
@@ -753,7 +752,7 @@ Resources:
                 Action:
                   - dynamodb:BatchWriteItem
                 Resource: !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${InactiveAccountTrackerStoreTableName}"
-              - !Ref AWS::NoValue
+        - !Ref AWS::NoValue
 
   ######################################
   # User Notifications store

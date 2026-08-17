@@ -119,8 +119,6 @@ Conditions:
     - !Equals [!Ref Environment, integration]
     - !Equals [!Ref Environment, production]
 
-  TempCondition: !Equals [!Ref Environment, dev]
-
   ExportLogsToSplunk:
     Fn::Or:
       - !Equals [!Ref Environment, integration]
@@ -254,7 +252,7 @@ Mappings:
     demo:
       AccountNumber: ""
     dev:
-      AccountNumber: "851725205974"
+      AccountNumber: ""
     build:
       AccountNumber: ""
     staging:
@@ -736,7 +734,7 @@ Resources:
         SSEType: KMS
         KMSMasterKeyId: !GetAtt DatabaseKmsKey.Arn
       ResourcePolicy: !If
-        - TempCondition
+        - UseExternalEvents
         - PolicyDocument:
             Version: "2012-10-17"
             Statement:
@@ -6283,7 +6281,7 @@ Resources:
             Resource:
               - "*"
           - !If
-            - "TempCondition"
+            - "UseExternalEvents"
             - Effect: Allow
               Principal:
                 AWS: !Join
@@ -6304,7 +6302,7 @@ Resources:
                 - "*"
             - !Ref AWS::NoValue
           - !If
-            - "TempCondition"
+            - "UseExternalEvents"
             - Effect: Allow
               Principal:
                 Service: "dynamodb.amazonaws.com"

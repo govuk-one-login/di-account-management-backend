@@ -7358,6 +7358,7 @@ Resources:
           NOTIFICATION_QUEUE_URL: !Ref NotificationQueue
           INACTIVE_ACCOUNT_TRACKER_TABLE_NAME: !Ref InactiveAccountTrackerStore
           ACCOUNT_DELETION_QUEUE_URL: !Ref AccountDeletionQueue
+          ACTIVITY_LOG_TABLE_NAME: !Ref ActivityLogsStoreTableName
           ACCOUNT_INTERVENTIONS_SERVICE_API_URL: !FindInMap [
             EnvironmentConfiguration,
             !Ref Environment,
@@ -7431,6 +7432,10 @@ Resources:
               - dynamodb:UpdateItem
             Resource:
               - !GetAtt InactiveAccountTrackerStore.Arn
+          - Effect: Allow
+            Action:
+              - dynamodb:Query
+            Resource: !GetAtt UserActivityLogsStore.Arn
           - Effect: Allow
             Action:
               - kms:Decrypt

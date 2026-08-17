@@ -8,17 +8,23 @@ import "aws-sdk-client-mock-vitest";
 const mockMetrics = vi.hoisted(() => ({
   publishStoredMetrics: vi.fn(),
   addMetric: vi.fn(),
+  addDimension: vi.fn(),
 }));
 const mockInitMetrics = vi.hoisted(() => vi.fn(() => mockMetrics));
 
-const mockGetAisStatus = vi.hoisted(() => vi.fn());
+const mockHasAisBlockIntervention = vi.hoisted(() => vi.fn());
+const mockHasRecentActivityLogEntry = vi.hoisted(() => vi.fn());
 
 vi.mock("../common/metrics.js", () => ({
   initMetrics: mockInitMetrics,
 }));
 
-vi.mock("../common/account-interventions-service-client.js", () => ({
-  getAisStatus: mockGetAisStatus,
+vi.mock("../common/iadGuards/hasAisBlockIntervention.js", () => ({
+  hasAisBlockIntervention: mockHasAisBlockIntervention,
+}));
+
+vi.mock("../common/iadGuards/hasRecentActivityLogEntry.js", () => ({
+  hasRecentActivityLogEntry: mockHasRecentActivityLogEntry,
 }));
 
 import { handler } from "../process-inactive-account.js";
@@ -45,6 +51,11 @@ const buildSqsEvent = (bodies: object[]): SQSEvent => ({
   })),
 });
 
+const notBlocked = { continue: true, guardName: "AIS" };
+const blocked = { continue: false, guardName: "AIS" };
+const noRecentActivity = { continue: true, guardName: "HomeUserActivityLog" };
+const recentActivity = { continue: false, guardName: "HomeUserActivityLog" };
+
 describe("process-inactive-account handler", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -53,17 +64,13 @@ describe("process-inactive-account handler", () => {
     sqsMock.on(SendMessageCommand).resolves({ MessageId: "test-message-id" });
     dynamoMock.on(UpdateCommand).resolves({});
 
-    mockGetAisStatus.mockResolvedValue({
-      state: {
-        blocked: false,
-        suspended: false,
-        reproveIdentity: false,
-        resetPassword: false,
-      },
-    });
+    mockHasAisBlockIntervention.mockResolvedValue(notBlocked);
+    mockHasRecentActivityLogEntry.mockResolvedValue(noRecentActivity);
 
-    process.env.NOTIFICATION_QUEUE_URL = "https://sqs.eu-west-2.amazonaws.com/123456789012/NotificationQueue";
-    process.env.INACTIVE_ACCOUNT_TRACKER_TABLE_NAME = "test-inactive-tracker-table";
+    process.env.NOTIFICATION_QUEUE_URL =
+      "https://sqs.eu-west-2.amazonaws.com/123456789012/NotificationQueue";
+    process.env.INACTIVE_ACCOUNT_TRACKER_TABLE_NAME =
+      "test-inactive-tracker-table";
   });
 
   test("enqueues a 30-day warning notification to the NotificationQueue", async () => {
@@ -80,7 +87,8 @@ describe("process-inactive-account handler", () => {
     await handler(event, {} as Context);
 
     expect(sqsMock).toHaveReceivedCommandWith(SendMessageCommand, {
-      QueueUrl: "https://sqs.eu-west-2.amazonaws.com/123456789012/NotificationQueue",
+      QueueUrl:
+        "https://sqs.eu-west-2.amazonaws.com/123456789012/NotificationQueue",
       MessageBody: JSON.stringify({
         notificationType: "INACTIVE_ACCOUNT_WARNING_30_DAY",
         emailAddress: "test@example.com",
@@ -100,7 +108,11 @@ describe("process-inactive-account handler", () => {
         ":timestamp": expect.any(String),
       },
     });
-    expect(mockMetrics.addMetric).toHaveBeenCalledWith("notificationEnqueued", expect.anything(), 1);
+    expect(mockMetrics.addMetric).toHaveBeenCalledWith(
+      "notificationEnqueued",
+      expect.anything(),
+      1
+    );
     expect(mockMetrics.publishStoredMetrics).toHaveBeenCalledTimes(1);
   });
 
@@ -118,7 +130,8 @@ describe("process-inactive-account handler", () => {
     await handler(event, {} as Context);
 
     expect(sqsMock).toHaveReceivedCommandWith(SendMessageCommand, {
-      QueueUrl: "https://sqs.eu-west-2.amazonaws.com/123456789012/NotificationQueue",
+      QueueUrl:
+        "https://sqs.eu-west-2.amazonaws.com/123456789012/NotificationQueue",
       MessageBody: JSON.stringify({
         notificationType: "INACTIVE_ACCOUNT_WARNING_7_DAY",
         emailAddress: "user@example.com",
@@ -138,7 +151,11 @@ describe("process-inactive-account handler", () => {
         ":timestamp": expect.any(String),
       },
     });
-    expect(mockMetrics.addMetric).toHaveBeenCalledWith("notificationEnqueued", expect.anything(), 1);
+    expect(mockMetrics.addMetric).toHaveBeenCalledWith(
+      "notificationEnqueued",
+      expect.anything(),
+      1
+    );
   });
 
   test("skips record when status is not allowed for process", async () => {
@@ -158,15 +175,8 @@ describe("process-inactive-account handler", () => {
     expect(dynamoMock).not.toHaveReceivedCommand(UpdateCommand);
   });
 
-  test("skips processing when user is blocked in AIS", async () => {
-    mockGetAisStatus.mockResolvedValue({
-      state: {
-        blocked: true,
-        suspended: false,
-        reproveIdentity: false,
-        resetPassword: false,
-      },
-    });
+  test("skips processing when AIS guard blocks the user", async () => {
+    mockHasAisBlockIntervention.mockResolvedValue(blocked);
 
     const event = buildSqsEvent([
       {
@@ -175,25 +185,39 @@ describe("process-inactive-account handler", () => {
         dateForDeletion: "2026-08-15",
         processName: "Warning30Day",
         status: "pending",
+        statusLastUpdated: "2024-01-01T00:00:00.000Z",
+        userLastActive: "2024-01-01T00:00:00.000Z",
+        userLastActiveSource: "auth",
+        userLastActiveUpdated: "2024-01-01T00:00:00.000Z",
+        emailAddressLastUpdated: "2024-01-01T00:00:00.000Z",
+        emailAddressSource: "auth",
+        hasSetupMfa: true,
       },
     ]);
 
     await handler(event, {} as Context);
 
-    expect(mockGetAisStatus).toHaveBeenCalledWith("blocked-user-123");
+    expect(mockHasAisBlockIntervention).toHaveBeenCalledWith(
+      "blocked-user-123"
+    );
     expect(sqsMock).not.toHaveReceivedCommand(SendMessageCommand);
     expect(dynamoMock).not.toHaveReceivedCommand(UpdateCommand);
-    expect(mockMetrics.addMetric).not.toHaveBeenCalled();
+    expect(mockMetrics.addDimension).toHaveBeenCalledWith("Guardrail", "AIS");
+    expect(mockMetrics.addDimension).toHaveBeenCalledWith(
+      "Process",
+      "Warning30Day"
+    );
+    expect(mockMetrics.addMetric).toHaveBeenCalledWith(
+      "GuardrailAbortedInactiveAccountDeletionProcess",
+      expect.anything(),
+      1
+    );
   });
 
   test("skips blocked user but processes non-blocked user in same batch", async () => {
-    mockGetAisStatus
-      .mockResolvedValueOnce({
-        state: { blocked: true, suspended: false, reproveIdentity: false, resetPassword: false },
-      })
-      .mockResolvedValueOnce({
-        state: { blocked: false, suspended: false, reproveIdentity: false, resetPassword: false },
-      });
+    mockHasAisBlockIntervention
+      .mockResolvedValueOnce(blocked)
+      .mockResolvedValueOnce(notBlocked);
 
     const event = buildSqsEvent([
       {
@@ -214,7 +238,7 @@ describe("process-inactive-account handler", () => {
 
     await handler(event, {} as Context);
 
-    expect(mockGetAisStatus).toHaveBeenCalledTimes(2);
+    expect(mockHasAisBlockIntervention).toHaveBeenCalledTimes(2);
     expect(sqsMock).toHaveReceivedCommandTimes(SendMessageCommand, 1);
     expect(dynamoMock).toHaveReceivedCommandTimes(UpdateCommand, 1);
     expect(dynamoMock).toHaveReceivedCommandWith(UpdateCommand, {
@@ -270,7 +294,9 @@ describe("process-inactive-account handler", () => {
       },
     ]);
 
-    await expect(handler(event, {} as Context)).rejects.toThrow("SQS send failed");
+    await expect(handler(event, {} as Context)).rejects.toThrow(
+      "SQS send failed"
+    );
   });
 
   test("throws when process configuration is not found", async () => {
@@ -302,11 +328,14 @@ describe("process-inactive-account handler", () => {
       },
     ]);
 
-    await expect(handler(event, {} as Context)).rejects.toThrow("DynamoDB update failed");
+    await expect(handler(event, {} as Context)).rejects.toThrow(
+      "DynamoDB update failed"
+    );
   });
 
   test("skips notification but still updates status and sends to target queue when notificationType is not configured", async () => {
-    process.env.ACCOUNT_DELETION_QUEUE_URL = "https://sqs.eu-west-2.amazonaws.com/123456789012/AccountDeletionQueue";
+    process.env.ACCOUNT_DELETION_QUEUE_URL =
+      "https://sqs.eu-west-2.amazonaws.com/123456789012/AccountDeletionQueue";
 
     const event = buildSqsEvent([
       {
@@ -323,7 +352,8 @@ describe("process-inactive-account handler", () => {
 
     expect(sqsMock).toHaveReceivedCommandTimes(SendMessageCommand, 1);
     expect(sqsMock).toHaveReceivedCommandWith(SendMessageCommand, {
-      QueueUrl: "https://sqs.eu-west-2.amazonaws.com/123456789012/AccountDeletionQueue",
+      QueueUrl:
+        "https://sqs.eu-west-2.amazonaws.com/123456789012/AccountDeletionQueue",
       MessageBody: JSON.stringify({
         publicSubjectId: "public-123",
         commonSubjectId: "user-123",
@@ -342,7 +372,11 @@ describe("process-inactive-account handler", () => {
         ":timestamp": expect.any(String),
       },
     });
-    expect(mockMetrics.addMetric).not.toHaveBeenCalledWith("notificationEnqueued", expect.anything(), 1);
+    expect(mockMetrics.addMetric).not.toHaveBeenCalledWith(
+      "notificationEnqueued",
+      expect.anything(),
+      1
+    );
     expect(mockMetrics.publishStoredMetrics).toHaveBeenCalledTimes(1);
   });
 
@@ -362,12 +396,64 @@ describe("process-inactive-account handler", () => {
 
     expect(sqsMock).toHaveReceivedCommandTimes(SendMessageCommand, 1);
     expect(sqsMock).toHaveReceivedCommandWith(SendMessageCommand, {
-      QueueUrl: "https://sqs.eu-west-2.amazonaws.com/123456789012/NotificationQueue",
+      QueueUrl:
+        "https://sqs.eu-west-2.amazonaws.com/123456789012/NotificationQueue",
       MessageBody: JSON.stringify({
         notificationType: "INACTIVE_ACCOUNT_WARNING_30_DAY",
         emailAddress: "test@example.com",
         dateForDeletion: "2026-08-15",
       }),
     });
+  });
+
+  test("skips deletion when hasRecentActivityLogEntry guard blocks the user", async () => {
+    mockHasRecentActivityLogEntry.mockResolvedValue(recentActivity);
+    process.env.ACCOUNT_DELETION_QUEUE_URL =
+      "https://sqs.eu-west-2.amazonaws.com/123456789012/AccountDeletionQueue";
+
+    const event = buildSqsEvent([
+      {
+        commonSubjectId: "user-123",
+        publicSubjectId: "public-123",
+        emailAddress: "test@example.com",
+        dateForDeletion: "2026-08-15",
+        processName: "DeleteAccount",
+        status: "pending",
+      },
+    ]);
+
+    await handler(event, {} as Context);
+
+    expect(sqsMock).not.toHaveReceivedCommand(SendMessageCommand);
+    expect(dynamoMock).not.toHaveReceivedCommand(UpdateCommand);
+    expect(mockMetrics.addDimension).toHaveBeenCalledWith(
+      "Guardrail",
+      "HomeUserActivityLog"
+    );
+    expect(mockMetrics.addDimension).toHaveBeenCalledWith(
+      "Process",
+      "DeleteAccount"
+    );
+    expect(mockMetrics.addMetric).toHaveBeenCalledWith(
+      "GuardrailAbortedInactiveAccountDeletionProcess",
+      expect.anything(),
+      1
+    );
+  });
+
+  test("hasRecentActivityLogEntry guard is not called for Warning30Day process", async () => {
+    const event = buildSqsEvent([
+      {
+        commonSubjectId: "user-123",
+        emailAddress: "test@example.com",
+        dateForDeletion: "2026-08-15",
+        processName: "Warning30Day",
+        status: "pending",
+      },
+    ]);
+
+    await handler(event, {} as Context);
+
+    expect(mockHasRecentActivityLogEntry).not.toHaveBeenCalled();
   });
 });

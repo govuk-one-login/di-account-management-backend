@@ -119,8 +119,7 @@ Conditions:
     - !Equals [!Ref Environment, integration]
     - !Equals [!Ref Environment, production]
 
-  TempCondition: !Or
-    - !Equals [!Ref Environment, dev]
+  TempCondition: !Equals [!Ref Environment, dev]
 
   ExportLogsToSplunk:
     Fn::Or:
@@ -253,9 +252,9 @@ Mappings:
 
   AuthenticationAccounts:
     demo:
-      AccountNumber: "851725205974"
-    dev:
       AccountNumber: ""
+    dev:
+      AccountNumber: "851725205974"
     build:
       AccountNumber: ""
     staging:

@@ -17,10 +17,13 @@ const addNotificationFailedMetric = (failureReason: string) => {
   metrics.addMetric("notificationFailed", MetricUnit.Count, 1);
 };
 
-enum NotificationType {
+export enum NotificationType {
   GLOBAL_LOGOUT = "GLOBAL_LOGOUT",
   INACTIVE_ACCOUNT_WARNING_30_DAY = "INACTIVE_ACCOUNT_WARNING_30_DAY",
   INACTIVE_ACCOUNT_WARNING_7_DAY = "INACTIVE_ACCOUNT_WARNING_7_DAY",
+  INACTIVE_ACCOUNT_SAVED_APP = "INACTIVE_ACCOUNT_SAVED_APP",
+  INACTIVE_ACCOUNT_SAVED_HOME = "INACTIVE_ACCOUNT_SAVED_HOME",
+  INACTIVE_ACCOUNT_SAVED_RP = "INACTIVE_ACCOUNT_SAVED_RP"
 }
 
 const missingContentPlaceholder = "-";
@@ -133,6 +136,27 @@ const messageSchema = v.variant("notificationType", [
       };
     })
   ),
+  v.object({
+    notificationType: v.literal(NotificationType.INACTIVE_ACCOUNT_SAVED_APP),
+    emailAddress: v.pipe(v.string(), v.email()),
+    personalisation: v.object({
+      email: v.pipe(v.string(), v.email()),
+    }),
+  }),
+  v.object({
+    notificationType: v.literal(NotificationType.INACTIVE_ACCOUNT_SAVED_HOME),
+    emailAddress: v.pipe(v.string(), v.email()),
+    personalisation: v.object({
+      email: v.pipe(v.string(), v.email()),
+    }),
+  }),
+  v.object({
+    notificationType: v.literal(NotificationType.INACTIVE_ACCOUNT_SAVED_RP),
+    emailAddress: v.pipe(v.string(), v.email()),
+    personalisation: v.object({
+      email: v.pipe(v.string(), v.email()),
+    }),
+  }),
 ]);
 
 const notifySuccessSchema = v.object({

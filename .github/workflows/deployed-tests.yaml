@@ -34,7 +34,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Verify 'skipPreMerge' is not in the last commit message
+      - name: Verify skipPreMerge is not in the last commit message
         id: verify_skip_merge
         env:
           GITHUB_EVENT_ACTION: ${{ github.event.action }}

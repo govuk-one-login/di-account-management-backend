@@ -16,7 +16,7 @@ Parameters:
     Description: The name of the stack that defines the Alerting resources
     Type: String
     Default: platform-alerting
-  InactveAccountTrackerStoreTableName:
+  InactiveAccountTrackerStoreTableName:
     Type: String
     Default: inactive_account_tracker_store
   UserNotificationsTableName:
@@ -710,7 +710,7 @@ Resources:
           Projection:
             ProjectionType: ALL
       BillingMode: PAY_PER_REQUEST
-      TableName: !Ref InactveAccountTrackerStoreTableName
+      TableName: !Ref InactiveAccountTrackerStoreTableName
       KeySchema:
         - AttributeName: dateForDeletion
           KeyType: HASH
@@ -733,55 +733,26 @@ Resources:
         SSEEnabled: true
         SSEType: KMS
         KMSMasterKeyId: !GetAtt DatabaseKmsKey.Arn
-
-  InactiveAccountTrackerStoreCrossAccountRole:
-    Type: AWS::IAM::Role
-    Condition: UseExternalEvents
-    Properties:
-      PermissionsBoundary: !If
-        - UsePermissionsBoundary
-        - !Ref PermissionsBoundary
-        - !Ref AWS::NoValue
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: Allow
-            Principal:
-              AWS: !Sub
-                - "arn:aws:iam::${AccountId}:root"
-                - AccountId:
-                    !FindInMap [
-                      AuthenticationAccounts,
-                      !Ref Environment,
-                      AccountNumber,
-                    ]
-            Action: sts:AssumeRole
-      Policies:
-        - PolicyName: InactiveAccountTrackerStoreWritePolicy
-          PolicyDocument:
+      ResourcePolicy: !If
+        - UseExternalEvents
+        - PolicyDocument:
             Version: "2012-10-17"
             Statement:
-              - Effect: Allow
+              - Sid: AllowAuthAccountBatchWrite
+                Effect: Allow
+                Principal:
+                  AWS: !Sub
+                    - "arn:aws:iam::${AccountId}:root"
+                    - AccountId:
+                        !FindInMap [
+                          AuthenticationAccounts,
+                          !Ref Environment,
+                          AccountNumber,
+                        ]
                 Action:
-                  - dynamodb:PutItem
                   - dynamodb:BatchWriteItem
-                Resource: !GetAtt InactiveAccountTrackerStore.Arn
-              - Effect: Allow
-                Action:
-                  - kms:Encrypt
-                  - kms:Decrypt
-                  - kms:GenerateDataKey*
-                  - kms:DescribeKey
-                Resource: !GetAtt DatabaseKmsKey.Arn
-
-  InactiveAccountTrackerStoreCrossAccountRoleArnParameter:
-    Type: AWS::SSM::Parameter
-    Condition: UseExternalEvents
-    Properties:
-      Description: The ARN of the cross-account role for the authentication account to write to the InactiveAccountTrackerStore
-      Name: !Sub "/${AWS::StackName}/IAM/InactiveAccountTrackerStoreCrossAccountRole/ARN"
-      Type: String
-      Value: !GetAtt InactiveAccountTrackerStoreCrossAccountRole.Arn
+                Resource: !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${InactiveAccountTrackerStoreTableName}"
+        - !Ref AWS::NoValue
 
   ######################################
   # User Notifications store
@@ -3420,12 +3391,16 @@ Resources:
         Variables:
           NODE_OPTIONS: --enable-source-maps
           ACCOUNT_SAVED_NOTIFICATION_QUEUE_URL: !Ref AccountSavedNotificationQueue
-          INACTIVE_ACCOUNT_TRACKER_TABLE_NAME: !Ref InactveAccountTrackerStoreTableName
+          INACTIVE_ACCOUNT_TRACKER_TABLE_NAME: !Ref InactiveAccountTrackerStoreTableName
           USER_NOTIFICATIONS_TABLE_NAME: !Ref UserNotificationsTableName
           OLH_CLIENT_ID:
             !FindInMap [EnvironmentVariables, !Ref Environment, OLHCLIENTID]
           AUTH_BACKFILL_COMPLETE_DATETIME:
-            !FindInMap [EnvironmentVariables, !Ref Environment, AUTHBACKFILLCOMPLETEDATETIME]
+            !FindInMap [
+              EnvironmentVariables,
+              !Ref Environment,
+              AUTHBACKFILLCOMPLETEDATETIME,
+            ]
       DeploymentPreference:
         Alarms:
           Fn::If:
@@ -3742,7 +3717,7 @@ Resources:
       Environment:
         Variables:
           NODE_OPTIONS: --enable-source-maps
-          INACTIVE_ACCOUNT_TRACKER_TABLE_NAME: !Ref InactveAccountTrackerStoreTableName
+          INACTIVE_ACCOUNT_TRACKER_TABLE_NAME: !Ref InactiveAccountTrackerStoreTableName
       DeploymentPreference:
         Alarms:
           Fn::If:
@@ -4741,7 +4716,7 @@ Resources:
       Role: !GetAtt DeleteInactiveAccountTrackerRole.Arn
       Environment:
         Variables:
-          TABLE_NAME: !Ref InactveAccountTrackerStoreTableName
+          TABLE_NAME: !Ref InactiveAccountTrackerStoreTableName
           NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
         Alarms:
@@ -5035,7 +5010,7 @@ Resources:
       ReservedConcurrentExecutions: 1
       Environment:
         Variables:
-          TABLE_NAME: !Ref InactveAccountTrackerStoreTableName
+          TABLE_NAME: !Ref InactiveAccountTrackerStoreTableName
           NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
         Alarms:
@@ -7129,7 +7104,7 @@ Resources:
       Role: !GetAtt QueryAndDispatchInactiveAccountsRole.Arn
       Environment:
         Variables:
-          TABLE_NAME: !Ref InactveAccountTrackerStoreTableName
+          TABLE_NAME: !Ref InactiveAccountTrackerStoreTableName
           WARNING_30_DAY_NOTIFICATION_QUEUE_URL: !Ref 30DayNotificationQueue
           WARNING_7_DAY_NOTIFICATION_QUEUE_URL: !Ref 7DayNotificationQueue
           ACCOUNT_DELETION_QUEUE_URL: !Ref AccountDeletionProcessQueue
@@ -7542,7 +7517,7 @@ Resources:
       Role: !GetAtt InactiveAccountDeletionForecastRole.Arn
       Environment:
         Variables:
-          TABLE_NAME: !Ref InactveAccountTrackerStoreTableName
+          TABLE_NAME: !Ref InactiveAccountTrackerStoreTableName
           FORECAST_TABLE_NAME: !Ref InactiveAccountDailyDeletionForecastTableName
           NODE_OPTIONS: --enable-source-maps
     Metadata:
@@ -7756,7 +7731,7 @@ Resources:
       Environment:
         Variables:
           NOTIFY_DELIVERY_RECEIPTS_SECRET_ARN: !Ref NotifyDeliveryReceiptsSecret
-          INACTIVE_ACCOUNT_TRACKER_TABLE_NAME: !Ref InactveAccountTrackerStoreTableName
+          INACTIVE_ACCOUNT_TRACKER_TABLE_NAME: !Ref InactiveAccountTrackerStoreTableName
       Policies:
         - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
         - Statement:
@@ -7900,12 +7875,6 @@ Outputs:
     Value: !GetAtt WrapperKey.Arn
     Export:
       Name: !Sub "${AWS::StackName}-WrappingKey"
-  InactiveAccountTrackerStoreCrossAccountRoleArn:
-    Condition: UseExternalEvents
-    Description: The ARN of the cross-account role for the authentication account to write to the InactiveAccountTrackerStore
-    Value: !GetAtt InactiveAccountTrackerStoreCrossAccountRole.Arn
-    Export:
-      Name: !Sub "${AWS::StackName}-InactiveAccountTrackerStoreCrossAccountRoleArn"
 
 # NOTES
 #

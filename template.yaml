@@ -268,6 +268,7 @@ Mappings:
     ### We are passing the version ID of AWS secrets as cloudformation does not retrieve updated secrets unless there is a change in the template file related to it.
     demo:
       OLHCLIENTID: "oneLoginHome"
+      GOVUKAPPCLIENTID: "govukApp"
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.integration.publishing.service.gov.uk"
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "2b3170b5-159e-457f-a282-f30f6006dc32"
       AUTHBACKFILLCOMPLETEDATETIME: ""
@@ -283,6 +284,7 @@ Mappings:
         }
     dev:
       OLHCLIENTID: "oneLoginHome"
+      GOVUKAPPCLIENTID: "govukApp"
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.integration.publishing.service.gov.uk"
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "2b3170b5-159e-457f-a282-f30f6006dc32"
       AUTHBACKFILLCOMPLETEDATETIME: ""
@@ -298,6 +300,7 @@ Mappings:
         }
     build:
       OLHCLIENTID: "oneLoginHome"
+      GOVUKAPPCLIENTID: "govukApp"
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.staging.publishing.service.gov.uk"
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "2b3170b5-159e-457f-a282-f30f6006dc32"
       AUTHBACKFILLCOMPLETEDATETIME: ""
@@ -314,6 +317,7 @@ Mappings:
     staging:
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.staging.publishing.service.gov.uk"
       OLHCLIENTID: "EMGmY82k-92QSakDl_9keKDFmZY"
+      GOVUKAPPCLIENTID: "govukApp"
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "2b3170b5-159e-457f-a282-f30f6006dc32"
       AUTHBACKFILLCOMPLETEDATETIME: ""
       NOTIFYTEMPLATEIDS: |
@@ -329,6 +333,7 @@ Mappings:
     integration:
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.integration.publishing.service.gov.uk"
       OLHCLIENTID: "Y8xi2wDAaRvWYlEkoExOUZbAPaYyBEhB"
+      GOVUKAPPCLIENTID: "EznkQXGrWxi0cQMSACY15UzvG1Q"
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "0674c6e3-219c-4e3a-b04c-3786bac7f228"
       AUTHBACKFILLCOMPLETEDATETIME: ""
       NOTIFYTEMPLATEIDS: |
@@ -343,6 +348,7 @@ Mappings:
         }
     production:
       OLHCLIENTID: "KcKmx2g1GH6ersWFvzMi1bhehq4"
+      GOVUKAPPCLIENTID: "EznkQXGrWxi0cQMSACY15UzvG1Q"
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.publishing.service.gov.uk"
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "0674c6e3-219c-4e3a-b04c-3786bac7f228"
       AUTHBACKFILLCOMPLETEDATETIME: ""
@@ -3421,6 +3427,9 @@ Resources:
               !Ref Environment,
               AUTHBACKFILLCOMPLETEDATETIME,
             ]
+          GOV_UK_APP_CLIENT_ID:
+            !FindInMap [EnvironmentVariables, !Ref Environment, GOVUKAPPCLIENTID]
+          NOTIFICATION_QUEUE_URL: !Ref NotificationQueue
       DeploymentPreference:
         Alarms:
           Fn::If:
@@ -3535,6 +3544,7 @@ Resources:
             Resource:
               - !GetAtt UpdateInactiveAccountTrackerDeadLetterQueue.Arn
               - !GetAtt AccountSavedNotificationQueue.Arn
+              - !GetAtt NotificationQueue.Arn
           - Effect: Allow
             Action:
               - dynamodb:DescribeStream

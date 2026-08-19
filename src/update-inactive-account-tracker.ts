@@ -7,10 +7,13 @@ import { getEnvironmentVariable } from "./common/utils.js";
 import { Logger } from "@aws-lambda-powertools/logger";
 import type { InactiveAccountTrackerRecord } from "./common/model.ts";
 import assert from 'node:assert/strict';
+import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
+import { NotificationType } from "./notification-service-utils.js"
 
 const logger = new Logger();
 const dynamoClient = new DynamoDBClient({});
 const dynamoDocClient = DynamoDBDocumentClient.from(dynamoClient);
+const sqsClient = new SQSClient();
 
 type TransactionItems = ConstructorParameters<typeof TransactWriteCommand>[0]['TransactItems']
 
@@ -53,11 +56,25 @@ const getLatestDate = (eventDate: Date, trackerRecord: InactiveAccountTrackerRec
   return eventDate > trackerDate ? eventDate : trackerDate;
 };
 
-const getDateForDeletion = (latestDate: Date): string => {
+const getNewDateForDeletion = (latestDate: Date): string => {
   const deletionDate = new Date(latestDate);
   deletionDate.setFullYear(deletionDate.getFullYear() + 5);
   return deletionDate.toISOString().split("T")[0];
 };
+
+const isCurrentDeletionIn30Days = (deletionDate: string): boolean => {
+  const date = new Date(deletionDate);
+  
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const thirtyDaysFromToday = new Date(today);
+  thirtyDaysFromToday.setDate(today.getDate() + 30);
+  
+  // Check if deletion dates falls between today and 30 days from now
+  return date >= today && date <= thirtyDaysFromToday;
+};
+
 
 const buildTransactionItems = (
   tableName: string,
@@ -167,7 +184,7 @@ const processRecord = async (
     userLastActive: latestDate.toISOString(),
     userLastActiveSource: txmaEvent.event_name,
     ...(txmaEvent.event_id && { userLastActiveSourceId: txmaEvent.event_id }),
-    dateForDeletion: getDateForDeletion(latestDate),
+    dateForDeletion: getNewDateForDeletion(latestDate),
     ...properties,
     status: 'pending',
     statusLastUpdated: eventDateTime,
@@ -175,6 +192,40 @@ const processRecord = async (
   };
 
   const transactionItems = buildTransactionItems(tableName, userNotificationsTableName, olhClientId, userId, newItem, currentTrackerRecord, txmaEvent);
+  const notificationQueueUrl = getEnvironmentVariable("NOTIFICATION_QUEUE_URL");
+  const govukAppClientId = getEnvironmentVariable("GOV_UK_APP_CLIENT_ID");
+  let notificationType;
+
+  switch (txmaEvent.client_id) {
+    //  GOVUK App client registry ID
+    case govukAppClientId:
+      notificationType = NotificationType.INACTIVE_ACCOUNT_SAVED_APP;
+      break;
+    //  OLH registry ID
+    case olhClientId:
+      notificationType = NotificationType.INACTIVE_ACCOUNT_SAVED_HOME;
+      break;
+    default:
+      notificationType = NotificationType.INACTIVE_ACCOUNT_SAVED_RP;
+  }
+
+
+  if (currentTrackerRecord?.dateForDeletion && isCurrentDeletionIn30Days(currentTrackerRecord.dateForDeletion)) {
+    // if currentTrackerRecord.dateForDeletion is within the next 30 days, send ACCOUNT SAVED email
+    const message = {
+      notificationType,
+      emailAddress: newItem.emailAddress,
+    };
+
+    await sqsClient.send(
+      new SendMessageCommand({
+        QueueUrl: notificationQueueUrl,
+        MessageBody: JSON.stringify(message),
+      })
+    );
+
+    logger.info(`${notificationType} message successfully sent to target queue`);
+  }
 
   try {
     await dynamoDocClient.send(new TransactWriteCommand({ TransactItems: transactionItems }));

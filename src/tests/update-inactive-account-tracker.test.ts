@@ -5,8 +5,13 @@ import { mockClient } from "aws-sdk-client-mock";
 import { DynamoDBDocumentClient, GetCommand, QueryCommand, TransactWriteCommand } from "@aws-sdk/lib-dynamodb";
 import { handler } from "../update-inactive-account-tracker.js";
 import { generateDynamoStreamRecord, timestamp, txmaEventId } from "./testFixtures.js";
-
+import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs"; 
 const dynamoMock = mockClient(DynamoDBDocumentClient);
+const sqsMock = mockClient(SQSClient);
+
+vi.hoisted(() => {
+  process.env.NOTIFY_TEMPLATE_IDS = '{"GLOBAL_LOGOUT":"template-id"}';
+});
 
 describe("UpdateInactiveAccountTracker handler", () => {
   const loggerInfoMock = vi
@@ -20,7 +25,11 @@ describe("UpdateInactiveAccountTracker handler", () => {
     process.env.INACTIVE_ACCOUNT_TRACKER_TABLE_NAME = "test-table";
     process.env.USER_NOTIFICATIONS_TABLE_NAME = "user-notifications-table";
     process.env.OLH_CLIENT_ID = "test-client";
+    process.env.NOTIFICATION_QUEUE_URL = "https://sqsq-url"; 
+    process.env.NOTIFY_TEMPLATE_IDS = '{"GLOBAL_LOGOUT":"template-id"}';
+    process.env.GOV_UK_APP_CLIENT_ID = 'govuk-app-client-id';
     dynamoMock.reset();
+    sqsMock.reset(); 
   });
 
   afterEach(() => {
@@ -28,8 +37,11 @@ describe("UpdateInactiveAccountTracker handler", () => {
     loggerWarnMock.mockClear();
     delete process.env.INACTIVE_ACCOUNT_TRACKER_TABLE_NAME;
     delete process.env.USER_NOTIFICATIONS_TABLE_NAME;
+    delete process.env.NOTIFY_TEMPLATE_IDS;
     delete process.env.OLH_CLIENT_ID;
     delete process.env.AUTH_BACKFILL_COMPLETE_DATETIME;
+    delete process.env.NOTIFICATION_QUEUE_URL;
+    delete process.env.GOV_UK_APP_CLIENT_ID;
   });
 
   test("queries CommonSubjectIdIndex with user_id", async () => {
@@ -667,6 +679,140 @@ describe("UpdateInactiveAccountTracker handler", () => {
     });
   });
 
+  test("sends INACTIVE_ACCOUNT_SAVED_APP to SQS when user is within 30 days of deletion and logs in via App", async () => {
+    const within30DaysDate = new Date();
+    within30DaysDate.setDate(within30DaysDate.getDate() + 15);
+    const dateStr = within30DaysDate.toISOString().split("T")[0];
+
+    dynamoMock.on(QueryCommand).resolves({
+      Items: [{ 
+        commonSubjectId: "qwerty", 
+        dateForDeletion: dateStr, 
+        userLastActive: new Date(Date.now() - 100000).toISOString(), 
+        status: "pending", 
+        emailAddress: "user@example.com" 
+      }],
+    });
+    dynamoMock.on(TransactWriteCommand).resolves({});
+    sqsMock.on(SendMessageCommand).resolves({});
+
+    const event: DynamoDBStreamEvent = { 
+      Records: [generateDynamoStreamRecord("govuk-app-client-id")] 
+    };
+
+    await handler(event, {} as Context);
+
+    expect(sqsMock).toHaveReceivedCommandWith(SendMessageCommand, {
+      QueueUrl: "https://sqsq-url",
+      MessageBody: JSON.stringify({
+        notificationType: "INACTIVE_ACCOUNT_SAVED_APP",
+        emailAddress: "foo@bar.com"
+      }),
+    });
+
+    expect(loggerInfoMock).toHaveBeenCalledWith(
+      expect.stringContaining("INACTIVE_ACCOUNT_SAVED_APP message successfully sent to target queue")
+    );
+  });
+
+  test("sends INACTIVE_ACCOUNT_SAVED_HOME to SQS when user is within 30 days of deletion and logs in via Home", async () => {
+    const within30DaysDate = new Date();
+    within30DaysDate.setDate(within30DaysDate.getDate() + 15);
+    const dateStr = within30DaysDate.toISOString().split("T")[0];
+
+    dynamoMock.on(QueryCommand).resolves({
+      Items: [{ 
+        commonSubjectId: "qwerty", 
+        dateForDeletion: dateStr, 
+        userLastActive: new Date(Date.now() - 100000).toISOString(), 
+        status: "pending", 
+        emailAddress: "user@example.com" 
+      }],
+    });
+    dynamoMock.on(TransactWriteCommand).resolves({});
+    sqsMock.on(SendMessageCommand).resolves({});
+
+    const event: DynamoDBStreamEvent = { 
+      Records: [generateDynamoStreamRecord("test-client")] 
+    };
+
+    await handler(event, {} as Context);
+
+    expect(sqsMock).toHaveReceivedCommandWith(SendMessageCommand, {
+      QueueUrl: "https://sqsq-url",
+      MessageBody: JSON.stringify({
+        notificationType: "INACTIVE_ACCOUNT_SAVED_HOME",
+        emailAddress: "foo@bar.com",
+      }),
+    });
+
+    expect(loggerInfoMock).toHaveBeenCalledWith(
+      expect.stringContaining("INACTIVE_ACCOUNT_SAVED_HOME message successfully sent to target queue")
+    );
+  });
+
+  test("sends INACTIVE_ACCOUNT_SAVED_RP to SQS when user is within 30 days of deletion and logs in via an RP that is not GOVUK App or OLH", async () => {
+    const within30DaysDate = new Date();
+    within30DaysDate.setDate(within30DaysDate.getDate() + 15);
+    const dateStr = within30DaysDate.toISOString().split("T")[0];
+
+    dynamoMock.on(QueryCommand).resolves({
+      Items: [{ 
+        commonSubjectId: "qwerty", 
+        dateForDeletion: dateStr, 
+        userLastActive: new Date(Date.now() - 100000).toISOString(), 
+        status: "pending", 
+        emailAddress: "user@example.com" 
+      }],
+    });
+    dynamoMock.on(TransactWriteCommand).resolves({});
+    sqsMock.on(SendMessageCommand).resolves({});
+
+    const event: DynamoDBStreamEvent = { 
+      Records: [generateDynamoStreamRecord("client-id")] 
+    };
+
+    await handler(event, {} as Context);
+
+    expect(sqsMock).toHaveReceivedCommandWith(SendMessageCommand, {
+      QueueUrl: "https://sqsq-url",
+      MessageBody: JSON.stringify({
+        notificationType: "INACTIVE_ACCOUNT_SAVED_RP",
+        emailAddress: "foo@bar.com",
+      }),
+    });
+
+    expect(loggerInfoMock).toHaveBeenCalledWith(
+      expect.stringContaining("INACTIVE_ACCOUNT_SAVED_RP message successfully sent to target queue")
+    );
+  });
+
+  test("does not send message when deletion date is too far in the future", async () => {
+    const outside30DaysDate = new Date();
+    outside30DaysDate.setDate(outside30DaysDate.getDate() + 45);
+    const dateStr = outside30DaysDate.toISOString().split("T")[0];
+
+    dynamoMock.on(QueryCommand).resolves({
+      Items: [{ 
+        commonSubjectId: "qwerty", 
+        dateForDeletion: dateStr, 
+        userLastActive: new Date(Date.now() - 100000).toISOString(), 
+        status: "pending", 
+        emailAddress: "foo@bar.com" 
+      }],
+    });
+    dynamoMock.on(TransactWriteCommand).resolves({});
+    sqsMock.on(SendMessageCommand).resolves({});
+
+    const event: DynamoDBStreamEvent = { 
+      Records: [generateDynamoStreamRecord("EznkQXGrWxi0cQMSACY15UzvG1Q")] 
+    };
+
+    await handler(event, {} as Context);
+
+    expect(sqsMock).not.toHaveReceivedCommand(SendMessageCommand);
+  });
+
   describe("backfill threshold", () => {
     // timestamp fixture = 123456789 seconds = 1973-11-29T21:33:09.000Z
     const beforeThreshold = "1974-01-01T00:00:00.000Z";
@@ -710,5 +856,4 @@ describe("UpdateInactiveAccountTracker handler", () => {
       expect(dynamoMock).toHaveReceivedCommand(TransactWriteCommand);
     });
   });
-
 });

@@ -2118,6 +2118,26 @@ Resources:
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
 
+  AccountDeletionQueuePolicy:
+    Condition: UseExternalEvents
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues:
+        - !Ref AccountDeletionQueue
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub
+                - "arn:aws:iam::${AccountId}:root"
+                - AccountId: !FindInMap [AuthenticationAccounts, !Ref Environment, AccountNumber]
+            Action:
+              - sqs:ChangeMessageVisibility
+              - sqs:ReceiveMessage
+              - sqs:GetQueueAttributes
+              - sqs:DeleteMessage
+            Resource: !GetAtt AccountDeletionQueue.Arn
+
   AccountDeletionDeadLetterQueue:
     Type: AWS::SQS::Queue
     DeletionPolicy: Delete
@@ -6251,6 +6271,18 @@ Resources:
               - kms:GenerateDataKey
             Resource:
               - "*"
+          - !If
+            - UseExternalEvents
+            - Effect: Allow
+              Principal:
+                AWS: !Sub
+                  - "arn:aws:iam::${AccountId}:root"
+                  - AccountId: !FindInMap [AuthenticationAccounts, !Ref Environment, AccountNumber]
+              Action:
+                - kms:Decrypt
+              Resource:
+                - "*"
+            - !Ref AWS::NoValue
 
   QueueKmsKeyAlias:
     Type: AWS::KMS::Alias

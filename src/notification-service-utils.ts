@@ -96,7 +96,6 @@ const messageSchema = v.variant("notificationType", [
         notificationType: input.notificationType,
 
         personalisation: {
-          email: input.emailAddress,
           deletionDate_en: new Intl.DateTimeFormat("en-gb", {
             dateStyle: "long",
             timeZone: "Europe/London",
@@ -123,7 +122,6 @@ const messageSchema = v.variant("notificationType", [
         notificationType: input.notificationType,
 
         personalisation: {
-          email: input.emailAddress,
           deletionDate_en: new Intl.DateTimeFormat("en-gb", {
             dateStyle: "long",
             timeZone: "Europe/London",
@@ -139,23 +137,14 @@ const messageSchema = v.variant("notificationType", [
   v.object({
     notificationType: v.literal(NotificationType.INACTIVE_ACCOUNT_SAVED_APP),
     emailAddress: v.pipe(v.string(), v.email()),
-    personalisation: v.object({
-      email: v.pipe(v.string(), v.email()),
-    }),
   }),
   v.object({
     notificationType: v.literal(NotificationType.INACTIVE_ACCOUNT_SAVED_HOME),
     emailAddress: v.pipe(v.string(), v.email()),
-    personalisation: v.object({
-      email: v.pipe(v.string(), v.email()),
-    }),
   }),
   v.object({
     notificationType: v.literal(NotificationType.INACTIVE_ACCOUNT_SAVED_RP),
     emailAddress: v.pipe(v.string(), v.email()),
-    personalisation: v.object({
-      email: v.pipe(v.string(), v.email()),
-    }),
   }),
 ]);
 
@@ -210,7 +199,7 @@ export const processNotification = async (
   const message: {
     emailAddress: string;
     notificationType: NotificationType;
-    personalisation: Record<string, string>;
+    personalisation?: Record<string, string>;
   } = messageParsed.output;
 
   const reference = randomUUID();

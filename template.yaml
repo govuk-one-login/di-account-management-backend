@@ -233,6 +233,25 @@ Mappings:
     production:
       QueueArn: "arn:aws:sqs:eu-west-2:451773080033:self-production-EC-SQS-Output-Queue-accounts"
       KeyArn: "arn:aws:kms:eu-west-2:451773080033:key/e95d47b6-613d-4bea-93c9-d400cdfb31ee"
+  IADInputQueue:
+    demo:
+      QueueArn: ""
+      KeyArn: ""
+    dev:
+      QueueArn: ""
+      KeyArn: ""
+    build:
+      QueueArn: ""
+      KeyArn: ""
+    staging:
+      QueueArn: "arn:aws:sqs:eu-west-2:178023842775:self-staging-EC-SQS-Output-Queue-homeIAD"
+      KeyArn: "arn:aws:kms:eu-west-2:178023842775:key/5d01677f-6080-494c-9ef0-03abab218bb9"
+    integration:
+      QueueArn: "arn:aws:sqs:eu-west-2:729485541398:self-integration-EC-SQS-Output-Queue-homeIAD"
+      KeyArn: "arn:aws:kms:eu-west-2:729485541398:key/6f10940b-6a40-42e9-a295-6ebed7c60a68"
+    production:
+      QueueArn: "arn:aws:sqs:eu-west-2:451773080033:self-production-EC-SQS-Output-Queue-homeIAD"
+      KeyArn: "arn:aws:kms:eu-west-2:451773080033:key/27cc5a43-8373-4125-a378-af88555abc50"      
 
   OrchestrationAccounts:
     demo:
@@ -790,7 +809,7 @@ Resources:
         KMSMasterKeyId: !GetAtt DatabaseKmsKey.Arn
 
   ######################################
-  # TxMA Event Queue (Dummy for now)
+  # TxMA Event Queues (Dummy for now)
   ######################################
 
   TxMAInputDummyQueue:
@@ -822,6 +841,38 @@ Resources:
       Dimensions:
         - Name: QueueName
           Value: !GetAtt TxMAInputDummyQueue.QueueName
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+
+  TxMAIADInputDummyQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+
+  TxMAIADInputDummyQueueOldestMessageAgeAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            TxMAIADInputDummyQueueOldestMessageAgeAlarm,
+          ],
+        ]
+      MetricName: ApproximateAgeOfOldestMessage
+      Namespace: AWS/SQS
+      Statistic: Maximum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 300
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt TxMAIADInputDummyQueue.QueueName
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
 
@@ -996,6 +1047,17 @@ Resources:
             MaximumBatchingWindowInSeconds: 10
             FunctionResponseTypes:
               - ReportBatchItemFailures
+        IADInputQueue:
+          Type: SQS
+          Properties:
+            Queue: !If
+              - UseInternalEvents
+              - !GetAtt TxMAIADInputDummyQueue.Arn
+              - !FindInMap [IADInputQueue, !Ref Environment, QueueArn]
+            BatchSize: 100
+            MaximumBatchingWindowInSeconds: 10
+            FunctionResponseTypes:
+              - ReportBatchItemFailures              
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt SaveRawEventsDeadLetterQueue.Arn
@@ -1066,10 +1128,15 @@ Resources:
               - sqs:ReceiveMessage
               - sqs:DeleteMessage
               - sqs:GetQueueAttributes
-            Resource: !If
-              - UseInternalEvents
-              - !GetAtt TxMAInputDummyQueue.Arn
-              - !FindInMap [InputQueue, !Ref Environment, QueueArn]
+            Resource:
+              - !If
+                - UseInternalEvents
+                - !GetAtt TxMAInputDummyQueue.Arn
+                - !FindInMap [InputQueue, !Ref Environment, QueueArn]
+              - !If
+                - UseInternalEvents
+                - !GetAtt TxMAIADInputDummyQueue.Arn
+                - !FindInMap [IADInputQueue, !Ref Environment, QueueArn]                
           - Effect: Allow
             Action:
               - sqs:SendMessage
@@ -1095,6 +1162,10 @@ Resources:
                 - UseInternalEvents
                 - !Ref AWS::NoValue
                 - !FindInMap [InputQueue, !Ref Environment, KeyArn]
+              - !If
+                - UseInternalEvents
+                - !Ref AWS::NoValue
+                - !FindInMap [IADInputQueue, !Ref Environment, KeyArn]                                
 
   SaveRawEventsFunctionLogGroup:
     Type: AWS::Logs::LogGroup

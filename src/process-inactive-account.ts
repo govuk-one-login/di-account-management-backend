@@ -6,18 +6,20 @@ import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import assert from "node:assert/strict";
 import { initMetrics } from "./common/metrics.js";
-import { processConfig, Guard } from "./common/process-config.js";
+import { processConfig, ProcessConfig } from "./common/process-config.js";
 import { getEnvironmentVariable } from "./common/utils.js";
 
 const logger = new Logger();
 const metrics = initMetrics("process-inactive-account");
 
 async function runGuards(
-  guards: Guard[],
+  guards: ProcessConfig[number]["guards"],
   body: Record<string, string>
 ): Promise<boolean> {
+  if (!guards) return false;
+
   for (const guard of guards) {
-    const guardResult = await guard(body.commonSubjectId);
+    const guardResult = await guard.guard(body.commonSubjectId);
 
     if (!guardResult.continue) {
       logger.info("Guard aborted inactive account deletion process", {
@@ -38,6 +40,11 @@ async function runGuards(
 
       metrics.addDimension("Guardrail", guardResult.guardName);
       metrics.addDimension("Process", body.processName);
+      metrics.addDimension(
+        "ContributeToAlarm",
+        guard.contributeToAlarm ? "1" : "0"
+      );
+
       metrics.addMetric(
         "GuardrailAbortedInactiveAccountDeletionProcess",
         MetricUnit.Count,
@@ -88,7 +95,7 @@ export const handler = async (
       `No target status configured for process ${body.processName}`
     );
 
-    if (process.guards && (await runGuards(process.guards, body))) continue;
+    if (await runGuards(process.guards, body)) continue;
 
     if (process.notificationType) {
       const message = {

@@ -16,7 +16,10 @@ export type ProcessConfig = Record<
     targetStatus?: InactiveAccountStatus;
     notificationType?: string;
     targetQueueUrlEnvVar?: string;
-    guards?: Guard[];
+    guards?: {
+      guard: Guard;
+      contributeToAlarm: boolean;
+    }[];
   }
 >;
 
@@ -27,7 +30,7 @@ export const processConfig: ProcessConfig = {
     allowedStatuses: ["pending"],
     targetStatus: "30DayWarningSent",
     notificationType: "INACTIVE_ACCOUNT_WARNING_30_DAY",
-    guards: [hasAisBlockIntervention],
+    guards: [{ guard: hasAisBlockIntervention, contributeToAlarm: false }],
   },
   Warning7Day: {
     queueUrlEnvVar: "WARNING_7_DAY_NOTIFICATION_QUEUE_URL",
@@ -35,7 +38,7 @@ export const processConfig: ProcessConfig = {
     allowedStatuses: ["pending", "30DayWarningSent"],
     targetStatus: "7DayWarningSent",
     notificationType: "INACTIVE_ACCOUNT_WARNING_7_DAY",
-    guards: [hasAisBlockIntervention],
+    guards: [{ guard: hasAisBlockIntervention, contributeToAlarm: false }],
   },
   DeleteAccount: {
     queueUrlEnvVar: "ACCOUNT_DELETION_QUEUE_URL",
@@ -43,6 +46,9 @@ export const processConfig: ProcessConfig = {
     allowedStatuses: ["pending", "30DayWarningSent", "7DayWarningSent"],
     targetStatus: "deleting",
     targetQueueUrlEnvVar: "ACCOUNT_DELETION_QUEUE_URL",
-    guards: [hasAisBlockIntervention, hasRecentActivityLogEntry],
+    guards: [
+      { guard: hasAisBlockIntervention, contributeToAlarm: false },
+      { guard: hasRecentActivityLogEntry, contributeToAlarm: true },
+    ],
   },
 };

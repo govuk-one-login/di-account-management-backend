@@ -207,6 +207,10 @@ describe("process-inactive-account handler", () => {
       "Process",
       "Warning30Day"
     );
+    expect(mockMetrics.addDimension).toHaveBeenCalledWith(
+      "ContributeToAlarm",
+      "0"
+    );
     expect(mockMetrics.addMetric).toHaveBeenCalledWith(
       "GuardrailAbortedInactiveAccountDeletionProcess",
       expect.anything(),
@@ -433,6 +437,10 @@ describe("process-inactive-account handler", () => {
     expect(mockMetrics.addDimension).toHaveBeenCalledWith(
       "Process",
       "DeleteAccount"
+    );
+    expect(mockMetrics.addDimension).toHaveBeenCalledWith(
+      "ContributeToAlarm",
+      "1"
     );
     expect(mockMetrics.addMetric).toHaveBeenCalledWith(
       "GuardrailAbortedInactiveAccountDeletionProcess",

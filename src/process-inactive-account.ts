@@ -6,11 +6,50 @@ import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import assert from "node:assert/strict";
 import { initMetrics } from "./common/metrics.js";
-import { processConfig } from "./common/process-config.js";
+import { processConfig, Guard } from "./common/process-config.js";
 import { getEnvironmentVariable } from "./common/utils.js";
 
 const logger = new Logger();
 const metrics = initMetrics("process-inactive-account");
+
+async function runGuards(
+  guards: Guard[],
+  body: Record<string, string>
+): Promise<boolean> {
+  for (const guard of guards) {
+    const guardResult = await guard(body.commonSubjectId);
+
+    if (!guardResult.continue) {
+      logger.info("Guard aborted inactive account deletion process", {
+        dateForDeletion: body.dateForDeletion,
+        processName: body.processName,
+        status: body.status,
+        statusLastUpdated: body.statusLastUpdated,
+        userLastActive: body.userLastActive,
+        userLastActiveSource: body.userLastActiveSource,
+        userLastActiveSourceId: body.userLastActiveSourceId,
+        userLastActiveUpdated: body.userLastActiveUpdated,
+        emailAddressLastUpdated: body.emailAddressLastUpdated,
+        emailAddressSource: body.emailAddressSource,
+        emailAddressSourceId: body.emailAddressSourceId,
+        hasSetupMfa: body.hasSetupMfa,
+        guard: guardResult.guardName,
+      });
+
+      metrics.addDimension("Guardrail", guardResult.guardName);
+      metrics.addDimension("Process", body.processName);
+      metrics.addMetric(
+        "GuardrailAbortedInactiveAccountDeletionProcess",
+        MetricUnit.Count,
+        1
+      );
+
+      return true;
+    }
+  }
+  return false;
+}
+
 const sqsClient = new SQSClient();
 const dynamoClient = new DynamoDBClient({});
 const dynamoDocClient = DynamoDBDocumentClient.from(dynamoClient);
@@ -49,44 +88,7 @@ export const handler = async (
       `No target status configured for process ${body.processName}`
     );
 
-    if (process.guards) {
-      let abort = false;
-
-      for (const guard of process.guards) {
-        const guardResult = await guard(body.commonSubjectId);
-
-        if (!guardResult.continue) {
-          logger.info("Guard aborted inactive account deletion process", {
-            dateForDeletion: body.dateForDeletion,
-            processName: body.processName,
-            status: body.status,
-            statusLastUpdated: body.statusLastUpdated,
-            userLastActive: body.userLastActive,
-            userLastActiveSource: body.userLastActiveSource,
-            userLastActiveSourceId: body.userLastActiveSourceId,
-            userLastActiveUpdated: body.userLastActiveUpdated,
-            emailAddressLastUpdated: body.emailAddressLastUpdated,
-            emailAddressSource: body.emailAddressSource,
-            emailAddressSourceId: body.emailAddressSourceId,
-            hasSetupMfa: body.hasSetupMfa,
-            guard: guardResult.guardName,
-          });
-
-          metrics.addDimension("Guardrail", guardResult.guardName);
-          metrics.addDimension("Process", body.processName);
-          metrics.addMetric(
-            "GuardrailAbortedInactiveAccountDeletionProcess",
-            MetricUnit.Count,
-            1
-          );
-
-          abort = true;
-          break;
-        }
-      }
-
-      if (abort) continue;
-    }
+    if (process.guards && (await runGuards(process.guards, body))) continue;
 
     if (process.notificationType) {
       const message = {

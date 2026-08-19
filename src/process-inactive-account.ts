@@ -6,12 +6,57 @@ import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import assert from "node:assert/strict";
 import { initMetrics } from "./common/metrics.js";
-import { processConfig } from "./common/process-config.js";
+import { processConfig, ProcessConfig } from "./common/process-config.js";
 import { getEnvironmentVariable } from "./common/utils.js";
-import { getAisStatus } from "./common/account-interventions-service-client.js";
 
 const logger = new Logger();
 const metrics = initMetrics("process-inactive-account");
+
+async function runGuards(
+  guards: ProcessConfig[number]["guards"],
+  body: Record<string, string>
+): Promise<boolean> {
+  if (!guards) return false;
+
+  for (const guard of guards) {
+    const guardResult = await guard.guard(body.commonSubjectId);
+
+    if (!guardResult.continue) {
+      logger.info("Guard aborted inactive account deletion process", {
+        dateForDeletion: body.dateForDeletion,
+        processName: body.processName,
+        status: body.status,
+        statusLastUpdated: body.statusLastUpdated,
+        userLastActive: body.userLastActive,
+        userLastActiveSource: body.userLastActiveSource,
+        userLastActiveSourceId: body.userLastActiveSourceId,
+        userLastActiveUpdated: body.userLastActiveUpdated,
+        emailAddressLastUpdated: body.emailAddressLastUpdated,
+        emailAddressSource: body.emailAddressSource,
+        emailAddressSourceId: body.emailAddressSourceId,
+        hasSetupMfa: body.hasSetupMfa,
+        guard: guardResult.guardName,
+      });
+
+      metrics.addDimension("Guardrail", guardResult.guardName);
+      metrics.addDimension("Process", body.processName);
+      metrics.addDimension(
+        "ContributeToAlarm",
+        guard.contributeToAlarm ? "1" : "0"
+      );
+
+      metrics.addMetric(
+        "GuardrailAbortedInactiveAccountDeletionProcess",
+        MetricUnit.Count,
+        1
+      );
+
+      return true;
+    }
+  }
+  return false;
+}
+
 const sqsClient = new SQSClient();
 const dynamoClient = new DynamoDBClient({});
 const dynamoDocClient = DynamoDBDocumentClient.from(dynamoClient);
@@ -23,7 +68,9 @@ export const handler = async (
   logger.addContext(context);
 
   const notificationQueueUrl = getEnvironmentVariable("NOTIFICATION_QUEUE_URL");
-  const tableName = getEnvironmentVariable("INACTIVE_ACCOUNT_TRACKER_TABLE_NAME");
+  const inactiveAccountTrackerTableName = getEnvironmentVariable(
+    "INACTIVE_ACCOUNT_TRACKER_TABLE_NAME"
+  );
 
   for (const record of event.Records) {
     const body = JSON.parse(record.body);
@@ -34,19 +81,12 @@ export const handler = async (
       processName: body.processName,
     });
 
-    const aisStatus = await getAisStatus(body.commonSubjectId);
-    if (aisStatus.state.blocked) {
-      logger.info("User is blocked, skipping processing", {
-        commonSubjectId: body.commonSubjectId,
-        processName: body.processName,
-      });
-      continue;
-    }
-
     assert(process, `Process configuration not found for ${body.processName}`);
 
     if (!process.allowedStatuses.includes(body.status)) {
-      logger.info(`Status ${body.status} is not allowed for process ${body.processName}`);
+      logger.info(
+        `Status ${body.status} is not allowed for process ${body.processName}`
+      );
       continue;
     }
 
@@ -54,6 +94,8 @@ export const handler = async (
       process.targetStatus,
       `No target status configured for process ${body.processName}`
     );
+
+    if (await runGuards(process.guards, body)) continue;
 
     if (process.notificationType) {
       const message = {
@@ -69,11 +111,14 @@ export const handler = async (
         })
       );
 
-      logger.info("Successfully enqueued inactive account warning notification", {
-        commonSubjectId: body.commonSubjectId,
-        processName: body.processName,
-        notificationType: process.notificationType,
-      });
+      logger.info(
+        "Successfully enqueued inactive account warning notification",
+        {
+          commonSubjectId: body.commonSubjectId,
+          processName: body.processName,
+          notificationType: process.notificationType,
+        }
+      );
       metrics.addMetric("notificationEnqueued", MetricUnit.Count, 1);
     } else {
       logger.info("No notificationType configured, skipping notification", {
@@ -84,12 +129,13 @@ export const handler = async (
 
     await dynamoDocClient.send(
       new UpdateCommand({
-        TableName: tableName,
+        TableName: inactiveAccountTrackerTableName,
         Key: {
           dateForDeletion: body.dateForDeletion,
           commonSubjectId: body.commonSubjectId,
         },
-        UpdateExpression: "SET #status = :status, statusLastUpdated = :timestamp",
+        UpdateExpression:
+          "SET #status = :status, statusLastUpdated = :timestamp",
         ExpressionAttributeNames: { "#status": "status" },
         ExpressionAttributeValues: {
           ":status": process.targetStatus,
@@ -99,7 +145,9 @@ export const handler = async (
     );
 
     if (process.targetQueueUrlEnvVar) {
-      const targetQueueUrl = getEnvironmentVariable(process.targetQueueUrlEnvVar);
+      const targetQueueUrl = getEnvironmentVariable(
+        process.targetQueueUrlEnvVar
+      );
       const targetMessage = {
         publicSubjectId: body.publicSubjectId,
         commonSubjectId: body.commonSubjectId,

@@ -33,7 +33,7 @@ export const processConfig: ProcessConfig = {
     notificationType: "INACTIVE_ACCOUNT_WARNING_30_DAY",
     guards: [
       { guard: hasAisBlockIntervention, contributeToAlarm: false },
-      { guard: hasUndeliverableEmailAddress, contributeToAlarm: true },
+      { guard: hasUndeliverableEmailAddress, contributeToAlarm: false },
     ],
   },
   Warning7Day: {
@@ -44,7 +44,7 @@ export const processConfig: ProcessConfig = {
     notificationType: "INACTIVE_ACCOUNT_WARNING_7_DAY",
     guards: [
       { guard: hasAisBlockIntervention, contributeToAlarm: false },
-      { guard: hasUndeliverableEmailAddress, contributeToAlarm: true },
+      { guard: hasUndeliverableEmailAddress, contributeToAlarm: false },
     ],
   },
   DeleteAccount: {
@@ -56,7 +56,6 @@ export const processConfig: ProcessConfig = {
     guards: [
       { guard: hasAisBlockIntervention, contributeToAlarm: false },
       { guard: hasRecentActivityLogEntry, contributeToAlarm: true },
-      { guard: hasUndeliverableEmailAddress, contributeToAlarm: true },
     ],
   },
 };

@@ -5,7 +5,6 @@ import { Guard } from "../process-config.js";
 
 const dynamoDocClient = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 
-
 export const hasUndeliverableEmailAddress: Guard = async (commonSubjectId) => {
   const inactiveAccountTrackerTableName = getEnvironmentVariable(
     "INACTIVE_ACCOUNT_TRACKER_TABLE_NAME"

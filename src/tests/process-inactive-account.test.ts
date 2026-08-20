@@ -479,6 +479,10 @@ describe("process-inactive-account handler", () => {
       expect.anything(),
       1
     );
+    expect(mockMetrics.addDimension).toHaveBeenCalledWith(
+      "ContributeToAlarm",
+      "0"
+    );
   });
 
   test("continue as expected where there is no hasUndeliverableEmailAddress flag", async () => {

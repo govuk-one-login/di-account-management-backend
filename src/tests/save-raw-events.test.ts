@@ -110,7 +110,11 @@ describe("validateUser", () => {
 
     expect(() => {
       validateUser(txmaEvent);
-    }).toThrow(new Error(`Could not validate User for event_name AUTH_AUTH_CODE_ISSUED with event_id ab12345a-a12b-3ced-ef12-12a3b4cd5678: user_id is undefined, session_id is undefined`));
+    }).toThrow(
+      new Error(
+        `Could not validate User for event_name AUTH_AUTH_CODE_ISSUED with event_id ab12345a-a12b-3ced-ef12-12a3b4cd5678: user_id is undefined`
+      )
+    );
   });
 
   test("throws error when user_id key is missing", () => {
@@ -128,43 +132,11 @@ describe("validateUser", () => {
 
     expect(() => {
       validateUser(txmaEvent);
-    }).toThrow(new Error(`Could not validate User for event_name AUTH_AUTH_CODE_ISSUED with event_id ab12345a-a12b-3ced-ef12-12a3b4cd5678: user_id is undefined`));
-  });
-
-  test("throws error when session_id key is missing", () => {
-    const inValidUser = JSON.parse(
-      JSON.stringify({
-        ...user,
-        session_id: undefined,
-      })
+    }).toThrow(
+      new Error(
+        `Could not validate User for event_name AUTH_AUTH_CODE_ISSUED with event_id ab12345a-a12b-3ced-ef12-12a3b4cd5678: user_id is undefined`
+      )
     );
-    const invalidTxmaEvent = {
-      ...makeTxmaEvent(),
-      user: inValidUser,
-    };
-    const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
-
-    expect(() => {
-      validateUser(txmaEvent);
-    }).toThrow(new Error(`Could not validate User for event_name AUTH_AUTH_CODE_ISSUED with event_id ab12345a-a12b-3ced-ef12-12a3b4cd5678: session_id is undefined`));
-  });
-
-  test("throws error when session_id value is null", () => {
-    const inValidUser = JSON.parse(
-      JSON.stringify({
-        ...user,
-        session_id: null,
-      })
-    );
-    const invalidTxmaEvent = {
-      ...makeTxmaEvent(),
-      user: inValidUser,
-    };
-    const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
-
-    expect(() => {
-      validateUser(txmaEvent);
-    }).toThrow(new Error(`Could not validate User for event_name AUTH_AUTH_CODE_ISSUED with event_id ab12345a-a12b-3ced-ef12-12a3b4cd5678: session_id is null`));
   });
 
   // TODO: To be reverted after backfill has completed
@@ -209,7 +181,11 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrow(new Error(`Could not validate TxmaEvent with id ${txmaEvent.event_id} and name ${txmaEvent.event_name}: txmaEvent.client_id is undefined`));
+    }).toThrow(
+      new Error(
+        `Could not validate TxmaEvent with id ${txmaEvent.event_id} and name ${txmaEvent.event_name}: txmaEvent.client_id is undefined`
+      )
+    );
   });
 
   test("throws error when client_id value is null", () => {
@@ -220,7 +196,11 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrow(new Error(`Could not validate TxmaEvent with id ${txmaEvent.event_id} and name ${txmaEvent.event_name}: txmaEvent.client_id is null`));
+    }).toThrow(
+      new Error(
+        `Could not validate TxmaEvent with id ${txmaEvent.event_id} and name ${txmaEvent.event_name}: txmaEvent.client_id is null`
+      )
+    );
   });
 
   test("throws error when timestamp key is missing", () => {
@@ -231,7 +211,11 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrow(new Error(`Could not validate TxmaEvent with id ${txmaEvent.event_id} and name ${txmaEvent.event_name}: txmaEvent.timestamp is undefined`));
+    }).toThrow(
+      new Error(
+        `Could not validate TxmaEvent with id ${txmaEvent.event_id} and name ${txmaEvent.event_name}: txmaEvent.timestamp is undefined`
+      )
+    );
   });
 
   test("throws error when timestamp value is null", () => {
@@ -242,7 +226,11 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrow(new Error(`Could not validate TxmaEvent with id ${txmaEvent.event_id} and name ${txmaEvent.event_name}: txmaEvent.timestamp is null`));
+    }).toThrow(
+      new Error(
+        `Could not validate TxmaEvent with id ${txmaEvent.event_id} and name ${txmaEvent.event_name}: txmaEvent.timestamp is null`
+      )
+    );
   });
 
   test("throws error when event_name key is missing", () => {
@@ -253,7 +241,11 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrow(new Error(`Could not validate TxmaEvent with id ${txmaEvent.event_id} and name ${txmaEvent.event_name}: txmaEvent.event_name is undefined`));
+    }).toThrow(
+      new Error(
+        `Could not validate TxmaEvent with id ${txmaEvent.event_id} and name ${txmaEvent.event_name}: txmaEvent.event_name is undefined`
+      )
+    );
   });
 
   test("throws error when event name value is null", () => {
@@ -264,7 +256,11 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrow(new Error(`Could not validate TxmaEvent with id ${txmaEvent.event_id} and name ${txmaEvent.event_name}: txmaEvent.event_name is null`));
+    }).toThrow(
+      new Error(
+        `Could not validate TxmaEvent with id ${txmaEvent.event_id} and name ${txmaEvent.event_name}: txmaEvent.event_name is null`
+      )
+    );
   });
 
   test("throws error when event_id key is missing", () => {
@@ -275,7 +271,11 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrow(new Error(`Could not validate TxmaEvent with id ${txmaEvent.event_id} and name ${txmaEvent.event_name}: txmaEvent.event_id is undefined`));
+    }).toThrow(
+      new Error(
+        `Could not validate TxmaEvent with id ${txmaEvent.event_id} and name ${txmaEvent.event_name}: txmaEvent.event_id is undefined`
+      )
+    );
   });
 
   test("throws error when event_id value is null", () => {
@@ -286,7 +286,11 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrow(new Error(`Could not validate TxmaEvent with id ${txmaEvent.event_id} and name ${txmaEvent.event_name}: txmaEvent.event_id is null`));
+    }).toThrow(
+      new Error(
+        `Could not validate TxmaEvent with id ${txmaEvent.event_id} and name ${txmaEvent.event_name}: txmaEvent.event_id is null`
+      )
+    );
   });
 
   test("throws error when user key is missing", () => {
@@ -297,7 +301,11 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrow(new Error(`Could not validate TxmaEvent with id ${txmaEvent.event_id} and name ${txmaEvent.event_name}: txmaEvent.user is undefined`));
+    }).toThrow(
+      new Error(
+        `Could not validate TxmaEvent with id ${txmaEvent.event_id} and name ${txmaEvent.event_name}: txmaEvent.user is undefined`
+      )
+    );
   });
 
   test("throws error when user_id key is missing", () => {
@@ -308,18 +316,26 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrow(new Error(`Could not validate User for event_name AUTH_AUTH_CODE_ISSUED with event_id ab12345a-a12b-3ced-ef12-12a3b4cd5678: user_id is undefined, session_id is undefined`));
+    }).toThrow(
+      new Error(
+        `Could not validate User for event_name AUTH_AUTH_CODE_ISSUED with event_id ab12345a-a12b-3ced-ef12-12a3b4cd5678: user_id is undefined`
+      )
+    );
   });
 
   test("throws error when user_id value is null", () => {
     const invalidTxmaEvent = {
       ...makeTxmaEvent(),
-      user: { user_id: null, session_id: "test" },
+      user: { user_id: null },
     };
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrow(new Error(`Could not validate User for event_name AUTH_AUTH_CODE_ISSUED with event_id ab12345a-a12b-3ced-ef12-12a3b4cd5678: user_id is null`));
+    }).toThrow(
+      new Error(
+        `Could not validate User for event_name AUTH_AUTH_CODE_ISSUED with event_id ab12345a-a12b-3ced-ef12-12a3b4cd5678: user_id is null`
+      )
+    );
   });
 });
 

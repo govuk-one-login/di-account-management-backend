@@ -41,19 +41,15 @@ const getTTLDate = (): number => {
 export const validateUser = (event: TxmaEvent): void => {
   const user: UserData = event.user;
 
-  if (!user.user_id || !user.session_id) {
+  if (!user.user_id) {
     logger.info("Could not validate User context", {
       typeofUser: typeof user,
       typeofUserUserId: typeof user.user_id,
-      typeofUserSessionId: typeof user.session_id,
     });
     const missingFields: string[] = [];
 
     if (!user.user_id) {
       missingFields.push(`user_id is ${user.user_id}`);
-    }
-    if (!user.session_id) {
-      missingFields.push(`session_id is ${user.session_id}`);
     }
     throw new Error(
       `Could not validate User for event_name ${event.event_name} with event_id ${event.event_id}: ${missingFields.join(", ")}`

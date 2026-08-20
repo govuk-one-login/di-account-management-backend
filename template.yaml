@@ -7548,6 +7548,17 @@ Resources:
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
 
+  GuardrailPreventedInactiveAccountDeletionFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      FilterPattern: '{ $.message = "GuardrailAbortedInactiveAccountDeletionProcess" && $.contributeToAlarm = true && $.processName = "DeleteAccount" }'
+      LogGroupName: !Ref ProcessInactiveAccountFunctionLogGroup
+      MetricTransformations:
+        - MetricName: GuardrailPreventedInactiveAccountDeletion
+          MetricNamespace: !Ref SystemTagValue
+          MetricValue: 1
+          Unit: Count
+
   GuardrailPreventedInactiveAccountDeletionAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
@@ -7560,11 +7571,10 @@ Resources:
             GuardrailPreventedInactiveAccountDeletionAlarm,
           ],
         ]
-      Metrics:
-        - Id: guardrail_deletion_preventions
-          Expression: "SUM(SEARCH('{account-management-backend,ContributeToAlarm,Guardrail,Process,service} MetricName=\"GuardrailAbortedInactiveAccountDeletionProcess\" ContributeToAlarm=\"1\" Process=\"DeleteAccount\"', 'Sum', 10))"
-          ReturnData: true
-          Period: 10
+      Namespace: !Ref SystemTagValue
+      MetricName: GuardrailPreventedInactiveAccountDeletion
+      Statistic: Sum
+      Period: 10
       EvaluationPeriods: 1
       Threshold: 1
       TreatMissingData: notBreaching

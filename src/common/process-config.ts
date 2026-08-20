@@ -1,6 +1,7 @@
 import type { InactiveAccountStatus } from "./model.js";
 import { hasRecentActivityLogEntry } from "./iadGuards/hasRecentActivityLogEntry.js";
 import { hasAisBlockIntervention } from "./iadGuards/hasAisBlockIntervention.js";
+import { hasUndeliverableEmailAddress } from "./iadGuards/hasUndeliverableEmailAddress.js";
 
 export type Guard = (commonSubjectId: string) => Promise<{
   continue: boolean;
@@ -30,7 +31,10 @@ export const processConfig: ProcessConfig = {
     allowedStatuses: ["pending"],
     targetStatus: "30DayWarningSent",
     notificationType: "INACTIVE_ACCOUNT_WARNING_30_DAY",
-    guards: [{ guard: hasAisBlockIntervention, contributeToAlarm: false }],
+    guards: [
+      { guard: hasAisBlockIntervention, contributeToAlarm: false },
+      { guard: hasUndeliverableEmailAddress, contributeToAlarm: true },
+    ],
   },
   Warning7Day: {
     queueUrlEnvVar: "WARNING_7_DAY_NOTIFICATION_QUEUE_URL",
@@ -38,7 +42,10 @@ export const processConfig: ProcessConfig = {
     allowedStatuses: ["pending", "30DayWarningSent"],
     targetStatus: "7DayWarningSent",
     notificationType: "INACTIVE_ACCOUNT_WARNING_7_DAY",
-    guards: [{ guard: hasAisBlockIntervention, contributeToAlarm: false }],
+    guards: [
+      { guard: hasAisBlockIntervention, contributeToAlarm: false },
+      { guard: hasUndeliverableEmailAddress, contributeToAlarm: true },
+    ],
   },
   DeleteAccount: {
     queueUrlEnvVar: "ACCOUNT_DELETION_QUEUE_URL",
@@ -49,6 +56,7 @@ export const processConfig: ProcessConfig = {
     guards: [
       { guard: hasAisBlockIntervention, contributeToAlarm: false },
       { guard: hasRecentActivityLogEntry, contributeToAlarm: true },
+      { guard: hasUndeliverableEmailAddress, contributeToAlarm: true },
     ],
   },
 };

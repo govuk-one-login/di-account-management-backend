@@ -3,7 +3,7 @@ import { Logger } from "@aws-lambda-powertools/logger";
 import { MetricUnit } from "@aws-lambda-powertools/metrics";
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, UpdateCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
+import { DynamoDBDocumentClient, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import assert from "node:assert/strict";
 import { initMetrics } from "./common/metrics.js";
 import { processConfig, ProcessConfig } from "./common/process-config.js";
@@ -84,28 +84,7 @@ export const handler = async (
     );
 
     if (await runGuards(process.guards, body)) continue;
-    
-    const emailQueryResponse = await dynamoDocClient.send(
-      new QueryCommand({
-        TableName: inactiveAccountTrackerTableName,
-        IndexName: "EmailAddressIndex",
-        KeyConditionExpression: "emailAddress = :email",
-        ExpressionAttributeValues: {
-          ":email": body.emailAddress,
-        },
-      })
-    );
-
-    const recordItem = emailQueryResponse.Items?.[0];
-
-    if (recordItem?.hasUndeliverableEmailAddress === true) {
-      logger.info("Email address flagged as undeliverable", {
-        commonSubjectId: body.commonSubjectId,
-        processName: body.processName,
-      });
-      continue;
-    }
-
+  
     if (process.notificationType) {
       const message = {
         notificationType: process.notificationType,

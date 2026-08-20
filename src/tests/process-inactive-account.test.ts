@@ -439,7 +439,7 @@ describe("process-inactive-account handler", () => {
   test("skips when record has hasUndeliverableEmailAddress", async () => {
     dynamoMock.on(QueryCommand, {
       TableName: "test-inactive-tracker-table",
-      IndexName: "EmailAddressIndex",
+      IndexName: "CommonSubjectIdIndex",
     }).resolves({
       Items: [
         {
@@ -465,16 +465,20 @@ describe("process-inactive-account handler", () => {
 
     expect(dynamoMock).toHaveReceivedCommandWith(QueryCommand, {
       TableName: "test-inactive-tracker-table",
-      IndexName: "EmailAddressIndex",
-      KeyConditionExpression: "emailAddress = :email",
+      IndexName: "CommonSubjectIdIndex",
+      KeyConditionExpression: "commonSubjectId = :id",
       ExpressionAttributeValues: {
-        ":email": "i-am-not-deliverable@undlvrbl.com",
+        ":id": "undeliverablee",
       },
     });
 
     expect(sqsMock).not.toHaveReceivedCommand(SendMessageCommand);
     expect(dynamoMock).not.toHaveReceivedCommand(UpdateCommand);
-    expect(mockMetrics.addMetric).not.toHaveBeenCalled();
+    expect(mockMetrics.addMetric).toHaveBeenCalledWith(
+      "GuardrailAbortedInactiveAccountDeletionProcess",
+      expect.anything(),
+      1
+    );
   });
 
   test("continue as expected where there is no hasUndeliverableEmailAddress flag", async () => {

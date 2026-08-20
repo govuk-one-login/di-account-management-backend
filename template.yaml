@@ -7562,7 +7562,7 @@ Resources:
         ]
       Metrics:
         - Id: guardrail_deletion_preventions
-          Expression: "SUM(SEARCH('{account-management-backend,ContributeToAlarm,Guardrail,Process,service} MetricName=\"GuardrailAbortedInactiveAccountDeletionProcess\" ContributeToAlarm=\"1\" Process=\"DeleteAccount\" service=\"process-inactive-account\"', 'Sum', 10))"
+          Expression: "SUM(SEARCH('{account-management-backend,ContributeToAlarm,Guardrail,Process,service} MetricName=\"GuardrailAbortedInactiveAccountDeletionProcess\" ContributeToAlarm=\"1\" Process=\"DeleteAccount\"', 'Sum', 10))"
           ReturnData: true
       EvaluationPeriods: 1
       Threshold: 1

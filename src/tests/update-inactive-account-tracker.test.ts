@@ -215,7 +215,7 @@ describe("UpdateInactiveAccountTracker handler", () => {
     };
     const event: DynamoDBStreamEvent = { Records: [record as DynamoDBRecord] };
     await handler(event, {} as Context);
-    expect(loggerInfoMock).toHaveBeenCalledWith(`Ignoring AUTH_CODE_VERIFIED event with missing extensions["journey-type"] of PASSWORD_RESET`);
+    expect(loggerInfoMock).toHaveBeenCalledWith(`Ignoring AUTH_CODE_VERIFIED event with extensions["journey-type"] of PASSWORD_RESET`);
     expect(dynamoMock).not.toHaveReceivedCommand(TransactWriteCommand);
   });
 

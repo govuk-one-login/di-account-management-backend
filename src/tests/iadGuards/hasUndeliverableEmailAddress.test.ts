@@ -13,32 +13,32 @@ describe("hasUndeliverableEmailAddress", () => {
     process.env.INACTIVE_ACCOUNT_TRACKER_TABLE_NAME = "test-inactive-account-table";
   });
 
-  test("returns continue: true when record has hasUndeliverableEmailAddress: false", async () => {
+  test("returns continue: 'Continue' when record has hasUndeliverableEmailAddress: false", async () => {
     dynamoMock.on(QueryCommand).resolves({
       Items: [{ commonSubjectId: "user-123", hasUndeliverableEmailAddress: false }]
     });
 
     const result = await hasUndeliverableEmailAddress("user-123");
 
-    expect(result).toEqual({ continue: true, guardName: "undeliverableEmailAddress" });
+    expect(result).toEqual({ continue: 'Continue', guardName: "undeliverableEmailAddress" });
   });
 
-  test("returns continue: false when record exists with hasUndeliverableEmailAddress: true", async () => {
+  test("returns continue: 'ContinueWithoutPerformingActions' when record exists with hasUndeliverableEmailAddress: true", async () => {
     dynamoMock.on(QueryCommand).resolves({
       Items: [{ commonSubjectId: "user-123", hasUndeliverableEmailAddress: true }]
     });
 
     const result = await hasUndeliverableEmailAddress("user-123");
 
-    expect(result).toEqual({ continue: false, guardName: "undeliverableEmailAddress" });
+    expect(result).toEqual({ continue: 'ContinueWithoutPerformingActions', guardName: "undeliverableEmailAddress" });
   });
 
-  test("returns continue: true when Items array is undefined", async () => {
+  test("returns continue: 'Continue' when Items array is undefined", async () => {
     dynamoMock.on(QueryCommand).resolves({});
 
     const result = await hasUndeliverableEmailAddress("user-123");
 
-    expect(result).toEqual({ continue: true, guardName: "undeliverableEmailAddress" });
+    expect(result).toEqual({ continue: 'Continue', guardName: "undeliverableEmailAddress" });
   });
 
   test("queries the correct table with the correct parameters", async () => {

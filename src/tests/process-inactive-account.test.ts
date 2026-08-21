@@ -7,6 +7,7 @@ import "aws-sdk-client-mock-vitest";
 
 const mockMetrics = vi.hoisted(() => ({
   publishStoredMetrics: vi.fn(),
+  addDimension: vi.fn(),
   addMetric: vi.fn(),
 }));
 const mockInitMetrics = vi.hoisted(() => vi.fn(() => mockMetrics));
@@ -50,10 +51,10 @@ const buildSqsEvent = (bodies: object[]): SQSEvent => ({
   })),
 });
 
-const notBlocked = { continue: true, guardName: "AIS" };
-const blocked = { continue: false, guardName: "AIS" };
-const noRecentActivity = { continue: true, guardName: "HomeUserActivityLog" };
-const recentActivity = { continue: false, guardName: "HomeUserActivityLog" };
+const notBlocked = { continue: "Continue", guardName: "AIS" };
+const blocked = { continue: "Abort", guardName: "AIS" };
+const noRecentActivity = { continue: "Continue", guardName: "HomeUserActivityLog" };
+const recentActivity = { continue: "Abort", guardName: "HomeUserActivityLog" };
 
 describe("process-inactive-account handler", () => {
   beforeEach(() => {
@@ -472,19 +473,13 @@ describe("process-inactive-account handler", () => {
       },
     });
 
+    // for undeliverable email addresses, do not enqueue notification
     expect(sqsMock).not.toHaveReceivedCommand(SendMessageCommand);
-    expect(dynamoMock).not.toHaveReceivedCommand(UpdateCommand);
-    expect(mockMetrics.addMetric).toHaveBeenCalledWith(
-      "GuardrailAbortedInactiveAccountDeletionProcess",
-      expect.anything(),
-      1
-    );
-    expect(mockMetrics.addDimension).toHaveBeenCalledWith(
-      "ContributeToAlarm",
-      "0"
-    );
+    expect(mockMetrics.addMetric).not.toHaveBeenCalledWith("notificationEnqueued", expect.anything());
+    // status should still be updated in the inactive account tracker
+    expect(dynamoMock).toHaveReceivedCommand(UpdateCommand);
   });
-
+  
   test("continue as expected where there is no hasUndeliverableEmailAddress flag", async () => {
     dynamoMock.on(QueryCommand, {
       TableName: "test-inactive-tracker-table",

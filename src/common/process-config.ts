@@ -3,8 +3,14 @@ import { hasRecentActivityLogEntry } from "./iadGuards/hasRecentActivityLogEntry
 import { hasAisBlockIntervention } from "./iadGuards/hasAisBlockIntervention.js";
 import { hasUndeliverableEmailAddress } from "./iadGuards/hasUndeliverableEmailAddress.js";
 
+export enum Actions {
+  continue = "Continue",
+  abort = "Abort",
+  continueWithoutActions = "ContinueWithoutPerformingActions"
+};
+
 export type Guard = (commonSubjectId: string) => Promise<{
-  continue: boolean;
+  continue: Actions;
   guardName: string;
 }>;
 

@@ -2207,7 +2207,12 @@ Resources:
             Principal:
               AWS: !Sub
                 - "arn:aws:iam::${AccountId}:root"
-                - AccountId: !FindInMap [AuthenticationAccounts, !Ref Environment, AccountNumber]
+                - AccountId:
+                    !FindInMap [
+                      AuthenticationAccounts,
+                      !Ref Environment,
+                      AccountNumber,
+                    ]
             Action:
               - sqs:ChangeMessageVisibility
               - sqs:ReceiveMessage
@@ -3499,7 +3504,11 @@ Resources:
               AUTHBACKFILLCOMPLETEDATETIME,
             ]
           GOV_UK_APP_CLIENT_ID:
-            !FindInMap [EnvironmentVariables, !Ref Environment, GOVUKAPPCLIENTID]
+            !FindInMap [
+              EnvironmentVariables,
+              !Ref Environment,
+              GOVUKAPPCLIENTID,
+            ]
           NOTIFICATION_QUEUE_URL: !Ref NotificationQueue
       DeploymentPreference:
         Alarms:
@@ -6358,7 +6367,12 @@ Resources:
               Principal:
                 AWS: !Sub
                   - "arn:aws:iam::${AccountId}:root"
-                  - AccountId: !FindInMap [AuthenticationAccounts, !Ref Environment, AccountNumber]
+                  - AccountId:
+                      !FindInMap [
+                        AuthenticationAccounts,
+                        !Ref Environment,
+                        AccountNumber,
+                      ]
               Action:
                 - kms:Decrypt
               Resource:
@@ -7447,11 +7461,12 @@ Resources:
           INACTIVE_ACCOUNT_TRACKER_TABLE_NAME: !Ref InactiveAccountTrackerStore
           ACCOUNT_DELETION_QUEUE_URL: !Ref AccountDeletionQueue
           ACTIVITY_LOG_TABLE_NAME: !Ref ActivityLogsStoreTableName
-          ACCOUNT_INTERVENTIONS_SERVICE_API_URL: !FindInMap [
-            EnvironmentConfiguration,
-            !Ref Environment,
-            accountInterventionsServiceApiUrl,
-          ]
+          ACCOUNT_INTERVENTIONS_SERVICE_API_URL:
+            !FindInMap [
+              EnvironmentConfiguration,
+              !Ref Environment,
+              accountInterventionsServiceApiUrl,
+            ]
       DeploymentPreference:
         Alarms:
           Fn::If:
@@ -7603,6 +7618,40 @@ Resources:
       EvaluationPeriods: 1
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+
+  GuardrailPreventedInactiveAccountDeletionFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      FilterPattern: '{ $.message = "GuardrailAbortedInactiveAccountDeletionProcess" && $.contributeToAlarm = true && $.processName = "DeleteAccount" }'
+      LogGroupName: !Ref ProcessInactiveAccountFunctionLogGroup
+      MetricTransformations:
+        - MetricName: GuardrailPreventedInactiveAccountDeletion
+          MetricNamespace: !Ref SystemTagValue
+          MetricValue: 1
+          Unit: Count
+
+  GuardrailPreventedInactiveAccountDeletionAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            GuardrailPreventedInactiveAccountDeletionAlarm,
+          ],
+        ]
+      Namespace: !Ref SystemTagValue
+      MetricName: GuardrailPreventedInactiveAccountDeletion
+      Statistic: Sum
+      Period: 10
+      EvaluationPeriods: 1
+      Threshold: 1
+      TreatMissingData: notBreaching
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/HighAlertNotificationTopic/ARN}}"
 
   #########################################
   # Inactive Account Deletion Forecast

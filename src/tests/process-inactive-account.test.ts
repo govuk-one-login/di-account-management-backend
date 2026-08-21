@@ -8,7 +8,6 @@ import "aws-sdk-client-mock-vitest";
 const mockMetrics = vi.hoisted(() => ({
   publishStoredMetrics: vi.fn(),
   addMetric: vi.fn(),
-  addDimension: vi.fn(),
 }));
 const mockInitMetrics = vi.hoisted(() => vi.fn(() => mockMetrics));
 
@@ -202,20 +201,7 @@ describe("process-inactive-account handler", () => {
     );
     expect(sqsMock).not.toHaveReceivedCommand(SendMessageCommand);
     expect(dynamoMock).not.toHaveReceivedCommand(UpdateCommand);
-    expect(mockMetrics.addDimension).toHaveBeenCalledWith("Guardrail", "AIS");
-    expect(mockMetrics.addDimension).toHaveBeenCalledWith(
-      "Process",
-      "Warning30Day"
-    );
-    expect(mockMetrics.addDimension).toHaveBeenCalledWith(
-      "ContributeToAlarm",
-      "0"
-    );
-    expect(mockMetrics.addMetric).toHaveBeenCalledWith(
-      "GuardrailAbortedInactiveAccountDeletionProcess",
-      expect.anything(),
-      1
-    );
+    expect(mockMetrics.addMetric).not.toHaveBeenCalled();
   });
 
   test("skips blocked user but processes non-blocked user in same batch", async () => {
@@ -430,23 +416,7 @@ describe("process-inactive-account handler", () => {
 
     expect(sqsMock).not.toHaveReceivedCommand(SendMessageCommand);
     expect(dynamoMock).not.toHaveReceivedCommand(UpdateCommand);
-    expect(mockMetrics.addDimension).toHaveBeenCalledWith(
-      "Guardrail",
-      "HomeUserActivityLog"
-    );
-    expect(mockMetrics.addDimension).toHaveBeenCalledWith(
-      "Process",
-      "DeleteAccount"
-    );
-    expect(mockMetrics.addDimension).toHaveBeenCalledWith(
-      "ContributeToAlarm",
-      "1"
-    );
-    expect(mockMetrics.addMetric).toHaveBeenCalledWith(
-      "GuardrailAbortedInactiveAccountDeletionProcess",
-      expect.anything(),
-      1
-    );
+    expect(mockMetrics.addMetric).not.toHaveBeenCalled();
   });
 
   test("hasRecentActivityLogEntry guard is not called for Warning30Day process", async () => {

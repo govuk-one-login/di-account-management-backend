@@ -22,7 +22,7 @@ async function runGuards(
     const guardResult = await guard.guard(body.commonSubjectId);
 
     if (!guardResult.continue) {
-      logger.info("Guard aborted inactive account deletion process", {
+      logger.info("GuardrailAbortedInactiveAccountDeletionProcess", {
         dateForDeletion: body.dateForDeletion,
         processName: body.processName,
         status: body.status,
@@ -36,20 +36,8 @@ async function runGuards(
         emailAddressSourceId: body.emailAddressSourceId,
         hasSetupMfa: body.hasSetupMfa,
         guard: guardResult.guardName,
+        contributeToAlarm: guard.contributeToAlarm,
       });
-
-      metrics.addDimension("Guardrail", guardResult.guardName);
-      metrics.addDimension("Process", body.processName);
-      metrics.addDimension(
-        "ContributeToAlarm",
-        guard.contributeToAlarm ? "1" : "0"
-      );
-
-      metrics.addMetric(
-        "GuardrailAbortedInactiveAccountDeletionProcess",
-        MetricUnit.Count,
-        1
-      );
 
       return true;
     }

@@ -162,7 +162,10 @@ const processRecord = async (
 
   assert(userId !== undefined, "user_id is undefined in the event");
 
-    if (
+  // The password reset journey has two CODE_VERIFIED events, the email OTP
+  // and sms/app 2FA - confirming the email OTP should not update the tracker
+  // as it's not a full login (as neither password nor 2fa have been entered at that point)
+  if (
       txmaEvent.event_name === "AUTH_CODE_VERIFIED" &&
       txmaEvent.extensions?.["journey-type"] === "PASSWORD_RESET"
     ) {

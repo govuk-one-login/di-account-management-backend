@@ -166,7 +166,7 @@ const processRecord = async (
       txmaEvent.event_name === "AUTH_CODE_VERIFIED" &&
       txmaEvent.extensions?.["journey-type"] === "PASSWORD_RESET"
     ) {
-    logger.info(`Ignoring AUTH_CODE_VERIFIED event with missing extensions["journey-type"] of PASSWORD_RESET`);
+    logger.info(`Ignoring AUTH_CODE_VERIFIED event with extensions["journey-type"] of PASSWORD_RESET`);
     return;
   }
 

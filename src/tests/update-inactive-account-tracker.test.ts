@@ -2,7 +2,7 @@ import { vi, describe, test, expect, afterEach, beforeEach } from "vitest";
 import { DynamoDBRecord, Context, DynamoDBStreamEvent } from "aws-lambda";
 import { Logger } from "@aws-lambda-powertools/logger";
 import { mockClient } from "aws-sdk-client-mock";
-import { DynamoDBDocumentClient, GetCommand, QueryCommand, TransactWriteCommand } from "@aws-sdk/lib-dynamodb";
+import { DynamoDBDocumentClient, QueryCommand, TransactWriteCommand } from "@aws-sdk/lib-dynamodb";
 import { handler } from "../update-inactive-account-tracker.js";
 import { generateDynamoStreamRecord, timestamp, txmaEventId } from "./testFixtures.js";
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs"; 
@@ -144,11 +144,10 @@ describe("UpdateInactiveAccountTracker handler", () => {
     await expect(handler(event, {} as Context)).rejects.toThrow("found more than one inactivity tracker record for qwerty");
   });
 
-  test("does not delete notification when no existing notification found", async () => {
+  test("does not delete from user notifications table when client_id matches OLH client", async () => {
     dynamoMock.on(QueryCommand).resolves({
       Items: [{ commonSubjectId: "qwerty", dateForDeletion: "2026-01-01", userLastActive: "2020-01-01T00:00:00.000Z", status: "pending", emailAddress: "x", statusLastUpdated: "" }],
     });
-    dynamoMock.on(GetCommand).resolves({ Item: undefined });
     dynamoMock.on(TransactWriteCommand).resolves({});
     const event: DynamoDBStreamEvent = { Records: [generateDynamoStreamRecord("test-client")] };
     await handler(event, {} as Context);
@@ -161,14 +160,97 @@ describe("UpdateInactiveAccountTracker handler", () => {
     });
   });
 
-  test("does not check notification store when currentItem status is not pending", async () => {
+  test("deletes from user notifications table when client_id does not match OLH client", async () => {
     dynamoMock.on(QueryCommand).resolves({
-      Items: [{ commonSubjectId: "qwerty", dateForDeletion: "2026-01-01", userLastActive: "2020-01-01T00:00:00.000Z", status: "active", emailAddress: "x", statusLastUpdated: "" }],
+      Items: [{ commonSubjectId: "qwerty", dateForDeletion: "2026-01-01", userLastActive: "2020-01-01T00:00:00.000Z", status: "pending", emailAddress: "x", statusLastUpdated: "" }],
+    });
+    dynamoMock.on(TransactWriteCommand).resolves({});
+    const event: DynamoDBStreamEvent = { Records: [generateDynamoStreamRecord("some-other-rp")] };
+    await handler(event, {} as Context);
+    expect(dynamoMock).toHaveReceivedCommandWith(TransactWriteCommand, {
+      TransactItems: expect.arrayContaining([
+        expect.objectContaining({
+          Delete: expect.objectContaining({
+            TableName: "user-notifications-table",
+            Key: { internalCommonSubjectId: "qwerty" },
+          }),
+        }),
+      ]),
+    });
+  });
+
+  test("returns early and logs info when AUTH_CODE_VERIFIED event has no user_id", async () => {
+    const record = {
+      dynamodb: {
+        NewImage: {
+          event: {
+            M: {
+              event_name: { S: "AUTH_CODE_VERIFIED" },
+              timestamp: { N: "1711929600" },
+            },
+          },
+        },
+      },
+    };
+    const event: DynamoDBStreamEvent = { Records: [record as DynamoDBRecord] };
+    await handler(event, {} as Context);
+    expect(loggerInfoMock).toHaveBeenCalledWith("Ignoring AUTH_CODE_VERIFIED event with missing user.user_id");
+    expect(dynamoMock).not.toHaveReceivedCommand(TransactWriteCommand);
+  });
+
+  test("returns early and logs info when AUTH_CODE_VERIFIED event has PASSWORD_RESET journey type", async () => {
+    const record = {
+      dynamodb: {
+        NewImage: {
+          event: {
+            M: {
+              event_name: { S: "AUTH_CODE_VERIFIED" },
+              timestamp: { N: "1711929600" },
+              user: { M: { user_id: { S: "qwerty" } } },
+              extensions: { M: { "journey-type": { S: "PASSWORD_RESET" } } },
+            },
+          },
+        },
+      },
+    };
+    const event: DynamoDBStreamEvent = { Records: [record as DynamoDBRecord] };
+    await handler(event, {} as Context);
+    expect(loggerInfoMock).toHaveBeenCalledWith(`Ignoring AUTH_CODE_VERIFIED event with missing extensions["journey-type"] of PASSWORD_RESET`);
+    expect(dynamoMock).not.toHaveReceivedCommand(TransactWriteCommand);
+  });
+
+  test("sets hasSetupMfa to false when no existing record", async () => {
+    dynamoMock.on(QueryCommand).resolves({ Items: [] });
+    dynamoMock.on(TransactWriteCommand).resolves({});
+    const event: DynamoDBStreamEvent = { Records: [generateDynamoStreamRecord("test-client")] };
+    await handler(event, {} as Context);
+    expect(dynamoMock).toHaveReceivedCommandWith(TransactWriteCommand, {
+      TransactItems: expect.arrayContaining([
+        expect.objectContaining({
+          Put: expect.objectContaining({
+            Item: expect.objectContaining({ hasSetupMfa: false }),
+          }),
+        }),
+      ]),
+    });
+  });
+
+  test("preserves hasSetupMfa from existing record", async () => {
+    dynamoMock.on(QueryCommand).resolves({
+      Items: [{ commonSubjectId: "qwerty", dateForDeletion: "1978-11-29", userLastActive: "1970-01-01T00:00:00.000Z", status: "pending", emailAddress: "x", statusLastUpdated: "", hasSetupMfa: true }],
     });
     dynamoMock.on(TransactWriteCommand).resolves({});
     const event: DynamoDBStreamEvent = { Records: [generateDynamoStreamRecord("test-client")] };
     await handler(event, {} as Context);
-    expect(dynamoMock).not.toHaveReceivedCommand(GetCommand);
+    expect(dynamoMock).toHaveReceivedCommandWith(TransactWriteCommand, {
+      TransactItems: expect.arrayContaining([
+        expect.objectContaining({
+          Put: expect.objectContaining({
+            Item: expect.objectContaining({ hasSetupMfa: true }),
+          }),
+        }),
+      ]),
+    });
   });
 
   test("does not delete tracker record when dateForDeletion is unchanged", async () => {

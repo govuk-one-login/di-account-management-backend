@@ -58,6 +58,7 @@ export interface TxmaEvent {
 
 export interface Extensions {
   reported_session_id: string;
+  "journey-type"?: string;
 }
 
 export interface CurrentTimeDescriptor {
@@ -166,12 +167,7 @@ interface RequesterAnonymous {
   email?: string;
 }
 export type Environment =
-  | "production"
-  | "integration"
-  | "staging"
-  | "build"
-  | "dev"
-  | "local";
+  "production" | "integration" | "staging" | "build" | "dev" | "local";
 
 export interface ReportSuspiciousActivityStepInput {
   user_id: string;
@@ -210,7 +206,12 @@ export interface Personalisation {
   timeCy: string;
 }
 
-export type InactiveAccountStatus = "pending" | "deleting" | "30DayWarningSent" | "7DayWarningSent" | "permanentSuspension"
+export type InactiveAccountStatus =
+  | "pending"
+  | "deleting"
+  | "30DayWarningSent"
+  | "7DayWarningSent"
+  | "permanentSuspension";
 
 export interface InactiveAccountTrackerRecord {
   dateForDeletion: string;

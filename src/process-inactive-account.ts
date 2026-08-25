@@ -6,7 +6,7 @@ import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import assert from "node:assert/strict";
 import { initMetrics } from "./common/metrics.js";
-import { processConfig, ProcessConfig } from "./common/process-config.js";
+import { processConfig, ProcessConfig, Actions } from "./common/process-config.js";
 import { getEnvironmentVariable } from "./common/utils.js";
 
 const logger = new Logger();
@@ -15,14 +15,16 @@ const metrics = initMetrics("process-inactive-account");
 async function runGuards(
   guards: ProcessConfig[number]["guards"],
   body: Record<string, string>
-): Promise<boolean> {
-  if (!guards) return false;
+): Promise<Actions> {
+  if (!guards) return Actions.continue;
 
   for (const guard of guards) {
     const guardResult = await guard.guard(body.commonSubjectId);
+    const typeOfGuardResult = guardResult.continue;
 
-    if (!guardResult.continue) {
-      logger.info("GuardrailAbortedInactiveAccountDeletionProcess", {
+    if (typeOfGuardResult === Actions.continueWithoutActions || typeOfGuardResult === Actions.abort ) {
+      const message = typeOfGuardResult === Actions.abort ? "GuardrailAbortedInactiveAccountDeletionProcess" : "GuardrailInactiveAccountDeletionProcessContinuedWithoutActions";
+      logger.info(message, {
         dateForDeletion: body.dateForDeletion,
         processName: body.processName,
         status: body.status,
@@ -39,10 +41,10 @@ async function runGuards(
         contributeToAlarm: guard.contributeToAlarm,
       });
 
-      return true;
+      return guardResult.continue;
     }
   }
-  return false;
+  return Actions.continue;
 }
 
 const sqsClient = new SQSClient();
@@ -83,36 +85,63 @@ export const handler = async (
       `No target status configured for process ${body.processName}`
     );
 
-    if (await runGuards(process.guards, body)) continue;
+    const runGuardsOutcome = await runGuards(process.guards, body);
 
-    if (process.notificationType) {
-      const message = {
-        notificationType: process.notificationType,
-        emailAddress: body.emailAddress,
-        dateForDeletion: body.dateForDeletion,
-      };
-
-      await sqsClient.send(
-        new SendMessageCommand({
-          QueueUrl: notificationQueueUrl,
-          MessageBody: JSON.stringify(message),
-        })
-      );
-
-      logger.info(
-        "Successfully enqueued inactive account warning notification",
-        {
+    if (runGuardsOutcome === Actions.abort) continue;
+  
+    if (runGuardsOutcome === Actions.continue) {
+      if (process.notificationType) {
+        const message = {
+          notificationType: process.notificationType,
+          emailAddress: body.emailAddress,
+          dateForDeletion: body.dateForDeletion,
+        };
+  
+        await sqsClient.send(
+          new SendMessageCommand({
+            QueueUrl: notificationQueueUrl,
+            MessageBody: JSON.stringify(message),
+          })
+        );
+  
+        logger.info(
+          "Successfully enqueued inactive account warning notification",
+          {
+            commonSubjectId: body.commonSubjectId,
+            processName: body.processName,
+            notificationType: process.notificationType,
+          }
+        );
+        metrics.addMetric("notificationEnqueued", MetricUnit.Count, 1);
+      } else {
+        logger.info("No notificationType configured, skipping notification", {
           commonSubjectId: body.commonSubjectId,
           processName: body.processName,
-          notificationType: process.notificationType,
-        }
-      );
-      metrics.addMetric("notificationEnqueued", MetricUnit.Count, 1);
-    } else {
-      logger.info("No notificationType configured, skipping notification", {
-        commonSubjectId: body.commonSubjectId,
-        processName: body.processName,
-      });
+        });
+      }
+
+      if (process.targetQueueUrlEnvVar) {
+        const targetQueueUrl = getEnvironmentVariable(
+          process.targetQueueUrlEnvVar
+        );
+        const targetMessage = {
+          publicSubjectId: body.publicSubjectId,
+          commonSubjectId: body.commonSubjectId,
+        };
+
+        await sqsClient.send(
+          new SendMessageCommand({
+            QueueUrl: targetQueueUrl,
+            MessageBody: JSON.stringify(targetMessage),
+          })
+        );
+
+        logger.info("Successfully enqueued message to target queue", {
+          commonSubjectId: body.commonSubjectId,
+          processName: body.processName,
+          targetQueueUrlEnvVar: process.targetQueueUrlEnvVar,
+        });
+      }
     }
 
     await dynamoDocClient.send(
@@ -131,29 +160,6 @@ export const handler = async (
         },
       })
     );
-
-    if (process.targetQueueUrlEnvVar) {
-      const targetQueueUrl = getEnvironmentVariable(
-        process.targetQueueUrlEnvVar
-      );
-      const targetMessage = {
-        publicSubjectId: body.publicSubjectId,
-        commonSubjectId: body.commonSubjectId,
-      };
-
-      await sqsClient.send(
-        new SendMessageCommand({
-          QueueUrl: targetQueueUrl,
-          MessageBody: JSON.stringify(targetMessage),
-        })
-      );
-
-      logger.info("Successfully enqueued message to target queue", {
-        commonSubjectId: body.commonSubjectId,
-        processName: body.processName,
-        targetQueueUrlEnvVar: process.targetQueueUrlEnvVar,
-      });
-    }
 
     logger.info("Successfully processed inactive account", {
       commonSubjectId: body.commonSubjectId,

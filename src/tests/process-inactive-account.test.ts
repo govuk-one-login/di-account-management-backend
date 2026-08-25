@@ -1,12 +1,13 @@
 import { vi, describe, test, expect, beforeEach } from "vitest";
 import { Context, SQSEvent } from "aws-lambda";
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
-import { DynamoDBDocumentClient, UpdateCommand } from "@aws-sdk/lib-dynamodb";
+import { DynamoDBDocumentClient, UpdateCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { mockClient } from "aws-sdk-client-mock";
 import "aws-sdk-client-mock-vitest";
 
 const mockMetrics = vi.hoisted(() => ({
   publishStoredMetrics: vi.fn(),
+  addDimension: vi.fn(),
   addMetric: vi.fn(),
 }));
 const mockInitMetrics = vi.hoisted(() => vi.fn(() => mockMetrics));
@@ -50,10 +51,10 @@ const buildSqsEvent = (bodies: object[]): SQSEvent => ({
   })),
 });
 
-const notBlocked = { continue: true, guardName: "AIS" };
-const blocked = { continue: false, guardName: "AIS" };
-const noRecentActivity = { continue: true, guardName: "HomeUserActivityLog" };
-const recentActivity = { continue: false, guardName: "HomeUserActivityLog" };
+const notBlocked = { continue: "Continue", guardName: "AIS" };
+const blocked = { continue: "Abort", guardName: "AIS" };
+const noRecentActivity = { continue: "Continue", guardName: "HomeUserActivityLog" };
+const recentActivity = { continue: "Abort", guardName: "HomeUserActivityLog" };
 
 describe("process-inactive-account handler", () => {
   beforeEach(() => {
@@ -61,6 +62,7 @@ describe("process-inactive-account handler", () => {
     sqsMock.reset();
     dynamoMock.reset();
     sqsMock.on(SendMessageCommand).resolves({ MessageId: "test-message-id" });
+    dynamoMock.on(QueryCommand).resolves({ Items: [] });
     dynamoMock.on(UpdateCommand).resolves({});
 
     mockHasAisBlockIntervention.mockResolvedValue(notBlocked);
@@ -433,5 +435,79 @@ describe("process-inactive-account handler", () => {
     await handler(event, {} as Context);
 
     expect(mockHasRecentActivityLogEntry).not.toHaveBeenCalled();
+  });
+
+  test("skips when record has hasUndeliverableEmailAddress", async () => {
+    dynamoMock.on(QueryCommand, {
+      TableName: "test-inactive-tracker-table",
+      IndexName: "CommonSubjectIdIndex",
+    }).resolves({
+      Items: [
+        {
+          commonSubjectId: "undeliverablee",
+          emailAddress: "i-am-not-deliverable@undlvrbl.com",
+          dateForDeletion: "2026-08-30",
+          hasUndeliverableEmailAddress: true,
+        },
+      ],
+    });
+
+    const event = buildSqsEvent([
+      {
+        commonSubjectId: "undeliverablee",
+        emailAddress: "i-am-not-deliverable@undlvrbl.com",
+        dateForDeletion: "2026-08-30",
+        processName: "Warning30Day",
+        status: "pending",
+      },
+    ]);
+
+    await handler(event, {} as Context);
+
+    expect(dynamoMock).toHaveReceivedCommandWith(QueryCommand, {
+      TableName: "test-inactive-tracker-table",
+      IndexName: "CommonSubjectIdIndex",
+      KeyConditionExpression: "commonSubjectId = :id",
+      ExpressionAttributeValues: {
+        ":id": "undeliverablee",
+      },
+    });
+
+    // for undeliverable email addresses, do not enqueue notification
+    expect(sqsMock).not.toHaveReceivedCommand(SendMessageCommand);
+    expect(mockMetrics.addMetric).not.toHaveBeenCalledWith("notificationEnqueued", expect.anything());
+    // status should still be updated in the inactive account tracker
+    expect(dynamoMock).toHaveReceivedCommand(UpdateCommand);
+  });
+  
+  test("continue as expected where there is no hasUndeliverableEmailAddress flag", async () => {
+    dynamoMock.on(QueryCommand, {
+      TableName: "test-inactive-tracker-table",
+      IndexName: "EmailAddressIndex",
+    }).resolves({
+      Items: [
+        {
+          commonSubjectId: "deliverable",
+          emailAddress: "deliverable@asdf.com",
+          dateForDeletion: "2026-08-12",
+        },
+      ],
+    });
+
+    const event = buildSqsEvent([
+      {
+        commonSubjectId: "deliverable",
+        emailAddress: "deliverable@asdf.com",
+        dateForDeletion: "2026-08-15",
+        processName: "Warning30Day",
+        status: "pending",
+      },
+    ]);
+
+    await handler(event, {} as Context);
+    expect(sqsMock).toHaveReceivedCommand(SendMessageCommand);
+    expect(dynamoMock).toHaveReceivedCommand(QueryCommand);
+    expect(dynamoMock).toHaveReceivedCommand(UpdateCommand);
+    expect(mockMetrics.addMetric).toHaveBeenCalledWith("notificationEnqueued", expect.anything(), 1);
   });
 });

@@ -89,34 +89,59 @@ export const handler = async (
 
     if (runGuardsOutcome === Actions.abort) continue;
   
-    if (process.notificationType && runGuardsOutcome === Actions.continue) {
-      const message = {
-        notificationType: process.notificationType,
-        emailAddress: body.emailAddress,
-        dateForDeletion: body.dateForDeletion,
-      };
-
-      await sqsClient.send(
-        new SendMessageCommand({
-          QueueUrl: notificationQueueUrl,
-          MessageBody: JSON.stringify(message),
-        })
-      );
-
-      logger.info(
-        "Successfully enqueued inactive account warning notification",
-        {
+    if (runGuardsOutcome === Actions.continue) {
+      if (process.notificationType) {
+        const message = {
+          notificationType: process.notificationType,
+          emailAddress: body.emailAddress,
+          dateForDeletion: body.dateForDeletion,
+        };
+  
+        await sqsClient.send(
+          new SendMessageCommand({
+            QueueUrl: notificationQueueUrl,
+            MessageBody: JSON.stringify(message),
+          })
+        );
+  
+        logger.info(
+          "Successfully enqueued inactive account warning notification",
+          {
+            commonSubjectId: body.commonSubjectId,
+            processName: body.processName,
+            notificationType: process.notificationType,
+          }
+        );
+        metrics.addMetric("notificationEnqueued", MetricUnit.Count, 1);
+      } else {
+        logger.info("No notificationType configured, skipping notification", {
           commonSubjectId: body.commonSubjectId,
           processName: body.processName,
-          notificationType: process.notificationType,
-        }
-      );
-      metrics.addMetric("notificationEnqueued", MetricUnit.Count, 1);
-    } else {
-      logger.info("No notificationType configured, skipping notification", {
-        commonSubjectId: body.commonSubjectId,
-        processName: body.processName,
-      });
+        });
+      }
+
+      if (process.targetQueueUrlEnvVar) {
+        const targetQueueUrl = getEnvironmentVariable(
+          process.targetQueueUrlEnvVar
+        );
+        const targetMessage = {
+          publicSubjectId: body.publicSubjectId,
+          commonSubjectId: body.commonSubjectId,
+        };
+
+        await sqsClient.send(
+          new SendMessageCommand({
+            QueueUrl: targetQueueUrl,
+            MessageBody: JSON.stringify(targetMessage),
+          })
+        );
+
+        logger.info("Successfully enqueued message to target queue", {
+          commonSubjectId: body.commonSubjectId,
+          processName: body.processName,
+          targetQueueUrlEnvVar: process.targetQueueUrlEnvVar,
+        });
+      }
     }
 
     await dynamoDocClient.send(
@@ -135,29 +160,6 @@ export const handler = async (
         },
       })
     );
-
-    if (process.targetQueueUrlEnvVar) {
-      const targetQueueUrl = getEnvironmentVariable(
-        process.targetQueueUrlEnvVar
-      );
-      const targetMessage = {
-        publicSubjectId: body.publicSubjectId,
-        commonSubjectId: body.commonSubjectId,
-      };
-
-      await sqsClient.send(
-        new SendMessageCommand({
-          QueueUrl: targetQueueUrl,
-          MessageBody: JSON.stringify(targetMessage),
-        })
-      );
-
-      logger.info("Successfully enqueued message to target queue", {
-        commonSubjectId: body.commonSubjectId,
-        processName: body.processName,
-        targetQueueUrlEnvVar: process.targetQueueUrlEnvVar,
-      });
-    }
 
     logger.info("Successfully processed inactive account", {
       commonSubjectId: body.commonSubjectId,

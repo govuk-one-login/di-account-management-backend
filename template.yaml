@@ -3516,6 +3516,12 @@ Resources:
               GOVUKAPPCLIENTID,
             ]
           NOTIFICATION_QUEUE_URL: !Ref NotificationQueue
+          NOTIFY_TEMPLATE_IDS:
+            !FindInMap [
+              EnvironmentVariables,
+              !Ref Environment,
+              NOTIFYTEMPLATEIDS,
+            ]          
       DeploymentPreference:
         Alarms:
           Fn::If:

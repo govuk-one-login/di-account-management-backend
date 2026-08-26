@@ -23,7 +23,8 @@ export enum NotificationType {
   INACTIVE_ACCOUNT_WARNING_7_DAY = "INACTIVE_ACCOUNT_WARNING_7_DAY",
   INACTIVE_ACCOUNT_SAVED_APP = "INACTIVE_ACCOUNT_SAVED_APP",
   INACTIVE_ACCOUNT_SAVED_HOME = "INACTIVE_ACCOUNT_SAVED_HOME",
-  INACTIVE_ACCOUNT_SAVED_RP = "INACTIVE_ACCOUNT_SAVED_RP"
+  INACTIVE_ACCOUNT_SAVED_RP = "INACTIVE_ACCOUNT_SAVED_RP",
+  INACTIVE_ACCOUNT_DELETED_CONFIRMATION = "INACTIVE_ACCOUNT_DELETED_CONFIRMATION",
 }
 
 const missingContentPlaceholder = "-";
@@ -84,7 +85,9 @@ const messageSchema = v.variant("notificationType", [
   ),
   v.pipe(
     v.object({
-      notificationType: v.literal(NotificationType.INACTIVE_ACCOUNT_WARNING_30_DAY),
+      notificationType: v.literal(
+        NotificationType.INACTIVE_ACCOUNT_WARNING_30_DAY
+      ),
       emailAddress: v.pipe(v.string(), v.email()),
       dateForDeletion: v.string(),
     }),
@@ -110,7 +113,9 @@ const messageSchema = v.variant("notificationType", [
   ),
   v.pipe(
     v.object({
-      notificationType: v.literal(NotificationType.INACTIVE_ACCOUNT_WARNING_7_DAY),
+      notificationType: v.literal(
+        NotificationType.INACTIVE_ACCOUNT_WARNING_7_DAY
+      ),
       emailAddress: v.pipe(v.string(), v.email()),
       dateForDeletion: v.string(),
     }),
@@ -144,6 +149,12 @@ const messageSchema = v.variant("notificationType", [
   }),
   v.object({
     notificationType: v.literal(NotificationType.INACTIVE_ACCOUNT_SAVED_RP),
+    emailAddress: v.pipe(v.string(), v.email()),
+  }),
+  v.object({
+    notificationType: v.literal(
+      NotificationType.INACTIVE_ACCOUNT_DELETED_CONFIRMATION
+    ),
     emailAddress: v.pipe(v.string(), v.email()),
   }),
 ]);
@@ -215,7 +226,7 @@ export const processNotification = async (
     return;
   }
 
-   if (
+  if (
     process.env["NOTIFY_DONT_SEND_EMAILS_TO"] &&
     new RegExp(process.env["NOTIFY_DONT_SEND_EMAILS_TO"], "i").test(
       message.emailAddress

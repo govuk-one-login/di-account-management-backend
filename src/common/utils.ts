@@ -29,11 +29,7 @@ export function getEnvironmentVariable(name: string): string {
 }
 
 /**
- * Determines whether the FEATURE_SEND_IAD_AUDIT_EVENTS feature flag is enabled.
- *
- * The flag is considered enabled only when the environment variable is set to
- * the string "true" (case-insensitive). Any other value, or an unset variable,
- * is treated as disabled.
+ * Determines whether the IAD Audit Event feature flag is enabled.
  *
  * @returns True if the feature flag is enabled, otherwise false.
  */

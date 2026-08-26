@@ -151,6 +151,12 @@ const messageSchema = v.variant("notificationType", [
     notificationType: v.literal(NotificationType.INACTIVE_ACCOUNT_SAVED_RP),
     emailAddress: v.pipe(v.string(), v.email()),
   }),
+  v.object({
+    notificationType: v.literal(
+      NotificationType.INACTIVE_ACCOUNT_DELETED_CONFIRMATION
+    ),
+    emailAddress: v.pipe(v.string(), v.email()),
+  }),
 ]);
 
 const notifySuccessSchema = v.object({

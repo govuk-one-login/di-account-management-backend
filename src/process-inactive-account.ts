@@ -11,6 +11,10 @@ import { getEnvironmentVariable } from "./common/utils.js";
 
 const logger = new Logger();
 const metrics = initMetrics("process-inactive-account");
+const sqsClient = new SQSClient();
+const dynamoClient = new DynamoDBClient({});
+const dynamoDocClient = DynamoDBDocumentClient.from(dynamoClient);
+
 
 async function runGuards(
   guards: ProcessConfig[number]["guards"],
@@ -46,10 +50,6 @@ async function runGuards(
   }
   return Actions.continue;
 }
-
-const sqsClient = new SQSClient();
-const dynamoClient = new DynamoDBClient({});
-const dynamoDocClient = DynamoDBDocumentClient.from(dynamoClient);
 
 export const handler = async (
   event: SQSEvent,

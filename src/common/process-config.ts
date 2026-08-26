@@ -2,6 +2,7 @@ import type { InactiveAccountStatus } from "./model.js";
 import { hasRecentActivityLogEntry } from "./iadGuards/hasRecentActivityLogEntry.js";
 import { hasAisBlockIntervention } from "./iadGuards/hasAisBlockIntervention.js";
 import { hasUndeliverableEmailAddress } from "./iadGuards/hasUndeliverableEmailAddress.js";
+import { sendInactiveAccountEmailsIsEnabled } from "./iadGuards/sendInactiveAccountEmailsIsEnabled.js";
 
 export enum Actions {
   continue = "Continue",
@@ -9,10 +10,17 @@ export enum Actions {
   continueWithoutActions = "ContinueWithoutPerformingActions"
 };
 
-export type Guard = (commonSubjectId: string) => Promise<{
+export type Guard = (commonSubjectId?: string) => Promise<{
   continue: Actions;
   guardName: string;
 }>;
+
+const guardsList = {
+  hasAisBlockIntervention: { guard: hasAisBlockIntervention, contributeToAlarm: false },
+  hasRecentActivityLogEntry: { guard: hasRecentActivityLogEntry, contributeToAlarm: true },
+  hasUndeliverableEmailAddress: { guard: hasUndeliverableEmailAddress, contributeToAlarm: false },
+  sendInactiveAccountEmailsIsEnabled: { guard: sendInactiveAccountEmailsIsEnabled, contributeToAlarm: false }
+}
 
 export type ProcessConfig = Record<
   string,
@@ -38,8 +46,9 @@ export const processConfig: ProcessConfig = {
     targetStatus: "30DayWarningSent",
     notificationType: "INACTIVE_ACCOUNT_WARNING_30_DAY",
     guards: [
-      { guard: hasAisBlockIntervention, contributeToAlarm: false },
-      { guard: hasUndeliverableEmailAddress, contributeToAlarm: false },
+      guardsList.sendInactiveAccountEmailsIsEnabled,
+      guardsList.hasAisBlockIntervention,
+      guardsList.hasUndeliverableEmailAddress,
     ],
   },
   Warning7Day: {
@@ -49,8 +58,9 @@ export const processConfig: ProcessConfig = {
     targetStatus: "7DayWarningSent",
     notificationType: "INACTIVE_ACCOUNT_WARNING_7_DAY",
     guards: [
-      { guard: hasAisBlockIntervention, contributeToAlarm: false },
-      { guard: hasUndeliverableEmailAddress, contributeToAlarm: false },
+      guardsList.sendInactiveAccountEmailsIsEnabled,
+      guardsList.hasAisBlockIntervention,
+      guardsList.hasUndeliverableEmailAddress,
     ],
   },
   DeleteAccount: {
@@ -60,8 +70,9 @@ export const processConfig: ProcessConfig = {
     targetStatus: "deleting",
     targetQueueUrlEnvVar: "ACCOUNT_DELETION_QUEUE_URL",
     guards: [
-      { guard: hasAisBlockIntervention, contributeToAlarm: false },
-      { guard: hasRecentActivityLogEntry, contributeToAlarm: true },
+      guardsList.sendInactiveAccountEmailsIsEnabled,
+      guardsList.hasAisBlockIntervention,
+      guardsList.hasRecentActivityLogEntry,
     ],
   },
 };

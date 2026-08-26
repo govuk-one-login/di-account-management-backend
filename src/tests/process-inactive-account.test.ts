@@ -14,6 +14,7 @@ const mockInitMetrics = vi.hoisted(() => vi.fn(() => mockMetrics));
 
 const mockHasAisBlockIntervention = vi.hoisted(() => vi.fn());
 const mockHasRecentActivityLogEntry = vi.hoisted(() => vi.fn());
+const mockSendInactiveAccountEmailsIsEnabled = vi.hoisted(() => vi.fn());
 
 vi.mock("../common/metrics.js", () => ({
   initMetrics: mockInitMetrics,
@@ -25,6 +26,10 @@ vi.mock("../common/iadGuards/hasAisBlockIntervention.js", () => ({
 
 vi.mock("../common/iadGuards/hasRecentActivityLogEntry.js", () => ({
   hasRecentActivityLogEntry: mockHasRecentActivityLogEntry,
+}));
+
+vi.mock("../common/iadGuards/sendInactiveAccountEmailsIsEnabled.js", () => ({
+  sendInactiveAccountEmailsIsEnabled: mockSendInactiveAccountEmailsIsEnabled,
 }));
 
 import { handler } from "../process-inactive-account.js";
@@ -55,6 +60,8 @@ const notBlocked = { continue: "Continue", guardName: "AIS" };
 const blocked = { continue: "Abort", guardName: "AIS" };
 const noRecentActivity = { continue: "Continue", guardName: "HomeUserActivityLog" };
 const recentActivity = { continue: "Abort", guardName: "HomeUserActivityLog" };
+const inactiveAccountEmailsFeatureFlagDisabled = { continue: "Abort", guardName: "SendInactiveAccountEmailsFeatureFlag" };
+const inactiveAccountEmailsFeatureFlagEnabled = { continue: "Continue", guardName: "SendInactiveAccountEmailsFeatureFlag" };
 
 describe("process-inactive-account handler", () => {
   beforeEach(() => {
@@ -67,11 +74,13 @@ describe("process-inactive-account handler", () => {
 
     mockHasAisBlockIntervention.mockResolvedValue(notBlocked);
     mockHasRecentActivityLogEntry.mockResolvedValue(noRecentActivity);
+    mockSendInactiveAccountEmailsIsEnabled.mockResolvedValue(inactiveAccountEmailsFeatureFlagEnabled);
 
     process.env.NOTIFICATION_QUEUE_URL =
       "https://sqs.eu-west-2.amazonaws.com/123456789012/NotificationQueue";
     process.env.INACTIVE_ACCOUNT_TRACKER_TABLE_NAME =
       "test-inactive-tracker-table";
+    process.env.SEND_INACTIVE_ACCOUNT_DELETION_EMAILS = '1';
   });
 
   test("enqueues a 30-day warning notification to the NotificationQueue", async () => {
@@ -509,5 +518,26 @@ describe("process-inactive-account handler", () => {
     expect(dynamoMock).toHaveReceivedCommand(QueryCommand);
     expect(dynamoMock).toHaveReceivedCommand(UpdateCommand);
     expect(mockMetrics.addMetric).toHaveBeenCalledWith("notificationEnqueued", expect.anything(), 1);
+  });
+
+  test("skips processing when inactive account deletion feature flag guard returns Abort", async () => {
+    mockSendInactiveAccountEmailsIsEnabled.mockResolvedValue(inactiveAccountEmailsFeatureFlagDisabled);
+
+    const event = buildSqsEvent([
+      {
+        commonSubjectId: "user-456",
+        emailAddress: "user@example.com",
+        dateForDeletion: "2026-07-27",
+        processName: "Warning7Day",
+        status: "30DayWarningSent",
+      },
+    ]);
+
+    await handler(event, {} as Context);
+
+    expect(mockSendInactiveAccountEmailsIsEnabled).toHaveBeenCalled();
+    expect(sqsMock).not.toHaveReceivedCommand(SendMessageCommand);
+    expect(dynamoMock).not.toHaveReceivedCommand(UpdateCommand);
+    expect(mockMetrics.addMetric).not.toHaveBeenCalled();
   });
 });

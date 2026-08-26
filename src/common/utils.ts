@@ -28,6 +28,15 @@ export function getEnvironmentVariable(name: string): string {
   return value;
 }
 
+/**
+ * Determines whether the IAD Audit Event feature flag is enabled.
+ *
+ * @returns True if the feature flag is enabled, otherwise false.
+ */
+export function isSendIadAuditEventsEnabled(): boolean {
+  return process.env["FEATURE_SEND_IAD_AUDIT_EVENTS"]?.toLowerCase() === "true";
+}
+
 export const zeroedArray = (length: number): number[] =>
   new Array(length).fill(0);
 

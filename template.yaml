@@ -3526,7 +3526,7 @@ Resources:
         Alarms:
           Fn::If:
             - IsNotDevelopmentOrDemo
-            - - !Ref UpdateInactiveAccountTrackerFunctionSuccessRate
+            - - !Ref AWS::NoValue
             - - !Ref AWS::NoValue
     Metadata:
       BuildMethod: esbuild

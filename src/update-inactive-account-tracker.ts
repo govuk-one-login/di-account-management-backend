@@ -24,7 +24,6 @@ const getCurrentRecordForUser = async (userId: string, tableName: string): Promi
       TableName: tableName,
       KeyConditionExpression: "commonSubjectId = :uid",
       ExpressionAttributeValues: { ":uid": userId },
-      ConsistentRead: true
     })
   );
 

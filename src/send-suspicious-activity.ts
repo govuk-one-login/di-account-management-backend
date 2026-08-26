@@ -1,4 +1,3 @@
-import { SendMessageCommandOutput } from "@aws-sdk/client-sqs";
 import { ReportSuspiciousActivityEvent, TxMAAuditEvent } from "./common/model.js";
 import {
   COMPONENT_ID,
@@ -7,7 +6,7 @@ import {
 } from "./common/constants.js";
 import VALIDATOR_RULES_MAP from "./common/validator-rules.js";
 import validateObject from "./common/validator.js";
-import { sendSqsMessage } from "./common/sqs.js";
+import { sendAuditEvent } from "./common/send-audit-event.js";
 import { getEnvironmentVariable } from "./common/utils.js";
 import { Logger } from "@aws-lambda-powertools/logger";
 import { Context } from "aws-lambda";
@@ -72,25 +71,7 @@ export const transformToTxMAEvent = (
   return txmaEvent;
 };
 
-export async function sendAuditEvent(
-  event: TxMAAuditEvent,
-  queueUrl: string | undefined
-): Promise<SendMessageCommandOutput> {
-  try {
-    const result = await sendSqsMessage(JSON.stringify(event), queueUrl);
-    logger.info(
-      `[Message sent to QUEUE] with message id = ${result.MessageId}`
-    );
-    return result;
-  } catch (error: unknown) {
-    logger.error(
-      `Error occurred trying to send the audit event to the TxMA queue: ${
-        (error as Error).message
-      }`
-    );
-    throw error;
-  }
-}
+export { sendAuditEvent };
 
 export const handler = async (
   input: ReportSuspiciousActivityEvent,

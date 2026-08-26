@@ -28,6 +28,7 @@ describe("UpdateInactiveAccountTracker handler", () => {
     process.env.NOTIFICATION_QUEUE_URL = "https://sqsq-url"; 
     process.env.NOTIFY_TEMPLATE_IDS = '{"GLOBAL_LOGOUT":"template-id"}';
     process.env.GOV_UK_APP_CLIENT_ID = 'govuk-app-client-id';
+    process.env.SEND_INACTIVE_ACCOUNT_DELETION_EMAILS = '1';
     dynamoMock.reset();
     sqsMock.reset(); 
   });
@@ -42,6 +43,7 @@ describe("UpdateInactiveAccountTracker handler", () => {
     delete process.env.AUTH_BACKFILL_COMPLETE_DATETIME;
     delete process.env.NOTIFICATION_QUEUE_URL;
     delete process.env.GOV_UK_APP_CLIENT_ID;
+    delete process.env.SEND_INACTIVE_ACCOUNT_DELETION_EMAILS;
   });
 
   test("queries CommonSubjectIdIndex with user_id", async () => {
@@ -893,6 +895,34 @@ describe("UpdateInactiveAccountTracker handler", () => {
     await handler(event, {} as Context);
 
     expect(sqsMock).not.toHaveReceivedCommand(SendMessageCommand);
+  });
+
+  test("does not send message when inactive account deletion emails feature flag is off", async () => {
+    const within30DaysDate = new Date();
+    within30DaysDate.setDate(within30DaysDate.getDate() + 15);
+    const dateStr = within30DaysDate.toISOString().split("T")[0];
+    process.env.SEND_INACTIVE_ACCOUNT_DELETION_EMAILS = '0';
+
+    dynamoMock.on(QueryCommand).resolves({
+      Items: [{ 
+        commonSubjectId: "qwerty", 
+        dateForDeletion: dateStr, 
+        userLastActive: new Date(Date.now() - 100000).toISOString(), 
+        status: "pending", 
+        emailAddress: "foo@bar.com" 
+      }],
+    });
+    dynamoMock.on(TransactWriteCommand).resolves({});
+    sqsMock.on(SendMessageCommand).resolves({});
+
+    const event: DynamoDBStreamEvent = { 
+      Records: [generateDynamoStreamRecord("EznkQXGrWxi0cQMSACY15UzvG1Q")] 
+    };
+
+    await handler(event, {} as Context);
+
+    expect(sqsMock).not.toHaveReceivedCommand(SendMessageCommand);
+    expect(dynamoMock).not.toHaveReceivedCommand(TransactWriteCommand);
   });
 
   describe("backfill threshold", () => {

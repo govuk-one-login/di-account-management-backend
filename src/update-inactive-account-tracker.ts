@@ -9,6 +9,7 @@ import type { InactiveAccountTrackerRecord } from "./common/model.ts";
 import assert from 'node:assert/strict';
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 import { NotificationType } from "./notification-service-utils.js"
+import { Actions, runGuards, guardsList } from "./common/process-config.js";
 
 const logger = new Logger();
 const dynamoClient = new DynamoDBClient({});
@@ -226,6 +227,10 @@ const processRecord = async (
       notificationType = NotificationType.INACTIVE_ACCOUNT_SAVED_RP;
   }
 
+  const runGuardBody = {...newItem, processName: "SaveAccount"} as unknown as Record<string, string>;
+  const runGuardOutcome = await runGuards([ guardsList.sendInactiveAccountEmailsIsEnabled ], runGuardBody);
+
+  if (runGuardOutcome === Actions.abort) return;
 
   if (currentTrackerRecord?.dateForDeletion && isCurrentDeletionIn30Days(currentTrackerRecord.dateForDeletion)) {
     // if currentTrackerRecord.dateForDeletion is within the next 30 days, send ACCOUNT SAVED email

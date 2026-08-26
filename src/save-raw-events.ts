@@ -25,6 +25,24 @@ const ALLOWED_EVENT_NAMES = new Set([
   "AUTH_AUTH_CODE_ISSUED",
   "AUTH_IPV_AUTHORISATION_REQUESTED",
   "AUTH_IPV_SUCCESSFUL_IDENTITY_RESPONSE_RECEIVED",
+  "AUTH_TOKEN_SENT_TO_ORCHESTRATION",
+  "AUTH_UPDATE_EMAIL",
+  "AUTH_CODE_VERIFIED",
+  "AUTH_PASSKEY_VERIFICATION_SUCCESSFUL",
+  "STS_REFRESH_TOKEN_ISSUED",
+]);
+
+const EVENTS_WITHOUT_SESSION_ID = new Set([
+  // AUTH_TOKEN_SENT_TO_ORCHESTRATION has no session_id in its schema, as the
+  // authentication session is already over by the time the token is exchanged.
+  "AUTH_TOKEN_SENT_TO_ORCHESTRATION",
+]);
+
+const EVENTS_WITHOUT_USER_ID = new Set([
+  // AUTH_CODE_VERIFIED does not always have a user a user ID, for example
+  // when a new user is verifying their email address prior to their account
+  // actually being created
+  "AUTH_CODE_VERIFIED",
 ]);
 
 const getEventId = (): string => {
@@ -40,8 +58,13 @@ const getTTLDate = (): number => {
 
 export const validateUser = (event: TxmaEvent): void => {
   const user: UserData = event.user;
+  const requiresSessionId = !EVENTS_WITHOUT_SESSION_ID.has(event.event_name);
+  const requireUserId = !EVENTS_WITHOUT_USER_ID.has(event.event_name);
 
-  if (!user.user_id || !user.session_id) {
+  if (
+    (requireUserId && !user.user_id) ||
+    (requiresSessionId && !user.session_id)
+  ) {
     logger.info("Could not validate User context", {
       typeofUser: typeof user,
       typeofUserUserId: typeof user.user_id,
@@ -49,10 +72,10 @@ export const validateUser = (event: TxmaEvent): void => {
     });
     const missingFields: string[] = [];
 
-    if (!user.user_id) {
+    if (requireUserId && !user.user_id) {
       missingFields.push(`user_id is ${user.user_id}`);
     }
-    if (!user.session_id) {
+    if (requiresSessionId && !user.session_id) {
       missingFields.push(`session_id is ${user.session_id}`);
     }
     throw new Error(

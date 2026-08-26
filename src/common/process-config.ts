@@ -3,8 +3,6 @@ import { hasRecentActivityLogEntry } from "./iadGuards/hasRecentActivityLogEntry
 import { hasAisBlockIntervention } from "./iadGuards/hasAisBlockIntervention.js";
 import { hasUndeliverableEmailAddress } from "./iadGuards/hasUndeliverableEmailAddress.js";
 import { sendInactiveAccountEmailsIsEnabled } from "./iadGuards/sendInactiveAccountEmailsIsEnabled.js";
-import { Logger } from "@aws-lambda-powertools/logger";
-const logger = new Logger();
 
 export enum Actions {
   continue = "Continue",
@@ -17,7 +15,7 @@ export type Guard = (commonSubjectId?: string) => Promise<{
   guardName: string;
 }>;
 
-export const guardsList = {
+const guardsList = {
   hasAisBlockIntervention: { guard: hasAisBlockIntervention, contributeToAlarm: false },
   hasRecentActivityLogEntry: { guard: hasRecentActivityLogEntry, contributeToAlarm: true },
   hasUndeliverableEmailAddress: { guard: hasUndeliverableEmailAddress, contributeToAlarm: false },
@@ -48,9 +46,9 @@ export const processConfig: ProcessConfig = {
     targetStatus: "30DayWarningSent",
     notificationType: "INACTIVE_ACCOUNT_WARNING_30_DAY",
     guards: [
+      guardsList.sendInactiveAccountEmailsIsEnabled,
       guardsList.hasAisBlockIntervention,
       guardsList.hasUndeliverableEmailAddress,
-      guardsList.sendInactiveAccountEmailsIsEnabled,
     ],
   },
   Warning7Day: {
@@ -60,9 +58,9 @@ export const processConfig: ProcessConfig = {
     targetStatus: "7DayWarningSent",
     notificationType: "INACTIVE_ACCOUNT_WARNING_7_DAY",
     guards: [
+      guardsList.sendInactiveAccountEmailsIsEnabled,
       guardsList.hasAisBlockIntervention,
       guardsList.hasUndeliverableEmailAddress,
-      guardsList.sendInactiveAccountEmailsIsEnabled,
     ],
   },
   DeleteAccount: {
@@ -72,44 +70,9 @@ export const processConfig: ProcessConfig = {
     targetStatus: "deleting",
     targetQueueUrlEnvVar: "ACCOUNT_DELETION_QUEUE_URL",
     guards: [
+      guardsList.sendInactiveAccountEmailsIsEnabled,
       guardsList.hasAisBlockIntervention,
       guardsList.hasRecentActivityLogEntry,
-      guardsList.sendInactiveAccountEmailsIsEnabled,
     ],
   },
 };
-
-export async function runGuards(
-  guards: ProcessConfig[number]["guards"],
-  body: Record<string, string>
-): Promise<Actions> {
-  if (!guards) return Actions.continue;
-
-  for (const guard of guards) {
-    const guardResult = await guard.guard(body.commonSubjectId);
-    const typeOfGuardResult = guardResult.continue;
-
-    if (typeOfGuardResult === Actions.continueWithoutActions || typeOfGuardResult === Actions.abort ) {
-      const message = typeOfGuardResult === Actions.abort ? "GuardrailAbortedInactiveAccountDeletionProcess" : "GuardrailInactiveAccountDeletionProcessContinuedWithoutActions";
-      logger.info(message, {
-        dateForDeletion: body.dateForDeletion,
-        processName: body.processName,
-        status: body.status,
-        statusLastUpdated: body.statusLastUpdated,
-        userLastActive: body.userLastActive,
-        userLastActiveSource: body.userLastActiveSource,
-        userLastActiveSourceId: body.userLastActiveSourceId,
-        userLastActiveUpdated: body.userLastActiveUpdated,
-        emailAddressLastUpdated: body.emailAddressLastUpdated,
-        emailAddressSource: body.emailAddressSource,
-        emailAddressSourceId: body.emailAddressSourceId,
-        hasSetupMfa: body.hasSetupMfa,
-        guard: guardResult.guardName,
-        contributeToAlarm: guard.contributeToAlarm,
-      });
-
-      return guardResult.continue;
-    }
-  }
-  return Actions.continue;
-}

@@ -9,7 +9,6 @@ import type { InactiveAccountTrackerRecord } from "./common/model.ts";
 import assert from 'node:assert/strict';
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 import { NotificationType } from "./notification-service-utils.js"
-import { Actions, runGuards, guardsList } from "./common/process-config.js";
 
 const logger = new Logger();
 const dynamoClient = new DynamoDBClient({});
@@ -227,11 +226,6 @@ const processRecord = async (
       notificationType = NotificationType.INACTIVE_ACCOUNT_SAVED_RP;
   }
 
-  const runGuardBody = {...newItem, processName: "SaveAccount"} as unknown as Record<string, string>;
-  const runGuardOutcome = await runGuards([ guardsList.sendInactiveAccountEmailsIsEnabled ], runGuardBody);
-
-  if (runGuardOutcome === Actions.abort) return;
-
   if (currentTrackerRecord?.dateForDeletion && isCurrentDeletionIn30Days(currentTrackerRecord.dateForDeletion)) {
     // if currentTrackerRecord.dateForDeletion is within the next 30 days, send ACCOUNT SAVED email
     const message = {
@@ -268,6 +262,12 @@ export const handler = async (
   const userNotificationsTableName = getEnvironmentVariable("USER_NOTIFICATIONS_TABLE_NAME");
   const olhClientId = getEnvironmentVariable("OLH_CLIENT_ID");
   const backfillCompleteDatetime = process.env["AUTH_BACKFILL_COMPLETE_DATETIME"] ?? "";
+  const inactiveAccountEmailFlagEnabled = getEnvironmentVariable("SEND_INACTIVE_ACCOUNT_DELETION_EMAILS") === "1";
+  
+  if (!inactiveAccountEmailFlagEnabled) {
+    logger.info("SEND_INACTIVE_ACCOUNT_DELETION_EMAILS feature flag is off");
+    return;
+  };
 
   for (const record of event.Records) {
     const txmaEvent = unmarshall(

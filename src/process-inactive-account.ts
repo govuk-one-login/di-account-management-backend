@@ -6,7 +6,7 @@ import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import assert from "node:assert/strict";
 import { initMetrics } from "./common/metrics.js";
-import { processConfig, Actions, runGuards } from "./common/process-config.js";
+import { processConfig, ProcessConfig, Actions } from "./common/process-config.js";
 import { getEnvironmentVariable } from "./common/utils.js";
 
 const logger = new Logger();
@@ -14,6 +14,42 @@ const metrics = initMetrics("process-inactive-account");
 const sqsClient = new SQSClient();
 const dynamoClient = new DynamoDBClient({});
 const dynamoDocClient = DynamoDBDocumentClient.from(dynamoClient);
+
+
+async function runGuards(
+  guards: ProcessConfig[number]["guards"],
+  body: Record<string, string>
+): Promise<Actions> {
+  if (!guards) return Actions.continue;
+
+  for (const guard of guards) {
+    const guardResult = await guard.guard(body.commonSubjectId);
+    const typeOfGuardResult = guardResult.continue;
+
+    if (typeOfGuardResult === Actions.continueWithoutActions || typeOfGuardResult === Actions.abort ) {
+      const message = typeOfGuardResult === Actions.abort ? "GuardrailAbortedInactiveAccountDeletionProcess" : "GuardrailInactiveAccountDeletionProcessContinuedWithoutActions";
+      logger.info(message, {
+        dateForDeletion: body.dateForDeletion,
+        processName: body.processName,
+        status: body.status,
+        statusLastUpdated: body.statusLastUpdated,
+        userLastActive: body.userLastActive,
+        userLastActiveSource: body.userLastActiveSource,
+        userLastActiveSourceId: body.userLastActiveSourceId,
+        userLastActiveUpdated: body.userLastActiveUpdated,
+        emailAddressLastUpdated: body.emailAddressLastUpdated,
+        emailAddressSource: body.emailAddressSource,
+        emailAddressSourceId: body.emailAddressSourceId,
+        hasSetupMfa: body.hasSetupMfa,
+        guard: guardResult.guardName,
+        contributeToAlarm: guard.contributeToAlarm,
+      });
+
+      return guardResult.continue;
+    }
+  }
+  return Actions.continue;
+}
 
 export const handler = async (
   event: SQSEvent,

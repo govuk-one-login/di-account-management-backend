@@ -31,6 +31,7 @@ export type ProcessConfig = Record<
     targetStatus?: InactiveAccountStatus;
     notificationType?: string;
     targetQueueUrlEnvVar?: string;
+    auditEventName?: string;
     guards?: {
       guard: Guard;
       contributeToAlarm: boolean;
@@ -45,6 +46,7 @@ export const processConfig: ProcessConfig = {
     allowedStatuses: ["pending"],
     targetStatus: "30DayWarningSent",
     notificationType: "INACTIVE_ACCOUNT_WARNING_30_DAY",
+    auditEventName: "HOME_ACCOUNT_TRACKER_ACCOUNT_FIRST_PERIOD_ENTERED",
     guards: [
       guardsList.sendInactiveAccountEmailsIsEnabled,
       guardsList.hasAisBlockIntervention,
@@ -57,6 +59,7 @@ export const processConfig: ProcessConfig = {
     allowedStatuses: ["pending", "30DayWarningSent"],
     targetStatus: "7DayWarningSent",
     notificationType: "INACTIVE_ACCOUNT_WARNING_7_DAY",
+    auditEventName: "HOME_ACCOUNT_TRACKER_ACCOUNT_SECOND_PERIOD_ENTERED",
     guards: [
       guardsList.sendInactiveAccountEmailsIsEnabled,
       guardsList.hasAisBlockIntervention,

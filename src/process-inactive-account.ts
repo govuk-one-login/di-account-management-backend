@@ -8,6 +8,7 @@ import assert from "node:assert/strict";
 import { initMetrics } from "./common/metrics.js";
 import { processConfig, ProcessConfig, Actions } from "./common/process-config.js";
 import { getEnvironmentVariable } from "./common/utils.js";
+import { sendAuditEvent } from "./common/send-audit-event.js";
 
 const logger = new Logger();
 const metrics = initMetrics("process-inactive-account");
@@ -160,6 +161,17 @@ export const handler = async (
         },
       })
     );
+
+    if (process.auditEventName) {
+      await sendAuditEvent(process.auditEventName, {
+        user: {
+          user_id: body.commonSubjectId,
+        },
+        extensions: {
+          accountTrackerAccountDeletionDate: body.dateForDeletion,
+        },
+      });
+    }
 
     logger.info("Successfully processed inactive account", {
       commonSubjectId: body.commonSubjectId,

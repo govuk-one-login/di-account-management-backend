@@ -7972,7 +7972,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-notify-delivery-receipts"
-      RetentionInDays: 90
+      RetentionInDays: 90 
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   NotifyDeliveryReceiptsLambdaErrorsAlarm:

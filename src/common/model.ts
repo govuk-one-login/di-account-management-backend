@@ -59,6 +59,7 @@ export interface TxmaEvent {
 export interface Extensions {
   reported_session_id: string;
   "journey-type"?: string;
+  account_deletion_reason?: string;
 }
 
 export interface CurrentTimeDescriptor {

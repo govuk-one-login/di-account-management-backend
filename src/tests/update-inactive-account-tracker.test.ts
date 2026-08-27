@@ -901,7 +901,7 @@ describe("UpdateInactiveAccountTracker handler", () => {
     await handler(event, {} as Context);
 
     expect(sqsMock).not.toHaveReceivedCommand(SendMessageCommand);
-    expect(loggerWarnMock).toHaveBeenCalledWith("INACTIVE_ACCOUNT_SAVED_NO_EMAIL");
+    expect(loggerWarnMock).toHaveBeenCalledWith("INACTIVE_ACCOUNT_SAVED_BUT_NO_EMAIL_ADDRESS_TO_NOTIFY");
   });
 
   test("does not send SQS message when newItem has no emailAddress, even if deletion date is within 30 days", async () => {

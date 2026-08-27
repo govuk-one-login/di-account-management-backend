@@ -37,6 +37,8 @@ const EVENTS_WITHOUT_SESSION_ID = new Set([
   // AUTH_TOKEN_SENT_TO_ORCHESTRATION has no session_id in its schema, as the
   // authentication session is already over by the time the token is exchanged.
   "AUTH_TOKEN_SENT_TO_ORCHESTRATION",
+  // AUTH_DELETE_ACCOUNT has no session_id when the account deletion is
+  // initiated by TSD.
   "AUTH_DELETE_ACCOUNT",
 ]);
 

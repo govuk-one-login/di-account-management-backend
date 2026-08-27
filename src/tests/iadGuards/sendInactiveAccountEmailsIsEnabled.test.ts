@@ -10,13 +10,13 @@ describe("sendInactiveAccountEmailsIsEnabled", () => {
     delete process.env["SEND_INACTIVE_ACCOUNT_DELETION_EMAILS"];
   });
 
-  test("continue when the feature flag is enabled", async () => {
+  test("continueWithoutActions when the feature flag is enabled", async () => {
     process.env["SEND_INACTIVE_ACCOUNT_DELETION_EMAILS"] = "1";
 
     const result = await sendInactiveAccountEmailsIsEnabled();
 
     expect(result).toEqual({
-      continue: Actions.continue,
+      continue: Actions.continueWithoutActions,
       guardName: "SendInactiveAccountEmailsFeatureFlag"
     });
   });

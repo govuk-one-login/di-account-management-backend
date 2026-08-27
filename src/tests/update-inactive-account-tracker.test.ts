@@ -897,7 +897,7 @@ describe("UpdateInactiveAccountTracker handler", () => {
     expect(sqsMock).not.toHaveReceivedCommand(SendMessageCommand);
   });
 
-  test("does not send message or update record when inactive account deletion emails feature flag is off", async () => {
+  test("does not send message when inactive account deletion emails feature flag is off", async () => {
     const within30DaysDate = new Date();
     within30DaysDate.setDate(within30DaysDate.getDate() + 15);
     const dateStr = within30DaysDate.toISOString().split("T")[0];
@@ -912,7 +912,6 @@ describe("UpdateInactiveAccountTracker handler", () => {
         emailAddress: "foo@bar.com" 
       }],
     });
-    dynamoMock.on(TransactWriteCommand).resolves({});
     sqsMock.on(SendMessageCommand).resolves({});
 
     const event: DynamoDBStreamEvent = { 
@@ -922,7 +921,6 @@ describe("UpdateInactiveAccountTracker handler", () => {
     await handler(event, {} as Context);
 
     expect(sqsMock).not.toHaveReceivedCommand(SendMessageCommand);
-    expect(dynamoMock).not.toHaveReceivedCommand(TransactWriteCommand);
   });
 
   describe("backfill threshold", () => {

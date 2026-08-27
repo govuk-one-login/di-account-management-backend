@@ -226,7 +226,11 @@ const processRecord = async (
       notificationType = NotificationType.INACTIVE_ACCOUNT_SAVED_RP;
   }
 
-  if (currentTrackerRecord?.dateForDeletion && isCurrentDeletionIn30Days(currentTrackerRecord.dateForDeletion)) {
+  const inactiveAccountEmailFlagEnabled = getEnvironmentVariable("SEND_INACTIVE_ACCOUNT_DELETION_EMAILS") === "1";
+
+  if (!inactiveAccountEmailFlagEnabled) {
+    logger.info("SEND_INACTIVE_ACCOUNT_DELETION_EMAILS feature flag is off");
+  } else if (currentTrackerRecord?.dateForDeletion && isCurrentDeletionIn30Days(currentTrackerRecord.dateForDeletion)) {
     // if currentTrackerRecord.dateForDeletion is within the next 30 days, send ACCOUNT SAVED email
     const message = {
       notificationType,
@@ -262,12 +266,6 @@ export const handler = async (
   const userNotificationsTableName = getEnvironmentVariable("USER_NOTIFICATIONS_TABLE_NAME");
   const olhClientId = getEnvironmentVariable("OLH_CLIENT_ID");
   const backfillCompleteDatetime = process.env["AUTH_BACKFILL_COMPLETE_DATETIME"] ?? "";
-  const inactiveAccountEmailFlagEnabled = getEnvironmentVariable("SEND_INACTIVE_ACCOUNT_DELETION_EMAILS") === "1";
-  
-  if (!inactiveAccountEmailFlagEnabled) {
-    logger.info("SEND_INACTIVE_ACCOUNT_DELETION_EMAILS feature flag is off");
-    return;
-  };
 
   for (const record of event.Records) {
     const txmaEvent = unmarshall(

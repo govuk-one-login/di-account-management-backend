@@ -94,6 +94,7 @@ describe("sendAuditEvent", () => {
     vi.useRealTimers();
     vi.clearAllMocks();
     delete process.env.TXMA_QUEUE_URL;
+    delete process.env.FEATURE_SEND_IAD_AUDIT_EVENTS;
   });
 
   test("builds the event and sends it to the queue from the environment variable", async () => {
@@ -136,5 +137,76 @@ describe("sendAuditEvent", () => {
     expect(loggerError).toHaveBeenCalledWith(
       "Error occurred trying to send the audit event to the TxMA queue: SomeSQSError"
     );
+  });
+
+  describe("IAD event skipping", () => {
+    const IAD_EVENTS = [
+      "HOME_ACCOUNT_TRACKER_ACCOUNT_DELETION_REQUESTED",
+      "HOME_ACCOUNT_TRACKER_ACCOUNT_FIRST_PERIOD_ENTERED",
+      "HOME_ACCOUNT_TRACKER_ACCOUNT_REACTIVATED",
+      "HOME_ACCOUNT_TRACKER_ACCOUNT_SECOND_PERIOD_ENTERED",
+      "HOME_ACCOUNT_TRACKER_NOTIFICATION_DELIVERY_PERMANENTLY_FAILED",
+      "HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED",
+      "HOME_ACCOUNT_TRACKER_NOTIFICATION_REQUESTED",
+      "HOME_ACCOUNT_TRACKER_RECORD_DELETED",
+    ];
+
+    test.each(IAD_EVENTS)(
+      "skips sending %s when FEATURE_SEND_IAD_AUDIT_EVENTS is not set",
+      async (eventName) => {
+        const loggerInfo = vi
+          .spyOn(Logger.prototype, "info")
+          .mockImplementation(() => undefined);
+
+        const result = await sendAuditEvent(eventName, parameters);
+
+        expect(result).toBeUndefined();
+        expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(0);
+        expect(loggerInfo).toHaveBeenCalledWith(
+          `Skipping IAD event ${eventName} because IAD audit events are disabled`
+        );
+      }
+    );
+
+    test.each(IAD_EVENTS)(
+      "skips sending %s when FEATURE_SEND_IAD_AUDIT_EVENTS is 'false'",
+      async (eventName) => {
+        process.env.FEATURE_SEND_IAD_AUDIT_EVENTS = "false";
+        const loggerInfo = vi
+          .spyOn(Logger.prototype, "info")
+          .mockImplementation(() => undefined);
+
+        const result = await sendAuditEvent(eventName, parameters);
+
+        expect(result).toBeUndefined();
+        expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(0);
+        expect(loggerInfo).toHaveBeenCalledWith(
+          `Skipping IAD event ${eventName} because IAD audit events are disabled`
+        );
+      }
+    );
+
+    test.each(IAD_EVENTS)(
+      "sends %s when FEATURE_SEND_IAD_AUDIT_EVENTS is 'true'",
+      async (eventName) => {
+        process.env.FEATURE_SEND_IAD_AUDIT_EVENTS = "true";
+        vi.spyOn(Logger.prototype, "info").mockImplementation(() => undefined);
+
+        const result = await sendAuditEvent(eventName, parameters);
+
+        expect(result).toEqual({ MessageId: "MessageId" });
+        expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(1);
+      }
+    );
+
+    test("sends non-IAD events regardless of feature flag being disabled", async () => {
+      delete process.env.FEATURE_SEND_IAD_AUDIT_EVENTS;
+      vi.spyOn(Logger.prototype, "info").mockImplementation(() => undefined);
+
+      const result = await sendAuditEvent("HOME_TEST_EVENT", parameters);
+
+      expect(result).toEqual({ MessageId: "MessageId" });
+      expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(1);
+    });
   });
 });

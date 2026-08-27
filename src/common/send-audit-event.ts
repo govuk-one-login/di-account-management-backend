@@ -89,12 +89,9 @@ export async function sendAuditEvent(
     return result;
   } catch (error: unknown) {
     logger.error(
-      `Error occurred trying to send the audit event to the TxMA queue: ${
-        (error as Error).message
+      `Error occurred trying to send the audit event to the TxMA queue: ${(error as Error).message
       }`
     );
     throw error;
   }
 }
-
-export default sendAuditEvent;

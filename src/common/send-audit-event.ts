@@ -1,23 +1,86 @@
 import { SendMessageCommandOutput } from "@aws-sdk/client-sqs";
 import { Logger } from "@aws-lambda-powertools/logger";
 import { sendSqsMessage } from "./sqs.js";
+import { getCurrentTimestamp, getEnvironmentVariable } from "./utils.js";
+import { COMPONENT_ID } from "./constants.js";
+import { TxmaEvent, UserData, Extensions } from "./model.js";
 
 const logger = new Logger();
 
 /**
- * Sends an audit event to a queue (e.g. the TxMA audit queue).
+ * The event-specific parameters used to build a TxMA audit event.
  *
- * This is intentionally generic: it accepts any serialisable event object so it
- * can be reused for any audit event type, not just suspicious activity events.
+ * The caller supplies the data that varies per event (the user, any
+ * extensions, and optionally explicit timestamps/ids). The function fills in
+ * the constant fields (component_id) and the event name, and generates
+ * timestamps when they are not provided.
+ */
+export interface AuditEventParameters {
+  user: UserData;
+  event_id?: string;
+  client_id?: string;
+  timestamp?: number;
+  event_timestamp_ms?: number;
+  timestamp_formatted?: string;
+  event_timestamp_ms_formatted?: string;
+  component_id?: string;
+  extensions?: Extensions;
+}
+
+/**
+ * Builds a TxMA audit event from an event name and a set of parameters.
  *
- * @param event - The audit event payload to send. Any JSON-serialisable object.
- * @param queueUrl - The URL of the target queue.
+ * @param eventName - The name of the event (populates `event_name`).
+ * @param parameters - The event-specific parameters.
+ * @returns A fully populated TxMA event.
+ */
+export function buildTxmaEvent(
+  eventName: string,
+  parameters: AuditEventParameters
+): TxmaEvent {
+  const timestamps = getCurrentTimestamp();
+
+  return {
+    event_name: eventName,
+    component_id: parameters.component_id ?? COMPONENT_ID,
+    timestamp: parameters.timestamp ?? timestamps.seconds,
+    event_timestamp_ms:
+      parameters.event_timestamp_ms ?? timestamps.milliseconds,
+    event_timestamp_ms_formatted:
+      parameters.event_timestamp_ms_formatted ?? timestamps.isoString,
+    user: parameters.user,
+    ...(parameters.event_id !== undefined && {
+      event_id: parameters.event_id,
+    }),
+    ...(parameters.client_id !== undefined && {
+      client_id: parameters.client_id,
+    }),
+    ...(parameters.timestamp_formatted !== undefined && {
+      timestamp_formatted: parameters.timestamp_formatted,
+    }),
+    ...(parameters.extensions !== undefined && {
+      extensions: parameters.extensions,
+    }),
+  };
+}
+
+/**
+ * Builds a TxMA audit event from the given event name and parameters and sends
+ * it to the TxMA audit queue.
+ *
+ * The target queue URL is read from the `TXMA_QUEUE_URL` environment variable.
+ *
+ * @param eventName - The name of the event to send.
+ * @param parameters - The event-specific parameters used to build the event.
  * @returns The result of the SQS send message command.
  */
-export async function sendAuditEvent<T>(
-  event: T,
-  queueUrl: string | undefined
+export async function sendAuditEvent(
+  eventName: string,
+  parameters: AuditEventParameters
 ): Promise<SendMessageCommandOutput> {
+  const queueUrl = getEnvironmentVariable("TXMA_QUEUE_URL");
+  const event = buildTxmaEvent(eventName, parameters);
+
   try {
     const result = await sendSqsMessage(JSON.stringify(event), queueUrl);
     logger.info(

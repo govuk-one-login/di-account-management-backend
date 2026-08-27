@@ -58,7 +58,7 @@ const publishRecordCountMetric = async (tableName: string): Promise<void> => {
     metrics.addMetric("InactiveAccountTrackerRecordCount", MetricUnit.Count, itemCount);
     metrics.publishStoredMetrics();
   } catch (metricError) {
-    logger.error("Failed to retrieve and/or publish InactiveAccountTrackerRecordCount metric");
+    logger.error("Failed to retrieve and/or publish InactiveAccountTrackerRecordCount metric", { error: metricError });
   }
 };
 

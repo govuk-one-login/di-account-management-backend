@@ -791,7 +791,11 @@ Resources:
                           AccountNumber,
                         ]
                 Action:
-                  - dynamodb:BatchWriteItem
+                  - dynamodb:DescribeTable
+                  - dynamodb:BatchGetItem
+                  - dynamodb:GetItem
+                  - dynamodb:Query
+                  - dynamodb:Scan
                 Resource: !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${InactiveAccountTrackerStoreTableName}"
         - !Ref AWS::NoValue
 

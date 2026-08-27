@@ -2623,6 +2623,7 @@ Resources:
   ############################
 
   DeleteEmailSubscriptionsSubscription:
+    DependsOn: DeleteEmailSubscriptionsFunctionAliaslive
     Type: AWS::SNS::Subscription
     Properties:
       Endpoint:
@@ -2657,6 +2658,7 @@ Resources:
                 "aws:SourceArn": !Ref UserAccountDeletionTopic
 
   DeleteEmailSubscriptionsLambdaInvokePermission:
+    DependsOn: DeleteEmailSubscriptionsFunctionAliaslive
     Type: AWS::Lambda::Permission
     Properties:
       Action: lambda:InvokeFunction
@@ -2675,6 +2677,12 @@ Resources:
       Handler: delete-email-subscriptions.handler
       Role: !GetAtt DeleteEmailSubscriptionsRole.Arn
       Timeout: 30
+      DeploymentPreference:
+        Alarms:
+          Fn::If:
+            - IsNotDevelopmentOrDemo
+            - - !Ref AWS::NoValue
+            - - !Ref AWS::NoValue
       EventInvokeConfig:
         DestinationConfig:
           OnFailure:
@@ -2903,12 +2911,13 @@ Resources:
             Stat: Sum
           ReturnData: false
         - Id: successRate
-          Expression: "1 - (errors / invocations)"
+          Expression: "IF(invocations > 0, 1 - (errors / invocations), 1)"
           Label: "Success Rate"
           ReturnData: true
       Threshold: 0.95
       ComparisonOperator: LessThanThreshold
       EvaluationPeriods: 1
+      TreatMissingData: notBreaching
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
 

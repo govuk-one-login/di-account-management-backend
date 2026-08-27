@@ -1,4 +1,3 @@
-import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import {
   DynamoDBDocumentClient,
   QueryCommand,
@@ -6,6 +5,10 @@ import {
 } from "@aws-sdk/lib-dynamodb";
 import { Logger } from "@aws-lambda-powertools/logger";
 import { getEnvironmentVariable } from "./common/utils.js";
+import { DynamoDBClient, DescribeTableCommand } from "@aws-sdk/client-dynamodb";
+import { MetricUnit } from "@aws-lambda-powertools/metrics";
+import { initMetrics } from "./common/metrics.js";
+const metrics = initMetrics("inactive-account-deletion-forecast");
 
 const logger = new Logger();
 const dynamoClient = new DynamoDBClient({});
@@ -46,12 +49,27 @@ export const countAccountsForDate = async (
   return count;
 };
 
+const publishRecordCountMetric = async (tableName: string): Promise<void> => {
+  try {
+    const describeCommand = new DescribeTableCommand({ TableName: tableName });
+    const tableInfo = await dynamoClient.send(describeCommand);
+    const itemCount = tableInfo.Table?.ItemCount ?? 0;
+
+    metrics.addMetric("InactiveAccountTrackerRecordCount", MetricUnit.Count, itemCount);
+    metrics.publishStoredMetrics();
+  } catch (metricError) {
+    logger.error("Failed to retrieve and/or publish InactiveAccountTrackerRecordCount metric");
+  }
+};
+
 export const handler = async (): Promise<void> => {
   const tableName = getEnvironmentVariable("TABLE_NAME");
   const forecastTableName = getEnvironmentVariable("FORECAST_TABLE_NAME");
   const dates = buildDates(new Date(), FORECAST_DAYS);
   const forecastedAt = new Date().toISOString();
   const ttl = Math.floor(Date.now() / 1000) + TTL_SECONDS;
+
+  await publishRecordCountMetric(tableName);
 
   const counts = await Promise.all(
     dates.map((date) => countAccountsForDate(tableName, date))

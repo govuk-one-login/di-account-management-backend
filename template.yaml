@@ -716,6 +716,8 @@ Resources:
           Value: !Ref "Environment"
         - Key: Source
           Value: "https://github.com/alphagov/di-account-management-backend/blob/main/infrastructure/template.yaml"
+        - Key: BackupFrequency
+          Value: !If [ BackupEnabled, "Daily", "" ]
 
   ######################################
   # Inactive Account Tracker store
@@ -764,6 +766,8 @@ Resources:
           Value: !Ref "Environment"
         - Key: Source
           Value: "https://github.com/alphagov/di-account-management-backend/blob/main/infrastructure/template.yaml"
+        - Key: BackupFrequency
+          Value: !If [ BackupEnabled, "Daily", "" ]
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
       SSESpecification:

@@ -131,11 +131,13 @@ const getNewItemDetails = (
     }
   })();
 
+  const emailAddress = newEmailAddress ?? currentTrackerRecord?.emailAddress;
+
   return {
-    emailAddress: newEmailAddress ?? currentTrackerRecord?.emailAddress ?? "",
-    emailAddressSource: newEmailAddress ? txmaEvent.event_name : (currentTrackerRecord?.emailAddressSource ?? ""),
+    ...(emailAddress && { emailAddress }),
+    emailAddressSource: newEmailAddress ? txmaEvent.event_name : currentTrackerRecord?.emailAddressSource,
     emailAddressSourceId: newEmailAddress ? txmaEvent.event_id : currentTrackerRecord?.emailAddressSourceId,
-    emailAddressLastUpdated: newEmailAddress ? eventDateTime : (currentTrackerRecord?.emailAddressLastUpdated ?? ""),
+    emailAddressLastUpdated: newEmailAddress ? eventDateTime : currentTrackerRecord?.emailAddressLastUpdated,
     userLastActiveUpdated: isNewLatestDate ? eventDateTime : (currentTrackerRecord?.userLastActiveUpdated ?? eventDateTime),
     publicSubjectId: txmaEvent.user?.public_subject_id ?? currentTrackerRecord?.publicSubjectId ?? "",
   };
@@ -173,21 +175,17 @@ const processRecord = async (
     return;
   }
 
-  if (txmaEvent.user?.email === undefined) {
-    logger.warn(`AUTH_EVENT_NO_EMAIL for userId ${userId}`);
-  }
-
   const currentTrackerRecord = await getCurrentRecordForUser(userId, tableName);
 
   if (currentTrackerRecord?.status === 'deleting') {
-    logger.warn(`AUTH_EVENT_ON_DELETING_ACCOUNT ${userId}`);
+    logger.warn("AUTH_EVENT_ON_DELETING_ACCOUNT");
     return;
   }
 
   const eventDate = getEventDate(txmaEvent);
 
   if (isBeforeBackfillThreshold(eventDate, backfillCompleteDatetime) && !currentTrackerRecord) {
-    logger.info(`BACKFILL_EVENT_SKIPPED_NO_EXISTING_RECORD for userId ${userId}`);
+    logger.info("BACKFILL_EVENT_SKIPPED_NO_EXISTING_RECORD");
     return;
   }
 
@@ -231,26 +229,30 @@ const processRecord = async (
   if (!inactiveAccountEmailFlagEnabled) {
     logger.info("SEND_INACTIVE_ACCOUNT_DELETION_EMAILS feature flag is off");
   } else if (currentTrackerRecord?.dateForDeletion && isCurrentDeletionIn30Days(currentTrackerRecord.dateForDeletion)) {
-    // if currentTrackerRecord.dateForDeletion is within the next 30 days, send ACCOUNT SAVED email
-    const message = {
-      notificationType,
-      emailAddress: newItem.emailAddress,
-    };
+    if (newItem.emailAddress) {
+      // if currentTrackerRecord.dateForDeletion is within the next 30 days, send ACCOUNT SAVED email
+      const message = {
+        notificationType,
+        emailAddress: newItem.emailAddress,
+      };
 
-    await sqsClient.send(
-      new SendMessageCommand({
-        QueueUrl: notificationQueueUrl,
-        MessageBody: JSON.stringify(message),
-      })
-    );
+      await sqsClient.send(
+        new SendMessageCommand({
+          QueueUrl: notificationQueueUrl,
+          MessageBody: JSON.stringify(message),
+        })
+      );
 
-    logger.info(`${notificationType} message successfully sent to target queue`);
+      logger.info(`${notificationType} message successfully sent to target queue`);
+    } else {
+      logger.warn("INACTIVE_ACCOUNT_SAVED_BUT_NO_EMAIL_ADDRESS_TO_NOTIFY");
+    }
   }
 
   try {
     await dynamoDocClient.send(new TransactWriteCommand({ TransactItems: transactionItems }));
   } catch (error) {
-    throw new Error(`Failed to update inactive account tracker for user ${userId} ${error}`, {
+    throw new Error(`Failed to update inactive account tracker: ${error}`, {
       cause: error
     });
   }

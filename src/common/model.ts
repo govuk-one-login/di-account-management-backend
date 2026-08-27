@@ -225,9 +225,9 @@ export interface InactiveAccountTrackerRecord {
   userLastActiveSourceId?: string;
   userLastActiveUpdated: string;
 
-  emailAddress: string;
-  emailAddressLastUpdated: string;
-  emailAddressSource: string;
+  emailAddress?: string;
+  emailAddressLastUpdated?: string;
+  emailAddressSource?: string;
   emailAddressSourceId?: string;
 
   hasSetupMfa: boolean;

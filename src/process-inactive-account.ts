@@ -96,14 +96,14 @@ export const handler = async (
           emailAddress: body.emailAddress,
           dateForDeletion: body.dateForDeletion,
         };
-  
+
         await sqsClient.send(
           new SendMessageCommand({
             QueueUrl: notificationQueueUrl,
             MessageBody: JSON.stringify(message),
           })
         );
-  
+
         logger.info(
           "Successfully enqueued inactive account warning notification",
           {

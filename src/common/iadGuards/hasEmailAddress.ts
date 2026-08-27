@@ -7,6 +7,6 @@ export const hasEmailAddress: Guard = async (_, emailAddress) => {
       : Actions.abort;
   return {
     continue: continueAction,
-    guardName: "SendInactiveAccountEmailsFeatureFlag",
+    guardName: "HasEmailAddress",
   };
 };

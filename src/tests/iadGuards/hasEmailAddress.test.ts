@@ -7,7 +7,7 @@ describe("hasEmailAddress", () => {
     const result = await hasEmailAddress(undefined, "user@example.com");
     expect(result).toEqual({
       continue: Actions.continue,
-      guardName: "SendInactiveAccountEmailsFeatureFlag",
+      guardName: "HasEmailAddress",
     });
   });
 
@@ -15,7 +15,7 @@ describe("hasEmailAddress", () => {
     const result = await hasEmailAddress(undefined, "");
     expect(result).toEqual({
       continue: Actions.abort,
-      guardName: "SendInactiveAccountEmailsFeatureFlag",
+      guardName: "HasEmailAddress",
     });
   });
 
@@ -23,7 +23,7 @@ describe("hasEmailAddress", () => {
     const result = await hasEmailAddress(undefined, undefined);
     expect(result).toEqual({
       continue: Actions.abort,
-      guardName: "SendInactiveAccountEmailsFeatureFlag",
+      guardName: "HasEmailAddress",
     });
   });
 });

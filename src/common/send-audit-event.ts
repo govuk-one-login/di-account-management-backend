@@ -64,7 +64,7 @@ export function buildTxmaEvent(
   };
 }
 
-const IAD_EVENTS = [
+const IAD_EVENTS = new Set([
   "HOME_ACCOUNT_TRACKER_ACCOUNT_DELETION_REQUESTED",
   "HOME_ACCOUNT_TRACKER_ACCOUNT_FIRST_PERIOD_ENTERED",
   "HOME_ACCOUNT_TRACKER_ACCOUNT_REACTIVATED",
@@ -73,7 +73,7 @@ const IAD_EVENTS = [
   "HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED",
   "HOME_ACCOUNT_TRACKER_NOTIFICATION_REQUESTED",
   "HOME_ACCOUNT_TRACKER_RECORD_DELETED"
-]
+])
 
 /**
  * Builds a TxMA audit event from the given event name and parameters and sends
@@ -89,7 +89,7 @@ export async function sendAuditEvent(
   eventName: string,
   parameters: AuditEventParameters
 ): Promise<SendMessageCommandOutput | undefined> {
-  if (IAD_EVENTS.includes(eventName) && !isSendIadAuditEventsEnabled()) {
+  if (IAD_EVENTS.has(eventName) && !isSendIadAuditEventsEnabled()) {
     logger.info(`Skipping IAD event ${eventName} because IAD audit events are disabled`);
     return;
   }

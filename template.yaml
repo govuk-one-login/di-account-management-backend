@@ -3504,6 +3504,8 @@ Resources:
         Type: SQS
         TargetArn: !GetAtt UpdateInactiveAccountTrackerDeadLetterQueue.Arn
       Handler: update-inactive-account-tracker.handler
+      ReservedConcurrentExecutions: 30
+      Timeout: 15
       Role: !GetAtt UpdateInactiveAccountTrackerRole.Arn
       Environment:
         Variables:

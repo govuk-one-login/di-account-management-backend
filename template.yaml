@@ -3498,6 +3498,7 @@ Resources:
           Type: DynamoDB
           Properties:
             BatchSize: 1
+            ParallelizationFactor: 5
             Stream: !GetAtt RawEventsStore.StreamArn
             DestinationConfig:
               OnFailure:

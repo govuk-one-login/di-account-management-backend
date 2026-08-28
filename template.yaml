@@ -3499,6 +3499,7 @@ Resources:
           Properties:
             BatchSize: 1
             ParallelizationFactor: 5
+            BisectBatchOnFunctionError: true
             Stream: !GetAtt RawEventsStore.StreamArn
             DestinationConfig:
               OnFailure:

@@ -3513,7 +3513,7 @@ Resources:
         TargetArn: !GetAtt UpdateInactiveAccountTrackerDeadLetterQueue.Arn
       Handler: update-inactive-account-tracker.handler
       ReservedConcurrentExecutions: 80
-      Timeout: 15
+      Timeout: 70
       Role: !GetAtt UpdateInactiveAccountTrackerRole.Arn
       Environment:
         Variables:

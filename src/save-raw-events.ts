@@ -146,6 +146,8 @@ export const handler = async (
   logger.addContext(context);
   const batchItemFailures: { itemIdentifier: string }[] = [];
 
+  logger.info(`Raw events handler invoked with incoming batch size: ${event.Records.length}`);
+
   await Promise.all(
     event.Records.map(async (record) => {
       try {
@@ -168,6 +170,10 @@ export const handler = async (
         batchItemFailures.push({ itemIdentifier: record.messageId });
       }
     })
+  );
+
+  logger.info(
+    `Raw events handler completed with failed batch size: ${batchItemFailures.length}`
   );
 
   return { batchItemFailures };

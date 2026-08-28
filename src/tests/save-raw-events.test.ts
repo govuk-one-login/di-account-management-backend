@@ -593,7 +593,7 @@ describe("handler only saves allowlisted events", () => {
     };
     await handler(mixedEvent, {} as Context);
     expect(dynamoMock.commandCalls(PutCommand).length).toEqual(1);
-    expect(mockLogger.info).toHaveBeenCalledTimes(1);
+    expect(mockLogger.info).toHaveBeenCalledTimes(3);
   });
 });
 

@@ -276,7 +276,7 @@ describe("UpdateInactiveAccountTracker handler", () => {
     dynamoMock.on(TransactWriteCommand).rejects(new Error("TransactionCanceledException"));
     const event: DynamoDBStreamEvent = { Records: [generateDynamoStreamRecord("test-client")] };
     await expect(handler(event, {} as Context)).rejects.toThrow(
-      "Failed to update inactive account tracker:"
+      "Failed to update inactive account tracker"
     );
   });
 

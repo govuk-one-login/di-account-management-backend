@@ -155,6 +155,8 @@ const processRecord = async (
   olhClientId: string,
   backfillCompleteDatetime: string
 ): Promise<void> => {
+  logger.info(`Processing event with ID ${txmaEvent.event_id}`);
+
   const userId = txmaEvent.user?.user_id;
 
   if (!userId && txmaEvent.event_name === "AUTH_CODE_VERIFIED") {
@@ -176,6 +178,8 @@ const processRecord = async (
   }
 
   const currentTrackerRecord = await getCurrentRecordForUser(userId, tableName);
+
+  logger.info(`User has existing tracker record for event_id ${txmaEvent.event_id}: ${Boolean(currentTrackerRecord)}`);
 
   if (currentTrackerRecord?.status === 'deleting') {
     logger.warn("AUTH_EVENT_ON_DELETING_ACCOUNT");
@@ -205,6 +209,8 @@ const processRecord = async (
     statusLastUpdated: eventDateTime,
     hasSetupMfa: currentTrackerRecord?.hasSetupMfa ?? false,
   };
+
+  logger.info(`Building transaction for update based on event id: ${txmaEvent.event_id}`);
 
   const transactionItems = buildTransactionItems(tableName, userNotificationsTableName, olhClientId, userId, newItem, currentTrackerRecord, txmaEvent);
   const notificationQueueUrl = getEnvironmentVariable("NOTIFICATION_QUEUE_URL");
@@ -250,9 +256,11 @@ const processRecord = async (
   }
 
   try {
+    logger.info(`Writing to DynamoDB for event id: ${txmaEvent.event_id}`);
     await dynamoDocClient.send(new TransactWriteCommand({ TransactItems: transactionItems }));
+    logger.info(`DynamoDB updated for event id: ${txmaEvent.event_id}`);
   } catch (error) {
-    throw new Error(`Failed to update inactive account tracker: ${error}`, {
+    throw new Error(`Failed to update inactive account tracker for event id ${txmaEvent.event_id}: ${error}`, {
       cause: error
     });
   }
@@ -270,6 +278,7 @@ export const handler = async (
   const backfillCompleteDatetime = process.env["AUTH_BACKFILL_COMPLETE_DATETIME"] ?? "";
 
   const batchItemFailures: DynamoDBBatchResponse["batchItemFailures"] = [];
+  logger.info(`Invoked with ${event.Records.length} to process`);
 
   for (const record of event.Records) {
     const txmaEvent = unmarshall(

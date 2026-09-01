@@ -249,7 +249,10 @@ const processRecord = async (
         })
       );
 
-      logger.info(`${notificationType} message successfully sent to target queue`);
+      logger.info("Account saved message successfully sent to target queue", { 
+        publicSubjectId: newItem.publicSubjectId,
+        notificationType: notificationType
+      });
     } else {
       logger.warn("INACTIVE_ACCOUNT_SAVED_BUT_NO_EMAIL_ADDRESS_TO_NOTIFY");
     }

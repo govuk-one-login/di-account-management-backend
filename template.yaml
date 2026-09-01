@@ -7739,6 +7739,7 @@ Resources:
           - Effect: Allow
             Action:
               - dynamodb:Query
+              - dynamodb:DescribeTable 
             Resource:
               - !GetAtt InactiveAccountTrackerStore.Arn
           - Effect: Allow

@@ -27,7 +27,7 @@ async function runGuards(
     const guardResult = await guard.guard(body.commonSubjectId);
     const typeOfGuardResult = guardResult.continue;
 
-    if (typeOfGuardResult === Actions.continueWithoutActions || typeOfGuardResult === Actions.abort ) {
+    if (typeOfGuardResult === Actions.continueWithoutActions || typeOfGuardResult === Actions.abort) {
       const message = typeOfGuardResult === Actions.abort ? "GuardrailAbortedInactiveAccountDeletionProcess" : "GuardrailInactiveAccountDeletionProcessContinuedWithoutActions";
       logger.info(message, {
         dateForDeletion: body.dateForDeletion,
@@ -88,8 +88,10 @@ export const handler = async (
 
     const runGuardsOutcome = await runGuards(process.guards, body);
 
+    logger.info(`guards ${runGuardsOutcome}`)
+
     if (runGuardsOutcome === Actions.abort) continue;
-  
+
     if (runGuardsOutcome === Actions.continue) {
       if (process.notificationType) {
         const message = {
@@ -97,14 +99,14 @@ export const handler = async (
           emailAddress: body.emailAddress,
           dateForDeletion: body.dateForDeletion,
         };
-  
+
         await sqsClient.send(
           new SendMessageCommand({
             QueueUrl: notificationQueueUrl,
             MessageBody: JSON.stringify(message),
           })
         );
-  
+
         logger.info(
           "Successfully enqueued inactive account warning notification",
           {

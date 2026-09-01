@@ -1,4 +1,4 @@
-import { Context, DynamoDBStreamEvent } from "aws-lambda";
+import { Context, DynamoDBStreamEvent, DynamoDBBatchResponse } from "aws-lambda";
 import { AttributeValue, DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
 import { DynamoDBDocumentClient, QueryCommand, TransactWriteCommand } from "@aws-sdk/lib-dynamodb";
@@ -261,7 +261,7 @@ const processRecord = async (
 export const handler = async (
   event: DynamoDBStreamEvent,
   context: Context
-): Promise<void> => {
+): Promise<DynamoDBBatchResponse> => {
   logger.addContext(context);
 
   const tableName = getEnvironmentVariable("INACTIVE_ACCOUNT_TRACKER_TABLE_NAME");
@@ -269,11 +269,20 @@ export const handler = async (
   const olhClientId = getEnvironmentVariable("OLH_CLIENT_ID");
   const backfillCompleteDatetime = process.env["AUTH_BACKFILL_COMPLETE_DATETIME"] ?? "";
 
+  const batchItemFailures: DynamoDBBatchResponse["batchItemFailures"] = [];
+
   for (const record of event.Records) {
     const txmaEvent = unmarshall(
       record.dynamodb?.NewImage?.event.M as Record<string, AttributeValue>
     ) as TxmaEvent;
 
-    await processRecord(txmaEvent, tableName, userNotificationsTableName, olhClientId, backfillCompleteDatetime);
+    try {
+      await processRecord(txmaEvent, tableName, userNotificationsTableName, olhClientId, backfillCompleteDatetime);
+    } catch (error) {
+      logger.error(`Failed to process record ${record.dynamodb?.SequenceNumber}`, { error });
+      batchItemFailures.push({ itemIdentifier: record.dynamodb?.SequenceNumber ?? "" });
+    }
   }
+
+  return { batchItemFailures };
 };

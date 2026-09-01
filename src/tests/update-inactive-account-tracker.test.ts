@@ -1,5 +1,5 @@
 import { vi, describe, test, expect, afterEach, beforeEach } from "vitest";
-import { DynamoDBRecord, Context, DynamoDBStreamEvent } from "aws-lambda";
+import { DynamoDBRecord, Context, DynamoDBStreamEvent, DynamoDBBatchResponse } from "aws-lambda";
 import { Logger } from "@aws-lambda-powertools/logger";
 import { mockClient } from "aws-sdk-client-mock";
 import { DynamoDBDocumentClient, QueryCommand, TransactWriteCommand } from "@aws-sdk/lib-dynamodb";
@@ -51,7 +51,8 @@ describe("UpdateInactiveAccountTracker handler", () => {
     dynamoMock.on(QueryCommand).resolves({ Items: [] });
     dynamoMock.on(TransactWriteCommand).resolves({});
     const event: DynamoDBStreamEvent = { Records: [generateDynamoStreamRecord("test-client")] };
-    await handler(event, {} as Context);
+    const result = await handler(event, {} as Context);
+    expect(result).toEqual<DynamoDBBatchResponse>({ batchItemFailures: [] });
     expect(dynamoMock).toHaveReceivedCommandWith(QueryCommand, {
       TableName: "test-table",
       IndexName: "CommonSubjectIdIndex",
@@ -64,7 +65,8 @@ describe("UpdateInactiveAccountTracker handler", () => {
     dynamoMock.on(QueryCommand).resolves({ Items: [] });
     dynamoMock.on(TransactWriteCommand).resolves({});
     const event: DynamoDBStreamEvent = { Records: [generateDynamoStreamRecord("test-client")] };
-    await handler(event, {} as Context);
+    const result = await handler(event, {} as Context);
+    expect(result).toEqual<DynamoDBBatchResponse>({ batchItemFailures: [] });
     expect(dynamoMock).toHaveReceivedCommandWith(TransactWriteCommand, {
       TransactItems: expect.arrayContaining([
         expect.objectContaining({
@@ -135,15 +137,18 @@ describe("UpdateInactiveAccountTracker handler", () => {
     expect(dynamoMock).not.toHaveReceivedCommand(TransactWriteCommand);
   });
 
-  test("throws assertion error when more than one tracker record exists", async () => {
+  test("returns failed record in batchItemFailures when more than one tracker record exists", async () => {
     dynamoMock.on(QueryCommand).resolves({
       Items: [
         { commonSubjectId: "qwerty", dateForDeletion: "2026-01-01", userLastActive: "2026-01-01T00:00:00.000Z", status: "pending", emailAddress: "x", statusLastUpdated: "" },
         { commonSubjectId: "qwerty", dateForDeletion: "2026-01-02", userLastActive: "2026-01-02T00:00:00.000Z", status: "pending", emailAddress: "x", statusLastUpdated: "" },
       ],
     });
-    const event: DynamoDBStreamEvent = { Records: [generateDynamoStreamRecord("test-client")] };
-    await expect(handler(event, {} as Context)).rejects.toThrow("found more than one inactivity tracker record for qwerty");
+    const record = generateDynamoStreamRecord("test-client");
+    record.dynamodb!.SequenceNumber = "1234567890";
+    const event: DynamoDBStreamEvent = { Records: [record] };
+    const result = await handler(event, {} as Context);
+    expect(result).toEqual<DynamoDBBatchResponse>({ batchItemFailures: [{ itemIdentifier: "1234567890" }] });
   });
 
   test("does not delete from user notifications table when client_id matches OLH client", async () => {
@@ -271,13 +276,33 @@ describe("UpdateInactiveAccountTracker handler", () => {
     });
   });
 
-  test("throws error when transaction fails", async () => {
+  test("returns failed record in batchItemFailures when transaction fails", async () => {
     dynamoMock.on(QueryCommand).resolves({ Items: [] });
     dynamoMock.on(TransactWriteCommand).rejects(new Error("TransactionCanceledException"));
-    const event: DynamoDBStreamEvent = { Records: [generateDynamoStreamRecord("test-client")] };
-    await expect(handler(event, {} as Context)).rejects.toThrow(
-      "Failed to update inactive account tracker:"
-    );
+    const record = generateDynamoStreamRecord("test-client");
+    record.dynamodb!.SequenceNumber = "1234567890";
+    const event: DynamoDBStreamEvent = { Records: [record] };
+    const result = await handler(event, {} as Context);
+    expect(result).toEqual<DynamoDBBatchResponse>({ batchItemFailures: [{ itemIdentifier: "1234567890" }] });
+  });
+
+  test("returns only failed records in batchItemFailures when one record in a batch fails", async () => {
+    dynamoMock.on(QueryCommand).resolves({ Items: [] });
+    dynamoMock.on(TransactWriteCommand)
+      .resolvesOnce({})
+      .rejectsOnce(new Error("TransactionCanceledException"))
+      .resolvesOnce({});
+
+    const record1 = generateDynamoStreamRecord("test-client");
+    record1.dynamodb!.SequenceNumber = "111";
+    const record2 = generateDynamoStreamRecord("test-client");
+    record2.dynamodb!.SequenceNumber = "222";
+    const record3 = generateDynamoStreamRecord("test-client");
+    record3.dynamodb!.SequenceNumber = "333";
+
+    const event: DynamoDBStreamEvent = { Records: [record1, record2, record3] };
+    const result = await handler(event, {} as Context);
+    expect(result).toEqual<DynamoDBBatchResponse>({ batchItemFailures: [{ itemIdentifier: "222" }] });
   });
 
   test("includes email and does not log warning when email exists on the event", async () => {

@@ -3501,7 +3501,7 @@ Resources:
         DynamoStream:
           Type: DynamoDB
           Properties:
-            BatchSize: 1
+            BatchSize: 10
             ParallelizationFactor: 5
             BisectBatchOnFunctionError: true
             Stream: !GetAtt RawEventsStore.StreamArn
@@ -3509,6 +3509,8 @@ Resources:
               OnFailure:
                 Destination: !GetAtt UpdateInactiveAccountTrackerDeadLetterQueue.Arn
             StartingPosition: LATEST
+            FunctionResponseTypes:
+              - ReportBatchItemFailures
             FilterCriteria:
               Filters:
                 - Pattern: '{ "eventName": ["INSERT"], "dynamodb": { "NewImage": { "event": { "M": { "event_name": { "S": ["AUTH_TOKEN_SENT_TO_ORCHESTRATION", "AUTH_CODE_VERIFIED", "AUTH_PASSKEY_VERIFICATION_SUCCESSFUL", "STS_REFRESH_TOKEN_ISSUED"] } } } } } }'
@@ -3516,6 +3518,7 @@ Resources:
         Type: SQS
         TargetArn: !GetAtt UpdateInactiveAccountTrackerDeadLetterQueue.Arn
       Handler: update-inactive-account-tracker.handler
+      MemorySize: 192
       ReservedConcurrentExecutions: 80
       Timeout: 70
       Role: !GetAtt UpdateInactiveAccountTrackerRole.Arn

@@ -7485,6 +7485,7 @@ Resources:
           INACTIVE_ACCOUNT_TRACKER_TABLE_NAME: !Ref InactiveAccountTrackerStore
           ACCOUNT_DELETION_QUEUE_URL: !Ref AccountDeletionQueue
           ACTIVITY_LOG_TABLE_NAME: !Ref ActivityLogsStoreTableName
+          TXMA_QUEUE_URL: !Ref AuditOutputQueue
           ACCOUNT_INTERVENTIONS_SERVICE_API_URL:
             !FindInMap [
               EnvironmentConfiguration,
@@ -7559,6 +7560,7 @@ Resources:
               - !GetAtt 30DayNotificationQueue.Arn
               - !GetAtt 7DayNotificationQueue.Arn
               - !GetAtt AccountDeletionProcessQueue.Arn
+              - !GetAtt AuditOutputQueue.Arn
           - Effect: Allow
             Action:
               - sqs:SendMessage

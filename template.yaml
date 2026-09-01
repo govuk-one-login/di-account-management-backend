@@ -7564,6 +7564,7 @@ Resources:
             Action:
               - dynamodb:UpdateItem
               - dynamodb:GetItem
+              - dynamodb:Query
             Resource:
               - !GetAtt InactiveAccountTrackerStore.Arn
           - Effect: Allow

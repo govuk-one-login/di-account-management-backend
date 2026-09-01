@@ -7497,6 +7497,12 @@ Resources:
               !Ref Environment,
               sendInactiveAccountDeletionEmails,
             ]
+          FEATURE_SEND_IAD_AUDIT_EVENTS:
+            !FindInMap [
+              EnvironmentVariables,
+              !Ref Environment,
+              FEATURESENDIADAUDITEVENTS,
+            ]
       DeploymentPreference:
         Alarms:
           Fn::If:

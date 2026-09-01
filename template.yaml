@@ -7560,7 +7560,6 @@ Resources:
               - !GetAtt 30DayNotificationQueue.Arn
               - !GetAtt 7DayNotificationQueue.Arn
               - !GetAtt AccountDeletionProcessQueue.Arn
-              - !GetAtt AuditOutputQueue.Arn
           - Effect: Allow
             Action:
               - sqs:SendMessage
@@ -7568,6 +7567,7 @@ Resources:
               - !GetAtt ProcessInactiveAccountDeadLetterQueue.Arn
               - !GetAtt NotificationQueue.Arn
               - !GetAtt AccountDeletionQueue.Arn
+              - !GetAtt AuditOutputQueue.Arn
           - Effect: Allow
             Action:
               - dynamodb:UpdateItem
@@ -7587,6 +7587,7 @@ Resources:
             Resource:
               - !GetAtt QueueKmsKey.Arn
               - !GetAtt DatabaseKmsKey.Arn
+              - !GetAtt AuditEncryptionKey.Arn
           - Effect: Allow
             Action:
               - "cloudwatch:PutMetricData"

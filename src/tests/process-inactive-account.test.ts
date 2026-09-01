@@ -81,7 +81,7 @@ describe("process-inactive-account handler", () => {
     process.env.INACTIVE_ACCOUNT_TRACKER_TABLE_NAME =
       "test-inactive-tracker-table";
     process.env.SEND_INACTIVE_ACCOUNT_DELETION_EMAILS = '1';
-    process.env.FEATURE_SEND_IAD_AUDIT_EVENTS = "false"
+    process.env.FEATURE_SEND_IAD_AUDIT_EVENTS = "false";
     process.env.TXMA_QUEUE_URL = "https://sqs.eu-west-2.amazonaws.com/123456789012/TxmaQueue";
     process.env.AWS_REGION = "eu-west-2";
   });

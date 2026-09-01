@@ -7567,6 +7567,7 @@ Resources:
               - dynamodb:Query
             Resource:
               - !GetAtt InactiveAccountTrackerStore.Arn
+              - !Sub "${InactiveAccountTrackerStore.Arn}/index/CommonSubjectIdIndex"
           - Effect: Allow
             Action:
               - dynamodb:Query

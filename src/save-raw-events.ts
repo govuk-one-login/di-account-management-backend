@@ -30,12 +30,16 @@ const ALLOWED_EVENT_NAMES = new Set([
   "AUTH_CODE_VERIFIED",
   "AUTH_PASSKEY_VERIFICATION_SUCCESSFUL",
   "STS_REFRESH_TOKEN_ISSUED",
+  "AUTH_DELETE_ACCOUNT",
 ]);
 
 const EVENTS_WITHOUT_SESSION_ID = new Set([
   // AUTH_TOKEN_SENT_TO_ORCHESTRATION has no session_id in its schema, as the
   // authentication session is already over by the time the token is exchanged.
   "AUTH_TOKEN_SENT_TO_ORCHESTRATION",
+  // AUTH_DELETE_ACCOUNT has no session_id when the account deletion is
+  // initiated by TSD.
+  "AUTH_DELETE_ACCOUNT",
 ]);
 
 const EVENTS_WITHOUT_USER_ID = new Set([
@@ -142,6 +146,8 @@ export const handler = async (
   logger.addContext(context);
   const batchItemFailures: { itemIdentifier: string }[] = [];
 
+  logger.info(`Raw events handler invoked with incoming batch size: ${event.Records.length}`);
+
   await Promise.all(
     event.Records.map(async (record) => {
       try {
@@ -164,6 +170,10 @@ export const handler = async (
         batchItemFailures.push({ itemIdentifier: record.messageId });
       }
     })
+  );
+
+  logger.info(
+    `Raw events handler completed with failed batch size: ${batchItemFailures.length}`
   );
 
   return { batchItemFailures };

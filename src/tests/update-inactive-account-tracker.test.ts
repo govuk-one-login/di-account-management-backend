@@ -1,5 +1,5 @@
 import { vi, describe, test, expect, afterEach, beforeEach } from "vitest";
-import { DynamoDBRecord, Context, DynamoDBStreamEvent } from "aws-lambda";
+import { DynamoDBRecord, Context, DynamoDBStreamEvent, DynamoDBBatchResponse } from "aws-lambda";
 import { Logger } from "@aws-lambda-powertools/logger";
 import { mockClient } from "aws-sdk-client-mock";
 import { DynamoDBDocumentClient, QueryCommand, TransactWriteCommand } from "@aws-sdk/lib-dynamodb";
@@ -51,7 +51,8 @@ describe("UpdateInactiveAccountTracker handler", () => {
     dynamoMock.on(QueryCommand).resolves({ Items: [] });
     dynamoMock.on(TransactWriteCommand).resolves({});
     const event: DynamoDBStreamEvent = { Records: [generateDynamoStreamRecord("test-client")] };
-    await handler(event, {} as Context);
+    const result = await handler(event, {} as Context);
+    expect(result).toEqual<DynamoDBBatchResponse>({ batchItemFailures: [] });
     expect(dynamoMock).toHaveReceivedCommandWith(QueryCommand, {
       TableName: "test-table",
       IndexName: "CommonSubjectIdIndex",
@@ -64,7 +65,8 @@ describe("UpdateInactiveAccountTracker handler", () => {
     dynamoMock.on(QueryCommand).resolves({ Items: [] });
     dynamoMock.on(TransactWriteCommand).resolves({});
     const event: DynamoDBStreamEvent = { Records: [generateDynamoStreamRecord("test-client")] };
-    await handler(event, {} as Context);
+    const result = await handler(event, {} as Context);
+    expect(result).toEqual<DynamoDBBatchResponse>({ batchItemFailures: [] });
     expect(dynamoMock).toHaveReceivedCommandWith(TransactWriteCommand, {
       TransactItems: expect.arrayContaining([
         expect.objectContaining({
@@ -131,19 +133,22 @@ describe("UpdateInactiveAccountTracker handler", () => {
     });
     const event: DynamoDBStreamEvent = { Records: [generateDynamoStreamRecord("test-client")] };
     await handler(event, {} as Context);
-    expect(loggerWarnMock).toHaveBeenCalledWith("AUTH_EVENT_ON_DELETING_ACCOUNT qwerty");
+    expect(loggerWarnMock).toHaveBeenCalledWith("AUTH_EVENT_ON_DELETING_ACCOUNT");
     expect(dynamoMock).not.toHaveReceivedCommand(TransactWriteCommand);
   });
 
-  test("throws assertion error when more than one tracker record exists", async () => {
+  test("returns failed record in batchItemFailures when more than one tracker record exists", async () => {
     dynamoMock.on(QueryCommand).resolves({
       Items: [
         { commonSubjectId: "qwerty", dateForDeletion: "2026-01-01", userLastActive: "2026-01-01T00:00:00.000Z", status: "pending", emailAddress: "x", statusLastUpdated: "" },
         { commonSubjectId: "qwerty", dateForDeletion: "2026-01-02", userLastActive: "2026-01-02T00:00:00.000Z", status: "pending", emailAddress: "x", statusLastUpdated: "" },
       ],
     });
-    const event: DynamoDBStreamEvent = { Records: [generateDynamoStreamRecord("test-client")] };
-    await expect(handler(event, {} as Context)).rejects.toThrow("found more than one inactivity tracker record for qwerty");
+    const record = generateDynamoStreamRecord("test-client");
+    record.dynamodb!.SequenceNumber = "1234567890";
+    const event: DynamoDBStreamEvent = { Records: [record] };
+    const result = await handler(event, {} as Context);
+    expect(result).toEqual<DynamoDBBatchResponse>({ batchItemFailures: [{ itemIdentifier: "1234567890" }] });
   });
 
   test("does not delete from user notifications table when client_id matches OLH client", async () => {
@@ -271,13 +276,33 @@ describe("UpdateInactiveAccountTracker handler", () => {
     });
   });
 
-  test("throws error when transaction fails", async () => {
+  test("returns failed record in batchItemFailures when transaction fails", async () => {
     dynamoMock.on(QueryCommand).resolves({ Items: [] });
     dynamoMock.on(TransactWriteCommand).rejects(new Error("TransactionCanceledException"));
-    const event: DynamoDBStreamEvent = { Records: [generateDynamoStreamRecord("test-client")] };
-    await expect(handler(event, {} as Context)).rejects.toThrow(
-      "Failed to update inactive account tracker for user qwerty"
-    );
+    const record = generateDynamoStreamRecord("test-client");
+    record.dynamodb!.SequenceNumber = "1234567890";
+    const event: DynamoDBStreamEvent = { Records: [record] };
+    const result = await handler(event, {} as Context);
+    expect(result).toEqual<DynamoDBBatchResponse>({ batchItemFailures: [{ itemIdentifier: "1234567890" }] });
+  });
+
+  test("returns only failed records in batchItemFailures when one record in a batch fails", async () => {
+    dynamoMock.on(QueryCommand).resolves({ Items: [] });
+    dynamoMock.on(TransactWriteCommand)
+      .resolvesOnce({})
+      .rejectsOnce(new Error("TransactionCanceledException"))
+      .resolvesOnce({});
+
+    const record1 = generateDynamoStreamRecord("test-client");
+    record1.dynamodb!.SequenceNumber = "111";
+    const record2 = generateDynamoStreamRecord("test-client");
+    record2.dynamodb!.SequenceNumber = "222";
+    const record3 = generateDynamoStreamRecord("test-client");
+    record3.dynamodb!.SequenceNumber = "333";
+
+    const event: DynamoDBStreamEvent = { Records: [record1, record2, record3] };
+    const result = await handler(event, {} as Context);
+    expect(result).toEqual<DynamoDBBatchResponse>({ batchItemFailures: [{ itemIdentifier: "222" }] });
   });
 
   test("includes email and does not log warning when email exists on the event", async () => {
@@ -318,7 +343,7 @@ describe("UpdateInactiveAccountTracker handler", () => {
     expect(loggerWarnMock).not.toHaveBeenCalled();
   });
 
-  test("logs warning when email is missing from the event and from pre-existing record", async () => {
+  test("logs warning when email is missing from the event and from pre-existing record, and omits emailAddress from record", async () => {
     dynamoMock.on(QueryCommand).resolves({
       Items: [{ commonSubjectId: "qwerty", dateForDeletion: "1978-11-29", userLastActive: "1970-01-01T00:00:00.000Z", status: "pending", statusLastUpdated: "" }],
     });
@@ -346,12 +371,11 @@ describe("UpdateInactiveAccountTracker handler", () => {
         expect.objectContaining({
           Put: expect.objectContaining({
             TableName: "test-table",
-            Item: expect.objectContaining({ commonSubjectId: "qwerty", emailAddress: "" }),
+            Item: expect.not.objectContaining({ emailAddress: expect.anything() }),
           }),
         }),
       ]),
     });
-    expect(loggerWarnMock).toHaveBeenCalledWith("AUTH_EVENT_NO_EMAIL for userId qwerty");
   });
 
   test("stores publicSubjectId from event when present", async () => {
@@ -533,7 +557,6 @@ describe("UpdateInactiveAccountTracker handler", () => {
         }),
       ]),
     });
-    expect(loggerWarnMock).toHaveBeenCalledWith("AUTH_EVENT_NO_EMAIL for userId qwerty");
   });
 
   test("uses event_timestamp_ms for eventDateTime when present", async () => {
@@ -871,6 +894,78 @@ describe("UpdateInactiveAccountTracker handler", () => {
     );
   });
 
+  test("logs warning when no email address and deletion date is within 30 days", async () => {
+    const within30DaysDate = new Date();
+    within30DaysDate.setDate(within30DaysDate.getDate() + 15);
+    const dateStr = within30DaysDate.toISOString().split("T")[0];
+
+    dynamoMock.on(QueryCommand).resolves({
+      Items: [{ 
+        commonSubjectId: "qwerty", 
+        dateForDeletion: dateStr, 
+        userLastActive: new Date(Date.now() - 100000).toISOString(), 
+        status: "pending",
+      }],
+    });
+    dynamoMock.on(TransactWriteCommand).resolves({});
+
+    const recordWithoutEmail = {
+      dynamodb: {
+        NewImage: {
+          event: {
+            M: {
+              client_id: { S: "test-client" },
+              timestamp: { N: `${Math.floor(Date.now() / 1000) - 1}` },
+              user: { M: { user_id: { S: "qwerty" } } },
+            },
+          },
+        },
+      },
+    };
+    const event: DynamoDBStreamEvent = { Records: [recordWithoutEmail as DynamoDBRecord] };
+    await handler(event, {} as Context);
+
+    expect(sqsMock).not.toHaveReceivedCommand(SendMessageCommand);
+    expect(loggerWarnMock).toHaveBeenCalledWith("INACTIVE_ACCOUNT_SAVED_BUT_NO_EMAIL_ADDRESS_TO_NOTIFY");
+  });
+
+  test("does not send SQS message when newItem has no emailAddress, even if deletion date is within 30 days", async () => {
+    const within30DaysDate = new Date();
+    within30DaysDate.setDate(within30DaysDate.getDate() + 15);
+    const dateStr = within30DaysDate.toISOString().split("T")[0];
+
+    dynamoMock.on(QueryCommand).resolves({
+      Items: [{ 
+        commonSubjectId: "qwerty", 
+        dateForDeletion: dateStr, 
+        userLastActive: new Date(Date.now() - 100000).toISOString(), 
+        status: "pending",
+        // no emailAddress on existing record
+      }],
+    });
+    dynamoMock.on(TransactWriteCommand).resolves({});
+    sqsMock.on(SendMessageCommand).resolves({});
+
+    // event also has no email
+    const recordWithoutEmail = {
+      dynamodb: {
+        NewImage: {
+          event: {
+            M: {
+              client_id: { S: "test-client" },
+              timestamp: { N: `${Math.floor(Date.now() / 1000) - 1}` },
+              user: { M: { user_id: { S: "qwerty" } } },
+            },
+          },
+        },
+      },
+    };
+    const event: DynamoDBStreamEvent = { Records: [recordWithoutEmail as DynamoDBRecord] };
+    await handler(event, {} as Context);
+
+    expect(sqsMock).not.toHaveReceivedCommand(SendMessageCommand);
+  });
+
   test("does not send message when deletion date is too far in the future", async () => {
     const outside30DaysDate = new Date();
     outside30DaysDate.setDate(outside30DaysDate.getDate() + 45);
@@ -897,7 +992,7 @@ describe("UpdateInactiveAccountTracker handler", () => {
     expect(sqsMock).not.toHaveReceivedCommand(SendMessageCommand);
   });
 
-  test("does not send message or update record when inactive account deletion emails feature flag is off", async () => {
+  test("does not send message when inactive account deletion emails feature flag is off", async () => {
     const within30DaysDate = new Date();
     within30DaysDate.setDate(within30DaysDate.getDate() + 15);
     const dateStr = within30DaysDate.toISOString().split("T")[0];
@@ -912,7 +1007,6 @@ describe("UpdateInactiveAccountTracker handler", () => {
         emailAddress: "foo@bar.com" 
       }],
     });
-    dynamoMock.on(TransactWriteCommand).resolves({});
     sqsMock.on(SendMessageCommand).resolves({});
 
     const event: DynamoDBStreamEvent = { 
@@ -922,7 +1016,6 @@ describe("UpdateInactiveAccountTracker handler", () => {
     await handler(event, {} as Context);
 
     expect(sqsMock).not.toHaveReceivedCommand(SendMessageCommand);
-    expect(dynamoMock).not.toHaveReceivedCommand(TransactWriteCommand);
   });
 
   describe("backfill threshold", () => {
@@ -936,7 +1029,7 @@ describe("UpdateInactiveAccountTracker handler", () => {
       const event: DynamoDBStreamEvent = { Records: [generateDynamoStreamRecord("test-client")] };
       await handler(event, {} as Context);
       expect(dynamoMock).not.toHaveReceivedCommand(TransactWriteCommand);
-      expect(loggerInfoMock).toHaveBeenCalledWith("BACKFILL_EVENT_SKIPPED_NO_EXISTING_RECORD for userId qwerty");
+      expect(loggerInfoMock).toHaveBeenCalledWith("BACKFILL_EVENT_SKIPPED_NO_EXISTING_RECORD");
     });
 
     test("updates existing record when event is before threshold", async () => {

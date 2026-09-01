@@ -251,7 +251,7 @@ Mappings:
       KeyArn: "arn:aws:kms:eu-west-2:729485541398:key/6f10940b-6a40-42e9-a295-6ebed7c60a68"
     production:
       QueueArn: "arn:aws:sqs:eu-west-2:451773080033:self-production-EC-SQS-Output-Queue-homeIAD"
-      KeyArn: "arn:aws:kms:eu-west-2:451773080033:key/27cc5a43-8373-4125-a378-af88555abc50"      
+      KeyArn: "arn:aws:kms:eu-west-2:451773080033:key/27cc5a43-8373-4125-a378-af88555abc50"
 
   OrchestrationAccounts:
     demo:
@@ -341,7 +341,7 @@ Mappings:
       OLHCLIENTID: "EMGmY82k-92QSakDl_9keKDFmZY"
       GOVUKAPPCLIENTID: "govukApp"
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "2b3170b5-159e-457f-a282-f30f6006dc32"
-      AUTHBACKFILLCOMPLETEDATETIME: ""
+      AUTHBACKFILLCOMPLETEDATETIME: "2026-08-18T12:18:31.557Z"
       FEATURESENDIADAUDITEVENTS: "false"
       NOTIFYTEMPLATEIDS: |
         {
@@ -358,7 +358,7 @@ Mappings:
       OLHCLIENTID: "Y8xi2wDAaRvWYlEkoExOUZbAPaYyBEhB"
       GOVUKAPPCLIENTID: "EznkQXGrWxi0cQMSACY15UzvG1Q"
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "0674c6e3-219c-4e3a-b04c-3786bac7f228"
-      AUTHBACKFILLCOMPLETEDATETIME: ""
+      AUTHBACKFILLCOMPLETEDATETIME: "2026-08-21T09:55:05.000Z"
       FEATURESENDIADAUDITEVENTS: "false"
       NOTIFYTEMPLATEIDS: |
         {
@@ -376,7 +376,7 @@ Mappings:
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.publishing.service.gov.uk"
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "0674c6e3-219c-4e3a-b04c-3786bac7f228"
       FEATURESENDIADAUDITEVENTS: "false"
-      AUTHBACKFILLCOMPLETEDATETIME: ""
+      AUTHBACKFILLCOMPLETEDATETIME: "2026-08-25T13:23:45.424Z"
       NOTIFYTEMPLATEIDS: |
         {
           "GLOBAL_LOGOUT": "fb33515d-41cb-40df-93c2-e1bf76c3672a",
@@ -472,7 +472,7 @@ Mappings:
       publishingApiKeyVersionId: "1fec2ee5-a02c-41e5-9227-185ac11bc1eb"
       accountInterventionsServiceApiUrl: https://vjdj6kjrj2.execute-api.eu-west-2.amazonaws.com/v1
       notifyDontSendEmailsTo: "^(perftest.+?@digital.cabinet-office.gov.uk)|(testuser@test.null.local)$"
-      sendInactiveAccountDeletionEmails: "0"
+      sendInactiveAccountDeletionEmails: "1"
     integration:
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
       zendeskGroupIdSecretArn: arn:aws:secretsmanager:eu-west-2:666500506359:secret:/account-mgmt-backend/zendesk-group-id-token-djJbv6
@@ -716,6 +716,8 @@ Resources:
           Value: !Ref "Environment"
         - Key: Source
           Value: "https://github.com/alphagov/di-account-management-backend/blob/main/infrastructure/template.yaml"
+        - Key: BackupFrequency
+          Value: !If [ BackupEnabled, "Daily", "" ]
 
   ######################################
   # Inactive Account Tracker store
@@ -764,6 +766,8 @@ Resources:
           Value: !Ref "Environment"
         - Key: Source
           Value: "https://github.com/alphagov/di-account-management-backend/blob/main/infrastructure/template.yaml"
+        - Key: BackupFrequency
+          Value: !If [ BackupEnabled, "Daily", "" ]
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
       SSESpecification:
@@ -775,7 +779,7 @@ Resources:
         - PolicyDocument:
             Version: "2012-10-17"
             Statement:
-              - Sid: AllowAuthAccountBatchWrite
+              - Sid: AllowAuthAccountRead
                 Effect: Allow
                 Principal:
                   AWS: !Sub
@@ -787,7 +791,11 @@ Resources:
                           AccountNumber,
                         ]
                 Action:
-                  - dynamodb:BatchWriteItem
+                  - dynamodb:DescribeTable
+                  - dynamodb:BatchGetItem
+                  - dynamodb:GetItem
+                  - dynamodb:Query
+                  - dynamodb:Scan
                 Resource: !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${InactiveAccountTrackerStoreTableName}"
         - !Ref AWS::NoValue
 
@@ -1065,6 +1073,9 @@ Resources:
             MaximumBatchingWindowInSeconds: 10
             FunctionResponseTypes:
               - ReportBatchItemFailures
+            MetricsConfig:
+              Metrics:
+                - EventCount
         IADInputQueue:
           Type: SQS
           Properties:
@@ -1075,7 +1086,10 @@ Resources:
             BatchSize: 100
             MaximumBatchingWindowInSeconds: 10
             FunctionResponseTypes:
-              - ReportBatchItemFailures              
+              - ReportBatchItemFailures
+            MetricsConfig:
+              Metrics:
+                - EventCount
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt SaveRawEventsDeadLetterQueue.Arn
@@ -1154,7 +1168,7 @@ Resources:
               - !If
                 - UseInternalEvents
                 - !GetAtt TxMAIADInputDummyQueue.Arn
-                - !FindInMap [IADInputQueue, !Ref Environment, QueueArn]                
+                - !FindInMap [IADInputQueue, !Ref Environment, QueueArn]
           - Effect: Allow
             Action:
               - sqs:SendMessage
@@ -1183,13 +1197,13 @@ Resources:
               - !If
                 - UseInternalEvents
                 - !Ref AWS::NoValue
-                - !FindInMap [IADInputQueue, !Ref Environment, KeyArn]                                
+                - !FindInMap [IADInputQueue, !Ref Environment, KeyArn]
 
   SaveRawEventsFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-save-raw-events"
-      RetentionInDays: 30
+      RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   SaveRawEventsCSLSSubscription:
@@ -1467,7 +1481,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-query-user-services"
-      RetentionInDays: 30
+      RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   QueryUserServicesCSLSSubscription:
@@ -1713,7 +1727,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-format-user-services"
-      RetentionInDays: 30
+      RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   FormatUserServicesCSLSSubscription:
@@ -2006,7 +2020,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-write-user-services"
-      RetentionInDays: 30
+      RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   WriteUserServicesCSLSSubscription:
@@ -2426,7 +2440,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-delete-user-services"
-      RetentionInDays: 30
+      RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   DeleteUserServicesCSLSSubscription:
@@ -2770,7 +2784,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${DeleteEmailSubscriptionsFunction}"
-      RetentionInDays: 30
+      RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   DeleteEmailSubscriptionsCSLSSubscription:
@@ -3043,7 +3057,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-write-activity-log"
-      RetentionInDays: 30
+      RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   WriteActivityLogCSLSSubscription:
@@ -3291,7 +3305,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-format-activity-log"
-      RetentionInDays: 30
+      RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   FormatActivityLogCSLSSubscription:
@@ -3487,12 +3501,16 @@ Resources:
         DynamoStream:
           Type: DynamoDB
           Properties:
-            BatchSize: 1
+            BatchSize: 10
+            ParallelizationFactor: 5
+            BisectBatchOnFunctionError: true
             Stream: !GetAtt RawEventsStore.StreamArn
             DestinationConfig:
               OnFailure:
                 Destination: !GetAtt UpdateInactiveAccountTrackerDeadLetterQueue.Arn
             StartingPosition: LATEST
+            FunctionResponseTypes:
+              - ReportBatchItemFailures
             FilterCriteria:
               Filters:
                 - Pattern: '{ "eventName": ["INSERT"], "dynamodb": { "NewImage": { "event": { "M": { "event_name": { "S": ["AUTH_TOKEN_SENT_TO_ORCHESTRATION", "AUTH_CODE_VERIFIED", "AUTH_PASSKEY_VERIFICATION_SUCCESSFUL", "STS_REFRESH_TOKEN_ISSUED"] } } } } } }'
@@ -3500,6 +3518,9 @@ Resources:
         Type: SQS
         TargetArn: !GetAtt UpdateInactiveAccountTrackerDeadLetterQueue.Arn
       Handler: update-inactive-account-tracker.handler
+      MemorySize: 192
+      ReservedConcurrentExecutions: 80
+      Timeout: 70
       Role: !GetAtt UpdateInactiveAccountTrackerRole.Arn
       Environment:
         Variables:
@@ -3527,7 +3548,7 @@ Resources:
               EnvironmentVariables,
               !Ref Environment,
               NOTIFYTEMPLATEIDS,
-            ]          
+            ]
           SEND_INACTIVE_ACCOUNT_DELETION_EMAILS:
             !FindInMap [
               EnvironmentConfiguration,
@@ -3538,7 +3559,7 @@ Resources:
         Alarms:
           Fn::If:
             - IsNotDevelopmentOrDemo
-            - - !Ref AWS::NoValue
+            - - !Ref UpdateInactiveAccountTrackerFunctionSuccessRate
             - - !Ref AWS::NoValue
     Metadata:
       BuildMethod: esbuild
@@ -3689,7 +3710,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-update-inactive-account-tracker"
-      RetentionInDays: 30
+      RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   UpdateInactiveAccountTrackerCSLSSubscription:
@@ -3699,17 +3720,6 @@ Resources:
       DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
       FilterPattern: ""
       LogGroupName: !Ref UpdateInactiveAccountTrackerFunctionLogGroup
-
-  AuthEventTriggeredOnMissingEmailFilter:
-    Type: AWS::Logs::MetricFilter
-    Properties:
-      FilterPattern: "AUTH_EVENT_NO_EMAIL for userId"
-      LogGroupName: !Ref UpdateInactiveAccountTrackerFunctionLogGroup
-      MetricTransformations:
-        - MetricName: AuthEventTriggeredOnMissingEmailCount
-          MetricNamespace: !Ref SystemTagValue
-          MetricValue: 1
-          Unit: Count
 
   AuthEventTriggeredOnAlreadyDeletingAccountFilter:
     Type: AWS::Logs::MetricFilter
@@ -3721,31 +3731,6 @@ Resources:
           MetricNamespace: !Ref SystemTagValue
           MetricValue: 1
           Unit: Count
-
-  AuthEventTriggeredOnMissingEmailAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Properties:
-      AlarmName:
-        !Join [
-          "-",
-          [
-            !Ref AWS::StackName,
-            !Ref Environment,
-            AuthEventTriggeredOnMissingEmailAlarm,
-          ],
-        ]
-      AlarmDescription: Triggers when an auth event is processed without an email address.
-      MetricName: AuthEventTriggeredOnMissingEmailCount
-      Namespace: !Ref SystemTagValue
-      Statistic: Sum
-      Period: 300
-      EvaluationPeriods: 1
-      Threshold: 1
-      ComparisonOperator: GreaterThanOrEqualToThreshold
-      TreatMissingData: notBreaching
-      ActionsEnabled: true
-      AlarmActions:
-        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
 
   AuthEventTriggeredOnAlreadyDeletingAccountAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -3941,7 +3926,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-update-user-email"
-      RetentionInDays: 30
+      RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   UpdateUserEmailCSLSSubscription:
@@ -4144,7 +4129,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-publish-account-deletion"
-      RetentionInDays: 30
+      RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   ################################
@@ -4315,7 +4300,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-delete-activity-log"
-      RetentionInDays: 30
+      RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   DeleteActivityLogCSLSSubscription:
@@ -4612,7 +4597,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-delete-user-notifications"
-      RetentionInDays: 30
+      RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   DeleteUserNotificationsCSLSSubscription:
@@ -4941,7 +4926,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-delete-inactive-account-tracker"
-      RetentionInDays: 30
+      RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   DeleteInactiveAccountTrackerCSLSSubscription:
@@ -5207,7 +5192,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-bulk-delete-inactive-account-tracker"
-      RetentionInDays: 30
+      RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   ######################
@@ -5312,7 +5297,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-mark-activity-reported"
-      RetentionInDays: 30
+      RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   MarkActivityReportedFunctionSuccessRate:
@@ -5455,7 +5440,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-send-suspicious-activity"
-      RetentionInDays: 30
+      RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   SendSuspiciousActivityToTxMACSLSSubscription:
@@ -5611,7 +5596,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-send-conf-email"
-      RetentionInDays: 30
+      RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   SendConfEmailToTxMACSLSSubscription:
@@ -5811,7 +5796,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-create-support-ticket"
-      RetentionInDays: 30
+      RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   CreateSupportTicketToTxMACSLSSubscription:
@@ -6030,7 +6015,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-trigger-rsa"
-      RetentionInDays: 30
+      RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   TriggerSuspiciousActivityStepToTxMACSLSSubscription:
@@ -6216,7 +6201,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-rsa-step"
-      RetentionInDays: 30
+      RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   ReportSuspiciousActivityStepFunctionCSLSSubscription:
@@ -7077,7 +7062,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-notification-service"
-      RetentionInDays: 30
+      RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   NotificationServiceCSLSSubscription:
@@ -7215,7 +7200,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-analyse-activity-log"
-      RetentionInDays: 30
+      RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   ################################################
@@ -7336,7 +7321,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-inactive-accounts-processor"
-      RetentionInDays: 30
+      RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   QueryAndDispatchInactiveAccountsCSLSSubscription:
@@ -7605,7 +7590,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-process-inactive-account"
-      RetentionInDays: 30
+      RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   ProcessInactiveAccountCSLSSubscription:
@@ -7772,6 +7757,7 @@ Resources:
           - Effect: Allow
             Action:
               - dynamodb:Query
+              - dynamodb:DescribeTable 
             Resource:
               - !GetAtt InactiveAccountTrackerStore.Arn
           - Effect: Allow
@@ -7795,7 +7781,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-inactive-acc-del-forecast"
-      RetentionInDays: 30
+      RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   InactiveAccountDeletionForecastCSLSSubscription:
@@ -7863,7 +7849,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/apigateway/${PublicApiGateway}/${Environment}"
-      RetentionInDays: 30
+      RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   PublicApiGateway5XXErrorsAlarm:
@@ -7983,7 +7969,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-notify-delivery-receipts"
-      RetentionInDays: 30
+      RetentionInDays: 90 
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   NotifyDeliveryReceiptsLambdaErrorsAlarm:

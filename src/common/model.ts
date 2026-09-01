@@ -60,6 +60,7 @@ export interface Extensions {
   reported_session_id?: string;
   "journey-type"?: string;
   accountTrackerAccountDeletionDate?: string;
+  account_deletion_reason?: string;
 }
 
 export interface CurrentTimeDescriptor {
@@ -226,9 +227,9 @@ export interface InactiveAccountTrackerRecord {
   userLastActiveSourceId?: string;
   userLastActiveUpdated: string;
 
-  emailAddress: string;
-  emailAddressLastUpdated: string;
-  emailAddressSource: string;
+  emailAddress?: string;
+  emailAddressLastUpdated?: string;
+  emailAddressSource?: string;
   emailAddressSourceId?: string;
 
   hasSetupMfa: boolean;

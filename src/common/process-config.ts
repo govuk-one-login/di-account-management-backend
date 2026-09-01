@@ -3,24 +3,44 @@ import { hasRecentActivityLogEntry } from "./iadGuards/hasRecentActivityLogEntry
 import { hasAisBlockIntervention } from "./iadGuards/hasAisBlockIntervention.js";
 import { hasUndeliverableEmailAddress } from "./iadGuards/hasUndeliverableEmailAddress.js";
 import { sendInactiveAccountEmailsIsEnabled } from "./iadGuards/sendInactiveAccountEmailsIsEnabled.js";
+import { hasEmailAddress } from "./iadGuards/hasEmailAddress.js";
 
 export enum Actions {
   continue = "Continue",
   abort = "Abort",
-  continueWithoutActions = "ContinueWithoutPerformingActions"
-};
+  continueWithoutActions = "ContinueWithoutPerformingActions",
+}
 
-export type Guard = (commonSubjectId?: string) => Promise<{
+export type Guard = (
+  commonSubjectId?: string,
+  emailAddress?: string
+) => Promise<{
   continue: Actions;
   guardName: string;
 }>;
 
 const guardsList = {
-  hasAisBlockIntervention: { guard: hasAisBlockIntervention, contributeToAlarm: false },
-  hasRecentActivityLogEntry: { guard: hasRecentActivityLogEntry, contributeToAlarm: true },
-  hasUndeliverableEmailAddress: { guard: hasUndeliverableEmailAddress, contributeToAlarm: false },
-  sendInactiveAccountEmailsIsEnabled: { guard: sendInactiveAccountEmailsIsEnabled, contributeToAlarm: false }
-}
+  hasAisBlockIntervention: {
+    guard: hasAisBlockIntervention,
+    contributeToAlarm: false,
+  },
+  hasRecentActivityLogEntry: {
+    guard: hasRecentActivityLogEntry,
+    contributeToAlarm: true,
+  },
+  hasUndeliverableEmailAddress: {
+    guard: hasUndeliverableEmailAddress,
+    contributeToAlarm: false,
+  },
+  sendInactiveAccountEmailsIsEnabled: {
+    guard: sendInactiveAccountEmailsIsEnabled,
+    contributeToAlarm: false,
+  },
+  hasEmailAddress: {
+    guard: hasEmailAddress,
+    contributeToAlarm: true,
+  },
+};
 
 export type ProcessConfig = Record<
   string,
@@ -49,6 +69,7 @@ export const processConfig: ProcessConfig = {
     auditEventName: "HOME_ACCOUNT_TRACKER_ACCOUNT_FIRST_PERIOD_ENTERED",
     guards: [
       guardsList.sendInactiveAccountEmailsIsEnabled,
+      guardsList.hasEmailAddress,
       guardsList.hasAisBlockIntervention,
       guardsList.hasUndeliverableEmailAddress,
     ],
@@ -62,6 +83,7 @@ export const processConfig: ProcessConfig = {
     auditEventName: "HOME_ACCOUNT_TRACKER_ACCOUNT_SECOND_PERIOD_ENTERED",
     guards: [
       guardsList.sendInactiveAccountEmailsIsEnabled,
+      guardsList.hasEmailAddress,
       guardsList.hasAisBlockIntervention,
       guardsList.hasUndeliverableEmailAddress,
     ],
@@ -73,7 +95,7 @@ export const processConfig: ProcessConfig = {
     targetStatus: "deleting",
     targetQueueUrlEnvVar: "ACCOUNT_DELETION_QUEUE_URL",
     guards: [
-      guardsList.sendInactiveAccountEmailsIsEnabled,
+      guardsList.hasEmailAddress,
       guardsList.hasAisBlockIntervention,
       guardsList.hasRecentActivityLogEntry,
     ],

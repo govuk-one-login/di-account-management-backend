@@ -1,4 +1,4 @@
-import { Context, DynamoDBStreamEvent } from "aws-lambda";
+import { Context, DynamoDBStreamEvent, DynamoDBBatchResponse } from "aws-lambda";
 import { AttributeValue, DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
 import { DynamoDBDocumentClient, QueryCommand, TransactWriteCommand } from "@aws-sdk/lib-dynamodb";
@@ -131,11 +131,13 @@ const getNewItemDetails = (
     }
   })();
 
+  const emailAddress = newEmailAddress ?? currentTrackerRecord?.emailAddress;
+
   return {
-    emailAddress: newEmailAddress ?? currentTrackerRecord?.emailAddress ?? "",
-    emailAddressSource: newEmailAddress ? txmaEvent.event_name : (currentTrackerRecord?.emailAddressSource ?? ""),
+    ...(emailAddress && { emailAddress }),
+    emailAddressSource: newEmailAddress ? txmaEvent.event_name : currentTrackerRecord?.emailAddressSource,
     emailAddressSourceId: newEmailAddress ? txmaEvent.event_id : currentTrackerRecord?.emailAddressSourceId,
-    emailAddressLastUpdated: newEmailAddress ? eventDateTime : (currentTrackerRecord?.emailAddressLastUpdated ?? ""),
+    emailAddressLastUpdated: newEmailAddress ? eventDateTime : currentTrackerRecord?.emailAddressLastUpdated,
     userLastActiveUpdated: isNewLatestDate ? eventDateTime : (currentTrackerRecord?.userLastActiveUpdated ?? eventDateTime),
     publicSubjectId: txmaEvent.user?.public_subject_id ?? currentTrackerRecord?.publicSubjectId ?? "",
   };
@@ -153,6 +155,8 @@ const processRecord = async (
   olhClientId: string,
   backfillCompleteDatetime: string
 ): Promise<void> => {
+  logger.info(`Processing event with ID ${txmaEvent.event_id}`);
+
   const userId = txmaEvent.user?.user_id;
 
   if (!userId && txmaEvent.event_name === "AUTH_CODE_VERIFIED") {
@@ -173,21 +177,19 @@ const processRecord = async (
     return;
   }
 
-  if (txmaEvent.user?.email === undefined) {
-    logger.warn(`AUTH_EVENT_NO_EMAIL for userId ${userId}`);
-  }
-
   const currentTrackerRecord = await getCurrentRecordForUser(userId, tableName);
 
+  logger.info(`User has existing tracker record for event_id ${txmaEvent.event_id}: ${Boolean(currentTrackerRecord)}`);
+
   if (currentTrackerRecord?.status === 'deleting') {
-    logger.warn(`AUTH_EVENT_ON_DELETING_ACCOUNT ${userId}`);
+    logger.warn("AUTH_EVENT_ON_DELETING_ACCOUNT");
     return;
   }
 
   const eventDate = getEventDate(txmaEvent);
 
   if (isBeforeBackfillThreshold(eventDate, backfillCompleteDatetime) && !currentTrackerRecord) {
-    logger.info(`BACKFILL_EVENT_SKIPPED_NO_EXISTING_RECORD for userId ${userId}`);
+    logger.info("BACKFILL_EVENT_SKIPPED_NO_EXISTING_RECORD");
     return;
   }
 
@@ -208,6 +210,8 @@ const processRecord = async (
     hasSetupMfa: currentTrackerRecord?.hasSetupMfa ?? false,
   };
 
+  logger.info(`Building transaction for update based on event id: ${txmaEvent.event_id}`);
+
   const transactionItems = buildTransactionItems(tableName, userNotificationsTableName, olhClientId, userId, newItem, currentTrackerRecord, txmaEvent);
   const notificationQueueUrl = getEnvironmentVariable("NOTIFICATION_QUEUE_URL");
   const govukAppClientId = getEnvironmentVariable("GOV_UK_APP_CLIENT_ID");
@@ -226,27 +230,37 @@ const processRecord = async (
       notificationType = NotificationType.INACTIVE_ACCOUNT_SAVED_RP;
   }
 
-  if (currentTrackerRecord?.dateForDeletion && isCurrentDeletionIn30Days(currentTrackerRecord.dateForDeletion)) {
-    // if currentTrackerRecord.dateForDeletion is within the next 30 days, send ACCOUNT SAVED email
-    const message = {
-      notificationType,
-      emailAddress: newItem.emailAddress,
-    };
+  const inactiveAccountEmailFlagEnabled = getEnvironmentVariable("SEND_INACTIVE_ACCOUNT_DELETION_EMAILS") === "1";
 
-    await sqsClient.send(
-      new SendMessageCommand({
-        QueueUrl: notificationQueueUrl,
-        MessageBody: JSON.stringify(message),
-      })
-    );
+  if (!inactiveAccountEmailFlagEnabled) {
+    logger.info("SEND_INACTIVE_ACCOUNT_DELETION_EMAILS feature flag is off");
+  } else if (currentTrackerRecord?.dateForDeletion && isCurrentDeletionIn30Days(currentTrackerRecord.dateForDeletion)) {
+    if (newItem.emailAddress) {
+      // if currentTrackerRecord.dateForDeletion is within the next 30 days, send ACCOUNT SAVED email
+      const message = {
+        notificationType,
+        emailAddress: newItem.emailAddress,
+      };
 
-    logger.info(`${notificationType} message successfully sent to target queue`);
+      await sqsClient.send(
+        new SendMessageCommand({
+          QueueUrl: notificationQueueUrl,
+          MessageBody: JSON.stringify(message),
+        })
+      );
+
+      logger.info(`${notificationType} message successfully sent to target queue`);
+    } else {
+      logger.warn("INACTIVE_ACCOUNT_SAVED_BUT_NO_EMAIL_ADDRESS_TO_NOTIFY");
+    }
   }
 
   try {
+    logger.info(`Writing to DynamoDB for event id: ${txmaEvent.event_id}`);
     await dynamoDocClient.send(new TransactWriteCommand({ TransactItems: transactionItems }));
+    logger.info(`DynamoDB updated for event id: ${txmaEvent.event_id}`);
   } catch (error) {
-    throw new Error(`Failed to update inactive account tracker for user ${userId} ${error}`, {
+    throw new Error(`Failed to update inactive account tracker for event id ${txmaEvent.event_id}: ${error}`, {
       cause: error
     });
   }
@@ -255,25 +269,29 @@ const processRecord = async (
 export const handler = async (
   event: DynamoDBStreamEvent,
   context: Context
-): Promise<void> => {
+): Promise<DynamoDBBatchResponse> => {
   logger.addContext(context);
 
   const tableName = getEnvironmentVariable("INACTIVE_ACCOUNT_TRACKER_TABLE_NAME");
   const userNotificationsTableName = getEnvironmentVariable("USER_NOTIFICATIONS_TABLE_NAME");
   const olhClientId = getEnvironmentVariable("OLH_CLIENT_ID");
   const backfillCompleteDatetime = process.env["AUTH_BACKFILL_COMPLETE_DATETIME"] ?? "";
-  const inactiveAccountEmailFlagEnabled = getEnvironmentVariable("SEND_INACTIVE_ACCOUNT_DELETION_EMAILS") === "1";
-  
-  if (!inactiveAccountEmailFlagEnabled) {
-    logger.info("SEND_INACTIVE_ACCOUNT_DELETION_EMAILS feature flag is off");
-    return;
-  };
+
+  const batchItemFailures: DynamoDBBatchResponse["batchItemFailures"] = [];
+  logger.info(`Invoked with ${event.Records.length} to process`);
 
   for (const record of event.Records) {
     const txmaEvent = unmarshall(
       record.dynamodb?.NewImage?.event.M as Record<string, AttributeValue>
     ) as TxmaEvent;
 
-    await processRecord(txmaEvent, tableName, userNotificationsTableName, olhClientId, backfillCompleteDatetime);
+    try {
+      await processRecord(txmaEvent, tableName, userNotificationsTableName, olhClientId, backfillCompleteDatetime);
+    } catch (error) {
+      logger.error(`Failed to process record ${record.dynamodb?.SequenceNumber}`, { error });
+      batchItemFailures.push({ itemIdentifier: record.dynamodb?.SequenceNumber ?? "" });
+    }
   }
+
+  return { batchItemFailures };
 };

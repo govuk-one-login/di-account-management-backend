@@ -10,25 +10,25 @@ describe("sendInactiveAccountEmailsIsEnabled", () => {
     delete process.env["SEND_INACTIVE_ACCOUNT_DELETION_EMAILS"];
   });
 
-  test("continue when the feature flag is enabled", async () => {
+  test("returns continue when the feature flag is enabled", async () => {
     process.env["SEND_INACTIVE_ACCOUNT_DELETION_EMAILS"] = "1";
 
     const result = await sendInactiveAccountEmailsIsEnabled();
 
     expect(result).toEqual({
       continue: Actions.continue,
-      guardName: "SendInactiveAccountEmailsFeatureFlag"
+      guardName: "SendInactiveAccountEmailsFeatureFlag",
     });
   });
 
-  test("abort when the feature flag is disabled", async () => {
+  test("returns continueWithoutActions when the feature flag is disabled", async () => {
     process.env["SEND_INACTIVE_ACCOUNT_DELETION_EMAILS"] = "0";
 
     const result = await sendInactiveAccountEmailsIsEnabled();
 
     expect(result).toEqual({
-      continue: Actions.abort,
-      guardName: "SendInactiveAccountEmailsFeatureFlag"
+      continue: Actions.continueWithoutActions,
+      guardName: "SendInactiveAccountEmailsFeatureFlag",
     });
   });
 });

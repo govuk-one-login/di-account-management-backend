@@ -779,7 +779,7 @@ Resources:
         - PolicyDocument:
             Version: "2012-10-17"
             Statement:
-              - Sid: AllowAuthAccountBatchWrite
+              - Sid: AllowAuthAccountRead
                 Effect: Allow
                 Principal:
                   AWS: !Sub

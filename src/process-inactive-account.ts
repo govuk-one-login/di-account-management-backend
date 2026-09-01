@@ -88,8 +88,6 @@ export const handler = async (
 
     const runGuardsOutcome = await runGuards(process.guards, body);
 
-    logger.info(`guards ${runGuardsOutcome}`)
-
     if (runGuardsOutcome === Actions.abort) continue;
 
     if (runGuardsOutcome === Actions.continue) {
@@ -116,11 +114,6 @@ export const handler = async (
           }
         );
         metrics.addMetric("notificationEnqueued", MetricUnit.Count, 1);
-      } else {
-        logger.info("No notificationType configured, skipping notification", {
-          commonSubjectId: body.commonSubjectId,
-          processName: body.processName,
-        });
       }
 
       if (process.targetQueueUrlEnvVar) {

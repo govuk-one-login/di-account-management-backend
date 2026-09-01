@@ -92,7 +92,6 @@ export const processConfig: ProcessConfig = {
     targetStatus: "deleting",
     targetQueueUrlEnvVar: "ACCOUNT_DELETION_QUEUE_URL",
     guards: [
-      guardsList.sendInactiveAccountEmailsIsEnabled,
       guardsList.hasEmailAddress,
       guardsList.hasAisBlockIntervention,
       guardsList.hasRecentActivityLogEntry,

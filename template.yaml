@@ -472,7 +472,7 @@ Mappings:
       publishingApiKeyVersionId: "1fec2ee5-a02c-41e5-9227-185ac11bc1eb"
       accountInterventionsServiceApiUrl: https://vjdj6kjrj2.execute-api.eu-west-2.amazonaws.com/v1
       notifyDontSendEmailsTo: "^(perftest.+?@digital.cabinet-office.gov.uk)|(testuser@test.null.local)$"
-      sendInactiveAccountDeletionEmails: "0"
+      sendInactiveAccountDeletionEmails: "1"
     integration:
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
       zendeskGroupIdSecretArn: arn:aws:secretsmanager:eu-west-2:666500506359:secret:/account-mgmt-backend/zendesk-group-id-token-djJbv6

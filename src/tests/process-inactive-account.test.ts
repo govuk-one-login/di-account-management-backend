@@ -81,6 +81,9 @@ describe("process-inactive-account handler", () => {
     process.env.INACTIVE_ACCOUNT_TRACKER_TABLE_NAME =
       "test-inactive-tracker-table";
     process.env.SEND_INACTIVE_ACCOUNT_DELETION_EMAILS = '1';
+    process.env.FEATURE_SEND_IAD_AUDIT_EVENTS = "false"
+    process.env.TXMA_QUEUE_URL = "https://sqs.eu-west-2.amazonaws.com/123456789012/TxmaQueue";
+    process.env.AWS_REGION = "eu-west-2";
   });
 
   test("enqueues a 30-day warning notification to the NotificationQueue", async () => {
@@ -488,7 +491,7 @@ describe("process-inactive-account handler", () => {
     // status should still be updated in the inactive account tracker
     expect(dynamoMock).toHaveReceivedCommand(UpdateCommand);
   });
-  
+
   test("continue as expected where there is no hasUndeliverableEmailAddress flag", async () => {
     dynamoMock.on(QueryCommand, {
       TableName: "test-inactive-tracker-table",

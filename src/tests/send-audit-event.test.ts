@@ -152,19 +152,15 @@ describe("sendAuditEvent", () => {
     ];
 
     test.each(IAD_EVENTS)(
-      "skips sending %s when FEATURE_SEND_IAD_AUDIT_EVENTS is not set",
+      "throws sending %s when FEATURE_SEND_IAD_AUDIT_EVENTS is not set",
       async (eventName) => {
-        const loggerInfo = vi
-          .spyOn(Logger.prototype, "info")
-          .mockImplementation(() => undefined);
-
-        const result = await sendAuditEvent(eventName, parameters);
-
-        expect(result).toBeUndefined();
-        expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(0);
-        expect(loggerInfo).toHaveBeenCalledWith(
-          `Skipping IAD event ${eventName} because IAD audit events are disabled`
+        await expect(
+          sendAuditEvent(eventName, parameters)
+        ).rejects.toThrowError(
+          'Environment variable "FEATURE_SEND_IAD_AUDIT_EVENTS" is not set.'
         );
+
+        expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(0);
       }
     );
 

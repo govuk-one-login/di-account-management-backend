@@ -40,11 +40,18 @@ describe("isSendIadAuditEventsEnabled", () => {
     expect(isSendIadAuditEventsEnabled()).toBe(false);
     process.env[ENV_VAR] = "yes";
     expect(isSendIadAuditEventsEnabled()).toBe(false);
-    process.env[ENV_VAR] = "";
-    expect(isSendIadAuditEventsEnabled()).toBe(false);
   });
 
-  test("returns false when the environment variable is not set", () => {
-    expect(isSendIadAuditEventsEnabled()).toBe(false);
+  test("throws when the environment variable is set to an empty string", () => {
+    process.env[ENV_VAR] = "";
+    expect(() => isSendIadAuditEventsEnabled()).toThrowError(
+      `Environment variable "${ENV_VAR}" is not set.`
+    );
+  });
+
+  test("throws when the environment variable is not set", () => {
+    expect(() => isSendIadAuditEventsEnabled()).toThrowError(
+      `Environment variable "${ENV_VAR}" is not set.`
+    );
   });
 });

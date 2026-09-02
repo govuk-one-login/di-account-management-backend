@@ -89,7 +89,7 @@ describe("setUpNotifyClient", () => {
   beforeEach(async () => {
     process.env = {
       ...OLD_PROCESS_ENV,
-      NOTIFY_API_KEY_SECRET_ARN: "NOTIFY_API_KEY_SECRET_ARN",
+      NOTIFY_API_KEY_SECRET_ARN: "NOTIFY_API_KEY_SECRET_ARN", // pragma: allowlist secret
       NOTIFY_TEMPLATE_IDS: '{"GLOBAL_LOGOUT":"template-id"}',
     };
     const actual = await vi.importActual<

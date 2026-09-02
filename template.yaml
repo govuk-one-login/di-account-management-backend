@@ -7554,7 +7554,10 @@ Resources:
           - Effect: Allow
             Action:
               - dynamodb:Query
-            Resource: !GetAtt UserActivityLogsStore.Arn
+            Resource:
+              - !GetAtt UserActivityLogsStore.Arn
+              - !GetAtt InactiveAccountTrackerStore.Arn
+              - !Sub "${InactiveAccountTrackerStore.Arn}/index/CommonSubjectIdIndex"
           - Effect: Allow
             Action:
               - kms:Decrypt

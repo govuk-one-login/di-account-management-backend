@@ -8055,6 +8055,7 @@ Resources:
     DependsOn:
       - TriggerInactiveAccountProcessFunctionLogGroup
     Properties:
+      Timeout: 15
       FunctionName: !Sub ${Environment}-${AWS::StackName}-trigger-inactive-account-process
       CodeUri: src
       PackageType: Zip

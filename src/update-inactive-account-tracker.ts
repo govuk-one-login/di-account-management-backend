@@ -28,10 +28,12 @@ const latestBy = (
   records: InactiveAccountTrackerRecord[],
   timestampField: keyof InactiveAccountTrackerRecord
 ): InactiveAccountTrackerRecord =>
-  records.reduce((latest, candidate) =>
-    toTime(candidate[timestampField] as string | undefined) > toTime(latest[timestampField] as string | undefined)
-      ? candidate
-      : latest
+  records.slice(1).reduce(
+    (latest, candidate) =>
+      toTime(candidate[timestampField] as string | undefined) > toTime(latest[timestampField] as string | undefined)
+        ? candidate
+        : latest,
+    records[0]
   );
 
 // A race condition can leave multiple tracker rows for the same user. Merge them into a

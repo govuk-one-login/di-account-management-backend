@@ -472,7 +472,7 @@ Mappings:
       publishingApiKeyVersionId: "1fec2ee5-a02c-41e5-9227-185ac11bc1eb"
       accountInterventionsServiceApiUrl: https://vjdj6kjrj2.execute-api.eu-west-2.amazonaws.com/v1
       notifyDontSendEmailsTo: "^(perftest.+?@digital.cabinet-office.gov.uk)|(testuser@test.null.local)$"
-      sendInactiveAccountDeletionEmails: "0"
+      sendInactiveAccountDeletionEmails: "1"
     integration:
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
       zendeskGroupIdSecretArn: arn:aws:secretsmanager:eu-west-2:666500506359:secret:/account-mgmt-backend/zendesk-group-id-token-djJbv6
@@ -779,7 +779,7 @@ Resources:
         - PolicyDocument:
             Version: "2012-10-17"
             Statement:
-              - Sid: AllowAuthAccountBatchWrite
+              - Sid: AllowAuthAccountRead
                 Effect: Allow
                 Principal:
                   AWS: !Sub
@@ -791,7 +791,11 @@ Resources:
                           AccountNumber,
                         ]
                 Action:
-                  - dynamodb:BatchWriteItem
+                  - dynamodb:DescribeTable
+                  - dynamodb:BatchGetItem
+                  - dynamodb:GetItem
+                  - dynamodb:Query
+                  - dynamodb:Scan
                 Resource: !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${InactiveAccountTrackerStoreTableName}"
         - !Ref AWS::NoValue
 
@@ -3497,7 +3501,7 @@ Resources:
         DynamoStream:
           Type: DynamoDB
           Properties:
-            BatchSize: 1
+            BatchSize: 10
             ParallelizationFactor: 5
             BisectBatchOnFunctionError: true
             Stream: !GetAtt RawEventsStore.StreamArn
@@ -3505,6 +3509,8 @@ Resources:
               OnFailure:
                 Destination: !GetAtt UpdateInactiveAccountTrackerDeadLetterQueue.Arn
             StartingPosition: LATEST
+            FunctionResponseTypes:
+              - ReportBatchItemFailures
             FilterCriteria:
               Filters:
                 - Pattern: '{ "eventName": ["INSERT"], "dynamodb": { "NewImage": { "event": { "M": { "event_name": { "S": ["AUTH_TOKEN_SENT_TO_ORCHESTRATION", "AUTH_CODE_VERIFIED", "AUTH_PASSKEY_VERIFICATION_SUCCESSFUL", "STS_REFRESH_TOKEN_ISSUED"] } } } } } }'
@@ -3512,6 +3518,7 @@ Resources:
         Type: SQS
         TargetArn: !GetAtt UpdateInactiveAccountTrackerDeadLetterQueue.Arn
       Handler: update-inactive-account-tracker.handler
+      MemorySize: 192
       ReservedConcurrentExecutions: 80
       Timeout: 70
       Role: !GetAtt UpdateInactiveAccountTrackerRole.Arn

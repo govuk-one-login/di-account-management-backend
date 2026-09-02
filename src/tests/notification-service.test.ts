@@ -47,7 +47,7 @@ vi.mock("../common/metrics.js", () => ({
 
 vi.hoisted(() => {
   process.env.NOTIFY_TEMPLATE_IDS = '{"GLOBAL_LOGOUT":"template-id"}';
-  process.env.NOTIFY_API_KEY = "NOTIFY_API_SECRET_KEY";
+  process.env.NOTIFY_API_KEY_SECRET_ARN = "NOTIFY_API_KEY_SECRET_ARN"; // pragma: allowlist secret
 });
 
 vi.mock("../notification-service-client.js", async (importOriginal) => {
@@ -89,7 +89,7 @@ describe("setUpNotifyClient", () => {
   beforeEach(async () => {
     process.env = {
       ...OLD_PROCESS_ENV,
-      NOTIFY_API_KEY: "NOTIFY_API_SECRET_KEY",
+      NOTIFY_API_KEY_SECRET_ARN: "NOTIFY_API_KEY_SECRET_ARN", // pragma: allowlist secret
       NOTIFY_TEMPLATE_IDS: '{"GLOBAL_LOGOUT":"template-id"}',
     };
     const actual = await vi.importActual<
@@ -112,7 +112,7 @@ describe("setUpNotifyClient", () => {
 
     const result = await setUpNotifyClient(mockRecord, batchItemFailures);
 
-    expect(mockGetSecret).toHaveBeenCalledWith("NOTIFY_API_SECRET_KEY", {
+    expect(mockGetSecret).toHaveBeenCalledWith("NOTIFY_API_KEY_SECRET_ARN", {
       maxAge: 900,
     });
     expect(mockNotifyClient).toHaveBeenCalledWith(mockApiKey);
@@ -127,7 +127,7 @@ describe("setUpNotifyClient", () => {
 
     expect(mockLogger.error).toHaveBeenCalledWith("Secret is undefined", {
       messageId: "test-message-id",
-      key: "NOTIFY_API_SECRET_KEY",
+      arn: "NOTIFY_API_KEY_SECRET_ARN",
     });
     expect(mockMetrics.addDimension).toHaveBeenCalledWith(
       "failureReason",
@@ -149,7 +149,7 @@ describe("setUpNotifyClient", () => {
 
     expect(mockLogger.error).toHaveBeenCalledWith("Secret is not a string", {
       messageId: "test-message-id",
-      key: "NOTIFY_API_SECRET_KEY",
+      arn: "NOTIFY_API_KEY_SECRET_ARN",
     });
     expect(mockMetrics.addDimension).toHaveBeenCalledWith(
       "failureReason",

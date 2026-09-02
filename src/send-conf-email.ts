@@ -113,13 +113,13 @@ export const handler = async (
   context: Context
 ): Promise<ReportSuspiciousActivityEvent> => {
   logger.addContext(context);
-  const NOTIFY_API_KEY = getEnvironmentVariable("NOTIFY_API_KEY");
+  const NOTIFY_API_KEY_SECRET_ARN = getEnvironmentVariable("NOTIFY_API_KEY_SECRET_ARN");
   const TEMPLATE_ID = getEnvironmentVariable("TEMPLATE_ID");
   try {
-    const notifyApiKey = await getSecret(NOTIFY_API_KEY, {
+    const notifyApiKey = await getSecret(NOTIFY_API_KEY_SECRET_ARN, {
       maxAge: 900,
     });
-    assert(notifyApiKey, `${NOTIFY_API_KEY} secret not retrieved`);
+    assert(notifyApiKey, `${NOTIFY_API_KEY_SECRET_ARN} secret not retrieved`);
     const response = await sendConfMail(
       notifyApiKey as string,
       TEMPLATE_ID,

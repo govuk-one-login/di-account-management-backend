@@ -232,6 +232,7 @@ export interface InactiveAccountTrackerRecord {
   emailAddressSourceId?: string;
 
   hasSetupMfa: boolean;
+  hasUndeliverableEmailAddress?: boolean;
 }
 
 export class DroppedEventError extends Error {

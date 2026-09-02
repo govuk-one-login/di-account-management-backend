@@ -5512,7 +5512,11 @@ Resources:
       Role: !GetAtt SendConfEmailRole.Arn
       Environment:
         Variables:
-          NOTIFY_API_KEY: /account-mgmt-backend/notify-api-key
+          NOTIFY_API_KEY_SECRET_ARN: !FindInMap [
+            EnvironmentConfiguration,
+            !Ref Environment,
+            notifyApiKeySecretArn,
+          ]
           TEMPLATE_ID:
             !FindInMap [
               EnvironmentVariables,
@@ -6974,7 +6978,11 @@ Resources:
       Environment:
         Variables:
           NODE_OPTIONS: --enable-source-maps
-          NOTIFY_API_KEY: /account-mgmt-backend/notify-api-key
+          NOTIFY_API_KEY_SECRET_ARN: !FindInMap [
+            EnvironmentConfiguration,
+            !Ref Environment,
+            notifyApiKeySecretArn,
+          ]
           NOTIFY_TEMPLATE_IDS:
             !FindInMap [
               EnvironmentVariables,
@@ -7554,7 +7562,10 @@ Resources:
           - Effect: Allow
             Action:
               - dynamodb:Query
-            Resource: !GetAtt UserActivityLogsStore.Arn
+            Resource:
+              - !GetAtt UserActivityLogsStore.Arn
+              - !GetAtt InactiveAccountTrackerStore.Arn
+              - !Sub "${InactiveAccountTrackerStore.Arn}/index/CommonSubjectIdIndex"
           - Effect: Allow
             Action:
               - kms:Decrypt
@@ -8042,6 +8053,93 @@ Resources:
       TreatMissingData: notBreaching
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+
+  ###########################################
+  # Trigger Inactive Account Process (manual test helper)
+  ###########################################
+
+  TriggerInactiveAccountProcessFunction:
+    Type: AWS::Serverless::Function
+    DependsOn:
+      - TriggerInactiveAccountProcessFunctionLogGroup
+    Properties:
+      Timeout: 15
+      FunctionName: !Sub ${Environment}-${AWS::StackName}-trigger-inactive-account-process
+      CodeUri: src
+      PackageType: Zip
+      Handler: trigger-inactive-account-process.handler
+      Role: !GetAtt TriggerInactiveAccountProcessRole.Arn
+      Environment:
+        Variables:
+          INACTIVE_ACCOUNT_TRACKER_TABLE_NAME: !Ref InactiveAccountTrackerStore
+          QUERY_AND_DISPATCH_FUNCTION_NAME: !Ref QueryAndDispatchInactiveAccountsFunction
+          NODE_OPTIONS: --enable-source-maps
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Format: "esm"
+        OutExtension:
+          - .js=.mjs
+        Target: "es2022"
+        Sourcemap: true
+        EntryPoints:
+          - trigger-inactive-account-process.ts
+        Banner:
+          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
+
+  TriggerInactiveAccountProcessFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-trigger-inactive-account-process"
+      RetentionInDays: 90
+      KmsKeyId: !GetAtt LoggingKmsKey.Arn
+
+  TriggerInactiveAccountProcessRole:
+    Type: AWS::IAM::Role
+    Properties:
+      PermissionsBoundary: !If
+        - UsePermissionsBoundary
+        - !Ref PermissionsBoundary
+        - !Ref AWS::NoValue
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+        - !Ref TriggerInactiveAccountProcessPolicy
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+
+  TriggerInactiveAccountProcessPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - dynamodb:PutItem
+              - dynamodb:Query
+            Resource:
+              - !GetAtt InactiveAccountTrackerStore.Arn
+              - !Sub "${InactiveAccountTrackerStore.Arn}/index/CommonSubjectIdIndex"
+          - Effect: Allow
+            Action:
+              - lambda:InvokeFunction
+            Resource: !GetAtt QueryAndDispatchInactiveAccountsFunction.Arn
+          - Effect: Allow
+            Action:
+              - kms:Decrypt
+              - kms:GenerateDataKey*
+            Resource:
+              - !GetAtt DatabaseKmsKey.Arn
+              - !GetAtt LoggingKmsKey.Arn
 
 Outputs:
   GeneratorKey:

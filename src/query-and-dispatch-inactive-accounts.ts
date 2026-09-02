@@ -14,6 +14,7 @@ const sqsClient = new SQSClient({});
 
 export interface QueryAndDispatchEvent {
   processName: string;
+  manualTestOnly?: boolean;
 }
 
 export const calculateTargetDate = (daysToDeletion: number): string => {
@@ -71,7 +72,10 @@ export const handler = async (
     logger.info(`Querying accounts for deletion date: ${targetDate}`);
 
     for await (const page of queryAccountsByDate(tableName, targetDate)) {
-      const eligible = page.filter((record) => allowedStatuses.includes(record.status));
+      const eligible = page.filter((record) =>
+        allowedStatuses.includes(record.status) &&
+        (!event.manualTestOnly || record.userLastActiveSource === "MANUAL_TEST")
+      );
 
       const chunks = [];
       for (let i = 0; i < eligible.length; i += 10) {

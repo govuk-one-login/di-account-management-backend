@@ -21,15 +21,15 @@ export const setUpNotifyClient = async (
   batchItemFailures: SQSBatchItemFailure[]
 ) => {
   if (!notifyClient) {
-    const notifyApiSecretKey = getEnvironmentVariable("NOTIFY_API_KEY");
-    const notifyApiKey = await getSecret(notifyApiSecretKey, {
+    const notifyApiSecretArn = getEnvironmentVariable("NOTIFY_API_KEY_SECRET_ARN");
+    const notifyApiKey = await getSecret(notifyApiSecretArn, {
       maxAge: 900,
     });
     if (!notifyApiKey) {
       const errorName = "Secret is undefined";
       logger.error(errorName, {
         messageId: record.messageId,
-        key: notifyApiSecretKey,
+        arn: notifyApiSecretArn,
       });
       addNotificationFailedMetric(errorName);
       batchItemFailures.push({ itemIdentifier: record.messageId });
@@ -39,7 +39,7 @@ export const setUpNotifyClient = async (
       const errorName = "Secret is not a string";
       logger.error(errorName, {
         messageId: record.messageId,
-        key: notifyApiSecretKey,
+        arn: notifyApiSecretArn,
       });
       addNotificationFailedMetric(errorName);
       batchItemFailures.push({ itemIdentifier: record.messageId });

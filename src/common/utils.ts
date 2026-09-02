@@ -34,7 +34,7 @@ export function getEnvironmentVariable(name: string): string {
  * @returns True if the feature flag is enabled, otherwise false.
  */
 export function isSendIadAuditEventsEnabled(): boolean {
-  return process.env["FEATURE_SEND_IAD_AUDIT_EVENTS"]?.toLowerCase() === "true";
+  return getEnvironmentVariable("FEATURE_SEND_IAD_AUDIT_EVENTS").toLowerCase() === "true";
 }
 
 export const zeroedArray = (length: number): number[] =>

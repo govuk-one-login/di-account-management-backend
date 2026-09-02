@@ -57,8 +57,9 @@ export interface TxmaEvent {
 }
 
 export interface Extensions {
-  reported_session_id: string;
+  reported_session_id?: string;
   "journey-type"?: string;
+  accountTrackerAccountDeletionDate?: string;
   account_deletion_reason?: string;
 }
 

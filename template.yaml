@@ -308,7 +308,7 @@ Mappings:
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.integration.publishing.service.gov.uk"
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "2b3170b5-159e-457f-a282-f30f6006dc32"
       AUTHBACKFILLCOMPLETEDATETIME: ""
-      FEATURESENDIADAUDITEVENTS: "false"
+      FEATURESENDIADAUDITEVENTS: "true"
       NOTIFYTEMPLATEIDS: |
         {
           "GLOBAL_LOGOUT": "a92761ef-213b-4fb6-a53c-5912a931c159",
@@ -7478,6 +7478,7 @@ Resources:
           INACTIVE_ACCOUNT_TRACKER_TABLE_NAME: !Ref InactiveAccountTrackerStore
           ACCOUNT_DELETION_QUEUE_URL: !Ref AccountDeletionQueue
           ACTIVITY_LOG_TABLE_NAME: !Ref ActivityLogsStoreTableName
+          TXMA_QUEUE_URL: !Ref AuditOutputQueue
           ACCOUNT_INTERVENTIONS_SERVICE_API_URL:
             !FindInMap [
               EnvironmentConfiguration,
@@ -7489,6 +7490,12 @@ Resources:
               EnvironmentConfiguration,
               !Ref Environment,
               sendInactiveAccountDeletionEmails,
+            ]
+          FEATURE_SEND_IAD_AUDIT_EVENTS:
+            !FindInMap [
+              EnvironmentVariables,
+              !Ref Environment,
+              FEATURESENDIADAUDITEVENTS,
             ]
       DeploymentPreference:
         Alarms:
@@ -7553,12 +7560,15 @@ Resources:
               - !GetAtt ProcessInactiveAccountDeadLetterQueue.Arn
               - !GetAtt NotificationQueue.Arn
               - !GetAtt AccountDeletionQueue.Arn
+              - !GetAtt AuditOutputQueue.Arn
           - Effect: Allow
             Action:
               - dynamodb:UpdateItem
               - dynamodb:GetItem
+              - dynamodb:Query
             Resource:
               - !GetAtt InactiveAccountTrackerStore.Arn
+              - !Sub "${InactiveAccountTrackerStore.Arn}/index/CommonSubjectIdIndex"
           - Effect: Allow
             Action:
               - dynamodb:Query
@@ -7573,6 +7583,7 @@ Resources:
             Resource:
               - !GetAtt QueueKmsKey.Arn
               - !GetAtt DatabaseKmsKey.Arn
+              - !GetAtt AuditEncryptionKey.Arn
           - Effect: Allow
             Action:
               - "cloudwatch:PutMetricData"

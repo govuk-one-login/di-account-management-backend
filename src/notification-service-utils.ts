@@ -99,6 +99,7 @@ const messageSchema = v.variant("notificationType", [
         notificationType: input.notificationType,
 
         personalisation: {
+          emailAddress: input.emailAddress,
           deletionDate_en: new Intl.DateTimeFormat("en-gb", {
             dateStyle: "long",
             timeZone: "Europe/London",
@@ -127,6 +128,7 @@ const messageSchema = v.variant("notificationType", [
         notificationType: input.notificationType,
 
         personalisation: {
+          emailAddress: input.emailAddress,
           deletionDate_en: new Intl.DateTimeFormat("en-gb", {
             dateStyle: "long",
             timeZone: "Europe/London",
@@ -139,24 +141,72 @@ const messageSchema = v.variant("notificationType", [
       };
     })
   ),
-  v.object({
-    notificationType: v.literal(NotificationType.INACTIVE_ACCOUNT_SAVED_APP),
-    emailAddress: v.pipe(v.string(), v.email()),
-  }),
-  v.object({
-    notificationType: v.literal(NotificationType.INACTIVE_ACCOUNT_SAVED_HOME),
-    emailAddress: v.pipe(v.string(), v.email()),
-  }),
-  v.object({
-    notificationType: v.literal(NotificationType.INACTIVE_ACCOUNT_SAVED_RP),
-    emailAddress: v.pipe(v.string(), v.email()),
-  }),
-  v.object({
-    notificationType: v.literal(
-      NotificationType.INACTIVE_ACCOUNT_DELETED_CONFIRMATION
-    ),
-    emailAddress: v.pipe(v.string(), v.email()),
-  }),
+  v.pipe(
+    v.object({
+      notificationType: v.literal(NotificationType.INACTIVE_ACCOUNT_SAVED_APP),
+      emailAddress: v.pipe(v.string(), v.email()),
+    }),
+    v.transform((input) => {
+      return {
+        emailAddress: input.emailAddress,
+        notificationType: input.notificationType,
+
+        personalisation: {
+          emailAddress: input.emailAddress,
+        },
+      };
+    })
+  ),
+  v.pipe(
+    v.object({
+      notificationType: v.literal(NotificationType.INACTIVE_ACCOUNT_SAVED_HOME),
+      emailAddress: v.pipe(v.string(), v.email()),
+    }),
+    v.transform((input) => {
+      return {
+        emailAddress: input.emailAddress,
+        notificationType: input.notificationType,
+
+        personalisation: {
+          emailAddress: input.emailAddress,
+        },
+      };
+    })
+  ),
+  v.pipe(
+    v.object({
+      notificationType: v.literal(NotificationType.INACTIVE_ACCOUNT_SAVED_RP),
+      emailAddress: v.pipe(v.string(), v.email()),
+    }),
+    v.transform((input) => {
+      return {
+        emailAddress: input.emailAddress,
+        notificationType: input.notificationType,
+
+        personalisation: {
+          emailAddress: input.emailAddress,
+        },
+      };
+    })
+  ),
+  v.pipe(
+    v.object({
+      notificationType: v.literal(
+        NotificationType.INACTIVE_ACCOUNT_DELETED_CONFIRMATION
+      ),
+      emailAddress: v.pipe(v.string(), v.email()),
+    }),
+    v.transform((input) => {
+      return {
+        emailAddress: input.emailAddress,
+        notificationType: input.notificationType,
+
+        personalisation: {
+          emailAddress: input.emailAddress,
+        },
+      };
+    })
+  ),
 ]);
 
 const notifySuccessSchema = v.object({

@@ -816,9 +816,12 @@ describe("UpdateInactiveAccountTracker handler", () => {
         emailAddress: "foo@bar.com"
       }),
     });
-
     expect(loggerInfoMock).toHaveBeenCalledWith(
-      expect.stringContaining("INACTIVE_ACCOUNT_SAVED_APP message successfully sent to target queue")
+      "Account saved message successfully sent to target queue",
+      {
+        publicSubjectId: "public-subject-id-123",
+        notificationType: "INACTIVE_ACCOUNT_SAVED_APP",
+      }
     );
   });
 
@@ -854,7 +857,11 @@ describe("UpdateInactiveAccountTracker handler", () => {
     });
 
     expect(loggerInfoMock).toHaveBeenCalledWith(
-      expect.stringContaining("INACTIVE_ACCOUNT_SAVED_HOME message successfully sent to target queue")
+      "Account saved message successfully sent to target queue",
+      {
+        publicSubjectId: "public-subject-id-123",
+        notificationType: "INACTIVE_ACCOUNT_SAVED_HOME",
+      }
     );
   });
 
@@ -890,7 +897,11 @@ describe("UpdateInactiveAccountTracker handler", () => {
     });
 
     expect(loggerInfoMock).toHaveBeenCalledWith(
-      expect.stringContaining("INACTIVE_ACCOUNT_SAVED_RP message successfully sent to target queue")
+      "Account saved message successfully sent to target queue",
+      {
+        publicSubjectId: "public-subject-id-123",
+        notificationType: "INACTIVE_ACCOUNT_SAVED_RP",
+      }
     );
   });
 

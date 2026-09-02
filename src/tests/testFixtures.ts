@@ -206,7 +206,8 @@ export const generateDynamoStreamRecord = (
             M: {
               user_id: { S: userId },
               session_id: { S: sessionId },
-              email: { S: "foo@bar.com" } 
+              email: { S: "foo@bar.com" },
+              public_subject_id: { S: "public-subject-id-123" } 
             },
           },
           client_id: { S: customClientId ?? clientId },

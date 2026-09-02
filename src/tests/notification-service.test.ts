@@ -47,7 +47,7 @@ vi.mock("../common/metrics.js", () => ({
 
 vi.hoisted(() => {
   process.env.NOTIFY_TEMPLATE_IDS = '{"GLOBAL_LOGOUT":"template-id"}';
-  process.env.NOTIFY_API_KEY_SECRET_ARN = "NOTIFY_API_KEY_SECRET_ARN";
+  process.env.NOTIFY_API_KEY_SECRET_ARN = "NOTIFY_API_KEY_SECRET_ARN"; // pragma: allowlist secret
 });
 
 vi.mock("../notification-service-client.js", async (importOriginal) => {

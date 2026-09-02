@@ -8075,7 +8075,7 @@ Resources:
       - TriggerInactiveAccountProcessFunctionLogGroup
     Properties:
       Timeout: 15
-      FunctionName: !Sub ${Environment}-${AWS::StackName}-trigger-inactive-account-process
+      FunctionName: !Sub ${Environment}-${AWS::StackName}-trigger-iad-process
       CodeUri: src
       PackageType: Zip
       Handler: trigger-inactive-account-process.handler

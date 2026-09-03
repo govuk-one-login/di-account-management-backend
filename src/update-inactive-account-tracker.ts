@@ -9,6 +9,9 @@ import type { InactiveAccountTrackerRecord } from "./common/model.ts";
 import assert from 'node:assert/strict';
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 import { NotificationType } from "./notification-service-utils.js"
+import { MetricUnit } from "@aws-lambda-powertools/metrics";
+import { initMetrics } from "./common/metrics.js";
+const metrics = initMetrics("process-inactive-account");
 
 const logger = new Logger();
 const dynamoClient = new DynamoDBClient({});
@@ -75,6 +78,17 @@ const isCurrentDeletionIn30Days = (deletionDate: string): boolean => {
   return date >= today && date <= thirtyDaysFromToday;
 };
 
+export function getDaysUntilAccountWouldHaveBeenDeleted(deletionDate: string): number {
+  const dateForDeletion = new Date(deletionDate);
+  const currentDate: Date = new Date();
+  dateForDeletion.setHours(0, 0, 0, 0);
+  currentDate.setHours(0, 0, 0, 0);
+
+  const differenceInMs = dateForDeletion.getTime() - currentDate.getTime();
+  // divide difference in milliseconds by the number of milliseconds in one day
+  return Math.round(differenceInMs / (24 * 60 * 60 * 1000));
+}
+
 
 const buildTransactionItems = (
   tableName: string,
@@ -82,18 +96,18 @@ const buildTransactionItems = (
   olhClientId: string,
   userId: string,
   newItem: InactiveAccountTrackerRecord,
-  currentTrackerRecord: InactiveAccountTrackerRecord | null,
+  previousTrackerRecord: InactiveAccountTrackerRecord | null,
   txmaEvent: TxmaEvent
 ): TransactionItems => {
   const items: TransactionItems = [
     { Put: { TableName: tableName, Item: newItem as unknown as Record<string, unknown> } },
   ];
 
-  if (currentTrackerRecord && currentTrackerRecord.dateForDeletion !== newItem.dateForDeletion) {
+  if (previousTrackerRecord && previousTrackerRecord.dateForDeletion !== newItem.dateForDeletion) {
     // if the dates are the same, then we don't need to delete the old record as
     // it would have been updated in place by the Put command
     items.push({
-      Delete: { TableName: tableName, Key: { dateForDeletion: currentTrackerRecord.dateForDeletion, commonSubjectId: userId } }
+      Delete: { TableName: tableName, Key: { dateForDeletion: previousTrackerRecord.dateForDeletion, commonSubjectId: userId } }
     });
   }
 
@@ -113,33 +127,33 @@ const buildTransactionItems = (
 
 const getNewItemDetails = (
   txmaEvent: TxmaEvent,
-  currentTrackerRecord: InactiveAccountTrackerRecord | null,
+  previousTrackerRecord: InactiveAccountTrackerRecord | null,
   eventDate: Date,
   eventDateTime: string
 ) => {
-  const isNewLatestDate = eventDate > (currentTrackerRecord ? new Date(currentTrackerRecord.userLastActive) : new Date(0));
+  const isNewLatestDate = eventDate > (previousTrackerRecord ? new Date(previousTrackerRecord.userLastActive) : new Date(0));
   
-  const recordedEmailLastUpdatedDate = currentTrackerRecord?.emailAddressLastUpdated 
-    ? new Date(currentTrackerRecord.emailAddressLastUpdated) 
+  const recordedEmailLastUpdatedDate = previousTrackerRecord?.emailAddressLastUpdated 
+    ? new Date(previousTrackerRecord.emailAddressLastUpdated) 
     : new Date(0);
     
   const eventHasNewerEmailLastUpdated = eventDate > recordedEmailLastUpdatedDate;
   
   const newEmailAddress = (() => {
-    if (txmaEvent.user?.email && eventHasNewerEmailLastUpdated && txmaEvent.user.email !== currentTrackerRecord?.emailAddress) {
+    if (txmaEvent.user?.email && eventHasNewerEmailLastUpdated && txmaEvent.user.email !== previousTrackerRecord?.emailAddress) {
       return txmaEvent.user.email;
     }
   })();
 
-  const emailAddress = newEmailAddress ?? currentTrackerRecord?.emailAddress;
+  const emailAddress = newEmailAddress ?? previousTrackerRecord?.emailAddress;
 
   return {
     ...(emailAddress && { emailAddress }),
-    emailAddressSource: newEmailAddress ? txmaEvent.event_name : currentTrackerRecord?.emailAddressSource,
-    emailAddressSourceId: newEmailAddress ? txmaEvent.event_id : currentTrackerRecord?.emailAddressSourceId,
-    emailAddressLastUpdated: newEmailAddress ? eventDateTime : currentTrackerRecord?.emailAddressLastUpdated,
-    userLastActiveUpdated: isNewLatestDate ? eventDateTime : (currentTrackerRecord?.userLastActiveUpdated ?? eventDateTime),
-    publicSubjectId: txmaEvent.user?.public_subject_id ?? currentTrackerRecord?.publicSubjectId ?? "",
+    emailAddressSource: newEmailAddress ? txmaEvent.event_name : previousTrackerRecord?.emailAddressSource,
+    emailAddressSourceId: newEmailAddress ? txmaEvent.event_id : previousTrackerRecord?.emailAddressSourceId,
+    emailAddressLastUpdated: newEmailAddress ? eventDateTime : previousTrackerRecord?.emailAddressLastUpdated,
+    userLastActiveUpdated: isNewLatestDate ? eventDateTime : (previousTrackerRecord?.userLastActiveUpdated ?? eventDateTime),
+    publicSubjectId: txmaEvent.user?.public_subject_id ?? previousTrackerRecord?.publicSubjectId ?? "",
   };
 };
 
@@ -177,26 +191,26 @@ const processRecord = async (
     return;
   }
 
-  const currentTrackerRecord = await getCurrentRecordForUser(userId, tableName);
+  const previousTrackerRecord = await getCurrentRecordForUser(userId, tableName);
 
-  logger.info(`User has existing tracker record for event_id ${txmaEvent.event_id}: ${Boolean(currentTrackerRecord)}`);
+  logger.info(`User has existing tracker record for event_id ${txmaEvent.event_id}: ${Boolean(previousTrackerRecord)}`);
 
-  if (currentTrackerRecord?.status === 'deleting') {
+  if (previousTrackerRecord?.status === 'deleting') {
     logger.warn("AUTH_EVENT_ON_DELETING_ACCOUNT");
     return;
   }
 
   const eventDate = getEventDate(txmaEvent);
 
-  if (isBeforeBackfillThreshold(eventDate, backfillCompleteDatetime) && !currentTrackerRecord) {
+  if (isBeforeBackfillThreshold(eventDate, backfillCompleteDatetime) && !previousTrackerRecord) {
     logger.info("BACKFILL_EVENT_SKIPPED_NO_EXISTING_RECORD");
     return;
   }
 
   const eventDateTime = eventDate.toISOString();
 
-  const latestDate = getLatestDate(eventDate, currentTrackerRecord);
-  const properties = getNewItemDetails(txmaEvent, currentTrackerRecord, eventDate, eventDateTime);
+  const latestDate = getLatestDate(eventDate, previousTrackerRecord);
+  const properties = getNewItemDetails(txmaEvent, previousTrackerRecord, eventDate, eventDateTime);
 
   const newItem: InactiveAccountTrackerRecord = {
     commonSubjectId: userId,
@@ -207,12 +221,12 @@ const processRecord = async (
     ...properties,
     status: 'pending',
     statusLastUpdated: eventDateTime,
-    hasSetupMfa: currentTrackerRecord?.hasSetupMfa ?? false,
+    hasSetupMfa: previousTrackerRecord?.hasSetupMfa ?? false,
   };
 
   logger.info(`Building transaction for update based on event id: ${txmaEvent.event_id}`);
 
-  const transactionItems = buildTransactionItems(tableName, userNotificationsTableName, olhClientId, userId, newItem, currentTrackerRecord, txmaEvent);
+  const transactionItems = buildTransactionItems(tableName, userNotificationsTableName, olhClientId, userId, newItem, previousTrackerRecord, txmaEvent);
   const notificationQueueUrl = getEnvironmentVariable("NOTIFICATION_QUEUE_URL");
   const govukAppClientId = getEnvironmentVariable("GOV_UK_APP_CLIENT_ID");
   let notificationType;
@@ -234,9 +248,9 @@ const processRecord = async (
 
   if (!inactiveAccountEmailFlagEnabled) {
     logger.info("SEND_INACTIVE_ACCOUNT_DELETION_EMAILS feature flag is off");
-  } else if (currentTrackerRecord?.dateForDeletion && isCurrentDeletionIn30Days(currentTrackerRecord.dateForDeletion)) {
+  } else if (previousTrackerRecord?.dateForDeletion && isCurrentDeletionIn30Days(previousTrackerRecord.dateForDeletion)) {
     if (newItem.emailAddress) {
-      // if currentTrackerRecord.dateForDeletion is within the next 30 days, send ACCOUNT SAVED email
+      // if previousTrackerRecord.dateForDeletion is within the next 30 days, send ACCOUNT SAVED email
       const message = {
         notificationType,
         emailAddress: newItem.emailAddress,
@@ -266,6 +280,13 @@ const processRecord = async (
     throw new Error(`Failed to update inactive account tracker for event id ${txmaEvent.event_id}: ${error}`, {
       cause: error
     });
+  }
+
+  if (previousTrackerRecord) {
+    metrics.addDimension("previousInactiveAccountRecordStatus", previousTrackerRecord.status);
+    metrics.addDimension("clientIdOfAuditEventThatResetDeletionDate", txmaEvent.client_id ?? "");
+    metrics.addMetric("DaysUntilAccountWouldHaveBeenDeleted", MetricUnit.Count, getDaysUntilAccountWouldHaveBeenDeleted(previousTrackerRecord?.dateForDeletion));
+    metrics.publishStoredMetrics();
   }
 };
 

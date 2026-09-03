@@ -151,36 +151,6 @@ async function emitAuditEvent(
   });
 }
 
-// A race condition can leave multiple tracker rows for the same user. Before processing an
-// account we collapse any duplicates into a single, most-up-to-date record so that we act on
-// correct data (e.g. the latest status/dateForDeletion) and never process a stale duplicate.
-// The merged record is written to the surviving row and the stale duplicate rows are deleted
-// in a single transaction. The returned record's fields are overlaid onto the message body so
-// the rest of processing (status update, notifications, target dispatch) uses the merged data.
-async function mergeDuplicatesBeforeProcessing(
-  body: Record<string, string>,
-  inactiveAccountTrackerTableName: string
-): Promise<void> {
-  // mergeTrackerRecords does all the work: it queries every tracker row for the user, and if
-  // there is more than one it merges them, writes the merged record to the surviving row, and
-  // deletes the stale duplicate rows in a single transaction. It returns the merged (or single)
-  // record, or null if the user has no tracker rows.
-  const merged = await mergeTrackerRecords(
-    body.commonSubjectId,
-    dynamoDocClient,
-    inactiveAccountTrackerTableName
-  );
-
-  if (!merged) return;
-
-  // Overlay the merged record onto the message body so downstream processing (status update
-  // keyed on dateForDeletion, notifications, target dispatch) acts on the merged data.
-  for (const [key, value] of Object.entries(merged)) {
-    if (value === undefined) continue;
-    body[key] = typeof value === "string" ? value : String(value);
-  }
-}
-
 async function processRecord(
   body: Record<string, string>,
   notificationQueueUrl: string,
@@ -195,7 +165,25 @@ async function processRecord(
 
   assert(process, `Process configuration not found for ${body.processName}`);
 
-  await mergeDuplicatesBeforeProcessing(body, inactiveAccountTrackerTableName);
+  // A race condition can leave multiple tracker rows for the same user. mergeTrackerRecords
+  // queries every row for the user and, if there is more than one, collapses them into a
+  // single most-up-to-date record: it writes the merged record to the surviving row and
+  // deletes the stale duplicate rows in one transaction, then returns the merged record. We
+  // overlay that record onto the message body so the rest of processing (allowed-status check,
+  // status update keyed on dateForDeletion, notifications, target dispatch) acts on the merged
+  // data rather than the potentially stale values that arrived on the SQS message.
+  const merged = await mergeTrackerRecords(
+    body.commonSubjectId,
+    dynamoDocClient,
+    inactiveAccountTrackerTableName
+  );
+
+  if (merged) {
+    for (const [key, value] of Object.entries(merged)) {
+      if (value === undefined) continue;
+      body[key] = typeof value === "string" ? value : String(value);
+    }
+  }
 
   if (!process.allowedStatuses.includes(body.status as InactiveAccountStatus)) {
     logger.info(

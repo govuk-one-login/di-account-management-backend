@@ -3,13 +3,17 @@ import { Logger } from "@aws-lambda-powertools/logger";
 import { MetricUnit } from "@aws-lambda-powertools/metrics";
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, UpdateCommand } from "@aws-sdk/lib-dynamodb";
+import {
+  DynamoDBDocumentClient,
+  UpdateCommand,
+} from "@aws-sdk/lib-dynamodb";
 import assert from "node:assert/strict";
 import { initMetrics } from "./common/metrics.js";
 import { processConfig, ProcessConfig, Actions } from "./common/process-config.js";
 import type { InactiveAccountStatus } from "./common/model.js";
 import { getEnvironmentVariable } from "./common/utils.js";
 import { sendAuditEvent } from "./common/send-audit-event.js";
+import { mergeTrackerRecords } from "./common/merge-tracker-records.js";
 
 const logger = new Logger();
 const metrics = initMetrics("process-inactive-account");
@@ -160,6 +164,26 @@ async function processRecord(
   });
 
   assert(process, `Process configuration not found for ${body.processName}`);
+
+  // A race condition can leave multiple tracker rows for the same user. mergeTrackerRecords
+  // queries every row for the user and, if there is more than one, collapses them into a
+  // single most-up-to-date record: it writes the merged record to the surviving row and
+  // deletes the stale duplicate rows in one transaction, then returns the merged record. We
+  // overlay that record onto the message body so the rest of processing (allowed-status check,
+  // status update keyed on dateForDeletion, notifications, target dispatch) acts on the merged
+  // data rather than the potentially stale values that arrived on the SQS message.
+  const merged = await mergeTrackerRecords(
+    body.commonSubjectId,
+    dynamoDocClient,
+    inactiveAccountTrackerTableName
+  );
+
+  if (merged) {
+    for (const [key, value] of Object.entries(merged)) {
+      if (value === undefined) continue;
+      body[key] = typeof value === "string" ? value : String(value);
+    }
+  }
 
   if (!process.allowedStatuses.includes(body.status as InactiveAccountStatus)) {
     logger.info(

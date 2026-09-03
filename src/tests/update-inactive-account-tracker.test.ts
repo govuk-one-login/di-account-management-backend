@@ -3,11 +3,23 @@ import { DynamoDBRecord, Context, DynamoDBStreamEvent, DynamoDBBatchResponse } f
 import { Logger } from "@aws-lambda-powertools/logger";
 import { mockClient } from "aws-sdk-client-mock";
 import { DynamoDBDocumentClient, QueryCommand, TransactWriteCommand } from "@aws-sdk/lib-dynamodb";
-import { handler } from "../update-inactive-account-tracker.js";
+import { getDaysUntilAccountWouldHaveBeenDeleted, handler } from "../update-inactive-account-tracker.js";
 import { generateDynamoStreamRecord, timestamp, txmaEventId } from "./testFixtures.js";
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs"; 
 const dynamoMock = mockClient(DynamoDBDocumentClient);
 const sqsMock = mockClient(SQSClient);
+
+const mockMetrics = vi.hoisted(() => ({
+  publishStoredMetrics: vi.fn(),
+  addDimension: vi.fn(),
+  addMetric: vi.fn(),
+}));
+
+const mockInitMetrics = vi.hoisted(() => vi.fn(() => mockMetrics));
+
+vi.mock("../common/metrics.js", () => ({
+  initMetrics: mockInitMetrics,
+}));
 
 vi.hoisted(() => {
   process.env.NOTIFY_TEMPLATE_IDS = '{"GLOBAL_LOGOUT":"template-id"}';
@@ -31,6 +43,7 @@ describe("UpdateInactiveAccountTracker handler", () => {
     process.env.SEND_INACTIVE_ACCOUNT_DELETION_EMAILS = '1';
     dynamoMock.reset();
     sqsMock.reset(); 
+    vi.clearAllMocks();
   });
 
   afterEach(() => {
@@ -828,9 +841,12 @@ describe("UpdateInactiveAccountTracker handler", () => {
         emailAddress: "foo@bar.com"
       }),
     });
-
     expect(loggerInfoMock).toHaveBeenCalledWith(
-      expect.stringContaining("INACTIVE_ACCOUNT_SAVED_APP message successfully sent to target queue")
+      "Account saved message successfully sent to target queue",
+      {
+        publicSubjectId: "public-subject-id-123",
+        notificationType: "INACTIVE_ACCOUNT_SAVED_APP",
+      }
     );
   });
 
@@ -866,7 +882,11 @@ describe("UpdateInactiveAccountTracker handler", () => {
     });
 
     expect(loggerInfoMock).toHaveBeenCalledWith(
-      expect.stringContaining("INACTIVE_ACCOUNT_SAVED_HOME message successfully sent to target queue")
+      "Account saved message successfully sent to target queue",
+      {
+        publicSubjectId: "public-subject-id-123",
+        notificationType: "INACTIVE_ACCOUNT_SAVED_HOME",
+      }
     );
   });
 
@@ -902,7 +922,11 @@ describe("UpdateInactiveAccountTracker handler", () => {
     });
 
     expect(loggerInfoMock).toHaveBeenCalledWith(
-      expect.stringContaining("INACTIVE_ACCOUNT_SAVED_RP message successfully sent to target queue")
+      "Account saved message successfully sent to target queue",
+      {
+        publicSubjectId: "public-subject-id-123",
+        notificationType: "INACTIVE_ACCOUNT_SAVED_RP",
+      }
     );
   });
 
@@ -1030,6 +1054,52 @@ describe("UpdateInactiveAccountTracker handler", () => {
     expect(sqsMock).not.toHaveReceivedCommand(SendMessageCommand);
   });
 
+  test("publishes DaysUntilAccountWouldHaveBeenDeleted metric when a previous dateForDeletion exists", async () => {
+    vi.useFakeTimers();
+    const systemNow = new Date("2026-09-02T12:12:30.000Z");
+    vi.setSystemTime(systemNow);
+
+    const targetDeletionDate = new Date(systemNow);
+    targetDeletionDate.setDate(targetDeletionDate.getDate() + 10);
+
+    dynamoMock.on(QueryCommand).resolves({ 
+      Items: [{
+        commonSubjectId: "qwerty",
+        status: "pending",
+        dateForDeletion: targetDeletionDate.toISOString(),
+        userLastActive: "1970-01-01T00:16:40.000Z", 
+        emailAddress: "old-email@example.com", 
+        emailAddressLastUpdated: "1970-01-01T00:16:40.000Z",
+        statusLastUpdated: "" 
+      }] 
+    });
+    dynamoMock.on(TransactWriteCommand).resolves({});
+
+    const event: DynamoDBStreamEvent = { 
+      Records: [generateDynamoStreamRecord("test-client")] 
+    };
+
+    await handler(event, {} as Context);
+
+    expect(mockMetrics.addDimension).toHaveBeenCalledWith(
+      "previousInactiveAccountRecordStatus",
+      "pending"
+    );
+    expect(mockMetrics.addDimension).toHaveBeenCalledWith(
+      "clientIdOfAuditEventThatResetDeletionDate",
+      "test-client"
+    );
+    
+    expect(mockMetrics.addMetric).toHaveBeenCalledWith(
+      "DaysUntilAccountWouldHaveBeenDeleted",
+      "Count",
+      10
+    );
+    expect(mockMetrics.publishStoredMetrics).toHaveBeenCalledTimes(1);
+
+    vi.useRealTimers();
+  });
+
   describe("backfill threshold", () => {
     // timestamp fixture = 123456789 seconds = 1973-11-29T21:33:09.000Z
     const beforeThreshold = "1974-01-01T00:00:00.000Z";
@@ -1071,6 +1141,44 @@ describe("UpdateInactiveAccountTracker handler", () => {
       const event: DynamoDBStreamEvent = { Records: [generateDynamoStreamRecord("test-client")] };
       await handler(event, {} as Context);
       expect(dynamoMock).toHaveReceivedCommand(TransactWriteCommand);
+    });
+  });
+
+  describe("getDaysUntilAccountWouldHaveBeenDeleted function", () => {
+    const NOW = new Date("2026-09-02T12:30:00.000Z");
+
+    beforeEach(() => {
+      vi.useFakeTimers();
+      vi.setSystemTime(NOW);
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    test("should return 0 when the deletion date is today", () => {
+      const deletionDate = "2026-09-02";
+      const result = getDaysUntilAccountWouldHaveBeenDeleted(deletionDate);
+      expect(result).toBe(0);
+    });
+
+    test("should return a positive integer when the deletion date is in the future", () => {
+      const deletionDate = "2026-09-12";
+      const result = getDaysUntilAccountWouldHaveBeenDeleted(deletionDate);
+      expect(result).toBe(10);
+    });
+
+    test("should return a negative integer when the deletion date is in the past", () => {
+      // this one shouldn't technically be possible as the account would have been deleted in the meanwhile, so it could potentially mean somethingg has gone wrong
+      const deletionDate = "2026-08-28";
+      const result = getDaysUntilAccountWouldHaveBeenDeleted(deletionDate);
+      expect(result).toBe(-5);
+    });
+
+    test("should ignore time of day differences", () => {
+      const deletionDate = "2026-09-03"; 
+      const result = getDaysUntilAccountWouldHaveBeenDeleted(deletionDate);
+      expect(result).toBe(1);
     });
   });
 });

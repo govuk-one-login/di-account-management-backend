@@ -7566,6 +7566,9 @@ Resources:
               - dynamodb:UpdateItem
               - dynamodb:GetItem
               - dynamodb:Query
+              - dynamodb:PutItem
+              - dynamodb:DeleteItem
+              - dynamodb:TransactWriteItems
             Resource:
               - !GetAtt InactiveAccountTrackerStore.Arn
               - !Sub "${InactiveAccountTrackerStore.Arn}/index/CommonSubjectIdIndex"

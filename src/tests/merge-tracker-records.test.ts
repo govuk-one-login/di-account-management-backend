@@ -1,8 +1,14 @@
-import { describe, test, expect } from "vitest";
-import { mergeTrackerRecords } from "../common/merge-tracker-records.js";
+import { describe, test, expect, beforeEach } from "vitest";
+import { DynamoDBDocumentClient, TransactWriteCommand } from "@aws-sdk/lib-dynamodb";
+import { mockClient } from "aws-sdk-client-mock";
+import "aws-sdk-client-mock-vitest";
+import {
+  computeMergedTrackerRecord,
+  mergeTrackerRecords,
+} from "../common/merge-tracker-records.js";
 
-describe("mergeTrackerRecords (shared module)", () => {
-  type Record = Parameters<typeof mergeTrackerRecords>[0][number];
+describe("computeMergedTrackerRecord (pure merge)", () => {
+  type Record = Parameters<typeof computeMergedTrackerRecord>[0][number];
 
   const baseRecord = (overrides: Partial<Record> = {}): Record => ({
     commonSubjectId: "user-1",
@@ -18,7 +24,7 @@ describe("mergeTrackerRecords (shared module)", () => {
   });
 
   test("throws when given an empty set of records", () => {
-    expect(() => mergeTrackerRecords([])).toThrow(
+    expect(() => computeMergedTrackerRecord([])).toThrow(
       "cannot merge an empty set of tracker records"
     );
   });
@@ -41,7 +47,7 @@ describe("mergeTrackerRecords (shared module)", () => {
       userLastActiveUpdated: "2026-06-01T00:00:00.000Z",
     });
 
-    const merged = mergeTrackerRecords([older, newer]);
+    const merged = computeMergedTrackerRecord([older, newer]);
 
     expect(merged.userLastActive).toBe("2026-06-01T00:00:00.000Z");
     expect(merged.userLastActiveSource).toBe("NEW_SOURCE");
@@ -67,7 +73,7 @@ describe("mergeTrackerRecords (shared module)", () => {
       emailAddressLastUpdated: "2026-06-01T00:00:00.000Z",
     });
 
-    const merged = mergeTrackerRecords([newestActivity, newestEmail]);
+    const merged = computeMergedTrackerRecord([newestActivity, newestEmail]);
 
     expect(merged.emailAddress).toBe("fresh@example.com");
     expect(merged.emailAddressSource).toBe("FRESH_EMAIL_SOURCE");
@@ -79,7 +85,7 @@ describe("mergeTrackerRecords (shared module)", () => {
     const older = baseRecord({ status: "pending", statusLastUpdated: "2026-01-01T00:00:00.000Z" });
     const newer = baseRecord({ status: "30DayWarningSent", statusLastUpdated: "2026-09-01T00:00:00.000Z" });
 
-    const merged = mergeTrackerRecords([older, newer]);
+    const merged = computeMergedTrackerRecord([older, newer]);
 
     expect(merged.status).toBe("30DayWarningSent");
     expect(merged.statusLastUpdated).toBe("2026-09-01T00:00:00.000Z");
@@ -89,7 +95,7 @@ describe("mergeTrackerRecords (shared module)", () => {
     const a = baseRecord({ hasSetupMfa: false, hasUndeliverableEmailAddress: false, userLastActiveUpdated: "2026-06-01T00:00:00.000Z" });
     const b = baseRecord({ hasSetupMfa: true, hasUndeliverableEmailAddress: true, userLastActiveUpdated: "2020-01-01T00:00:00.000Z" });
 
-    const merged = mergeTrackerRecords([a, b]);
+    const merged = computeMergedTrackerRecord([a, b]);
 
     expect(merged.hasSetupMfa).toBe(true);
     expect(merged.hasUndeliverableEmailAddress).toBe(true);
@@ -99,7 +105,7 @@ describe("mergeTrackerRecords (shared module)", () => {
     const a = baseRecord();
     const b = baseRecord({ userLastActiveUpdated: "2026-06-01T00:00:00.000Z" });
 
-    const merged = mergeTrackerRecords([a, b]);
+    const merged = computeMergedTrackerRecord([a, b]);
 
     expect(merged.emailAddress).toBeUndefined();
     expect(merged.emailAddressLastUpdated).toBeUndefined();
@@ -110,11 +116,133 @@ describe("mergeTrackerRecords (shared module)", () => {
   test("returns the single record unchanged in shape when only one is provided", () => {
     const only = baseRecord({ emailAddress: "solo@example.com", emailAddressLastUpdated: "2026-01-01T00:00:00.000Z" });
 
-    const merged = mergeTrackerRecords([only]);
+    const merged = computeMergedTrackerRecord([only]);
 
     expect(merged.commonSubjectId).toBe("user-1");
     expect(merged.userLastActive).toBe("2021-01-01T00:00:00.000Z");
     expect(merged.emailAddress).toBe("solo@example.com");
     expect(merged.status).toBe("pending");
+  });
+});
+
+describe("mergeTrackerRecords (merge + persist)", () => {
+  type Record = Parameters<typeof mergeTrackerRecords>[0][number];
+
+  const dynamoMock = mockClient(DynamoDBDocumentClient);
+  const docClient = dynamoMock as unknown as DynamoDBDocumentClient;
+  const TABLE = "test-tracker-table";
+
+  const baseRecord = (overrides: Partial<Record> = {}): Record => ({
+    commonSubjectId: "user-1",
+    publicSubjectId: "public-1",
+    dateForDeletion: "2030-01-01",
+    status: "pending",
+    statusLastUpdated: "2026-01-01T00:00:00.000Z",
+    userLastActive: "2021-01-01T00:00:00.000Z",
+    userLastActiveSource: "AUTH_EVENT",
+    userLastActiveUpdated: "2026-01-01T00:00:00.000Z",
+    hasSetupMfa: false,
+    ...overrides,
+  });
+
+  beforeEach(() => {
+    dynamoMock.reset();
+    dynamoMock.on(TransactWriteCommand).resolves({});
+  });
+
+  test("writes the merged record and deletes the stale duplicate rows in one transaction", async () => {
+    const older = baseRecord({
+      dateForDeletion: "2031-01-01",
+      userLastActiveUpdated: "2026-01-01T00:00:00.000Z",
+    });
+    const newer = baseRecord({
+      dateForDeletion: "2031-06-01",
+      status: "30DayWarningSent",
+      statusLastUpdated: "2026-06-01T00:00:00.000Z",
+      userLastActive: "2026-06-01T00:00:00.000Z",
+      userLastActiveUpdated: "2026-06-01T00:00:00.000Z",
+    });
+
+    const merged = await mergeTrackerRecords([older, newer], docClient, TABLE);
+
+    // The newer-activity row owns dateForDeletion, so it is the surviving row.
+    expect(merged.dateForDeletion).toBe("2031-06-01");
+
+    // Put the merged record to the surviving row; delete only the stale row.
+    expect(dynamoMock).toHaveReceivedCommandWith(TransactWriteCommand, {
+      TransactItems: expect.arrayContaining([
+        expect.objectContaining({
+          Put: expect.objectContaining({
+            TableName: TABLE,
+            Item: expect.objectContaining({
+              commonSubjectId: "user-1",
+              dateForDeletion: "2031-06-01",
+              status: "30DayWarningSent",
+            }),
+          }),
+        }),
+        expect.objectContaining({
+          Delete: expect.objectContaining({
+            TableName: TABLE,
+            Key: { dateForDeletion: "2031-01-01", commonSubjectId: "user-1" },
+          }),
+        }),
+      ]),
+    });
+    // The surviving row must NOT be deleted.
+    expect(dynamoMock).toHaveReceivedCommandWith(TransactWriteCommand, {
+      TransactItems: expect.not.arrayContaining([
+        expect.objectContaining({
+          Delete: expect.objectContaining({
+            Key: { dateForDeletion: "2031-06-01", commonSubjectId: "user-1" },
+          }),
+        }),
+      ]),
+    });
+  });
+
+  test("deduplicates stale deletion dates so each stale row is deleted once", async () => {
+    // Three rows, two of which share the same stale dateForDeletion.
+    const staleA = baseRecord({ dateForDeletion: "2031-01-01", userLastActiveUpdated: "2026-01-01T00:00:00.000Z" });
+    const staleB = baseRecord({ dateForDeletion: "2031-01-01", userLastActiveUpdated: "2026-02-01T00:00:00.000Z" });
+    const winner = baseRecord({ dateForDeletion: "2031-06-01", userLastActiveUpdated: "2026-06-01T00:00:00.000Z" });
+
+    await mergeTrackerRecords([staleA, staleB, winner], docClient, TABLE);
+
+    const call = dynamoMock.commandCalls(TransactWriteCommand)[0];
+    const transactItems = (call.args[0].input as { TransactItems: unknown[] }).TransactItems;
+    const deletes = transactItems.filter((item) => (item as { Delete?: unknown }).Delete);
+
+    expect(deletes).toHaveLength(1);
+  });
+
+  test("does not run a transaction when all rows share the merged dateForDeletion", async () => {
+    const a = baseRecord({ dateForDeletion: "2031-06-01", userLastActiveUpdated: "2026-01-01T00:00:00.000Z" });
+    const b = baseRecord({ dateForDeletion: "2031-06-01", userLastActiveUpdated: "2026-06-01T00:00:00.000Z" });
+
+    const merged = await mergeTrackerRecords([a, b], docClient, TABLE);
+
+    expect(merged.dateForDeletion).toBe("2031-06-01");
+    expect(dynamoMock).not.toHaveReceivedCommand(TransactWriteCommand);
+  });
+
+  test("does not run a transaction for a single record", async () => {
+    const only = baseRecord({ dateForDeletion: "2031-06-01" });
+
+    const merged = await mergeTrackerRecords([only], docClient, TABLE);
+
+    expect(merged.dateForDeletion).toBe("2031-06-01");
+    expect(dynamoMock).not.toHaveReceivedCommand(TransactWriteCommand);
+  });
+
+  test("propagates a transaction failure to the caller", async () => {
+    dynamoMock.on(TransactWriteCommand).rejects(new Error("Transaction failed"));
+
+    const older = baseRecord({ dateForDeletion: "2031-01-01", userLastActiveUpdated: "2026-01-01T00:00:00.000Z" });
+    const newer = baseRecord({ dateForDeletion: "2031-06-01", userLastActiveUpdated: "2026-06-01T00:00:00.000Z" });
+
+    await expect(
+      mergeTrackerRecords([older, newer], docClient, TABLE)
+    ).rejects.toThrow("Transaction failed");
   });
 });

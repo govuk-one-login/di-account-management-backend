@@ -7,7 +7,6 @@ import {
   DynamoDBDocumentClient,
   UpdateCommand,
   QueryCommand,
-  TransactWriteCommand,
 } from "@aws-sdk/lib-dynamodb";
 import assert from "node:assert/strict";
 import { initMetrics } from "./common/metrics.js";
@@ -184,30 +183,14 @@ async function mergeDuplicatesBeforeProcessing(
     duplicateCount: allRows.length,
   });
 
-  const merged = mergeTrackerRecords(allRows);
-
-  // Delete every stale duplicate row whose dateForDeletion differs from the merged record's,
-  // then write the merged record to the surviving row, all in a single transaction so the
-  // table is never left with a partial merge.
-  const staleDeletionDates = [
-    ...new Set(
-      allRows
-        .map((row) => row.dateForDeletion)
-        .filter((dateForDeletion) => dateForDeletion !== merged.dateForDeletion)
-    ),
-  ];
-
-  const transactItems: ConstructorParameters<typeof TransactWriteCommand>[0]["TransactItems"] = [
-    { Put: { TableName: inactiveAccountTrackerTableName, Item: merged as unknown as Record<string, unknown> } },
-    ...staleDeletionDates.map((dateForDeletion) => ({
-      Delete: {
-        TableName: inactiveAccountTrackerTableName,
-        Key: { dateForDeletion, commonSubjectId: userId },
-      },
-    })),
-  ];
-
-  await dynamoDocClient.send(new TransactWriteCommand({ TransactItems: transactItems }));
+  // mergeTrackerRecords collapses the duplicates and persists the result: it writes the
+  // merged record to the surviving row and deletes the stale duplicate rows in a single
+  // transaction, then returns the merged record.
+  const merged = await mergeTrackerRecords(
+    allRows,
+    dynamoDocClient,
+    inactiveAccountTrackerTableName
+  );
 
   // Overlay the merged record onto the message body so downstream processing (status update
   // keyed on dateForDeletion, notifications, target dispatch) acts on the merged data.

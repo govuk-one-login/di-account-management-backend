@@ -56,8 +56,8 @@ describe("UpdateInactiveAccountTracker handler", () => {
     expect(dynamoMock).toHaveReceivedCommandWith(QueryCommand, {
       TableName: "test-table",
       IndexName: "CommonSubjectIdIndex",
-      KeyConditionExpression: "commonSubjectId = :uid",
-      ExpressionAttributeValues: { ":uid": "qwerty" },
+      KeyConditionExpression: "commonSubjectId = :id",
+      ExpressionAttributeValues: { ":id": "qwerty" },
     });
   });
 
@@ -137,18 +137,30 @@ describe("UpdateInactiveAccountTracker handler", () => {
     expect(dynamoMock).not.toHaveReceivedCommand(TransactWriteCommand);
   });
 
-  test("returns failed record in batchItemFailures when more than one tracker record exists", async () => {
+  test("merges duplicate tracker records and processes the event successfully", async () => {
     dynamoMock.on(QueryCommand).resolves({
       Items: [
         { commonSubjectId: "qwerty", dateForDeletion: "2026-01-01", userLastActive: "2026-01-01T00:00:00.000Z", status: "pending", emailAddress: "x", statusLastUpdated: "" },
         { commonSubjectId: "qwerty", dateForDeletion: "2026-01-02", userLastActive: "2026-01-02T00:00:00.000Z", status: "pending", emailAddress: "x", statusLastUpdated: "" },
       ],
     });
+    dynamoMock.on(TransactWriteCommand).resolves({});
     const record = generateDynamoStreamRecord("test-client");
     record.dynamodb!.SequenceNumber = "1234567890";
     const event: DynamoDBStreamEvent = { Records: [record] };
     const result = await handler(event, {} as Context);
-    expect(result).toEqual<DynamoDBBatchResponse>({ batchItemFailures: [{ itemIdentifier: "1234567890" }] });
+    expect(result).toEqual<DynamoDBBatchResponse>({ batchItemFailures: [] });
+    // The duplicate rows are collapsed by mergeTrackerRecords and the event is written normally.
+    expect(dynamoMock).toHaveReceivedCommandWith(TransactWriteCommand, {
+      TransactItems: expect.arrayContaining([
+        expect.objectContaining({
+          Put: expect.objectContaining({
+            TableName: "test-table",
+            Item: expect.objectContaining({ commonSubjectId: "qwerty" }),
+          }),
+        }),
+      ]),
+    });
   });
 
   test("does not delete from user notifications table when client_id matches OLH client", async () => {

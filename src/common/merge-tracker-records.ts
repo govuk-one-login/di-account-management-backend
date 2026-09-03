@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { DynamoDBDocumentClient, TransactWriteCommand } from "@aws-sdk/lib-dynamodb";
+import { DynamoDBDocumentClient, QueryCommand, TransactWriteCommand } from "@aws-sdk/lib-dynamodb";
 import type { InactiveAccountTrackerRecord } from "./model.js";
 
 const toTime = (value: string | undefined): number => {
@@ -71,18 +71,34 @@ export const computeMergedTrackerRecord = (
   return merged;
 };
 
-// Merge a user's duplicate tracker rows into a single record AND persist the result: the
-// merged record is written to the surviving row and every stale duplicate row is deleted, all
-// in one transaction so the table is never left with a partial merge. Returns the merged
-// record so callers can act on the up-to-date data.
-//
-// Callers should only invoke this when there is more than one row to merge; a single row (or
-// none) needs no transaction. The transaction is skipped defensively in that case anyway.
+// Collapse a user's duplicate tracker rows into a single record and persist the result.
+// Given just a user id, this queries every tracker row for that user, merges them (taking each
+// group of fields from whichever duplicate updated it most recently), writes the merged record
+// to the surviving row, and deletes the stale duplicate rows — all in one transaction so the
+// table is never left with a partial merge. Returns the merged record (or the single existing
+// row) so callers can act on the up-to-date data, or null when the user has no tracker rows.
 export const mergeTrackerRecords = async (
-  records: InactiveAccountTrackerRecord[],
+  userId: string,
   dynamoDocClient: DynamoDBDocumentClient,
   tableName: string
-): Promise<InactiveAccountTrackerRecord> => {
+): Promise<InactiveAccountTrackerRecord | null> => {
+  const response = await dynamoDocClient.send(
+    new QueryCommand({
+      TableName: tableName,
+      IndexName: "CommonSubjectIdIndex",
+      KeyConditionExpression: "commonSubjectId = :id",
+      ExpressionAttributeValues: { ":id": userId },
+    })
+  );
+
+  const records = (response.Items ?? []) as InactiveAccountTrackerRecord[];
+
+  // No rows: nothing to merge or return.
+  if (records.length === 0) return null;
+
+  // A single row: it is already the up-to-date record, and no transaction is required.
+  if (records.length === 1) return records[0];
+
   const merged = computeMergedTrackerRecord(records);
 
   // Delete every stale duplicate row whose dateForDeletion differs from the merged record's.
@@ -97,7 +113,8 @@ export const mergeTrackerRecords = async (
   ];
 
   if (staleDeletionDates.length === 0) {
-    // Nothing stale to remove (e.g. a single row): no transaction required.
+    // Duplicates that all share the merged dateForDeletion: the Put alone suffices, so no
+    // delete/transaction is required.
     return merged;
   }
 

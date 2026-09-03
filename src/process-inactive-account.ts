@@ -6,12 +6,11 @@ import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import {
   DynamoDBDocumentClient,
   UpdateCommand,
-  QueryCommand,
 } from "@aws-sdk/lib-dynamodb";
 import assert from "node:assert/strict";
 import { initMetrics } from "./common/metrics.js";
 import { processConfig, ProcessConfig, Actions } from "./common/process-config.js";
-import type { InactiveAccountStatus, InactiveAccountTrackerRecord } from "./common/model.js";
+import type { InactiveAccountStatus } from "./common/model.js";
 import { getEnvironmentVariable } from "./common/utils.js";
 import { sendAuditEvent } from "./common/send-audit-event.js";
 import { mergeTrackerRecords } from "./common/merge-tracker-records.js";
@@ -162,35 +161,17 @@ async function mergeDuplicatesBeforeProcessing(
   body: Record<string, string>,
   inactiveAccountTrackerTableName: string
 ): Promise<void> {
-  const userId = body.commonSubjectId;
-
-  const response = await dynamoDocClient.send(
-    new QueryCommand({
-      TableName: inactiveAccountTrackerTableName,
-      IndexName: "CommonSubjectIdIndex",
-      KeyConditionExpression: "commonSubjectId = :id",
-      ExpressionAttributeValues: { ":id": userId },
-    })
-  );
-
-  const allRows = (response.Items ?? []) as InactiveAccountTrackerRecord[];
-
-  // Nothing to merge: 0 rows (fall back to the body as dispatched) or a single row.
-  if (allRows.length <= 1) return;
-
-  logger.warn("MERGING_DUPLICATE_INACTIVE_ACCOUNT_TRACKER_RECORDS", {
-    commonSubjectId: userId,
-    duplicateCount: allRows.length,
-  });
-
-  // mergeTrackerRecords collapses the duplicates and persists the result: it writes the
-  // merged record to the surviving row and deletes the stale duplicate rows in a single
-  // transaction, then returns the merged record.
+  // mergeTrackerRecords does all the work: it queries every tracker row for the user, and if
+  // there is more than one it merges them, writes the merged record to the surviving row, and
+  // deletes the stale duplicate rows in a single transaction. It returns the merged (or single)
+  // record, or null if the user has no tracker rows.
   const merged = await mergeTrackerRecords(
-    allRows,
+    body.commonSubjectId,
     dynamoDocClient,
     inactiveAccountTrackerTableName
   );
+
+  if (!merged) return;
 
   // Overlay the merged record onto the message body so downstream processing (status update
   // keyed on dateForDeletion, notifications, target dispatch) acts on the merged data.

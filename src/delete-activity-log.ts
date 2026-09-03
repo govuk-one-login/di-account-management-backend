@@ -56,6 +56,7 @@ export const getAllActivityLogEntriesForUser = async (
     }
 
     lastEvaluatedKey = response.LastEvaluatedKey ?? undefined;
+    command.ExclusiveStartKey = lastEvaluatedKey;
   } while (lastEvaluatedKey);
 
   logger.info(

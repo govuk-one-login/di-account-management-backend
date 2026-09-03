@@ -17,78 +17,7 @@ const sqsClient = new SQSClient();
 
 type TransactionItems = ConstructorParameters<typeof TransactWriteCommand>[0]['TransactItems']
 
-const toTime = (value: string | undefined): number => {
-  if (!value) return 0;
-  const time = new Date(value).getTime();
-  return Number.isNaN(time) ? 0 : time;
-};
-
-// Picks the record whose timestamp field is the most recent. Ties keep the first record.
-const latestBy = (
-  records: InactiveAccountTrackerRecord[],
-  timestampField: keyof InactiveAccountTrackerRecord
-): InactiveAccountTrackerRecord =>
-  records.slice(1).reduce(
-    (latest, candidate) =>
-      toTime(candidate[timestampField] as string | undefined) > toTime(latest[timestampField] as string | undefined)
-        ? candidate
-        : latest,
-    records[0]
-  );
-
-// A race condition can leave multiple tracker rows for the same user. Merge them into a
-// single record, taking each group of fields from whichever duplicate updated it most recently.
-export const mergeTrackerRecords = (
-  records: InactiveAccountTrackerRecord[]
-): InactiveAccountTrackerRecord => {
-  assert(records.length > 0, "cannot merge an empty set of tracker records");
-
-  const latestActivity = latestBy(records, "userLastActiveUpdated");
-  const latestEmail = latestBy(records, "emailAddressLastUpdated");
-  const latestStatus = latestBy(records, "statusLastUpdated");
-
-  // The winning userLastActive row also owns dateForDeletion/publicSubjectId, which are
-  // derived from the user's most recent activity.
-  const merged: InactiveAccountTrackerRecord = {
-    commonSubjectId: latestActivity.commonSubjectId,
-    publicSubjectId: latestActivity.publicSubjectId,
-    dateForDeletion: latestActivity.dateForDeletion,
-
-    userLastActive: latestActivity.userLastActive,
-    userLastActiveSource: latestActivity.userLastActiveSource,
-    userLastActiveUpdated: latestActivity.userLastActiveUpdated,
-
-    status: latestStatus.status,
-    statusLastUpdated: latestStatus.statusLastUpdated,
-
-    // hasSetupMfa/hasUndeliverableEmailAddress have no dedicated timestamp, so treat them
-    // as sticky: once any duplicate has flagged them true, keep them true.
-    hasSetupMfa: records.some((record) => record.hasSetupMfa),
-  };
-
-  const userLastActiveSourceId = latestActivity.userLastActiveSourceId;
-  if (userLastActiveSourceId !== undefined) {
-    merged.userLastActiveSourceId = userLastActiveSourceId;
-  }
-
-  if (latestEmail.emailAddress !== undefined) {
-    merged.emailAddress = latestEmail.emailAddress;
-    merged.emailAddressLastUpdated = latestEmail.emailAddressLastUpdated;
-    merged.emailAddressSource = latestEmail.emailAddressSource;
-    merged.emailAddressSourceId = latestEmail.emailAddressSourceId;
-  }
-
-  if (records.some((record) => record.hasUndeliverableEmailAddress)) {
-    merged.hasUndeliverableEmailAddress = true;
-  }
-
-  return merged;
-};
-
-const getCurrentRecordForUser = async (
-  userId: string,
-  tableName: string
-): Promise<{ record: InactiveAccountTrackerRecord | null; allRows: InactiveAccountTrackerRecord[] }> => {
+const getCurrentRecordForUser = async (userId: string, tableName: string): Promise<InactiveAccountTrackerRecord | null> => {
   const response = await dynamoDocClient.send(
     new QueryCommand({
       IndexName: "CommonSubjectIdIndex",
@@ -99,26 +28,9 @@ const getCurrentRecordForUser = async (
   );
 
   assert(response.Items !== undefined, "Query response is missing Items");
+  assert(response.Items.length < 2, `found more than one inactivity tracker record for ${userId}`);
 
-  const allRows = response.Items as InactiveAccountTrackerRecord[];
-
-  if (allRows.length === 0) {
-    return { record: null, allRows };
-  }
-
-  if (allRows.length === 1) {
-    return { record: allRows[0], allRows };
-  }
-
-  // A race condition has produced duplicate rows for this user. Merge them so the
-  // caller sees a single, most-up-to-date record; the stale rows are deleted in the
-  // write transaction (see buildTransactionItems).
-  logger.warn("MERGING_DUPLICATE_INACTIVE_ACCOUNT_TRACKER_RECORDS", {
-    userId,
-    duplicateCount: allRows.length,
-  });
-
-  return { record: mergeTrackerRecords(allRows), allRows };
+  return response.Items.length > 0 ? response.Items[0] as InactiveAccountTrackerRecord : null;
 };
 
 const getEventDate = (txmaEvent: TxmaEvent): Date => {
@@ -170,29 +82,18 @@ const buildTransactionItems = (
   olhClientId: string,
   userId: string,
   newItem: InactiveAccountTrackerRecord,
-  existingRows: InactiveAccountTrackerRecord[],
+  currentTrackerRecord: InactiveAccountTrackerRecord | null,
   txmaEvent: TxmaEvent
 ): TransactionItems => {
   const items: TransactionItems = [
     { Put: { TableName: tableName, Item: newItem as unknown as Record<string, unknown> } },
   ];
 
-  // Delete every existing row whose dateForDeletion differs from the new item's, keyed on the
-  // table's composite primary key (dateForDeletion + commonSubjectId). Rows sharing the new
-  // item's dateForDeletion are updated in place by the Put above. When a race condition has
-  // produced duplicates this collapses the stale rows so a single merged record remains.
-  // De-duplicate the delete keys so a transaction never references the same key twice.
-  const staleDeletionDates = [
-    ...new Set(
-      existingRows
-        .map((row) => row.dateForDeletion)
-        .filter((dateForDeletion) => dateForDeletion !== newItem.dateForDeletion)
-    ),
-  ];
-
-  for (const dateForDeletion of staleDeletionDates) {
+  if (currentTrackerRecord && currentTrackerRecord.dateForDeletion !== newItem.dateForDeletion) {
+    // if the dates are the same, then we don't need to delete the old record as
+    // it would have been updated in place by the Put command
     items.push({
-      Delete: { TableName: tableName, Key: { dateForDeletion, commonSubjectId: userId } },
+      Delete: { TableName: tableName, Key: { dateForDeletion: currentTrackerRecord.dateForDeletion, commonSubjectId: userId } }
     });
   }
 
@@ -276,7 +177,7 @@ const processRecord = async (
     return;
   }
 
-  const { record: currentTrackerRecord, allRows: existingRows } = await getCurrentRecordForUser(userId, tableName);
+  const currentTrackerRecord = await getCurrentRecordForUser(userId, tableName);
 
   logger.info(`User has existing tracker record for event_id ${txmaEvent.event_id}: ${Boolean(currentTrackerRecord)}`);
 
@@ -311,7 +212,7 @@ const processRecord = async (
 
   logger.info(`Building transaction for update based on event id: ${txmaEvent.event_id}`);
 
-  const transactionItems = buildTransactionItems(tableName, userNotificationsTableName, olhClientId, userId, newItem, existingRows, txmaEvent);
+  const transactionItems = buildTransactionItems(tableName, userNotificationsTableName, olhClientId, userId, newItem, currentTrackerRecord, txmaEvent);
   const notificationQueueUrl = getEnvironmentVariable("NOTIFICATION_QUEUE_URL");
   const govukAppClientId = getEnvironmentVariable("GOV_UK_APP_CLIENT_ID");
   let notificationType;

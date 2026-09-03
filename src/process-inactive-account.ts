@@ -3,13 +3,19 @@ import { Logger } from "@aws-lambda-powertools/logger";
 import { MetricUnit } from "@aws-lambda-powertools/metrics";
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, UpdateCommand } from "@aws-sdk/lib-dynamodb";
+import {
+  DynamoDBDocumentClient,
+  UpdateCommand,
+  QueryCommand,
+  TransactWriteCommand,
+} from "@aws-sdk/lib-dynamodb";
 import assert from "node:assert/strict";
 import { initMetrics } from "./common/metrics.js";
 import { processConfig, ProcessConfig, Actions } from "./common/process-config.js";
-import type { InactiveAccountStatus } from "./common/model.js";
+import type { InactiveAccountStatus, InactiveAccountTrackerRecord } from "./common/model.js";
 import { getEnvironmentVariable } from "./common/utils.js";
 import { sendAuditEvent } from "./common/send-audit-event.js";
+import { mergeTrackerRecords } from "./common/merge-tracker-records.js";
 
 const logger = new Logger();
 const metrics = initMetrics("process-inactive-account");
@@ -147,6 +153,70 @@ async function emitAuditEvent(
   });
 }
 
+// A race condition can leave multiple tracker rows for the same user. Before processing an
+// account we collapse any duplicates into a single, most-up-to-date record so that we act on
+// correct data (e.g. the latest status/dateForDeletion) and never process a stale duplicate.
+// The merged record is written to the surviving row and the stale duplicate rows are deleted
+// in a single transaction. The returned record's fields are overlaid onto the message body so
+// the rest of processing (status update, notifications, target dispatch) uses the merged data.
+async function mergeDuplicatesBeforeProcessing(
+  body: Record<string, string>,
+  inactiveAccountTrackerTableName: string
+): Promise<void> {
+  const userId = body.commonSubjectId;
+
+  const response = await dynamoDocClient.send(
+    new QueryCommand({
+      TableName: inactiveAccountTrackerTableName,
+      IndexName: "CommonSubjectIdIndex",
+      KeyConditionExpression: "commonSubjectId = :id",
+      ExpressionAttributeValues: { ":id": userId },
+    })
+  );
+
+  const allRows = (response.Items ?? []) as InactiveAccountTrackerRecord[];
+
+  // Nothing to merge: 0 rows (fall back to the body as dispatched) or a single row.
+  if (allRows.length <= 1) return;
+
+  logger.warn("MERGING_DUPLICATE_INACTIVE_ACCOUNT_TRACKER_RECORDS", {
+    commonSubjectId: userId,
+    duplicateCount: allRows.length,
+  });
+
+  const merged = mergeTrackerRecords(allRows);
+
+  // Delete every stale duplicate row whose dateForDeletion differs from the merged record's,
+  // then write the merged record to the surviving row, all in a single transaction so the
+  // table is never left with a partial merge.
+  const staleDeletionDates = [
+    ...new Set(
+      allRows
+        .map((row) => row.dateForDeletion)
+        .filter((dateForDeletion) => dateForDeletion !== merged.dateForDeletion)
+    ),
+  ];
+
+  const transactItems: ConstructorParameters<typeof TransactWriteCommand>[0]["TransactItems"] = [
+    { Put: { TableName: inactiveAccountTrackerTableName, Item: merged as unknown as Record<string, unknown> } },
+    ...staleDeletionDates.map((dateForDeletion) => ({
+      Delete: {
+        TableName: inactiveAccountTrackerTableName,
+        Key: { dateForDeletion, commonSubjectId: userId },
+      },
+    })),
+  ];
+
+  await dynamoDocClient.send(new TransactWriteCommand({ TransactItems: transactItems }));
+
+  // Overlay the merged record onto the message body so downstream processing (status update
+  // keyed on dateForDeletion, notifications, target dispatch) acts on the merged data.
+  for (const [key, value] of Object.entries(merged)) {
+    if (value === undefined) continue;
+    body[key] = typeof value === "string" ? value : String(value);
+  }
+}
+
 async function processRecord(
   body: Record<string, string>,
   notificationQueueUrl: string,
@@ -160,6 +230,8 @@ async function processRecord(
   });
 
   assert(process, `Process configuration not found for ${body.processName}`);
+
+  await mergeDuplicatesBeforeProcessing(body, inactiveAccountTrackerTableName);
 
   if (!process.allowedStatuses.includes(body.status as InactiveAccountStatus)) {
     logger.info(

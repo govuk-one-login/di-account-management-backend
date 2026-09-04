@@ -51,6 +51,16 @@ async function runGuards(
         contributeToAlarm: guard.contributeToAlarm,
       });
 
+      if (guard.skippedNotificationAuditEventName) {
+        await sendAuditEvent(guard.skippedNotificationAuditEventName, {
+          user: {
+            user_id: body.commonSubjectId,
+          },
+          extensions: {
+            accountTrackerNotificationSkipReason: guard.skippedNotificationAuditEventReason ?? "",
+          },
+        });
+      }
       return guardResult.continue;
     }
   }

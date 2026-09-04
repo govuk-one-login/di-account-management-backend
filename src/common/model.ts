@@ -60,6 +60,8 @@ export interface Extensions {
   reported_session_id?: string;
   "journey-type"?: string;
   accountTrackerAccountDeletionDate?: string;
+  accountTrackerNotificationType?: string;
+  accountTrackerNotificationSkipReason?: string;
   account_deletion_reason?: string;
 }
 

@@ -8,7 +8,8 @@ import { Logger } from "@aws-lambda-powertools/logger";
 import type { InactiveAccountTrackerRecord } from "./common/model.ts";
 import assert from 'node:assert/strict';
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
-import { NotificationType } from "./notification-service-utils.js"
+import { notificationConfiguration } from "./notification-service-utils.js"
+import { sendAuditEvent } from "./common/send-audit-event.js";
 import { MetricUnit } from "@aws-lambda-powertools/metrics";
 import { initMetrics } from "./common/metrics.js";
 const metrics = initMetrics("process-inactive-account");
@@ -234,14 +235,14 @@ const processRecord = async (
   switch (txmaEvent.client_id) {
     //  GOVUK App client registry ID
     case govukAppClientId:
-      notificationType = NotificationType.INACTIVE_ACCOUNT_SAVED_APP;
+      notificationType = notificationConfiguration.INACTIVE_ACCOUNT_SAVED_APP.name;
       break;
     //  OLH registry ID
     case olhClientId:
-      notificationType = NotificationType.INACTIVE_ACCOUNT_SAVED_HOME;
+      notificationType = notificationConfiguration.INACTIVE_ACCOUNT_SAVED_HOME.name;
       break;
     default:
-      notificationType = NotificationType.INACTIVE_ACCOUNT_SAVED_RP;
+      notificationType = notificationConfiguration.INACTIVE_ACCOUNT_SAVED_RP.name;
   }
 
   const inactiveAccountEmailFlagEnabled = getEnvironmentVariable("SEND_INACTIVE_ACCOUNT_DELETION_EMAILS") === "1";
@@ -266,6 +267,16 @@ const processRecord = async (
       logger.info("Account saved message successfully sent to target queue", { 
         publicSubjectId: newItem.publicSubjectId,
         notificationType: notificationType
+      });
+
+      const currentEventConfiguration = notificationConfiguration[notificationType];
+      await sendAuditEvent(currentEventConfiguration.auditEvent ?? "", {
+        user: {
+          user_id: newItem.commonSubjectId,
+        },
+        extensions: {
+          accountTrackerNotificationType: currentEventConfiguration.auditEventNotificationType,
+        },
       });
     } else {
       logger.warn("INACTIVE_ACCOUNT_SAVED_BUT_NO_EMAIL_ADDRESS_TO_NOTIFY");

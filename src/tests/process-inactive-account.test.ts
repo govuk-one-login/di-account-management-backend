@@ -92,6 +92,7 @@ describe("process-inactive-account handler", () => {
     process.env.FEATURE_SEND_IAD_AUDIT_EVENTS = "false";
     process.env.TXMA_QUEUE_URL = "https://sqs.eu-west-2.amazonaws.com/123456789012/TxmaQueue";
     process.env.AWS_REGION = "eu-west-2";
+    process.env.FEATURE_SEND_IAD_AUDIT_EVENTS = "true";
   });
 
   test("enqueues a 30-day warning notification to the NotificationQueue", async () => {
@@ -222,7 +223,29 @@ describe("process-inactive-account handler", () => {
       "blocked-user-123",
       "blocked@example.com"
     );
-    expect(sqsMock).not.toHaveReceivedCommand(SendMessageCommand);
+    // expect strictly one call to sqs, for audit event
+    expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(1);
+    // check the correct txma event is being sent out
+    const sqsCalls = sqsMock.commandCalls(SendMessageCommand);
+    const txmaCallInput = sqsCalls[0].args[0].input; 
+    
+    expect(txmaCallInput.QueueUrl).toEqual("https://sqs.eu-west-2.amazonaws.com/123456789012/TxmaQueue");
+
+    const txmaEventBody = JSON.parse(txmaCallInput.MessageBody ?? "");
+
+    expect(txmaEventBody).toEqual({
+      event_name:"HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED",
+      component_id:"https://home.account.gov.uk",
+      timestamp: expect.any(Number),
+      event_timestamp_ms: expect.any(Number),
+      event_timestamp_ms_formatted:expect.any(String),
+      user:{
+        user_id: "blocked-user-123"
+      },
+      extensions:{
+        accountTrackerNotificationSkipReason: "IndefiniteSuspension"
+      }
+    });
     expect(dynamoMock).not.toHaveReceivedCommand(UpdateCommand);
     expect(mockMetrics.addMetric).not.toHaveBeenCalled();
   });
@@ -252,7 +275,7 @@ describe("process-inactive-account handler", () => {
     await handler(event, {} as Context);
 
     expect(mockHasAisBlockIntervention).toHaveBeenCalledTimes(2);
-    expect(sqsMock).toHaveReceivedCommandTimes(SendMessageCommand, 1);
+    expect(sqsMock).toHaveReceivedCommandTimes(SendMessageCommand, 3);
     expect(dynamoMock).toHaveReceivedCommandTimes(UpdateCommand, 1);
     expect(dynamoMock).toHaveReceivedCommandWith(UpdateCommand, {
       TableName: "test-inactive-tracker-table",
@@ -266,6 +289,61 @@ describe("process-inactive-account handler", () => {
         ":status": "30DayWarningSent",
         ":timestamp": expect.any(String),
       },
+    });
+
+    const sqsCalls = sqsMock.commandCalls(SendMessageCommand);
+
+    // 1st call to SQS is the HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED txma event for the blocked user 
+    const txmaCallInput1 = sqsCalls[0].args[0].input; 
+    
+    expect(txmaCallInput1.QueueUrl).toEqual("https://sqs.eu-west-2.amazonaws.com/123456789012/TxmaQueue");
+
+    const txmaEventBody1 = JSON.parse(txmaCallInput1.MessageBody ?? "");
+
+    expect(txmaEventBody1).toEqual({
+      event_name:"HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED",
+      component_id:"https://home.account.gov.uk",
+      timestamp: expect.any(Number),
+      event_timestamp_ms: expect.any(Number),
+      event_timestamp_ms_formatted:expect.any(String),
+      user:{
+        user_id:"blocked-user"
+      },
+      extensions:{
+        accountTrackerNotificationSkipReason: "IndefiniteSuspension"
+      }
+    });
+
+    // 2nd call to SQS is the notification for the non blocked user 
+    expect(sqsMock).toHaveReceivedNthCommandWith(SendMessageCommand, 2, {
+      QueueUrl:
+        "https://sqs.eu-west-2.amazonaws.com/123456789012/NotificationQueue",
+      MessageBody: JSON.stringify({
+        notificationType: "INACTIVE_ACCOUNT_WARNING_30_DAY",
+        emailAddress: "active@example.com",
+        dateForDeletion: "2026-08-20",
+      }),
+    });
+
+    // 3rd call to SQS is the HOME_ACCOUNT_TRACKER_ACCOUNT_FIRST_PERIOD_ENTERED txma event for the non blocked user 
+    const txmaCallInput2 = sqsCalls[2].args[0].input; 
+    
+    expect(txmaCallInput2.QueueUrl).toEqual("https://sqs.eu-west-2.amazonaws.com/123456789012/TxmaQueue");
+
+    const txmaEventBody2 = JSON.parse(txmaCallInput2.MessageBody ?? "");
+
+    expect(txmaEventBody2).toEqual({
+      event_name:"HOME_ACCOUNT_TRACKER_ACCOUNT_FIRST_PERIOD_ENTERED",
+      component_id:"https://home.account.gov.uk",
+      timestamp: expect.any(Number),
+      event_timestamp_ms: expect.any(Number),
+      event_timestamp_ms_formatted:expect.any(String),
+      user:{
+        user_id:"active-user"
+      },
+      extensions:{
+        accountTrackerAccountDeletionDate: "2026-08-20"
+      }
     });
   });
 
@@ -288,8 +366,8 @@ describe("process-inactive-account handler", () => {
     ]);
 
     await handler(event, {} as Context);
-
-    expect(sqsMock).toHaveReceivedCommandTimes(SendMessageCommand, 2);
+    // 2 notifications and 2 audit events
+    expect(sqsMock).toHaveReceivedCommandTimes(SendMessageCommand, 4);
     expect(dynamoMock).toHaveReceivedCommandTimes(UpdateCommand, 2);
     expect(mockMetrics.publishStoredMetrics).toHaveBeenCalledTimes(1);
   });
@@ -407,8 +485,8 @@ describe("process-inactive-account handler", () => {
 
     await handler(event, {} as Context);
 
-    expect(sqsMock).toHaveReceivedCommandTimes(SendMessageCommand, 1);
-    expect(sqsMock).toHaveReceivedCommandWith(SendMessageCommand, {
+    expect(sqsMock).toHaveReceivedCommandTimes(SendMessageCommand, 2);
+    expect(sqsMock).toHaveReceivedNthCommandWith(SendMessageCommand, 1, {
       QueueUrl:
         "https://sqs.eu-west-2.amazonaws.com/123456789012/NotificationQueue",
       MessageBody: JSON.stringify({
@@ -416,6 +494,12 @@ describe("process-inactive-account handler", () => {
         emailAddress: "test@example.com",
         dateForDeletion: "2026-08-15",
       }),
+    });
+
+    expect(sqsMock).toHaveReceivedNthCommandWith(SendMessageCommand, 2, {
+      QueueUrl:
+        "https://sqs.eu-west-2.amazonaws.com/123456789012/TxmaQueue",
+      MessageBody: expect.stringContaining('"event_name":"HOME_ACCOUNT_TRACKER_ACCOUNT_FIRST_PERIOD_ENTERED"'),
     });
   });
 
@@ -494,8 +578,29 @@ describe("process-inactive-account handler", () => {
       },
     });
 
-    // for undeliverable email addresses, do not enqueue notification
-    expect(sqsMock).not.toHaveReceivedCommand(SendMessageCommand);
+    // expect strictly one call to sqs, for audit event
+    // expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(1);
+    // check the correct txma event is being sent out
+    const sqsCalls = sqsMock.commandCalls(SendMessageCommand);
+    const txmaCallInput = sqsCalls[0].args[0].input; 
+    
+    expect(txmaCallInput.QueueUrl).toEqual("https://sqs.eu-west-2.amazonaws.com/123456789012/TxmaQueue");
+
+    const txmaEventBody = JSON.parse(txmaCallInput.MessageBody ?? "");
+
+    expect(txmaEventBody).toEqual({
+      event_name:"HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED",
+      component_id:"https://home.account.gov.uk",
+      timestamp: expect.any(Number),
+      event_timestamp_ms: expect.any(Number),
+      event_timestamp_ms_formatted:expect.any(String),
+      user:{
+        user_id:"undeliverablee"
+      },
+      extensions:{
+        accountTrackerNotificationSkipReason: "PreviouslyUndeliverable"
+      }
+    });
     expect(mockMetrics.addMetric).not.toHaveBeenCalledWith("notificationEnqueued", expect.anything());
     // status should still be updated in the inactive account tracker
     expect(dynamoMock).toHaveReceivedCommand(UpdateCommand);

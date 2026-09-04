@@ -64,7 +64,7 @@ export function buildTxmaEvent(
   };
 }
 
-const IAD_EVENTS = new Set([
+const IAD_EVENTS_ARRAY = [
   "HOME_ACCOUNT_TRACKER_ACCOUNT_DELETION_REQUESTED",
   "HOME_ACCOUNT_TRACKER_ACCOUNT_FIRST_PERIOD_ENTERED",
   "HOME_ACCOUNT_TRACKER_ACCOUNT_REACTIVATED",
@@ -73,7 +73,10 @@ const IAD_EVENTS = new Set([
   "HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED",
   "HOME_ACCOUNT_TRACKER_NOTIFICATION_REQUESTED",
   "HOME_ACCOUNT_TRACKER_RECORD_DELETED"
-])
+] as const;
+
+const IAD_EVENTS = new Set<string>(IAD_EVENTS_ARRAY);
+export type IadEvent = typeof IAD_EVENTS_ARRAY[number];
 
 /**
  * Builds a TxMA audit event from the given event name and parameters and sends

@@ -47,6 +47,16 @@ async function runGuards(
         contributeToAlarm: guard.contributeToAlarm,
       });
 
+      if (guard.auditEventName) {
+        await sendAuditEvent(guard.auditEventName, {
+          user: {
+            user_id: body.commonSubjectId,
+          },
+          extensions: {
+            accountTrackerNotificationSkipReason: guard.auditEventSkipReason ?? "",
+          },
+        });
+      }
       return guardResult.continue;
     }
   }

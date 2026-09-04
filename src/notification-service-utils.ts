@@ -8,6 +8,7 @@ import { isAxiosError } from "axios";
 import { MetricUnit } from "@aws-lambda-powertools/metrics";
 import { initMetrics } from "./common/metrics.js";
 import { setUpNotifyClient } from "./notification-service-client.js";
+import { IadEvent } from "./common/send-audit-event.js";
 
 const logger = new Logger();
 const metrics = initMetrics("notification-service");
@@ -17,14 +18,49 @@ const addNotificationFailedMetric = (failureReason: string) => {
   metrics.addMetric("notificationFailed", MetricUnit.Count, 1);
 };
 
-export enum NotificationType {
-  GLOBAL_LOGOUT = "GLOBAL_LOGOUT",
-  INACTIVE_ACCOUNT_WARNING_30_DAY = "INACTIVE_ACCOUNT_WARNING_30_DAY",
-  INACTIVE_ACCOUNT_WARNING_7_DAY = "INACTIVE_ACCOUNT_WARNING_7_DAY",
-  INACTIVE_ACCOUNT_SAVED_APP = "INACTIVE_ACCOUNT_SAVED_APP",
-  INACTIVE_ACCOUNT_SAVED_HOME = "INACTIVE_ACCOUNT_SAVED_HOME",
-  INACTIVE_ACCOUNT_SAVED_RP = "INACTIVE_ACCOUNT_SAVED_RP",
-  INACTIVE_ACCOUNT_DELETED_CONFIRMATION = "INACTIVE_ACCOUNT_DELETED_CONFIRMATION",
+type NotificationConfig = Record<
+  string,
+  {
+    name: string;
+    auditEvent?: IadEvent;
+    auditEventNotificationType?: string
+  }
+>;
+
+export const notificationConfiguration: NotificationConfig = {
+  "GLOBAL_LOGOUT": { 
+    name: "GLOBAL_LOGOUT"
+  },
+  "INACTIVE_ACCOUNT_WARNING_30_DAY": { 
+    name: "INACTIVE_ACCOUNT_WARNING_30_DAY",
+    auditEvent: "HOME_ACCOUNT_TRACKER_NOTIFICATION_REQUESTED", 
+    auditEventNotificationType: "30DayWarning"
+  },
+  "INACTIVE_ACCOUNT_WARNING_7_DAY": { 
+    name: "INACTIVE_ACCOUNT_WARNING_7_DAY",
+    auditEvent:"HOME_ACCOUNT_TRACKER_NOTIFICATION_REQUESTED", 
+    auditEventNotificationType: "7DayWarning"
+  },
+  "INACTIVE_ACCOUNT_SAVED_APP": { 
+    name: "INACTIVE_ACCOUNT_SAVED_APP",
+    auditEvent:"HOME_ACCOUNT_TRACKER_NOTIFICATION_REQUESTED", 
+    auditEventNotificationType: "RecoveryViaApp"
+  },
+  "INACTIVE_ACCOUNT_SAVED_HOME": { 
+    name: "INACTIVE_ACCOUNT_SAVED_HOME",
+    auditEvent:"HOME_ACCOUNT_TRACKER_NOTIFICATION_REQUESTED", 
+    auditEventNotificationType: "RecoveryViaHome"
+  },
+  "INACTIVE_ACCOUNT_SAVED_RP": { 
+    name: "INACTIVE_ACCOUNT_SAVED_RP",
+    auditEvent:"HOME_ACCOUNT_TRACKER_NOTIFICATION_REQUESTED", 
+    auditEventNotificationType: "Recovery"
+  },
+  "INACTIVE_ACCOUNT_DELETED_CONFIRMATION": { 
+    name: "INACTIVE_ACCOUNT_DELETED_CONFIRMATION",
+    auditEvent:"HOME_ACCOUNT_TRACKER_NOTIFICATION_REQUESTED", 
+    auditEventNotificationType: "Deletion"
+  },
 }
 
 const missingContentPlaceholder = "-";
@@ -32,7 +68,7 @@ const missingContentPlaceholder = "-";
 const messageSchema = v.variant("notificationType", [
   v.pipe(
     v.object({
-      notificationType: v.literal(NotificationType.GLOBAL_LOGOUT),
+      notificationType: v.literal(notificationConfiguration.GLOBAL_LOGOUT.name),
       emailAddress: v.pipe(v.string(), v.email()),
       loggedOutAt: v.pipe(v.string(), v.isoTimestamp()),
       ipAddress: v.optional(v.pipe(v.string(), v.ip())),
@@ -86,7 +122,7 @@ const messageSchema = v.variant("notificationType", [
   v.pipe(
     v.object({
       notificationType: v.literal(
-        NotificationType.INACTIVE_ACCOUNT_WARNING_30_DAY
+        notificationConfiguration.INACTIVE_ACCOUNT_WARNING_30_DAY.name
       ),
       emailAddress: v.pipe(v.string(), v.email()),
       dateForDeletion: v.string(),
@@ -115,7 +151,7 @@ const messageSchema = v.variant("notificationType", [
   v.pipe(
     v.object({
       notificationType: v.literal(
-        NotificationType.INACTIVE_ACCOUNT_WARNING_7_DAY
+        notificationConfiguration.INACTIVE_ACCOUNT_WARNING_7_DAY.name
       ),
       emailAddress: v.pipe(v.string(), v.email()),
       dateForDeletion: v.string(),
@@ -143,7 +179,7 @@ const messageSchema = v.variant("notificationType", [
   ),
   v.pipe(
     v.object({
-      notificationType: v.literal(NotificationType.INACTIVE_ACCOUNT_SAVED_APP),
+      notificationType: v.literal(notificationConfiguration.INACTIVE_ACCOUNT_SAVED_APP.name),
       emailAddress: v.pipe(v.string(), v.email()),
     }),
     v.transform((input) => {
@@ -159,7 +195,7 @@ const messageSchema = v.variant("notificationType", [
   ),
   v.pipe(
     v.object({
-      notificationType: v.literal(NotificationType.INACTIVE_ACCOUNT_SAVED_HOME),
+      notificationType: v.literal(notificationConfiguration.INACTIVE_ACCOUNT_SAVED_HOME.name),
       emailAddress: v.pipe(v.string(), v.email()),
     }),
     v.transform((input) => {
@@ -175,7 +211,7 @@ const messageSchema = v.variant("notificationType", [
   ),
   v.pipe(
     v.object({
-      notificationType: v.literal(NotificationType.INACTIVE_ACCOUNT_SAVED_RP),
+      notificationType: v.literal(notificationConfiguration.INACTIVE_ACCOUNT_SAVED_RP.name),
       emailAddress: v.pipe(v.string(), v.email()),
     }),
     v.transform((input) => {
@@ -192,7 +228,7 @@ const messageSchema = v.variant("notificationType", [
   v.pipe(
     v.object({
       notificationType: v.literal(
-        NotificationType.INACTIVE_ACCOUNT_DELETED_CONFIRMATION
+        notificationConfiguration.INACTIVE_ACCOUNT_DELETED_CONFIRMATION.name
       ),
       emailAddress: v.pipe(v.string(), v.email()),
     }),
@@ -216,7 +252,10 @@ const notifySuccessSchema = v.object({
   }),
 });
 
-const templateIDsSchema = v.record(v.enum(NotificationType), v.string());
+const templateIDsSchema = v.record(
+  v.picklist(Object.keys(notificationConfiguration) as (keyof typeof notificationConfiguration)[]), 
+  v.string()
+);
 
 const notifyTemplateIds = v.parse(
   templateIDsSchema,
@@ -259,7 +298,7 @@ export const processNotification = async (
 
   const message: {
     emailAddress: string;
-    notificationType: NotificationType;
+    notificationType: keyof typeof notificationConfiguration;
     personalisation?: Record<string, string>;
   } = messageParsed.output;
 

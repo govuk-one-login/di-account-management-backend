@@ -6,6 +6,7 @@ import { DynamoDBDocumentClient, QueryCommand, TransactWriteCommand } from "@aws
 import { getDaysUntilAccountWouldHaveBeenDeleted, handler } from "../update-inactive-account-tracker.js";
 import { generateDynamoStreamRecord, timestamp, txmaEventId } from "./testFixtures.js";
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs"; 
+
 const dynamoMock = mockClient(DynamoDBDocumentClient);
 const sqsMock = mockClient(SQSClient);
 
@@ -41,6 +42,9 @@ describe("UpdateInactiveAccountTracker handler", () => {
     process.env.NOTIFY_TEMPLATE_IDS = '{"GLOBAL_LOGOUT":"template-id"}';
     process.env.GOV_UK_APP_CLIENT_ID = 'govuk-app-client-id';
     process.env.SEND_INACTIVE_ACCOUNT_DELETION_EMAILS = '1';
+    process.env.TXMA_QUEUE_URL = "TXMA_QUEUE_URL";
+    process.env.FEATURE_SEND_IAD_AUDIT_EVENTS = "true";
+    process.env.AWS_REGION = "mock-aws-region";
     dynamoMock.reset();
     sqsMock.reset(); 
     vi.clearAllMocks();
@@ -57,6 +61,9 @@ describe("UpdateInactiveAccountTracker handler", () => {
     delete process.env.NOTIFICATION_QUEUE_URL;
     delete process.env.GOV_UK_APP_CLIENT_ID;
     delete process.env.SEND_INACTIVE_ACCOUNT_DELETION_EMAILS;
+    delete process.env.TXMA_QUEUE_URL;
+    delete process.env.FEATURE_SEND_IAD_AUDIT_EVENTS;
+    delete process.env.AWS_REGION;
   });
 
   test("queries CommonSubjectIdIndex with user_id", async () => {
@@ -822,13 +829,16 @@ describe("UpdateInactiveAccountTracker handler", () => {
 
     await handler(event, {} as Context);
 
-    expect(sqsMock).toHaveReceivedCommandWith(SendMessageCommand, {
+    expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(2);
+    
+    expect(sqsMock).toHaveReceivedNthCommandWith(SendMessageCommand, 1, {
       QueueUrl: "https://sqsq-url",
       MessageBody: JSON.stringify({
         notificationType: "INACTIVE_ACCOUNT_SAVED_APP",
         emailAddress: "foo@bar.com"
       }),
     });
+
     expect(loggerInfoMock).toHaveBeenCalledWith(
       "Account saved message successfully sent to target queue",
       {
@@ -836,7 +846,30 @@ describe("UpdateInactiveAccountTracker handler", () => {
         notificationType: "INACTIVE_ACCOUNT_SAVED_APP",
       }
     );
+
+    // check the correct txma event is being sent out
+    const sqsCalls = sqsMock.commandCalls(SendMessageCommand);
+    const txmaCallInput = sqsCalls[1].args[0].input; 
+    
+    expect(txmaCallInput.QueueUrl).toEqual("TXMA_QUEUE_URL");
+
+    const txmaEventBody = JSON.parse(txmaCallInput.MessageBody ?? "");
+
+    expect(txmaEventBody).toEqual({
+      user: {
+        user_id: "qwerty",
+      },
+      component_id: "https://home.account.gov.uk",
+      event_name: "HOME_ACCOUNT_TRACKER_NOTIFICATION_REQUESTED",
+      timestamp: expect.any(Number),
+      event_timestamp_ms: expect.any(Number),
+      event_timestamp_ms_formatted: expect.any(String),
+      extensions: {
+        accountTrackerNotificationType: "RecoveryViaApp",
+      },
+    });
   });
+
 
   test("sends INACTIVE_ACCOUNT_SAVED_HOME to SQS when user is within 30 days of deletion and logs in via Home", async () => {
     const within30DaysDate = new Date();
@@ -861,7 +894,9 @@ describe("UpdateInactiveAccountTracker handler", () => {
 
     await handler(event, {} as Context);
 
-    expect(sqsMock).toHaveReceivedCommandWith(SendMessageCommand, {
+    expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(2);
+    
+    expect(sqsMock).toHaveReceivedNthCommandWith(SendMessageCommand, 1, {
       QueueUrl: "https://sqsq-url",
       MessageBody: JSON.stringify({
         notificationType: "INACTIVE_ACCOUNT_SAVED_HOME",
@@ -876,6 +911,28 @@ describe("UpdateInactiveAccountTracker handler", () => {
         notificationType: "INACTIVE_ACCOUNT_SAVED_HOME",
       }
     );
+
+    // check the correct txma event is being sent out
+    const sqsCalls = sqsMock.commandCalls(SendMessageCommand);
+    const txmaCallInput = sqsCalls[1].args[0].input; 
+    
+    expect(txmaCallInput.QueueUrl).toEqual("TXMA_QUEUE_URL");
+
+    const txmaEventBody = JSON.parse(txmaCallInput.MessageBody ?? "");
+
+    expect(txmaEventBody).toEqual({
+      user: {
+        user_id: "qwerty",
+      },
+      component_id: "https://home.account.gov.uk",
+      event_name: "HOME_ACCOUNT_TRACKER_NOTIFICATION_REQUESTED",
+      timestamp: expect.any(Number),
+      event_timestamp_ms: expect.any(Number),
+      event_timestamp_ms_formatted: expect.any(String),
+      extensions: {
+        accountTrackerNotificationType: "RecoveryViaHome",
+      },
+    });
   });
 
   test("sends INACTIVE_ACCOUNT_SAVED_RP to SQS when user is within 30 days of deletion and logs in via an RP that is not GOVUK App or OLH", async () => {
@@ -901,7 +958,9 @@ describe("UpdateInactiveAccountTracker handler", () => {
 
     await handler(event, {} as Context);
 
-    expect(sqsMock).toHaveReceivedCommandWith(SendMessageCommand, {
+    expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(2);
+    
+    expect(sqsMock).toHaveReceivedNthCommandWith(SendMessageCommand, 1, {
       QueueUrl: "https://sqsq-url",
       MessageBody: JSON.stringify({
         notificationType: "INACTIVE_ACCOUNT_SAVED_RP",
@@ -916,6 +975,28 @@ describe("UpdateInactiveAccountTracker handler", () => {
         notificationType: "INACTIVE_ACCOUNT_SAVED_RP",
       }
     );
+
+    // check the correct txma event is being sent out
+    const sqsCalls = sqsMock.commandCalls(SendMessageCommand);
+    const txmaCallInput = sqsCalls[1].args[0].input; 
+    
+    expect(txmaCallInput.QueueUrl).toEqual("TXMA_QUEUE_URL");
+
+    const txmaEventBody = JSON.parse(txmaCallInput.MessageBody ?? "");
+
+    expect(txmaEventBody).toEqual({
+      user: {
+        user_id: "qwerty",
+      },
+      component_id: "https://home.account.gov.uk",
+      event_name: "HOME_ACCOUNT_TRACKER_NOTIFICATION_REQUESTED",
+      timestamp: expect.any(Number),
+      event_timestamp_ms: expect.any(Number),
+      event_timestamp_ms_formatted: expect.any(String),
+      extensions: {
+        accountTrackerNotificationType: "Recovery",
+      },
+    });
   });
 
   test("logs warning when no email address and deletion date is within 30 days", async () => {

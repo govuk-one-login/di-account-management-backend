@@ -50,3 +50,8 @@ export const getAisStatus = async (
   logger.info("Successfully fetched AIS status", { userId });
   return parsed.output;
 };
+
+export const isUserIdBlocked = async (userId: string): Promise<boolean> => {
+  const aisStatus = await getAisStatus(userId);
+  return aisStatus.state.blocked;
+};

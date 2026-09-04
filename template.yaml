@@ -4837,6 +4837,13 @@ Resources:
         Variables:
           TABLE_NAME: !Ref InactiveAccountTrackerStoreTableName
           NODE_OPTIONS: --enable-source-maps
+          NOTIFICATION_QUEUE_URL: !Ref NotificationQueue
+          ACCOUNT_INTERVENTIONS_SERVICE_API_URL:
+            !FindInMap [
+              EnvironmentConfiguration,
+              !Ref Environment,
+              accountInterventionsServiceApiUrl,
+            ]
       DeploymentPreference:
         Alarms:
           Fn::If:
@@ -4898,7 +4905,9 @@ Resources:
           - Effect: Allow
             Action:
               - sqs:SendMessage
-            Resource: !GetAtt DeleteInactiveAccountTrackerDeadLetterQueue.Arn
+            Resource:
+              - !GetAtt DeleteInactiveAccountTrackerDeadLetterQueue.Arn
+              - !GetAtt NotificationQueue.Arn
           - Effect: Allow
             Action:
               - dynamodb:Query

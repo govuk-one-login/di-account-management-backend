@@ -1131,6 +1131,8 @@ describe("UpdateInactiveAccountTracker handler", () => {
     const targetDeletionDate = new Date(systemNow);
     targetDeletionDate.setDate(targetDeletionDate.getDate() + 10);
 
+    sqsMock.on(SendMessageCommand).resolves({});
+
     dynamoMock.on(QueryCommand).resolves({ 
       Items: [{
         commonSubjectId: "qwerty",

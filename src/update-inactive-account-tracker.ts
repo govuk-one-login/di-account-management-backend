@@ -12,7 +12,8 @@ import { notificationConfiguration } from "./notification-service-utils.js"
 import { sendAuditEvent } from "./common/send-audit-event.js";
 import { MetricUnit } from "@aws-lambda-powertools/metrics";
 import { initMetrics } from "./common/metrics.js";
-const metrics = initMetrics("process-inactive-account");
+
+const metrics = initMetrics("update-inactive-account-tracker");
 
 const logger = new Logger();
 const dynamoClient = new DynamoDBClient({});

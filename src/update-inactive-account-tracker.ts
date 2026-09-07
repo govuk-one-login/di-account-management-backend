@@ -1,9 +1,10 @@
 import { Context, DynamoDBStreamEvent, DynamoDBBatchResponse } from "aws-lambda";
 import { AttributeValue, DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
-import { DynamoDBDocumentClient, QueryCommand, TransactWriteCommand } from "@aws-sdk/lib-dynamodb";
+import { DynamoDBDocumentClient, TransactWriteCommand } from "@aws-sdk/lib-dynamodb";
 import { TxmaEvent } from "./common/model.js";
 import { getEnvironmentVariable } from "./common/utils.js";
+import { mergeTrackerRecords } from "./common/merge-tracker-records.js";
 import { Logger } from "@aws-lambda-powertools/logger";
 import type { InactiveAccountTrackerRecord } from "./common/model.ts";
 import assert from 'node:assert/strict';
@@ -19,22 +20,6 @@ const dynamoDocClient = DynamoDBDocumentClient.from(dynamoClient);
 const sqsClient = new SQSClient();
 
 type TransactionItems = ConstructorParameters<typeof TransactWriteCommand>[0]['TransactItems']
-
-const getCurrentRecordForUser = async (userId: string, tableName: string): Promise<InactiveAccountTrackerRecord | null> => {
-  const response = await dynamoDocClient.send(
-    new QueryCommand({
-      IndexName: "CommonSubjectIdIndex",
-      TableName: tableName,
-      KeyConditionExpression: "commonSubjectId = :uid",
-      ExpressionAttributeValues: { ":uid": userId },
-    })
-  );
-
-  assert(response.Items !== undefined, "Query response is missing Items");
-  assert(response.Items.length < 2, `found more than one inactivity tracker record for ${userId}`);
-
-  return response.Items.length > 0 ? response.Items[0] as InactiveAccountTrackerRecord : null;
-};
 
 const getEventDate = (txmaEvent: TxmaEvent): Date => {
   // Use explicit millisecond timestamp if available
@@ -67,13 +52,13 @@ const getNewDateForDeletion = (latestDate: Date): string => {
 
 const isCurrentDeletionIn30Days = (deletionDate: string): boolean => {
   const date = new Date(deletionDate);
-  
+
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  
+
   const thirtyDaysFromToday = new Date(today);
   thirtyDaysFromToday.setDate(today.getDate() + 30);
-  
+
   // Check if deletion dates falls between today and 30 days from now
   return date >= today && date <= thirtyDaysFromToday;
 };
@@ -132,13 +117,13 @@ const getNewItemDetails = (
   eventDateTime: string
 ) => {
   const isNewLatestDate = eventDate > (previousTrackerRecord ? new Date(previousTrackerRecord.userLastActive) : new Date(0));
-  
-  const recordedEmailLastUpdatedDate = previousTrackerRecord?.emailAddressLastUpdated 
-    ? new Date(previousTrackerRecord.emailAddressLastUpdated) 
+
+  const recordedEmailLastUpdatedDate = previousTrackerRecord?.emailAddressLastUpdated
+    ? new Date(previousTrackerRecord.emailAddressLastUpdated)
     : new Date(0);
-    
+
   const eventHasNewerEmailLastUpdated = eventDate > recordedEmailLastUpdatedDate;
-  
+
   const newEmailAddress = (() => {
     if (txmaEvent.user?.email && eventHasNewerEmailLastUpdated && txmaEvent.user.email !== previousTrackerRecord?.emailAddress) {
       return txmaEvent.user.email;
@@ -184,14 +169,14 @@ const processRecord = async (
   // and sms/app 2FA - confirming the email OTP should not update the tracker
   // as it's not a full login (as neither password nor 2fa have been entered at that point)
   if (
-      txmaEvent.event_name === "AUTH_CODE_VERIFIED" &&
-      txmaEvent.extensions?.["journey-type"] === "PASSWORD_RESET"
-    ) {
+    txmaEvent.event_name === "AUTH_CODE_VERIFIED" &&
+    txmaEvent.extensions?.["journey-type"] === "PASSWORD_RESET"
+  ) {
     logger.info(`Ignoring AUTH_CODE_VERIFIED event with extensions["journey-type"] of PASSWORD_RESET`);
     return;
   }
 
-  const previousTrackerRecord = await getCurrentRecordForUser(userId, tableName);
+  const previousTrackerRecord = await mergeTrackerRecords(userId, dynamoDocClient, tableName);
 
   logger.info(`User has existing tracker record for event_id ${txmaEvent.event_id}: ${Boolean(previousTrackerRecord)}`);
 
@@ -263,7 +248,7 @@ const processRecord = async (
         })
       );
 
-      logger.info("Account saved message successfully sent to target queue", { 
+      logger.info("Account saved message successfully sent to target queue", {
         publicSubjectId: newItem.publicSubjectId,
         notificationType: notificationType
       });

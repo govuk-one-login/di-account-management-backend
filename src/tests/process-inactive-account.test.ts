@@ -1,7 +1,7 @@
 import { vi, describe, test, expect, beforeEach } from "vitest";
 import { Context, SQSEvent } from "aws-lambda";
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
-import { DynamoDBDocumentClient, UpdateCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
+import { DynamoDBDocumentClient, UpdateCommand, QueryCommand, TransactWriteCommand } from "@aws-sdk/lib-dynamodb";
 import { mockClient } from "aws-sdk-client-mock";
 import "aws-sdk-client-mock-vitest";
 
@@ -78,6 +78,7 @@ describe("process-inactive-account handler", () => {
     sqsMock.on(SendMessageCommand).resolves({ MessageId: "test-message-id" });
     dynamoMock.on(QueryCommand).resolves({ Items: [] });
     dynamoMock.on(UpdateCommand).resolves({});
+    dynamoMock.on(TransactWriteCommand).resolves({});
 
     mockHasAisBlockIntervention.mockResolvedValue(notBlocked);
     mockHasRecentActivityLogEntry.mockResolvedValue(noRecentActivity);
@@ -571,5 +572,169 @@ describe("process-inactive-account handler", () => {
     expect(sqsMock).not.toHaveReceivedCommand(SendMessageCommand);
     expect(dynamoMock).not.toHaveReceivedCommand(UpdateCommand);
     expect(mockMetrics.addMetric).not.toHaveBeenCalled();
+  });
+
+  describe("merge before processing", () => {
+    test("merges duplicate rows, deletes stale rows, and processes using the merged record", async () => {
+      // Two rows for the same user (race condition). The newer activity row (2026-06-01)
+      // owns dateForDeletion; the stale row (2031-01-01) must be deleted. The newer row
+      // also carries the 30DayWarningSent status so the Warning7Day process (which allows it)
+      // should proceed and update the surviving row keyed on the merged dateForDeletion.
+      dynamoMock
+        .on(QueryCommand, {
+          TableName: "test-inactive-tracker-table",
+          IndexName: "CommonSubjectIdIndex",
+        })
+        .resolves({
+          Items: [
+            {
+              commonSubjectId: "dup-user",
+              publicSubjectId: "public-old",
+              dateForDeletion: "2031-01-01",
+              status: "pending",
+              statusLastUpdated: "2026-01-01T00:00:00.000Z",
+              userLastActive: "2021-01-01T00:00:00.000Z",
+              userLastActiveSource: "OLD",
+              userLastActiveUpdated: "2026-01-01T00:00:00.000Z",
+              emailAddress: "dup@example.com",
+              emailAddressLastUpdated: "2026-01-01T00:00:00.000Z",
+              hasSetupMfa: false,
+            },
+            {
+              commonSubjectId: "dup-user",
+              publicSubjectId: "public-new",
+              dateForDeletion: "2031-06-01",
+              status: "30DayWarningSent",
+              statusLastUpdated: "2026-06-01T00:00:00.000Z",
+              userLastActive: "2026-06-01T00:00:00.000Z",
+              userLastActiveSource: "NEW",
+              userLastActiveUpdated: "2026-06-01T00:00:00.000Z",
+              emailAddress: "dup@example.com",
+              emailAddressLastUpdated: "2026-06-01T00:00:00.000Z",
+              hasSetupMfa: false,
+            },
+          ],
+        });
+
+      const event = buildSqsEvent([
+        {
+          commonSubjectId: "dup-user",
+          emailAddress: "dup@example.com",
+          dateForDeletion: "2031-01-01",
+          processName: "Warning7Day",
+          status: "pending",
+        },
+      ]);
+
+      await handler(event, {} as Context);
+
+      // The merged record is written and the stale duplicate row (2031-01-01) is deleted;
+      // the surviving row (2031-06-01) is written by the Put and must NOT be deleted.
+      expect(dynamoMock).toHaveReceivedCommandWith(TransactWriteCommand, {
+        TransactItems: expect.arrayContaining([
+          expect.objectContaining({
+            Put: expect.objectContaining({
+              TableName: "test-inactive-tracker-table",
+              Item: expect.objectContaining({
+                commonSubjectId: "dup-user",
+                dateForDeletion: "2031-06-01",
+                status: "30DayWarningSent",
+              }),
+            }),
+          }),
+          expect.objectContaining({
+            Delete: expect.objectContaining({
+              TableName: "test-inactive-tracker-table",
+              Key: { dateForDeletion: "2031-01-01", commonSubjectId: "dup-user" },
+            }),
+          }),
+        ]),
+      });
+      expect(dynamoMock).toHaveReceivedCommandWith(TransactWriteCommand, {
+        TransactItems: expect.not.arrayContaining([
+          expect.objectContaining({
+            Delete: expect.objectContaining({
+              Key: { dateForDeletion: "2031-06-01", commonSubjectId: "dup-user" },
+            }),
+          }),
+        ]),
+      });
+
+      // Status update targets the surviving merged row (merged dateForDeletion), not the
+      // stale dateForDeletion that arrived on the message body.
+      expect(dynamoMock).toHaveReceivedCommandWith(UpdateCommand, {
+        TableName: "test-inactive-tracker-table",
+        Key: {
+          dateForDeletion: "2031-06-01",
+          commonSubjectId: "dup-user",
+        },
+        UpdateExpression: "SET #status = :status, statusLastUpdated = :timestamp",
+        ExpressionAttributeNames: { "#status": "status" },
+        ExpressionAttributeValues: {
+          ":status": "7DayWarningSent",
+          ":timestamp": expect.any(String),
+        },
+      });
+    });
+
+    test("does not run a merge transaction when the user has a single tracker row", async () => {
+      dynamoMock
+        .on(QueryCommand, {
+          TableName: "test-inactive-tracker-table",
+          IndexName: "CommonSubjectIdIndex",
+        })
+        .resolves({
+          Items: [
+            {
+              commonSubjectId: "single-user",
+              dateForDeletion: "2026-08-15",
+              status: "pending",
+              emailAddress: "single@example.com",
+            },
+          ],
+        });
+
+      const event = buildSqsEvent([
+        {
+          commonSubjectId: "single-user",
+          emailAddress: "single@example.com",
+          dateForDeletion: "2026-08-15",
+          processName: "Warning30Day",
+          status: "pending",
+        },
+      ]);
+
+      await handler(event, {} as Context);
+
+      expect(dynamoMock).not.toHaveReceivedCommand(TransactWriteCommand);
+      // Normal processing still occurs on the body as dispatched.
+      expect(dynamoMock).toHaveReceivedCommandWith(UpdateCommand, {
+        TableName: "test-inactive-tracker-table",
+        Key: { dateForDeletion: "2026-08-15", commonSubjectId: "single-user" },
+        UpdateExpression: "SET #status = :status, statusLastUpdated = :timestamp",
+        ExpressionAttributeNames: { "#status": "status" },
+        ExpressionAttributeValues: {
+          ":status": "30DayWarningSent",
+          ":timestamp": expect.any(String),
+        },
+      });
+    });
+
+    test("does not run a merge transaction when the user has no tracker rows", async () => {
+      // Default QueryCommand mock resolves { Items: [] }.
+      const event = buildSqsEvent([
+        {
+          commonSubjectId: "no-rows-user",
+          emailAddress: "norows@example.com",
+          dateForDeletion: "2026-08-15",
+          processName: "Warning30Day",
+          status: "pending",
+        },
+      ]);
+
+      await handler(event, {} as Context);
+
+      expect(dynamoMock).not.toHaveReceivedCommand(TransactWriteCommand);
+    });
   });
 });

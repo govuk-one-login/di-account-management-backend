@@ -140,9 +140,18 @@ async function emitAuditEvent(
   await sendAuditEvent(process.auditEventName, {
     user: {
       user_id: body.commonSubjectId,
+      ...(process.sendAdditionalAuditEventDetails && {
+        email: body.emailAddress,
+        public_subject_id: body.publicSubjectId,
+      }),
     },
     extensions: {
       accountTrackerAccountDeletionDate: body.dateForDeletion,
+      ...(process.sendAdditionalAuditEventDetails && {
+        accountTrackerAccountLastAccessDate: body.userLastActive,
+        accountTrackerAccountLastAccessSource: body.userLastActiveSource,
+        accountTrackerAccountLastAccessSourceEventId: body.userLastActiveSourceId,
+      }),
     },
   });
 }

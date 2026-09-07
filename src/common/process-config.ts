@@ -52,6 +52,7 @@ export type ProcessConfig = Record<
     notificationType?: string;
     targetQueueUrlEnvVar?: string;
     auditEventName?: string;
+    sendAdditionalAuditEventDetails?: boolean;
     guards?: {
       guard: Guard;
       contributeToAlarm: boolean;
@@ -94,6 +95,8 @@ export const processConfig: ProcessConfig = {
     allowedStatuses: ["pending", "30DayWarningSent", "7DayWarningSent"],
     targetStatus: "deleting",
     targetQueueUrlEnvVar: "ACCOUNT_DELETION_QUEUE_URL",
+    auditEventName: "HOME_ACCOUNT_TRACKER_ACCOUNT_DELETION_REQUESTED",
+    sendAdditionalAuditEventDetails: true,
     guards: [
       guardsList.hasEmailAddress,
       guardsList.hasAisBlockIntervention,

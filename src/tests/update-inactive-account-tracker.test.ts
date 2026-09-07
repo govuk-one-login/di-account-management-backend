@@ -69,8 +69,8 @@ describe("UpdateInactiveAccountTracker handler", () => {
     expect(dynamoMock).toHaveReceivedCommandWith(QueryCommand, {
       TableName: "test-table",
       IndexName: "CommonSubjectIdIndex",
-      KeyConditionExpression: "commonSubjectId = :uid",
-      ExpressionAttributeValues: { ":uid": "qwerty" },
+      KeyConditionExpression: "commonSubjectId = :id",
+      ExpressionAttributeValues: { ":id": "qwerty" },
     });
   });
 
@@ -150,18 +150,30 @@ describe("UpdateInactiveAccountTracker handler", () => {
     expect(dynamoMock).not.toHaveReceivedCommand(TransactWriteCommand);
   });
 
-  test("returns failed record in batchItemFailures when more than one tracker record exists", async () => {
+  test("merges duplicate tracker records and processes the event successfully", async () => {
     dynamoMock.on(QueryCommand).resolves({
       Items: [
         { commonSubjectId: "qwerty", dateForDeletion: "2026-01-01", userLastActive: "2026-01-01T00:00:00.000Z", status: "pending", emailAddress: "x", statusLastUpdated: "" },
         { commonSubjectId: "qwerty", dateForDeletion: "2026-01-02", userLastActive: "2026-01-02T00:00:00.000Z", status: "pending", emailAddress: "x", statusLastUpdated: "" },
       ],
     });
+    dynamoMock.on(TransactWriteCommand).resolves({});
     const record = generateDynamoStreamRecord("test-client");
     record.dynamodb!.SequenceNumber = "1234567890";
     const event: DynamoDBStreamEvent = { Records: [record] };
     const result = await handler(event, {} as Context);
-    expect(result).toEqual<DynamoDBBatchResponse>({ batchItemFailures: [{ itemIdentifier: "1234567890" }] });
+    expect(result).toEqual<DynamoDBBatchResponse>({ batchItemFailures: [] });
+    // The duplicate rows are collapsed by mergeTrackerRecords and the event is written normally.
+    expect(dynamoMock).toHaveReceivedCommandWith(TransactWriteCommand, {
+      TransactItems: expect.arrayContaining([
+        expect.objectContaining({
+          Put: expect.objectContaining({
+            TableName: "test-table",
+            Item: expect.objectContaining({ commonSubjectId: "qwerty" }),
+          }),
+        }),
+      ]),
+    });
   });
 
   test("does not delete from user notifications table when client_id matches OLH client", async () => {
@@ -918,6 +930,46 @@ describe("UpdateInactiveAccountTracker handler", () => {
     );
   });
 
+  test("sends INACTIVE_ACCOUNT_SAVED_APP to SQS when STS_REFRESH_TOKEN_ISSUED event has no client_id", async () => {
+    const within30DaysDate = new Date();
+    within30DaysDate.setDate(within30DaysDate.getDate() + 15);
+    const dateStr = within30DaysDate.toISOString().split("T")[0];
+
+    dynamoMock.on(QueryCommand).resolves({
+      Items: [{ 
+        commonSubjectId: "qwerty", 
+        dateForDeletion: dateStr, 
+        userLastActive: new Date(Date.now() - 100000).toISOString(), 
+        status: "pending", 
+        emailAddress: "user@example.com" 
+      }],
+    });
+    dynamoMock.on(TransactWriteCommand).resolves({});
+    sqsMock.on(SendMessageCommand).resolves({});
+
+    const event: DynamoDBStreamEvent = { 
+      Records: [generateDynamoStreamRecord(undefined, "STS_REFRESH_TOKEN_ISSUED", true)] 
+    };
+
+    await handler(event, {} as Context);
+
+    expect(sqsMock).toHaveReceivedCommandWith(SendMessageCommand, {
+      QueueUrl: "https://sqsq-url",
+      MessageBody: JSON.stringify({
+        notificationType: "INACTIVE_ACCOUNT_SAVED_APP",
+        emailAddress: "foo@bar.com",
+      }),
+    });
+
+    expect(loggerInfoMock).toHaveBeenCalledWith(
+      "Account saved message successfully sent to target queue",
+      {
+        publicSubjectId: "public-subject-id-123",
+        notificationType: "INACTIVE_ACCOUNT_SAVED_APP",
+      }
+    );
+  });
+
   test("logs warning when no email address and deletion date is within 30 days", async () => {
     const within30DaysDate = new Date();
     within30DaysDate.setDate(within30DaysDate.getDate() + 15);
@@ -1086,6 +1138,32 @@ describe("UpdateInactiveAccountTracker handler", () => {
     expect(mockMetrics.publishStoredMetrics).toHaveBeenCalledTimes(1);
 
     vi.useRealTimers();
+  });
+
+  test("publishes clientIdOfAuditEventThatResetDeletionDate metric as the GOVUK App client id when STS_REFRESH_TOKEN_ISSUED event has no client_id", async () => {
+    dynamoMock.on(QueryCommand).resolves({
+      Items: [{
+        commonSubjectId: "qwerty",
+        status: "pending",
+        dateForDeletion: "2026-01-01",
+        userLastActive: "1970-01-01T00:16:40.000Z",
+        emailAddress: "old-email@example.com",
+        emailAddressLastUpdated: "1970-01-01T00:16:40.000Z",
+        statusLastUpdated: ""
+      }]
+    });
+    dynamoMock.on(TransactWriteCommand).resolves({});
+
+    const event: DynamoDBStreamEvent = {
+      Records: [generateDynamoStreamRecord(undefined, "STS_REFRESH_TOKEN_ISSUED", true)]
+    };
+
+    await handler(event, {} as Context);
+
+    expect(mockMetrics.addDimension).toHaveBeenCalledWith(
+      "clientIdOfAuditEventThatResetDeletionDate",
+      "govuk-app-client-id"
+    );
   });
 
   describe("backfill threshold", () => {

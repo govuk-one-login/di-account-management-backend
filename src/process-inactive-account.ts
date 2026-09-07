@@ -3,13 +3,17 @@ import { Logger } from "@aws-lambda-powertools/logger";
 import { MetricUnit } from "@aws-lambda-powertools/metrics";
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, UpdateCommand } from "@aws-sdk/lib-dynamodb";
+import {
+  DynamoDBDocumentClient,
+  UpdateCommand,
+} from "@aws-sdk/lib-dynamodb";
 import assert from "node:assert/strict";
 import { initMetrics } from "./common/metrics.js";
 import { processConfig, ProcessConfig, Actions } from "./common/process-config.js";
 import type { InactiveAccountStatus } from "./common/model.js";
 import { getEnvironmentVariable } from "./common/utils.js";
 import { sendAuditEvent } from "./common/send-audit-event.js";
+import { mergeTrackerRecords } from "./common/merge-tracker-records.js";
 
 const logger = new Logger();
 const metrics = initMetrics("process-inactive-account");
@@ -169,6 +173,19 @@ async function processRecord(
   });
 
   assert(process, `Process configuration not found for ${body.processName}`);
+
+  const merged = await mergeTrackerRecords(
+    body.commonSubjectId,
+    dynamoDocClient,
+    inactiveAccountTrackerTableName
+  );
+
+  if (merged) {
+    for (const [key, value] of Object.entries(merged)) {
+      if (value === undefined) continue;
+      body[key] = typeof value === "string" ? value : String(value);
+    }
+  }
 
   if (!process.allowedStatuses.includes(body.status as InactiveAccountStatus)) {
     logger.info(

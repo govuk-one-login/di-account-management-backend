@@ -49,6 +49,12 @@ const EVENTS_WITHOUT_USER_ID = new Set([
   "AUTH_CODE_VERIFIED",
 ]);
 
+const EVENTS_WITHOUT_CLIENT_ID = new Set([
+  // STS_REFRESH_TOKEN_ISSUED does not always have a client_id, but we still
+  // want to ingest the event and use it downstream if it is present.
+  "STS_REFRESH_TOKEN_ISSUED",
+]);
+
 const getEventId = (): string => {
   return crypto.randomUUID();
 };
@@ -89,11 +95,13 @@ export const validateUser = (event: TxmaEvent): void => {
 };
 
 export const validateTxmaEventBody = (txmaEvent: TxmaEvent): void => {
+  const requiresClientId = !EVENTS_WITHOUT_CLIENT_ID.has(txmaEvent.event_name);
+
   if (
     txmaEvent.timestamp &&
     txmaEvent.event_name &&
     txmaEvent.event_id &&
-    txmaEvent.client_id &&
+    (!requiresClientId || txmaEvent.client_id) &&
     txmaEvent.user
   ) {
     validateUser(txmaEvent);
@@ -105,7 +113,7 @@ export const validateTxmaEventBody = (txmaEvent: TxmaEvent): void => {
       missingFields.push(`txmaEvent.event_name is ${txmaEvent.event_name}`);
     if (!txmaEvent.event_id)
       missingFields.push(`txmaEvent.event_id is ${txmaEvent.event_id}`);
-    if (!txmaEvent.client_id)
+    if (requiresClientId && !txmaEvent.client_id)
       missingFields.push(`txmaEvent.client_id is ${txmaEvent.client_id}`);
     if (!txmaEvent.user)
       missingFields.push(`txmaEvent.user is ${txmaEvent.user}`);

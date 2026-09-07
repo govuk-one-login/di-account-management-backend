@@ -8,7 +8,6 @@ const toTime = (value: string | undefined): number => {
   return Number.isNaN(time) ? 0 : time;
 };
 
-// Picks the record whose timestamp field is the most recent. Ties keep the first record.
 const latestBy = (
   records: InactiveAccountTrackerRecord[],
   timestampField: keyof InactiveAccountTrackerRecord
@@ -21,9 +20,6 @@ const latestBy = (
     records[0]
   );
 
-// A race condition can leave multiple tracker rows for the same user. Combine them into a
-// single record, taking each group of fields from whichever duplicate updated it most recently.
-// This is the pure computation with no side effects; mergeTrackerRecords persists the result.
 export const computeMergedTrackerRecord = (
   records: InactiveAccountTrackerRecord[]
 ): InactiveAccountTrackerRecord => {
@@ -71,12 +67,8 @@ export const computeMergedTrackerRecord = (
   return merged;
 };
 
-// Collapse a user's duplicate tracker rows into a single record and persist the result.
-// Given just a user id, this queries every tracker row for that user, merges them (taking each
-// group of fields from whichever duplicate updated it most recently), writes the merged record
-// to the surviving row, and deletes the stale duplicate rows — all in one transaction so the
-// table is never left with a partial merge. Returns the merged record (or the single existing
-// row) so callers can act on the up-to-date data, or null when the user has no tracker rows.
+// There is a potential race condition where multiple records could appear for the same user
+// this function merges them into single record
 export const mergeTrackerRecords = async (
   userId: string,
   dynamoDocClient: DynamoDBDocumentClient,
@@ -93,17 +85,12 @@ export const mergeTrackerRecords = async (
 
   const records = (response.Items ?? []) as InactiveAccountTrackerRecord[];
 
-  // No rows: nothing to merge or return.
   if (records.length === 0) return null;
 
-  // A single row: it is already the up-to-date record, and no transaction is required.
   if (records.length === 1) return records[0];
 
   const merged = computeMergedTrackerRecord(records);
 
-  // Delete every stale duplicate row whose dateForDeletion differs from the merged record's.
-  // The surviving row (merged.dateForDeletion) is updated in place by the Put, so it must not
-  // also be deleted.
   const staleDeletionDates = [
     ...new Set(
       records
@@ -113,8 +100,6 @@ export const mergeTrackerRecords = async (
   ];
 
   if (staleDeletionDates.length === 0) {
-    // Duplicates that all share the merged dateForDeletion: the Put alone suffices, so no
-    // delete/transaction is required.
     return merged;
   }
 

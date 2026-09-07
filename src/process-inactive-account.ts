@@ -165,13 +165,6 @@ async function processRecord(
 
   assert(process, `Process configuration not found for ${body.processName}`);
 
-  // A race condition can leave multiple tracker rows for the same user. mergeTrackerRecords
-  // queries every row for the user and, if there is more than one, collapses them into a
-  // single most-up-to-date record: it writes the merged record to the surviving row and
-  // deletes the stale duplicate rows in one transaction, then returns the merged record. We
-  // overlay that record onto the message body so the rest of processing (allowed-status check,
-  // status update keyed on dateForDeletion, notifications, target dispatch) acts on the merged
-  // data rather than the potentially stale values that arrived on the SQS message.
   const merged = await mergeTrackerRecords(
     body.commonSubjectId,
     dynamoDocClient,

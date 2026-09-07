@@ -279,6 +279,37 @@ describe("validateTxmaEventBody", () => {
     );
   });
 
+  test("does not throw when client_id key is missing for STS_REFRESH_TOKEN_ISSUED", () => {
+    const stsEvent = {
+      ...makeTxmaEvent(),
+      event_name: "STS_REFRESH_TOKEN_ISSUED",
+      client_id: undefined,
+    };
+    const txmaEvent = JSON.parse(JSON.stringify(stsEvent));
+
+    expect(() => {
+      validateTxmaEventBody(txmaEvent);
+    }).not.toThrow();
+  });
+
+  test("still throws when timestamp is missing for STS_REFRESH_TOKEN_ISSUED with no client_id", () => {
+    const stsEvent = {
+      ...makeTxmaEvent(),
+      event_name: "STS_REFRESH_TOKEN_ISSUED",
+      client_id: undefined,
+      timestamp: undefined,
+    };
+    const txmaEvent = JSON.parse(JSON.stringify(stsEvent));
+
+    expect(() => {
+      validateTxmaEventBody(txmaEvent);
+    }).toThrow(
+      new Error(
+        `Could not validate TxmaEvent with id ${txmaEvent.event_id} and name ${txmaEvent.event_name}: txmaEvent.timestamp is undefined`
+      )
+    );
+  });
+
   test("throws error when timestamp key is missing", () => {
     const invalidTxmaEvent = {
       ...makeTxmaEvent(),
@@ -529,6 +560,28 @@ describe("handler only saves allowlisted events", () => {
       ],
     };
     await handler(tokenSentEvent, {} as Context);
+    expect(dynamoMock.commandCalls(PutCommand).length).toEqual(1);
+  });
+
+  test("writes to DynamoDB when event_name is STS_REFRESH_TOKEN_ISSUED and client_id is missing", async () => {
+    vi.spyOn(Date, "now").mockImplementation(() => TIMESTAMP);
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-expect-error
+    vi.spyOn(crypto, "randomUUID").mockImplementation(() => UUID);
+
+    const stsEvent: SQSEvent = {
+      Records: [
+        {
+          ...TEST_SQS_RECORD,
+          body: JSON.stringify({
+            ...makeTxmaEvent(),
+            event_name: "STS_REFRESH_TOKEN_ISSUED",
+            client_id: undefined,
+          }),
+        },
+      ],
+    };
+    await handler(stsEvent, {} as Context);
     expect(dynamoMock.commandCalls(PutCommand).length).toEqual(1);
   });
 

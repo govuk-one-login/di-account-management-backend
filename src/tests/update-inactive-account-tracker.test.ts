@@ -918,6 +918,46 @@ describe("UpdateInactiveAccountTracker handler", () => {
     );
   });
 
+  test("sends INACTIVE_ACCOUNT_SAVED_APP to SQS when STS_REFRESH_TOKEN_ISSUED event has no client_id", async () => {
+    const within30DaysDate = new Date();
+    within30DaysDate.setDate(within30DaysDate.getDate() + 15);
+    const dateStr = within30DaysDate.toISOString().split("T")[0];
+
+    dynamoMock.on(QueryCommand).resolves({
+      Items: [{ 
+        commonSubjectId: "qwerty", 
+        dateForDeletion: dateStr, 
+        userLastActive: new Date(Date.now() - 100000).toISOString(), 
+        status: "pending", 
+        emailAddress: "user@example.com" 
+      }],
+    });
+    dynamoMock.on(TransactWriteCommand).resolves({});
+    sqsMock.on(SendMessageCommand).resolves({});
+
+    const event: DynamoDBStreamEvent = { 
+      Records: [generateDynamoStreamRecord(undefined, "STS_REFRESH_TOKEN_ISSUED", true)] 
+    };
+
+    await handler(event, {} as Context);
+
+    expect(sqsMock).toHaveReceivedCommandWith(SendMessageCommand, {
+      QueueUrl: "https://sqsq-url",
+      MessageBody: JSON.stringify({
+        notificationType: "INACTIVE_ACCOUNT_SAVED_APP",
+        emailAddress: "foo@bar.com",
+      }),
+    });
+
+    expect(loggerInfoMock).toHaveBeenCalledWith(
+      "Account saved message successfully sent to target queue",
+      {
+        publicSubjectId: "public-subject-id-123",
+        notificationType: "INACTIVE_ACCOUNT_SAVED_APP",
+      }
+    );
+  });
+
   test("logs warning when no email address and deletion date is within 30 days", async () => {
     const within30DaysDate = new Date();
     within30DaysDate.setDate(within30DaysDate.getDate() + 15);
@@ -1086,6 +1126,32 @@ describe("UpdateInactiveAccountTracker handler", () => {
     expect(mockMetrics.publishStoredMetrics).toHaveBeenCalledTimes(1);
 
     vi.useRealTimers();
+  });
+
+  test("publishes clientIdOfAuditEventThatResetDeletionDate metric as the GOVUK App client id when STS_REFRESH_TOKEN_ISSUED event has no client_id", async () => {
+    dynamoMock.on(QueryCommand).resolves({
+      Items: [{
+        commonSubjectId: "qwerty",
+        status: "pending",
+        dateForDeletion: "2026-01-01",
+        userLastActive: "1970-01-01T00:16:40.000Z",
+        emailAddress: "old-email@example.com",
+        emailAddressLastUpdated: "1970-01-01T00:16:40.000Z",
+        statusLastUpdated: ""
+      }]
+    });
+    dynamoMock.on(TransactWriteCommand).resolves({});
+
+    const event: DynamoDBStreamEvent = {
+      Records: [generateDynamoStreamRecord(undefined, "STS_REFRESH_TOKEN_ISSUED", true)]
+    };
+
+    await handler(event, {} as Context);
+
+    expect(mockMetrics.addDimension).toHaveBeenCalledWith(
+      "clientIdOfAuditEventThatResetDeletionDate",
+      "govuk-app-client-id"
+    );
   });
 
   describe("backfill threshold", () => {

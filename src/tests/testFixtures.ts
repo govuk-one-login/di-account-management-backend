@@ -186,7 +186,8 @@ export const MUTABLE_ACTIVITY_LOG_ENTRY: ActivityLogEntry = {
 // TODO: This would be better placed in testUtils but fails to be imported as a function when moved there.
 export const generateDynamoStreamRecord = (
   customClientId?: string,
-  txmaEventName = "AUTH_AUTH_CODE_ISSUED"
+  txmaEventName = "AUTH_AUTH_CODE_ISSUED",
+  omitClientId = false
 ): DynamoDBRecord => ({
   eventID: "1234567",
   eventName: "INSERT",
@@ -210,7 +211,7 @@ export const generateDynamoStreamRecord = (
               public_subject_id: { S: "public-subject-id-123" } 
             },
           },
-          client_id: { S: customClientId ?? clientId },
+          ...(omitClientId ? {} : { client_id: { S: customClientId ?? clientId } }),
           txma: { M: { configVersion: { S: "2.2.1" } } },
           timestamp: { N: `${timestamp}` },
         },

@@ -4010,7 +4010,6 @@ Resources:
   #########################################
 
   PublishAccountDeletionFunction:
-    Condition: IsDevelopment
     Type: AWS::Serverless::Function
     DependsOn:
       - PublishAccountDeletionFunctionLogGroup
@@ -4059,7 +4058,6 @@ Resources:
           - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
 
   PublishAccountDeletionDeadLetterQueue:
-    Condition: IsDevelopment
     Type: AWS::SQS::Queue
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
@@ -4068,7 +4066,6 @@ Resources:
       KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
 
   PublishAccountDeletionRole:
-    Condition: IsDevelopment
     Type: AWS::IAM::Role
     Properties:
       PermissionsBoundary: !If
@@ -4090,7 +4087,6 @@ Resources:
               - "sts:AssumeRole"
 
   PublishAccountDeletionPolicy:
-    Condition: IsDevelopment
     Type: AWS::IAM::ManagedPolicy
     Properties:
       PolicyDocument:
@@ -4125,7 +4121,6 @@ Resources:
               - !GetAtt SnsKmsKey.Arn
 
   PublishAccountDeletionFunctionLogGroup:
-    Condition: IsDevelopment
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-publish-account-deletion"
@@ -4844,6 +4839,13 @@ Resources:
               !Ref Environment,
               FEATURESENDIADAUDITEVENTS,
             ]
+          NOTIFICATION_QUEUE_URL: !Ref NotificationQueue
+          ACCOUNT_INTERVENTIONS_SERVICE_API_URL:
+            !FindInMap [
+              EnvironmentConfiguration,
+              !Ref Environment,
+              accountInterventionsServiceApiUrl,
+            ]
       DeploymentPreference:
         Alarms:
           Fn::If:
@@ -4908,6 +4910,7 @@ Resources:
             Resource:
               - !GetAtt DeleteInactiveAccountTrackerDeadLetterQueue.Arn
               - !GetAtt AuditOutputQueue.Arn
+              - !GetAtt NotificationQueue.Arn
           - Effect: Allow
             Action:
               - dynamodb:Query

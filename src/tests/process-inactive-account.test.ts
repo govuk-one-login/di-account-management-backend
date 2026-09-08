@@ -574,6 +574,88 @@ describe("process-inactive-account handler", () => {
     expect(mockMetrics.addMetric).not.toHaveBeenCalled();
   });
 
+  test("includes additional user and extension details in the audit event when sendAdditionalAuditEventDetails is set", async () => {
+    process.env.FEATURE_SEND_IAD_AUDIT_EVENTS = "true";
+    process.env.ACCOUNT_DELETION_QUEUE_URL =
+      "https://sqs.eu-west-2.amazonaws.com/123456789012/AccountDeletionQueue";
+
+    const event = buildSqsEvent([
+      {
+        commonSubjectId: "user-123",
+        publicSubjectId: "public-123",
+        emailAddress: "test@example.com",
+        dateForDeletion: "2026-08-15",
+        userLastActive: "2021-10-01",
+        userLastActiveSource: "AUTH_TOKEN_SENT_TO_ORCHESTRATION",
+        userLastActiveSourceId: "event-guid",
+        processName: "DeleteAccount",
+        status: "pending",
+      },
+    ]);
+
+    await handler(event, {} as Context);
+
+    const txmaCall = sqsMock
+      .commandCalls(SendMessageCommand)
+      .find(
+        (call) =>
+          call.args[0].input.QueueUrl ===
+          "https://sqs.eu-west-2.amazonaws.com/123456789012/TxmaQueue"
+      );
+    expect(txmaCall).toBeDefined();
+
+    const auditEvent = JSON.parse(txmaCall!.args[0].input.MessageBody as string);
+    expect(auditEvent.event_name).toBe(
+      "HOME_ACCOUNT_TRACKER_ACCOUNT_DELETION_REQUESTED"
+    );
+    expect(auditEvent.user).toMatchObject({
+      user_id: "user-123",
+      email: "test@example.com",
+      public_subject_id: "public-123",
+    });
+    expect(auditEvent.extensions).toMatchObject({
+      accountTrackerAccountDeletionDate: "2026-08-15",
+      accountTrackerAccountLastAccessDate: "2021-10-01",
+      accountTrackerAccountLastAccessSource: "AUTH_TOKEN_SENT_TO_ORCHESTRATION",
+      accountTrackerAccountLastAccessSourceEventId: "event-guid",
+    });
+  });
+
+  test("sends only base audit event details when sendAdditionalAuditEventDetails is not set", async () => {
+    process.env.FEATURE_SEND_IAD_AUDIT_EVENTS = "true";
+
+    const event = buildSqsEvent([
+      {
+        commonSubjectId: "user-123",
+        publicSubjectId: "public-123",
+        emailAddress: "test@example.com",
+        dateForDeletion: "2026-08-15",
+        userLastActive: "2021-10-01",
+        userLastActiveSource: "AUTH_TOKEN_SENT_TO_ORCHESTRATION",
+        userLastActiveSourceId: "event-guid",
+        processName: "Warning30Day",
+        status: "pending",
+      },
+    ]);
+
+    await handler(event, {} as Context);
+
+    const txmaCall = sqsMock
+      .commandCalls(SendMessageCommand)
+      .find(
+        (call) =>
+          call.args[0].input.QueueUrl ===
+          "https://sqs.eu-west-2.amazonaws.com/123456789012/TxmaQueue"
+      );
+    expect(txmaCall).toBeDefined();
+
+    const auditEvent = JSON.parse(txmaCall!.args[0].input.MessageBody as string);
+    expect(auditEvent.user).toEqual({ user_id: "user-123" });
+    expect(auditEvent.extensions).toEqual({
+      accountTrackerAccountDeletionDate: "2026-08-15",
+    });
+  });
+
   describe("merge before processing", () => {
     test("merges duplicate rows, deletes stale rows, and processes using the merged record", async () => {
       // Two rows for the same user (race condition). The newer activity row (2026-06-01)

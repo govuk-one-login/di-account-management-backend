@@ -58,6 +58,7 @@ describe("handler", () => {
     process.env.AWS_REGION = "AWS_REGION";
     process.env.GOV_ACCOUNTS_PUBLISHING_API_TOKEN = "test-token";
     process.env.GOV_ACCOUNTS_PUBLISHING_API_URL = "https://api.example.com";
+    process.env.FEATURE_DELETE_EMAIL_SUBSCRIPTIONS = "true";
   });
 
   afterEach(() => {
@@ -161,6 +162,7 @@ describe("deleteEmailSubscription", () => {
     );
     process.env.GOV_ACCOUNTS_PUBLISHING_API_TOKEN = "test-token";
     process.env.GOV_ACCOUNTS_PUBLISHING_API_URL = "https://api.example.com";
+    process.env.FEATURE_DELETE_EMAIL_SUBSCRIPTIONS = "true";
   });
 
   afterEach(() => {
@@ -228,5 +230,26 @@ describe("deleteEmailSubscription", () => {
       "https://api.example.com/api/oidc-users/public_subject_id",
       { headers: { Authorization: "Bearer test-token" }, method: "DELETE" }
     );
+  });
+
+  test("skips sending the DELETE request when FEATURE_DELETE_EMAIL_SUBSCRIPTIONS is 'false'", async () => {
+    process.env.FEATURE_DELETE_EMAIL_SUBSCRIPTIONS = "false";
+
+    await expect(
+      deleteEmailSubscription(TEST_USER_DATA)
+    ).resolves.not.toThrow();
+    expect(mockFetch).not.toHaveBeenCalled();
+    expect(mockLogger.info).toHaveBeenCalledWith(
+      "Skipping GOV.UK API call: FEATURE_DELETE_EMAIL_SUBSCRIPTIONS is disabled."
+    );
+  });
+
+  test("throws when FEATURE_DELETE_EMAIL_SUBSCRIPTIONS is not set", async () => {
+    delete process.env.FEATURE_DELETE_EMAIL_SUBSCRIPTIONS;
+
+    await expect(deleteEmailSubscription(TEST_USER_DATA)).rejects.toThrow(
+      'Environment variable "FEATURE_DELETE_EMAIL_SUBSCRIPTIONS" is not set.'
+    );
+    expect(mockFetch).not.toHaveBeenCalled();
   });
 });

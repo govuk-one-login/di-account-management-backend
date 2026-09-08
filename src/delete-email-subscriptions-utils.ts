@@ -1,5 +1,8 @@
 import { UserData } from "./common/model.js";
-import { getEnvironmentVariable } from "./common/utils.js";
+import {
+  getEnvironmentVariable,
+  isDeleteEmailSubscriptionsEnabled,
+} from "./common/utils.js";
 import { Logger } from "@aws-lambda-powertools/logger";
 
 const logger = new Logger();
@@ -40,6 +43,13 @@ const getDeleteUrl = (
 };
 
 export const deleteEmailSubscription = async (userData: UserData) => {
+  if (!isDeleteEmailSubscriptionsEnabled()) {
+    logger.info(
+      "Skipping GOV.UK API call: FEATURE_DELETE_EMAIL_SUBSCRIPTIONS is disabled."
+    );
+    return;
+  }
+
   // We are storing the api token in the environment variables to avoid repeated calls to secrets manager possibly limiting lambda start times and it is infrequently changed.
   const GOV_ACCOUNTS_PUBLISHING_API_TOKEN = getEnvironmentVariable(
     "GOV_ACCOUNTS_PUBLISHING_API_TOKEN"

@@ -4844,6 +4844,13 @@ Resources:
         Variables:
           TABLE_NAME: !Ref InactiveAccountTrackerStoreTableName
           NODE_OPTIONS: --enable-source-maps
+          TXMA_QUEUE_URL: !Ref AuditOutputQueue
+          FEATURE_SEND_IAD_AUDIT_EVENTS:
+            !FindInMap [
+              EnvironmentVariables,
+              !Ref Environment,
+              FEATURESENDIADAUDITEVENTS,
+            ]
           NOTIFICATION_QUEUE_URL: !Ref NotificationQueue
           ACCOUNT_INTERVENTIONS_SERVICE_API_URL:
             !FindInMap [
@@ -4914,6 +4921,7 @@ Resources:
               - sqs:SendMessage
             Resource:
               - !GetAtt DeleteInactiveAccountTrackerDeadLetterQueue.Arn
+              - !GetAtt AuditOutputQueue.Arn
               - !GetAtt NotificationQueue.Arn
           - Effect: Allow
             Action:

@@ -7,6 +7,7 @@ import {
 } from "@aws-sdk/lib-dynamodb";
 import { UserData } from "./common/model.js";
 import { getEnvironmentVariable } from "./common/utils.js";
+import { sendAuditEvent } from "./common/send-audit-event.js";
 import { Logger } from "@aws-lambda-powertools/logger";
 import { sendSqsMessage } from "./common/sqs.js";
 import { isUserIdBlocked } from "./common/account-interventions-service-client.js";
@@ -55,8 +56,8 @@ export const deleteUserData = async (
   const item = queryResponse.Items[0];
 
   await Promise.all(
-    queryResponse.Items.map((i) =>
-      dynamoDocClient.send(
+    queryResponse.Items.map(async (i) => {
+      await dynamoDocClient.send(
         new DeleteCommand({
           TableName: TABLE_NAME,
           Key: {
@@ -64,8 +65,19 @@ export const deleteUserData = async (
             commonSubjectId: i.commonSubjectId,
           },
         })
-      )
-    )
+      );
+
+      // Emit one audit event per deleted tracker record so TxMA has a record of
+      // the deletion. The extension carries the deleted record's deletion date.
+      await sendAuditEvent("HOME_ACCOUNT_TRACKER_RECORD_DELETED", {
+        user: {
+          user_id: i.commonSubjectId,
+        },
+        extensions: {
+          accountTrackerAccountDeletionDate: i.dateForDeletion,
+        },
+      });
+    })
   );
 
   return {

@@ -227,7 +227,7 @@ const processRecord = async (
   const govukAppClientId = getEnvironmentVariable("GOV_UK_APP_CLIENT_ID");
   const effectiveClientId = getEffectiveClientId(txmaEvent, govukAppClientId);
   const transactionItems = buildTransactionItems(tableName, userNotificationsTableName, olhClientId, userId, newItem, previousTrackerRecord, effectiveClientId);
-  const isDeletionIn30DaysOrLess = previousTrackerRecord?.dateForDeletion && isCurrentDeletionIn30DaysOrLess(previousTrackerRecord.dateForDeletion)
+  const isDeletionIn30DaysOrLess = previousTrackerRecord?.dateForDeletion && isCurrentDeletionIn30DaysOrLess(previousTrackerRecord.dateForDeletion);
   let notificationType;
 
   switch (effectiveClientId) {

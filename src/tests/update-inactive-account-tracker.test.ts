@@ -841,7 +841,10 @@ describe("UpdateInactiveAccountTracker handler", () => {
 
     await handler(event, {} as Context);
 
-    expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(2);
+    // 1 call is to notification queue
+    // 1 call to txma queue with HOME_ACCOUNT_TRACKER_NOTIFICATION_REQUESTED
+    // 1 call to txma with HOME_ACCOUNT_TRACKER_ACCOUNT_REACTIVATED if successful
+    expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(3);
     
     expect(sqsMock).toHaveReceivedNthCommandWith(SendMessageCommand, 1, {
       QueueUrl: "https://sqsq-url",
@@ -906,7 +909,10 @@ describe("UpdateInactiveAccountTracker handler", () => {
 
     await handler(event, {} as Context);
 
-    expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(2);
+    // 1 call is to notification queue
+    // 1 call to txma queue with HOME_ACCOUNT_TRACKER_NOTIFICATION_REQUESTED
+    // 1 call to txma with HOME_ACCOUNT_TRACKER_ACCOUNT_REACTIVATED if successful
+    expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(3);
     
     expect(sqsMock).toHaveReceivedNthCommandWith(SendMessageCommand, 1, {
       QueueUrl: "https://sqsq-url",
@@ -970,7 +976,10 @@ describe("UpdateInactiveAccountTracker handler", () => {
 
     await handler(event, {} as Context);
 
-    expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(2);
+    // 1 call is to notification queue
+    // 1 call to txma queue with HOME_ACCOUNT_TRACKER_NOTIFICATION_REQUESTED
+    // 1 call to txma with HOME_ACCOUNT_TRACKER_ACCOUNT_REACTIVATED if successful
+    expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(3);
     
     expect(sqsMock).toHaveReceivedNthCommandWith(SendMessageCommand, 1, {
       QueueUrl: "https://sqsq-url",
@@ -1082,7 +1091,7 @@ describe("UpdateInactiveAccountTracker handler", () => {
     const event: DynamoDBStreamEvent = { Records: [recordWithoutEmail as DynamoDBRecord] };
     await handler(event, {} as Context);
 
-    // the HOME_ACCOUNT_TRACKER_ACCOUNT_REACTIVATED txma audit event should be the only call to sqs
+    // the HOME_ACCOUNT_TRACKER_ACCOUNT_REACTIVATED txma audit event should be the only call to sqs as no email notification is sent
     expect(sqsMock).toHaveReceivedCommandTimes(SendMessageCommand, 1);
     const sqsCalls = sqsMock.commandCalls(SendMessageCommand);
     const txmaCallInput = sqsCalls[0].args[0].input; 
@@ -1102,7 +1111,7 @@ describe("UpdateInactiveAccountTracker handler", () => {
       },
       extensions: {
         accountTrackerRecordPreviousStatus: "pending",
-        accountTrackerAccountDeletionDate: "2026-09-23"
+        accountTrackerAccountDeletionDate: dateStr
       }
     });
 
@@ -1163,7 +1172,7 @@ describe("UpdateInactiveAccountTracker handler", () => {
       },
       extensions: {
         accountTrackerRecordPreviousStatus: "pending",
-        accountTrackerAccountDeletionDate: "2026-09-23"
+        accountTrackerAccountDeletionDate: dateStr
       }
     });
   });
@@ -1237,7 +1246,7 @@ describe("UpdateInactiveAccountTracker handler", () => {
       },
       extensions: {
         accountTrackerRecordPreviousStatus: "pending",
-        accountTrackerAccountDeletionDate: "2026-09-23"
+        accountTrackerAccountDeletionDate: dateStr
       }
     });
   });

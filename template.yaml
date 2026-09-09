@@ -3513,7 +3513,7 @@ Resources:
         DynamoStream:
           Type: DynamoDB
           Properties:
-            BatchSize: 10
+            BatchSize: 50
             ParallelizationFactor: 5
             BisectBatchOnFunctionError: true
             Stream: !GetAtt RawEventsStore.StreamArn
@@ -3532,7 +3532,7 @@ Resources:
       Handler: update-inactive-account-tracker.handler
       MemorySize: 192
       ReservedConcurrentExecutions: 80
-      Timeout: 70
+      Timeout: 180
       Role: !GetAtt UpdateInactiveAccountTrackerRole.Arn
       Environment:
         Variables:

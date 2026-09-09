@@ -1,6 +1,7 @@
 import { vi, describe, test, expect, beforeEach, afterEach } from "vitest";
 import { DynamoDBDocumentClient, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { SQSClient, SendMessageBatchCommand } from "@aws-sdk/client-sqs";
+import { Logger } from "@aws-lambda-powertools/logger";
 import { mockClient } from "aws-sdk-client-mock";
 import {
   handler,
@@ -103,6 +104,7 @@ describe("handler", () => {
     sqsMock.reset();
     process.env.TABLE_NAME = "inactive-accounts-table";
     process.env.WARNING_30_DAY_NOTIFICATION_QUEUE_URL = "https://sqs.eu-west-2.amazonaws.com/123/queue";
+    process.env.ACCOUNT_DELETION_QUEUE_URL = "https://sqs.eu-west-2.amazonaws.com/123/deletion-queue";
   });
 
   afterEach(() => {
@@ -169,5 +171,56 @@ describe("handler", () => {
     await handler({ processName: "Warning30Day", manualTestOnly: false }, {} as Context);
 
     expect(sqsMock.commandCalls(SendMessageBatchCommand)[0].args[0].input.Entries).toHaveLength(2);
+  });
+
+  test("dry run does not send any messages to SQS but still queries accounts", async () => {
+    dynamoMock.on(QueryCommand).resolves({ Items: [mockRecord] });
+    sqsMock.on(SendMessageBatchCommand).resolves({ Successful: [], Failed: [] });
+
+    await handler({ processName: "DeletionDryRun" }, {} as Context);
+
+    expect(sqsMock.commandCalls(SendMessageBatchCommand)).toHaveLength(0);
+    // DeletionDryRun has 15 entries in daysToDeletion, so 15 queries are made.
+    expect(dynamoMock.commandCalls(QueryCommand)).toHaveLength(15);
+  });
+
+  test("dry run logs the count of eligible accounts found for each date", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-06-17T12:00:00.000Z"));
+
+    const infoSpy = vi.spyOn(Logger.prototype, "info");
+
+    // daysToDeletion[0] is 0 -> target date equals the system date.
+    dynamoMock.on(QueryCommand).resolves({ Items: [mockRecord, { ...mockRecord, commonSubjectId: "user-2" }] });
+
+    await handler({ processName: "DeletionDryRun" }, {} as Context);
+
+    expect(infoSpy).toHaveBeenCalledWith(
+      "Dry Run DeletionDryRun: found 2 accounts for date 2026-06-17"
+    );
+
+    infoSpy.mockRestore();
+    vi.useRealTimers();
+  });
+
+  test("dry run reports zero eligible accounts when none match the allowed statuses", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-06-17T12:00:00.000Z"));
+
+    const infoSpy = vi.spyOn(Logger.prototype, "info");
+
+    dynamoMock.on(QueryCommand).resolves({
+      Items: [{ ...mockRecord, status: "deleting" }],
+    });
+
+    await handler({ processName: "DeletionDryRun" }, {} as Context);
+
+    expect(sqsMock.commandCalls(SendMessageBatchCommand)).toHaveLength(0);
+    expect(infoSpy).toHaveBeenCalledWith(
+      "Dry Run DeletionDryRun: found 0 accounts for date 2026-06-17"
+    );
+
+    infoSpy.mockRestore();
+    vi.useRealTimers();
   });
 });

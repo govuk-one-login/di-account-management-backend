@@ -62,7 +62,7 @@ export const handler = async (
 
   const tableName = getEnvironmentVariable("TABLE_NAME");
 
-  const { queueUrlEnvVar, daysToDeletion, allowedStatuses } = processConfig[event.processName];
+  const { queueUrlEnvVar, daysToDeletion, allowedStatuses, isDryRun } = processConfig[event.processName];
   const queueUrl = getEnvironmentVariable(queueUrlEnvVar);
 
   let dispatched = 0;
@@ -71,11 +71,19 @@ export const handler = async (
     const targetDate = calculateTargetDate(days);
     logger.info(`Querying accounts for deletion date: ${targetDate}`);
 
+    let eligibleForDate = 0;
+
     for await (const page of queryAccountsByDate(tableName, targetDate)) {
       const eligible = page.filter((record) =>
         allowedStatuses.includes(record.status) &&
         (!event.manualTestOnly || record.userLastActiveSource === "MANUAL_TEST")
       );
+
+      eligibleForDate += eligible.length;
+
+      if (isDryRun) {
+        continue;
+      }
 
       const chunks = [];
       for (let i = 0; i < eligible.length; i += 10) {
@@ -102,6 +110,12 @@ export const handler = async (
             logger.error(`Failed to send batch`, { err });
           }
         })
+      );
+    }
+
+    if (isDryRun) {
+      logger.info(
+        `Dry Run ${event.processName}: found ${eligibleForDate} accounts for date ${targetDate}`
       );
     }
   }

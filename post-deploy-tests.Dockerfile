@@ -1,4 +1,4 @@
-FROM amazonlinux:2023.12.20260727.0
+FROM amazonlinux:2023.12.20260817.0
 
 ENV AWS_PAGER=""
 

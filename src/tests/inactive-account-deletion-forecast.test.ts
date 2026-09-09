@@ -37,9 +37,9 @@ describe("buildDates", () => {
     vi.useRealTimers();
   });
 
-  test("returns 180 dates for the full forecast window", () => {
-    const dates = buildDates(new Date(), 180);
-    expect(dates).toHaveLength(180);
+  test("returns 1825 dates for the full forecast window", () => {
+    const dates = buildDates(new Date(), 5 * 365);
+    expect(dates).toHaveLength(1825);
   });
 });
 
@@ -101,7 +101,7 @@ describe("handler", () => {
     delete process.env.FORECAST_TABLE_NAME;
   });
 
-  test("queries 180 dates, writes forecast records, and emits InactiveAccountTrackerRecordCount metricc", async () => {
+  test("queries 1825 dates, writes forecast records, logs per date, and emits InactiveAccountTrackerRecordCount metricc", async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-01-01T00:00:00.000Z"));
 
@@ -124,8 +124,8 @@ describe("handler", () => {
     );
     expect(mockMetrics.publishStoredMetrics).toHaveBeenCalledTimes(1);
 
-    expect(dynamoDocumentMock.commandCalls(QueryCommand)).toHaveLength(180);
-    expect(dynamoDocumentMock.commandCalls(PutCommand)).toHaveLength(180);
+    expect(dynamoDocumentMock.commandCalls(QueryCommand)).toHaveLength(1825);
+    expect(dynamoDocumentMock.commandCalls(PutCommand)).toHaveLength(1825);
 
     vi.useRealTimers();
   });

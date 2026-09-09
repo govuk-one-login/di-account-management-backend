@@ -7724,7 +7724,7 @@ Resources:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-inactive-acc-del-forecast
       CodeUri: src
       PackageType: Zip
-      Timeout: 300
+      Timeout: 900
       Events:
         DailySchedule:
           Type: Schedule

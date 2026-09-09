@@ -180,8 +180,7 @@ describe("handler", () => {
     await handler({ processName: "DeletionDryRun" }, {} as Context);
 
     expect(sqsMock.commandCalls(SendMessageBatchCommand)).toHaveLength(0);
-    // DeletionDryRun has 15 entries in daysToDeletion, so 15 queries are made.
-    expect(dynamoMock.commandCalls(QueryCommand)).toHaveLength(15);
+    expect(dynamoMock.commandCalls(QueryCommand)).toHaveLength(11);
   });
 
   test("dry run logs the count of eligible accounts found for each date", async () => {

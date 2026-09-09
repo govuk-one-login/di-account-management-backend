@@ -3514,7 +3514,7 @@ Resources:
           Type: DynamoDB
           Properties:
             BatchSize: 50
-            ParallelizationFactor: 5
+            ParallelizationFactor: 10
             BisectBatchOnFunctionError: true
             Stream: !GetAtt RawEventsStore.StreamArn
             DestinationConfig:

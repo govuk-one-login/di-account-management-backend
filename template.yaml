@@ -7259,6 +7259,11 @@ Resources:
           Properties:
             Schedule: "cron(0 9 * * ? *)"
             Input: '{"processName": "Warning7Day"}'
+        DeletionDryRunScheduleEvent:
+          Type: Schedule
+          Properties:
+            Schedule: "cron(0 1 * * ? *)"
+            Input: '{"processName": "DeletionDryRun"}'
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt QueryAndDispatchInactiveAccountsDeadLetterQueue.Arn

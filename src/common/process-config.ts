@@ -91,7 +91,7 @@ export const processConfig: ProcessConfig = {
   },
   DeleteAccount: {
     queueUrlEnvVar: "ACCOUNT_DELETION_QUEUE_URL",
-    daysToDeletion: [0],
+    daysToDeletion: [0, -1, -2, -3, -4, -5, -6, -7, -8, -9, -10, -11, -12, -13, -14],
     allowedStatuses: ["pending", "30DayWarningSent", "7DayWarningSent"],
     targetStatus: "deleting",
     targetQueueUrlEnvVar: "ACCOUNT_DELETION_QUEUE_URL",

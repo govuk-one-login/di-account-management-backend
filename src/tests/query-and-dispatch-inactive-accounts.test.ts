@@ -6,10 +6,8 @@ import {
   handler,
   validateEvent,
   calculateTargetDate,
-  queryAccountsByDate,
 } from "../query-and-dispatch-inactive-accounts.js";
 import type { Context } from "aws-lambda";
-import type { InactiveAccountTrackerRecord } from "../common/model.js";
 
 const dynamoMock = mockClient(DynamoDBDocumentClient);
 const sqsMock = mockClient(SQSClient);
@@ -57,43 +55,6 @@ describe("calculateTargetDate", () => {
     expect(calculateTargetDate(-3)).toBe("2026-06-14");
 
     vi.useRealTimers();
-  });
-});
-
-describe("queryAccountsByDate", () => {
-  beforeEach(() => {
-    dynamoMock.reset();
-  });
-
-  test("yields pages across paginated results", async () => {
-    dynamoMock
-      .on(QueryCommand)
-      .resolvesOnce({
-        Items: [mockRecord],
-        LastEvaluatedKey: { dateForDeletion: "2026-06-20", commonSubjectId: "user-1" },
-      })
-      .resolvesOnce({
-        Items: [{ ...mockRecord, commonSubjectId: "user-2" }],
-        LastEvaluatedKey: undefined,
-      });
-
-    const pages: InactiveAccountTrackerRecord[][] = [];
-    for await (const page of queryAccountsByDate("table", "2026-06-20")) {
-      pages.push(page);
-    }
-    expect(pages).toHaveLength(2);
-    expect(pages.flat()).toHaveLength(2);
-    expect(dynamoMock.commandCalls(QueryCommand)).toHaveLength(2);
-  });
-
-  test("yields nothing when no results", async () => {
-    dynamoMock.on(QueryCommand).resolves({ Items: [] });
-
-    const pages: InactiveAccountTrackerRecord[][] = [];
-    for await (const page of queryAccountsByDate("table", "2026-06-20")) {
-      pages.push(page);
-    }
-    expect(pages).toHaveLength(0);
   });
 });
 

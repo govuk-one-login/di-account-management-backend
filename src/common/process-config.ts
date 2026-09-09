@@ -23,6 +23,8 @@ const guardsList = {
   hasAisBlockIntervention: {
     guard: hasAisBlockIntervention,
     contributeToAlarm: false,
+    skippedNotificationAuditEventReason: "IndefiniteSuspension",
+    skippedNotificationAuditEventName: "HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED"
   },
   hasRecentActivityLogEntry: {
     guard: hasRecentActivityLogEntry,
@@ -31,6 +33,8 @@ const guardsList = {
   hasUndeliverableEmailAddress: {
     guard: hasUndeliverableEmailAddress,
     contributeToAlarm: false,
+    skippedNotificationAuditEventReason: "PreviouslyUndeliverable",
+    skippedNotificationAuditEventName: "HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED"
   },
   sendInactiveAccountEmailsIsEnabled: {
     guard: sendInactiveAccountEmailsIsEnabled,
@@ -56,6 +60,8 @@ export type ProcessConfig = Record<
     guards?: {
       guard: Guard;
       contributeToAlarm: boolean;
+      skippedNotificationAuditEventName?: string;
+      skippedNotificationAuditEventReason?: string;
     }[];
   }
 >;

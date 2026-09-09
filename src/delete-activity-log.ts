@@ -55,8 +55,6 @@ export const getAllActivityLogEntriesForUser = async (
     lastEvaluatedKey = response.LastEvaluatedKey ?? undefined;
   } while (lastEvaluatedKey);
 
-  logger.info(`finished querying ${pageCount} pages of activity log entries`);
-
   logger.info(
     `queried ${queryResult.length} activity log entries across ${pageCount} pages`
   );

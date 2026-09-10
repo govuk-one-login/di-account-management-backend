@@ -8,6 +8,10 @@ export default defineConfig({
       reporter: ["text", "lcov", "clover", "json"],
       reportsDirectory: "coverage",
     },
-    include: ["**/tests/*/*.test.ts", "**/tests/*.test.ts"],
+    include: [
+      "**/tests/*/*.test.ts",
+      "**/tests/*.test.ts",
+      "scripts/hash-iad-query-logic/*.test.ts",
+    ],
   },
 });

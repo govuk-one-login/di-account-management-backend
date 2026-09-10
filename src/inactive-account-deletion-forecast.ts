@@ -5,6 +5,8 @@ import { DynamoDBClient, DescribeTableCommand } from "@aws-sdk/client-dynamodb";
 import { MetricUnit } from "@aws-lambda-powertools/metrics";
 import { initMetrics } from "./common/metrics.js";
 import { countAccountsForDate } from "./common/query-inactive-accounts.js";
+import iadQueryLogicHash from "./common/iad-query-logic-hash.json" with { type: "json" };
+import type { Context } from "aws-lambda";
 const metrics = initMetrics("inactive-account-deletion-forecast");
 
 const logger = new Logger();
@@ -34,7 +36,13 @@ const publishRecordCountMetric = async (tableName: string): Promise<void> => {
   }
 };
 
-export const handler = async (): Promise<void> => {
+export const handler = async (
+  _event: unknown,
+  context: Context
+): Promise<void> => {
+  logger.addContext(context);
+  logger.info("IAD query logic hash", { iadQueryLogicHash: iadQueryLogicHash.hash });
+
   const tableName = getEnvironmentVariable("TABLE_NAME");
   const forecastTableName = getEnvironmentVariable("FORECAST_TABLE_NAME");
   const dates = buildDates(new Date(), FORECAST_DAYS);

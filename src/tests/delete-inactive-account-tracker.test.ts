@@ -41,7 +41,7 @@ vi.mock("../common/account-interventions-service-client.js", () => ({
 const aisNotSuspended = false;
 const aisSuspended = true;
 
-const trackerItem = { dateForDeletion: "2030-01-01", commonSubjectId: "user-id", emailAddress: "user@example.com", hasUndeliverableEmailAddress: false };
+const trackerItem = { dateForDeletion: "2030-01-01", commonSubjectId: "user-id", emailAddress: "user@example.com", hasUndeliverableEmailAddress: false, hasSetupMfa: true };
 
 // The handler sends to two SQS queues: the TxMA audit queue (per deleted
 // record) and the notification queue (deletion-confirmation email). These
@@ -145,6 +145,7 @@ describe("deleteUserData", () => {
       deleted: true,
       emailAddress: "user@example.com",
       hasUndeliverableEmailAddress: false,
+      hasSetupMfa: true,
     });
   });
 
@@ -167,6 +168,9 @@ describe("maybeEnqueueDeletionEmail", () => {
     sqsMock.reset();
     dynamoMock.reset();
     process.env.NOTIFICATION_QUEUE_URL = "https://sqs.example.com/notification";
+    process.env.TXMA_QUEUE_URL =
+      "https://sqs.eu-west-2.amazonaws.com/123456789012/TxmaQueue";
+    process.env.FEATURE_SEND_IAD_AUDIT_EVENTS = "true";
     process.env.AWS_REGION = "eu-west-2";
     mockIsUserIdBlocked.mockResolvedValue(aisNotSuspended);
   });
@@ -178,7 +182,7 @@ describe("maybeEnqueueDeletionEmail", () => {
   test("enqueues email when user is not blocked and email is deliverable", async () => {
     sqsMock.on(SendMessageCommand).resolves({});
 
-    await maybeEnqueueDeletionEmail("user-id", "user@example.com", false);
+    await maybeEnqueueDeletionEmail("user-id", "user@example.com", false, true);
 
     expect(sqsMock).toHaveReceivedCommandWith(SendMessageCommand, {
       QueueUrl: "https://sqs.example.com/notification",
@@ -190,18 +194,42 @@ describe("maybeEnqueueDeletionEmail", () => {
   });
 
   test("does not enqueue email when hasUndeliverableEmailAddress is true", async () => {
-    await maybeEnqueueDeletionEmail("user-id", "user@example.com", true);
+    await maybeEnqueueDeletionEmail("user-id", "user@example.com", true, true);
 
-    expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(0);
+    expect(notificationSendCount()).toEqual(0);
     expect(mockIsUserIdBlocked).not.toHaveBeenCalled();
   });
 
   test("does not enqueue email when user is blocked", async () => {
     mockIsUserIdBlocked.mockResolvedValue(aisSuspended);
 
-    await maybeEnqueueDeletionEmail("user-id", "user@example.com", false);
+    await maybeEnqueueDeletionEmail("user-id", "user@example.com", false, true);
 
-    expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(0);
+    expect(notificationSendCount()).toEqual(0);
+  });
+
+  test("does not enqueue email and emits UnusableAccount skipped audit event when user has not set up MFA", async () => {
+    sqsMock.on(SendMessageCommand).resolves({ MessageId: "test-message-id" });
+
+    await maybeEnqueueDeletionEmail("user-id", "user@example.com", false, false);
+
+    expect(notificationSendCount()).toEqual(0);
+    expect(mockIsUserIdBlocked).not.toHaveBeenCalled();
+
+    const txmaCall = sqsMock
+      .commandCalls(SendMessageCommand)
+      .find(
+        (call) =>
+          call.args[0].input.QueueUrl ===
+          "https://sqs.eu-west-2.amazonaws.com/123456789012/TxmaQueue"
+      );
+    expect(txmaCall).toBeDefined();
+    const auditEvent = JSON.parse(txmaCall!.args[0].input.MessageBody as string);
+    expect(auditEvent.event_name).toBe("HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED");
+    expect(auditEvent.user).toMatchObject({ user_id: "user-id" });
+    expect(auditEvent.extensions).toMatchObject({
+      accountTrackerNotificationSkipReason: "UnusableAccount",
+    });
   });
 });
 

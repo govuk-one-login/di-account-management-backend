@@ -3725,14 +3725,6 @@ Resources:
       RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
-  UpdateInactiveAccountTrackerCSLSSubscription:
-    Condition: ExportLogsToSplunk
-    Type: AWS::Logs::SubscriptionFilter
-    Properties:
-      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
-      FilterPattern: ""
-      LogGroupName: !Ref UpdateInactiveAccountTrackerFunctionLogGroup
-
   AuthEventTriggeredOnAlreadyDeletingAccountFilter:
     Type: AWS::Logs::MetricFilter
     Properties:

@@ -67,12 +67,12 @@ describe("UpdateInactiveAccountTracker handler", () => {
   });
 
   test("queries CommonSubjectIdIndex with user_id", async () => {
-
     dynamoMock.on(QueryCommand).resolves({ Items: [] });
     dynamoMock.on(TransactWriteCommand).resolves({});
     const event: DynamoDBStreamEvent = { Records: [generateDynamoStreamRecord("test-client")] };
     const result = await handler(event, {} as Context);
     expect(result).toEqual<DynamoDBBatchResponse>({ batchItemFailures: [] });
+    sqsMock.on(SendMessageCommand).resolves({});
     expect(dynamoMock).toHaveReceivedCommandWith(QueryCommand, {
       TableName: "test-table",
       IndexName: "CommonSubjectIdIndex",
@@ -841,7 +841,10 @@ describe("UpdateInactiveAccountTracker handler", () => {
 
     await handler(event, {} as Context);
 
-    expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(2);
+    // 1 call is to notification queue
+    // 1 call to txma queue with HOME_ACCOUNT_TRACKER_NOTIFICATION_REQUESTED
+    // 1 call to txma with HOME_ACCOUNT_TRACKER_ACCOUNT_REACTIVATED if successful
+    expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(3);
     
     expect(sqsMock).toHaveReceivedNthCommandWith(SendMessageCommand, 1, {
       QueueUrl: "https://sqsq-url",
@@ -906,7 +909,10 @@ describe("UpdateInactiveAccountTracker handler", () => {
 
     await handler(event, {} as Context);
 
-    expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(2);
+    // 1 call is to notification queue
+    // 1 call to txma queue with HOME_ACCOUNT_TRACKER_NOTIFICATION_REQUESTED
+    // 1 call to txma with HOME_ACCOUNT_TRACKER_ACCOUNT_REACTIVATED if successful
+    expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(3);
     
     expect(sqsMock).toHaveReceivedNthCommandWith(SendMessageCommand, 1, {
       QueueUrl: "https://sqsq-url",
@@ -970,7 +976,10 @@ describe("UpdateInactiveAccountTracker handler", () => {
 
     await handler(event, {} as Context);
 
-    expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(2);
+    // 1 call is to notification queue
+    // 1 call to txma queue with HOME_ACCOUNT_TRACKER_NOTIFICATION_REQUESTED
+    // 1 call to txma with HOME_ACCOUNT_TRACKER_ACCOUNT_REACTIVATED if successful
+    expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(3);
     
     expect(sqsMock).toHaveReceivedNthCommandWith(SendMessageCommand, 1, {
       QueueUrl: "https://sqsq-url",
@@ -1082,7 +1091,30 @@ describe("UpdateInactiveAccountTracker handler", () => {
     const event: DynamoDBStreamEvent = { Records: [recordWithoutEmail as DynamoDBRecord] };
     await handler(event, {} as Context);
 
-    expect(sqsMock).not.toHaveReceivedCommand(SendMessageCommand);
+    // the HOME_ACCOUNT_TRACKER_ACCOUNT_REACTIVATED txma audit event should be the only call to sqs as no email notification is sent
+    expect(sqsMock).toHaveReceivedCommandTimes(SendMessageCommand, 1);
+    const sqsCalls = sqsMock.commandCalls(SendMessageCommand);
+    const txmaCallInput = sqsCalls[0].args[0].input; 
+
+    expect(txmaCallInput.QueueUrl).toEqual("TXMA_QUEUE_URL");
+
+    const txmaEventBody = JSON.parse(txmaCallInput.MessageBody ?? "");
+
+    expect(txmaEventBody).toEqual({
+      event_name:"HOME_ACCOUNT_TRACKER_ACCOUNT_REACTIVATED",
+      component_id:"https://home.account.gov.uk",
+      timestamp: expect.any(Number),
+      event_timestamp_ms: expect.any(Number),
+      event_timestamp_ms_formatted:expect.any(String),
+      user:{
+        user_id: "qwerty"
+      },
+      extensions: {
+        accountTrackerRecordPreviousStatus: "pending",
+        accountTrackerAccountDeletionDate: dateStr
+      }
+    });
+
     expect(loggerWarnMock).toHaveBeenCalledWith("INACTIVE_ACCOUNT_SAVED_BUT_NO_EMAIL_ADDRESS_TO_NOTIFY");
   });
 
@@ -1120,7 +1152,29 @@ describe("UpdateInactiveAccountTracker handler", () => {
     const event: DynamoDBStreamEvent = { Records: [recordWithoutEmail as DynamoDBRecord] };
     await handler(event, {} as Context);
 
-    expect(sqsMock).not.toHaveReceivedCommand(SendMessageCommand);
+    // the HOME_ACCOUNT_TRACKER_ACCOUNT_REACTIVATED txma audit event should be the only call to sqs
+    expect(sqsMock).toHaveReceivedCommandTimes(SendMessageCommand, 1);
+    const sqsCalls = sqsMock.commandCalls(SendMessageCommand);
+    const txmaCallInput = sqsCalls[0].args[0].input; 
+
+    expect(txmaCallInput.QueueUrl).toEqual("TXMA_QUEUE_URL");
+
+    const txmaEventBody = JSON.parse(txmaCallInput.MessageBody ?? "");
+
+    expect(txmaEventBody).toEqual({
+      event_name:"HOME_ACCOUNT_TRACKER_ACCOUNT_REACTIVATED",
+      component_id:"https://home.account.gov.uk",
+      timestamp: expect.any(Number),
+      event_timestamp_ms: expect.any(Number),
+      event_timestamp_ms_formatted:expect.any(String),
+      user:{
+        user_id: "qwerty"
+      },
+      extensions: {
+        accountTrackerRecordPreviousStatus: "pending",
+        accountTrackerAccountDeletionDate: dateStr
+      }
+    });
   });
 
   test("does not send message when deletion date is too far in the future", async () => {
@@ -1172,7 +1226,29 @@ describe("UpdateInactiveAccountTracker handler", () => {
 
     await handler(event, {} as Context);
 
-    expect(sqsMock).not.toHaveReceivedCommand(SendMessageCommand);
+    // the HOME_ACCOUNT_TRACKER_ACCOUNT_REACTIVATED txma audit event should be the only call to sqs
+    expect(sqsMock).toHaveReceivedCommandTimes(SendMessageCommand, 1);
+    const sqsCalls = sqsMock.commandCalls(SendMessageCommand);
+    const txmaCallInput = sqsCalls[0].args[0].input; 
+
+    expect(txmaCallInput.QueueUrl).toEqual("TXMA_QUEUE_URL");
+
+    const txmaEventBody = JSON.parse(txmaCallInput.MessageBody ?? "");
+
+    expect(txmaEventBody).toEqual({
+      event_name:"HOME_ACCOUNT_TRACKER_ACCOUNT_REACTIVATED",
+      component_id:"https://home.account.gov.uk",
+      timestamp: expect.any(Number),
+      event_timestamp_ms: expect.any(Number),
+      event_timestamp_ms_formatted:expect.any(String),
+      user:{
+        user_id: "qwerty"
+      },
+      extensions: {
+        accountTrackerRecordPreviousStatus: "pending",
+        accountTrackerAccountDeletionDate: dateStr
+      }
+    });
   });
 
   test("publishes DaysUntilAccountWouldHaveBeenDeleted metric when a previous dateForDeletion exists", async () => {

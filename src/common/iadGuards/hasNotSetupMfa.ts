@@ -21,8 +21,6 @@ export const hasNotSetupMfa: Guard = async (commonSubjectId) => {
   );
 
   const recordItem = mfaQueryResponse.Items?.[0];
-  // Skip notifications for accounts that have never set up MFA - these have not
-  // been used to interact with a government service, so are treated as unusable.
   const continueAction = recordItem?.hasSetupMfa === false
     ? Actions.continueWithoutActions
     : Actions.continue;

@@ -39,21 +39,27 @@ export const getAllActivityLogEntriesForUser = async (
   let pageCount = 0;
   do {
     logger.info(`querying page ${pageCount + 1}`);
-    const response = await dynamoDocClient.send(new QueryCommand({
-      TableName: tableName,
-      KeyConditionExpression: "user_id = :user_id",
-      ExpressionAttributeValues: { ":user_id": userData.user_id },
-      ScanIndexForward: true,
-      ExclusiveStartKey: lastEvaluatedKey,
-    }));
-    pageCount++;
+    try {
+      const response = await dynamoDocClient.send(
+        new QueryCommand({
+          TableName: tableName,
+          KeyConditionExpression: "user_id = :user_id",
+          ExpressionAttributeValues: { ":user_id": userData.user_id },
+          ScanIndexForward: true,
+          ExclusiveStartKey: lastEvaluatedKey,
+        })
+      );
+      pageCount++;
 
-    if (response.Items) {
-      queryResult.push(...(response.Items as ActivityLogEntry[]));
+      if (response.Items) {
+        queryResult.push(...(response.Items as ActivityLogEntry[]));
+      }
+
+      lastEvaluatedKey = response.LastEvaluatedKey ?? undefined;
+    } catch (error) {
+      logger.error("Error querying activity log:", error as Error);
+      throw error;
     }
-
-    lastEvaluatedKey = response.LastEvaluatedKey ?? undefined;
-    command.ExclusiveStartKey = lastEvaluatedKey;
   } while (lastEvaluatedKey);
 
   logger.info(

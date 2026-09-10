@@ -36,7 +36,7 @@ export const validateUserData = (userData: UserData): UserData => {
 
 export const deleteUserData = async (
   userData: UserData
-): Promise<{ deleted: boolean; emailAddress?: string; hasUndeliverableEmailAddress?: boolean }> => {
+): Promise<{ deleted: boolean; emailAddress?: string; hasUndeliverableEmailAddress?: boolean; hasSetupMfa?: boolean }> => {
   const TABLE_NAME = getEnvironmentVariable("TABLE_NAME");
 
   const queryResponse = await dynamoDocClient.send(
@@ -84,16 +84,31 @@ export const deleteUserData = async (
     deleted: true,
     emailAddress: item.emailAddress,
     hasUndeliverableEmailAddress: item.hasUndeliverableEmailAddress,
+    hasSetupMfa: item.hasSetupMfa,
   };
 };
 
 export const maybeEnqueueDeletionEmail = async (
   userId: string,
   emailAddress: string | undefined,
-  hasUndeliverableEmailAddress: boolean | undefined
+  hasUndeliverableEmailAddress: boolean | undefined,
+  hasSetupMfa: boolean | undefined
 ): Promise<void> => {
   if (!emailAddress) {
     logger.info("Skipping IAD deletion email: no email address");
+    return;
+  }
+
+  if (hasSetupMfa === false) {
+    logger.info("Skipping IAD deletion email: user has not set up MFA");
+    await sendAuditEvent("HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED", {
+      user: {
+        user_id: userId,
+      },
+      extensions: {
+        accountTrackerNotificationSkipReason: "UnusableAccount",
+      },
+    });
     return;
   }
 
@@ -144,7 +159,8 @@ export const handler = async (
           await maybeEnqueueDeletionEmail(
             userData.user_id,
             result.emailAddress,
-            result.hasUndeliverableEmailAddress
+            result.hasUndeliverableEmailAddress,
+            result.hasSetupMfa
           );
         }
 

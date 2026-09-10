@@ -251,6 +251,51 @@ describe("process-inactive-account handler", () => {
     expect(mockMetrics.addMetric).not.toHaveBeenCalled();
   });
 
+  test("skips warning notification and emits UnusableAccount skipped audit event when user has not set up MFA", async () => {
+    dynamoMock.on(QueryCommand).resolves({
+      Items: [{ commonSubjectId: "no-mfa-user", hasSetupMfa: false }],
+    });
+
+    const event = buildSqsEvent([
+      {
+        commonSubjectId: "no-mfa-user",
+        emailAddress: "no-mfa@example.com",
+        dateForDeletion: "2026-08-15",
+        processName: "Warning30Day",
+        status: "pending",
+      },
+    ]);
+
+    await handler(event, {} as Context);
+
+    // No warning notification is enqueued to the NotificationQueue.
+    const notificationCalls = sqsMock
+      .commandCalls(SendMessageCommand)
+      .filter(
+        (call) =>
+          call.args[0].input.QueueUrl ===
+          "https://sqs.eu-west-2.amazonaws.com/123456789012/NotificationQueue"
+      );
+    expect(notificationCalls.length).toEqual(0);
+
+    // A NOTIFICATION_SKIPPED audit event with reason UnusableAccount is emitted.
+    const txmaCall = sqsMock
+      .commandCalls(SendMessageCommand)
+      .find(
+        (call) =>
+          call.args[0].input.QueueUrl ===
+          "https://sqs.eu-west-2.amazonaws.com/123456789012/TxmaQueue"
+      );
+    expect(txmaCall).toBeDefined();
+    const auditEvent = JSON.parse(txmaCall!.args[0].input.MessageBody ?? "");
+    expect(auditEvent.event_name).toBe("HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED");
+    expect(auditEvent.user).toMatchObject({ user_id: "no-mfa-user" });
+    expect(auditEvent.extensions).toMatchObject({
+      accountTrackerNotificationSkipReason: "UnusableAccount",
+    });
+    expect(mockMetrics.addMetric).not.toHaveBeenCalled();
+  });
+
   test("skips blocked user but processes non-blocked user in same batch", async () => {
     mockHasAisBlockIntervention
       .mockResolvedValueOnce(blocked)

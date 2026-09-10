@@ -247,7 +247,21 @@ const processRecord = async (
   if (!inactiveAccountEmailFlagEnabled) {
     logger.info("SEND_INACTIVE_ACCOUNT_DELETION_EMAILS feature flag is off");
   } else if (previousTrackerRecord?.dateForDeletion && isCurrentDeletionIn30Days(previousTrackerRecord.dateForDeletion)) {
-    if (newItem.emailAddress) {
+    if (!newItem.emailAddress) {
+      logger.warn("INACTIVE_ACCOUNT_SAVED_BUT_NO_EMAIL_ADDRESS_TO_NOTIFY");
+    } else if (!newItem.hasSetupMfa) {
+      // Accounts that have never set up MFA have not been used to interact with
+      // a government service, so are treated as unusable and receive no IAD emails.
+      logger.info("Skipping IAD account saved email: user has not set up MFA");
+      await sendAuditEvent("HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED", {
+        user: {
+          user_id: newItem.commonSubjectId,
+        },
+        extensions: {
+          accountTrackerNotificationSkipReason: "UnusableAccount",
+        },
+      });
+    } else {
       // if previousTrackerRecord.dateForDeletion is within the next 30 days, send ACCOUNT SAVED email
       const message = {
         notificationType,
@@ -275,8 +289,6 @@ const processRecord = async (
           accountTrackerNotificationType: currentEventConfiguration.auditEventNotificationType,
         },
       });
-    } else {
-      logger.warn("INACTIVE_ACCOUNT_SAVED_BUT_NO_EMAIL_ADDRESS_TO_NOTIFY");
     }
   }
 

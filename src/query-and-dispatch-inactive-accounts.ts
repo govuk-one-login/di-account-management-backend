@@ -1,15 +1,11 @@
 import { Context } from "aws-lambda";
-import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { SQSClient, SendMessageBatchCommand } from "@aws-sdk/client-sqs";
 import { Logger } from "@aws-lambda-powertools/logger";
 import { getEnvironmentVariable } from "./common/utils.js";
-import type { InactiveAccountTrackerRecord } from "./common/model.js";
 import { processConfig } from "./common/process-config.js";
+import { queryAccountsByDate } from "./common/query-inactive-accounts.js";
 
 const logger = new Logger();
-const dynamoClient = new DynamoDBClient({});
-const dynamoDocClient = DynamoDBDocumentClient.from(dynamoClient);
 const sqsClient = new SQSClient({});
 
 export interface QueryAndDispatchEvent {
@@ -28,29 +24,6 @@ export const validateEvent = (event: QueryAndDispatchEvent): void => {
     throw new Error(`Unknown processName: ${event.processName}`);
   }
 };
-
-export async function* queryAccountsByDate(
-  tableName: string,
-  dateForDeletion: string
-): AsyncGenerator<InactiveAccountTrackerRecord[]> {
-  let lastEvaluatedKey: Record<string, unknown> | undefined;
-
-  do {
-    const response = await dynamoDocClient.send(
-      new QueryCommand({
-        TableName: tableName,
-        KeyConditionExpression: "dateForDeletion = :date",
-        ExpressionAttributeValues: { ":date": dateForDeletion },
-        ExclusiveStartKey: lastEvaluatedKey,
-      })
-    );
-
-    if (response.Items?.length) {
-      yield response.Items as InactiveAccountTrackerRecord[];
-    }
-    lastEvaluatedKey = response.LastEvaluatedKey ?? undefined;
-  } while (lastEvaluatedKey);
-}
 
 export const handler = async (
   event: QueryAndDispatchEvent,

@@ -6,11 +6,7 @@ import {
 } from "@aws-sdk/lib-dynamodb";
 import { DynamoDBClient, DescribeTableCommand } from "@aws-sdk/client-dynamodb";
 import { mockClient } from "aws-sdk-client-mock";
-import {
-  buildDates,
-  countAccountsForDate,
-  handler,
-} from "../inactive-account-deletion-forecast.js";
+import { buildDates, handler } from "../inactive-account-deletion-forecast.js";
 
 const dynamoDocumentMock = mockClient(DynamoDBDocumentClient);
 const dynamoMock = mockClient(DynamoDBClient);
@@ -43,51 +39,6 @@ describe("buildDates", () => {
   });
 });
 
-describe("countAccountsForDate", () => {
-  beforeEach(() => {
-    dynamoDocumentMock.reset();
-  });
-
-  test("returns the count from a single page", async () => {
-    dynamoDocumentMock.on(QueryCommand).resolves({ Count: 42 });
-
-    const count = await countAccountsForDate("my-table", "2026-06-01");
-    expect(count).toBe(42);
-  });
-
-  test("accumulates counts across paginated responses", async () => {
-    dynamoDocumentMock
-      .on(QueryCommand)
-      .resolvesOnce({
-        Count: 100,
-        LastEvaluatedKey: {
-          dateForDeletion: "2026-06-01",
-          commonSubjectId: "x",
-        },
-      })
-      .resolvesOnce({ Count: 50 });
-
-    const count = await countAccountsForDate("my-table", "2026-06-01");
-    expect(count).toBe(150);
-    expect(dynamoDocumentMock.commandCalls(QueryCommand)).toHaveLength(2);
-  });
-
-  test("returns 0 when Count is undefined", async () => {
-    dynamoDocumentMock.on(QueryCommand).resolves({});
-
-    const count = await countAccountsForDate("my-table", "2026-06-01");
-    expect(count).toBe(0);
-  });
-
-  test("throws on DynamoDB error", async () => {
-    dynamoDocumentMock.on(QueryCommand).rejects(new Error("DynamoDB failure"));
-
-    await expect(
-      countAccountsForDate("my-table", "2026-06-01")
-    ).rejects.toThrow("DynamoDB failure");
-  });
-});
-
 describe("handler", () => {
   beforeEach(() => {
     dynamoDocumentMock.reset();
@@ -106,7 +57,7 @@ describe("handler", () => {
     vi.setSystemTime(new Date("2026-01-01T00:00:00.000Z"));
 
     dynamoMock.on(DescribeTableCommand).resolves({
-      Table: { ItemCount: 4500 }
+      Table: { ItemCount: 4500 },
     });
     dynamoDocumentMock.on(QueryCommand).resolves({ Count: 10 });
     dynamoDocumentMock.on(PutCommand).resolves({});
@@ -114,7 +65,8 @@ describe("handler", () => {
     await handler();
 
     expect(dynamoMock).toHaveReceivedCommandWith(DescribeTableCommand, {
-      TableName: "inactive-accounts-table"});
+      TableName: "inactive-accounts-table",
+    });
     expect(dynamoMock.commandCalls(DescribeTableCommand)).toHaveLength(1);
 
     expect(mockMetrics.addMetric).toHaveBeenCalledWith(
@@ -129,7 +81,6 @@ describe("handler", () => {
 
     vi.useRealTimers();
   });
-
 
   test("throws when TABLE_NAME is not set", async () => {
     delete process.env.TABLE_NAME;

@@ -7,6 +7,7 @@ import {
 import { DynamoDBClient, DescribeTableCommand } from "@aws-sdk/client-dynamodb";
 import { mockClient } from "aws-sdk-client-mock";
 import { buildDates, handler } from "../inactive-account-deletion-forecast.js";
+import type { Context } from "aws-lambda";
 
 const dynamoDocumentMock = mockClient(DynamoDBDocumentClient);
 const dynamoMock = mockClient(DynamoDBClient);
@@ -62,7 +63,7 @@ describe("handler", () => {
     dynamoDocumentMock.on(QueryCommand).resolves({ Count: 10 });
     dynamoDocumentMock.on(PutCommand).resolves({});
 
-    await handler();
+    await handler(undefined, {} as Context);
 
     expect(dynamoMock).toHaveReceivedCommandWith(DescribeTableCommand, {
       TableName: "inactive-accounts-table",
@@ -85,7 +86,7 @@ describe("handler", () => {
   test("throws when TABLE_NAME is not set", async () => {
     delete process.env.TABLE_NAME;
 
-    await expect(handler()).rejects.toThrow(
+    await expect(handler(undefined, {} as Context)).rejects.toThrow(
       'Environment variable "TABLE_NAME" is not set.'
     );
   });
@@ -93,7 +94,7 @@ describe("handler", () => {
   test("throws when FORECAST_TABLE_NAME is not set", async () => {
     delete process.env.FORECAST_TABLE_NAME;
 
-    await expect(handler()).rejects.toThrow(
+    await expect(handler(undefined, {} as Context)).rejects.toThrow(
       'Environment variable "FORECAST_TABLE_NAME" is not set.'
     );
   });
@@ -101,6 +102,6 @@ describe("handler", () => {
   test("throws loudly on DynamoDB error", async () => {
     dynamoDocumentMock.on(QueryCommand).rejects(new Error("DynamoDB down"));
 
-    await expect(handler()).rejects.toThrow("DynamoDB down");
+    await expect(handler(undefined, {} as Context)).rejects.toThrow("DynamoDB down");
   });
 });

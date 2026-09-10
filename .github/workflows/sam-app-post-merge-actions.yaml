@@ -69,6 +69,12 @@ jobs:
       - name: SAM validate
         run: sam validate
 
+      - name: Generate IAD query logic hash
+        run: |
+          esbuild scripts/hash-iad-query-logic/index.ts --bundle --platform=node --format=esm --packages=external --outfile=.tmp-hash-iad-query-logic.mjs
+          node .tmp-hash-iad-query-logic.mjs
+          rm .tmp-hash-iad-query-logic.mjs
+
       - name: SAM build
         run: sam build --manifest package.json
 

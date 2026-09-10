@@ -14,7 +14,7 @@ const logger = new Logger();
 const dynamoClient = new DynamoDBClient({});
 const dynamoDocClient = DynamoDBDocumentClient.from(dynamoClient);
 
-const FORECAST_DAYS = 180;
+const FORECAST_DAYS = 5 * 365;
 const TTL_SECONDS = 365 * 24 * 60 * 60;
 
 export const buildDates = (fromDate: Date, days: number): string[] =>
@@ -76,8 +76,9 @@ export const handler = async (): Promise<void> => {
   );
 
   await Promise.all(
-    dates.map((date, i) =>
-      dynamoDocClient.send(
+    dates.map((date, i) => {
+      logger.info("Deletion forecast", { dateForDeletion: date, accountsToDelete: counts[i] });
+      return dynamoDocClient.send(
         new PutCommand({
           TableName: forecastTableName,
           Item: {
@@ -87,8 +88,8 @@ export const handler = async (): Promise<void> => {
             ttl,
           },
         })
-      )
-    )
+      );
+    })
   );
 
   logger.info(`Saved deletion forecast for ${dates.length} dates`);

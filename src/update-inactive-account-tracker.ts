@@ -52,7 +52,7 @@ const getNewDateForDeletion = (latestDate: Date): string => {
   return deletionDate.toISOString().split("T")[0];
 };
 
-const isCurrentDeletionIn30Days = (deletionDate: string): boolean => {
+const isCurrentDeletionIn30DaysOrLess = (deletionDate: string): boolean => {
   const date = new Date(deletionDate);
 
   const today = new Date();
@@ -227,6 +227,7 @@ const processRecord = async (
   const govukAppClientId = getEnvironmentVariable("GOV_UK_APP_CLIENT_ID");
   const effectiveClientId = getEffectiveClientId(txmaEvent, govukAppClientId);
   const transactionItems = buildTransactionItems(tableName, userNotificationsTableName, olhClientId, userId, newItem, previousTrackerRecord, effectiveClientId);
+  const isDeletionIn30DaysOrLess = previousTrackerRecord?.dateForDeletion && isCurrentDeletionIn30DaysOrLess(previousTrackerRecord.dateForDeletion);
   let notificationType;
 
   switch (effectiveClientId) {
@@ -246,7 +247,7 @@ const processRecord = async (
 
   if (!inactiveAccountEmailFlagEnabled) {
     logger.info("SEND_INACTIVE_ACCOUNT_DELETION_EMAILS feature flag is off");
-  } else if (previousTrackerRecord?.dateForDeletion && isCurrentDeletionIn30Days(previousTrackerRecord.dateForDeletion)) {
+  } else if (isDeletionIn30DaysOrLess) {
     if (!newItem.emailAddress) {
       logger.warn("INACTIVE_ACCOUNT_SAVED_BUT_NO_EMAIL_ADDRESS_TO_NOTIFY");
     } else if (!newItem.hasSetupMfa) {
@@ -296,6 +297,18 @@ const processRecord = async (
     logger.info(`Writing to DynamoDB for event id: ${txmaEvent.event_id}`);
     await dynamoDocClient.send(new TransactWriteCommand({ TransactItems: transactionItems }));
     logger.info(`DynamoDB updated for event id: ${txmaEvent.event_id}`);
+
+    if (isDeletionIn30DaysOrLess) {
+      await sendAuditEvent("HOME_ACCOUNT_TRACKER_ACCOUNT_REACTIVATED", {
+        user: {
+          user_id: newItem.commonSubjectId,
+        },
+        extensions: {
+          accountTrackerRecordPreviousStatus: previousTrackerRecord.status,
+          accountTrackerAccountDeletionDate: previousTrackerRecord.dateForDeletion,
+        },
+      });
+    }
   } catch (error) {
     throw new Error(`Failed to update inactive account tracker for event id ${txmaEvent.event_id}: ${error}`, {
       cause: error

@@ -65,6 +65,7 @@ export interface Extensions {
   accountTrackerAccountLastAccessSourceEventId?: string;
   accountTrackerNotificationType?: string;
   accountTrackerNotificationSkipReason?: string;
+  accountTrackerRecordPreviousStatus?: string;
   account_deletion_reason?: string;
 }
 

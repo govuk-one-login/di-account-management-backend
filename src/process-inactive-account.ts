@@ -29,7 +29,7 @@ async function runGuards(
   if (!guards) return Actions.continue;
 
   for (const guard of guards) {
-    const guardResult = await guard.guard(body.commonSubjectId, body.emailAddress);
+    const guardResult = await guard.guard(body.commonSubjectId, body.emailAddress, body.dateForDeletion);
     const typeOfGuardResult = guardResult.continue;
 
     if (typeOfGuardResult === Actions.continueWithoutActions || typeOfGuardResult === Actions.abort) {

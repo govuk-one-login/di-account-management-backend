@@ -13,6 +13,7 @@ import { notificationConfiguration } from "./notification-service-utils.js"
 import { sendAuditEvent } from "./common/send-audit-event.js";
 import { MetricUnit } from "@aws-lambda-powertools/metrics";
 import { initMetrics } from "./common/metrics.js";
+import checkIfDateIs27October from "./common/check-if-date-is-27-october.js";
 
 const metrics = initMetrics("update-inactive-account-tracker");
 
@@ -244,10 +245,11 @@ const processRecord = async (
   }
 
   const inactiveAccountEmailFlagEnabled = getEnvironmentVariable("SEND_INACTIVE_ACCOUNT_DELETION_EMAILS") === "1";
+  const dateForDeletionIs27October = checkIfDateIs27October(previousTrackerRecord?.dateForDeletion ?? "");
 
   if (!inactiveAccountEmailFlagEnabled) {
     logger.info("SEND_INACTIVE_ACCOUNT_DELETION_EMAILS feature flag is off");
-  } else if (isDeletionIn30DaysOrLess) {
+  } else if (isDeletionIn30DaysOrLess && !dateForDeletionIs27October) {
     if (newItem.emailAddress) {
       // if previousTrackerRecord.dateForDeletion is within the next 30 days, send ACCOUNT SAVED email
       const message = {
@@ -308,6 +310,17 @@ const processRecord = async (
     metrics.addDimension("clientIdOfAuditEventThatResetDeletionDate", effectiveClientId ?? "");
     metrics.addMetric("DaysUntilAccountWouldHaveBeenDeleted", MetricUnit.Count, getDaysUntilAccountWouldHaveBeenDeleted(previousTrackerRecord?.dateForDeletion));
     metrics.publishStoredMetrics();
+  }
+
+  if (dateForDeletionIs27October) {
+    await sendAuditEvent("HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED", {
+      user: {
+        user_id: newItem.commonSubjectId,
+      },
+      extensions: {
+        accountTrackerNotificationType: "LikelyVerifyMigratedUser",
+      },
+    });
   }
 };
 

@@ -222,7 +222,8 @@ describe("process-inactive-account handler", () => {
 
     expect(mockHasAisBlockIntervention).toHaveBeenCalledWith(
       "blocked-user-123",
-      "blocked@example.com"
+      "blocked@example.com",
+      "2026-08-15"
     );
     // expect strictly one call to sqs, for audit event
     expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(1);
@@ -668,7 +669,7 @@ describe("process-inactive-account handler", () => {
 
     await handler(event, {} as Context);
 
-    expect(mockHasEmailAddress).toHaveBeenCalledWith("user-no-email", "");
+    expect(mockHasEmailAddress).toHaveBeenCalledWith("user-no-email", "", "2026-08-15");
     expect(sqsMock).not.toHaveReceivedCommand(SendMessageCommand);
     expect(dynamoMock).not.toHaveReceivedCommand(UpdateCommand);
   });
@@ -774,6 +775,81 @@ describe("process-inactive-account handler", () => {
     expect(auditEvent.extensions).toEqual({
       accountTrackerAccountDeletionDate: "2026-08-15",
     });
+  });
+
+  test("does not send emails when dateForDeletion is 27th October", async () => {
+    dynamoMock.on(QueryCommand, {
+      TableName: "test-inactive-tracker-table",
+      IndexName: "CommonSubjectIdIndex",
+    }).resolves({
+      Items: [
+        {
+          commonSubjectId: "migratedverifyuser",
+          emailAddress: "i-might-be-a-migrated-verify@user.com",
+          dateForDeletion: "2026-10-27",
+        },
+      ],
+    });
+
+    const event = buildSqsEvent([
+      {
+        commonSubjectId: "migratedverifyuser",
+        emailAddress: "i-might-be-a-migrated-verify@user.com",
+        dateForDeletion: "2026-10-27",
+        processName: "Warning30Day",
+        status: "pending",
+      },
+    ]);
+
+    await handler(event, {} as Context);
+
+    expect(dynamoMock).toHaveReceivedCommandWith(QueryCommand, {
+      TableName: "test-inactive-tracker-table",
+      IndexName: "CommonSubjectIdIndex",
+      KeyConditionExpression: "commonSubjectId = :id",
+      ExpressionAttributeValues: {
+        ":id": "migratedverifyuser",
+      },
+    });
+
+    // expect strictly two calls to sqs, for audit events
+    expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(2);
+    // check the correct txma event is being sent out
+    const sqsCalls = sqsMock.commandCalls(SendMessageCommand);
+    const txmaCallInput = sqsCalls[0].args[0].input; 
+    
+    expect(txmaCallInput.QueueUrl).toEqual("https://sqs.eu-west-2.amazonaws.com/123456789012/TxmaQueue");
+
+    const txmaEventBody = JSON.parse(txmaCallInput.MessageBody ?? "");
+
+    expect(txmaEventBody).toEqual({
+      event_name:"HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED",
+      component_id:"https://home.account.gov.uk",
+      timestamp: expect.any(Number),
+      event_timestamp_ms: expect.any(Number),
+      event_timestamp_ms_formatted:expect.any(String),
+      user:{
+        user_id:"migratedverifyuser"
+      },
+      extensions:{
+        accountTrackerNotificationSkipReason: "LikelyVerifyMigratedUser"
+      }
+    });
+
+    const txmaCallInput2 = sqsCalls[1].args[0].input; 
+    const txmaEventBody2 = JSON.parse(txmaCallInput2.MessageBody ?? "");
+    expect(txmaEventBody2).toEqual(
+      expect.objectContaining({
+        event_name: "HOME_ACCOUNT_TRACKER_ACCOUNT_FIRST_PERIOD_ENTERED",
+        extensions: {
+          accountTrackerAccountDeletionDate: "2026-10-27"
+        }
+      })
+    );
+
+    expect(mockMetrics.addMetric).not.toHaveBeenCalledWith("notificationEnqueued", expect.anything());
+    // status should still be updated in the inactive account tracker
+    expect(dynamoMock).toHaveReceivedCommand(UpdateCommand);
   });
 
   describe("merge before processing", () => {

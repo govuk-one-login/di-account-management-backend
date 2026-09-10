@@ -1251,6 +1251,33 @@ describe("UpdateInactiveAccountTracker handler", () => {
     });
   });
 
+  test("does not send message when date for deletion is 27th October 2026", async () => {
+    const now = new Date("2026-10-01T12:30:00.000Z");
+    vi.useFakeTimers();
+    vi.setSystemTime(now);
+
+    dynamoMock.on(QueryCommand).resolves({
+      Items: [{ 
+        commonSubjectId: "qwerty", 
+        dateForDeletion: "2026-10-27", 
+        userLastActive: now.toISOString(), 
+        status: "pending",
+        emailAddress: "foo@bar.com" 
+      }],
+    });
+    dynamoMock.on(TransactWriteCommand).resolves({});
+    sqsMock.on(SendMessageCommand).resolves({});
+
+    const event: DynamoDBStreamEvent = { 
+      Records: [generateDynamoStreamRecord("EznkQXGrWxi0cQMSACY15UzvG1Q")] 
+    };
+
+    await handler(event, {} as Context);
+    expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(1);
+
+    vi.useRealTimers();
+  });
+
   test("publishes DaysUntilAccountWouldHaveBeenDeleted metric when a previous dateForDeletion exists", async () => {
     vi.useFakeTimers();
     const systemNow = new Date("2026-09-02T12:12:30.000Z");

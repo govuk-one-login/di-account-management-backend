@@ -3,6 +3,7 @@ import { hasRecentActivityLogEntry } from "./iadGuards/hasRecentActivityLogEntry
 import { hasAisBlockIntervention } from "./iadGuards/hasAisBlockIntervention.js";
 import { hasUndeliverableEmailAddress } from "./iadGuards/hasUndeliverableEmailAddress.js";
 import { sendInactiveAccountEmailsIsEnabled } from "./iadGuards/sendInactiveAccountEmailsIsEnabled.js";
+import { dateForDeletionIs27October } from "./iadGuards/dateForDeletionIs27October.js";
 import { hasEmailAddress } from "./iadGuards/hasEmailAddress.js";
 
 export enum Actions {
@@ -13,7 +14,8 @@ export enum Actions {
 
 export type Guard = (
   commonSubjectId?: string,
-  emailAddress?: string
+  emailAddress?: string,
+  dateForDeletion?: string
 ) => Promise<{
   continue: Actions;
   guardName: string;
@@ -43,6 +45,12 @@ const guardsList = {
   hasEmailAddress: {
     guard: hasEmailAddress,
     contributeToAlarm: true,
+  },
+  dateForDeletionIs27October: {
+    guard: dateForDeletionIs27October,
+    contributeToAlarm: false,
+    skippedNotificationAuditEventReason: "LikelyVerifyMigratedUser",
+    skippedNotificationAuditEventName: "HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED"
   },
 };
 
@@ -80,6 +88,7 @@ export const processConfig: ProcessConfig = {
       guardsList.hasEmailAddress,
       guardsList.hasAisBlockIntervention,
       guardsList.hasUndeliverableEmailAddress,
+      guardsList.dateForDeletionIs27October,
     ],
   },
   Warning7Day: {
@@ -94,6 +103,7 @@ export const processConfig: ProcessConfig = {
       guardsList.hasEmailAddress,
       guardsList.hasAisBlockIntervention,
       guardsList.hasUndeliverableEmailAddress,
+      guardsList.dateForDeletionIs27October,
     ],
   },
   DeleteAccount: {
@@ -107,6 +117,7 @@ export const processConfig: ProcessConfig = {
     guards: [
       guardsList.hasEmailAddress,
       guardsList.hasRecentActivityLogEntry,
+      guardsList.dateForDeletionIs27October,
     ],
   },
   DeletionDryRun: {

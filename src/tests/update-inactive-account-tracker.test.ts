@@ -1251,6 +1251,56 @@ describe("UpdateInactiveAccountTracker handler", () => {
     });
   });
 
+  test("does not send message when date for deletion is 27th October 2026", async () => {
+    const now = new Date("2026-10-01T12:30:00.000Z");
+    vi.useFakeTimers();
+    vi.setSystemTime(now);
+
+    dynamoMock.on(QueryCommand).resolves({
+      Items: [{ 
+        commonSubjectId: "qwerty", 
+        dateForDeletion: "2026-10-27", 
+        userLastActive: now.toISOString(), 
+        status: "pending",
+        emailAddress: "foo@bar.com" 
+      }],
+    });
+    dynamoMock.on(TransactWriteCommand).resolves({});
+    sqsMock.on(SendMessageCommand).resolves({});
+
+    const event: DynamoDBStreamEvent = { 
+      Records: [generateDynamoStreamRecord("EznkQXGrWxi0cQMSACY15UzvG1Q")] 
+    };
+
+    await handler(event, {} as Context);
+
+    // txma events should be the only calls to sqs
+    expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(2);
+    const sqsCalls = sqsMock.commandCalls(SendMessageCommand);
+    const txmaCallInput = sqsCalls[0].args[0].input; 
+
+    expect(txmaCallInput.QueueUrl).toEqual("TXMA_QUEUE_URL");
+
+    const txmaEventBody = JSON.parse(txmaCallInput.MessageBody ?? "");
+
+    expect(txmaEventBody).toEqual(
+      expect.objectContaining({
+        event_name: "HOME_ACCOUNT_TRACKER_ACCOUNT_REACTIVATED",
+      })
+    );
+    const txmaCallInput2 = sqsCalls[1].args[0].input; 
+    const txmaEventBody2 = JSON.parse(txmaCallInput2.MessageBody ?? "");
+    expect(txmaEventBody2).toEqual(
+      expect.objectContaining({
+        event_name: "HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED",
+        extensions: {
+          accountTrackerNotificationType: "LikelyVerifyMigratedUser",
+        },
+      })
+    );
+    vi.useRealTimers();
+  });
+
   test("publishes DaysUntilAccountWouldHaveBeenDeleted metric when a previous dateForDeletion exists", async () => {
     vi.useFakeTimers();
     const systemNow = new Date("2026-09-02T12:12:30.000Z");

@@ -1273,8 +1273,31 @@ describe("UpdateInactiveAccountTracker handler", () => {
     };
 
     await handler(event, {} as Context);
-    expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(1);
 
+    // txma events should be the only calls to sqs
+    expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(2);
+    const sqsCalls = sqsMock.commandCalls(SendMessageCommand);
+    const txmaCallInput = sqsCalls[0].args[0].input; 
+
+    expect(txmaCallInput.QueueUrl).toEqual("TXMA_QUEUE_URL");
+
+    const txmaEventBody = JSON.parse(txmaCallInput.MessageBody ?? "");
+
+    expect(txmaEventBody).toEqual(
+      expect.objectContaining({
+        event_name: "HOME_ACCOUNT_TRACKER_ACCOUNT_REACTIVATED",
+      })
+    );
+    const txmaCallInput2 = sqsCalls[1].args[0].input; 
+    const txmaEventBody2 = JSON.parse(txmaCallInput2.MessageBody ?? "");
+    expect(txmaEventBody2).toEqual(
+      expect.objectContaining({
+        event_name: "HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED",
+        extensions: {
+          accountTrackerNotificationType: "LikelyVerifyMigratedUser",
+        },
+      })
+    );
     vi.useRealTimers();
   });
 

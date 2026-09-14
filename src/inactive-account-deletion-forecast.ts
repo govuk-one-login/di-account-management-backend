@@ -1,6 +1,5 @@
 import {
   DynamoDBDocumentClient,
-  QueryCommand,
   PutCommand,
 } from "@aws-sdk/lib-dynamodb";
 import { Context } from "aws-lambda";
@@ -9,6 +8,7 @@ import { getEnvironmentVariable } from "./common/utils.js";
 import { DynamoDBClient, DescribeTableCommand } from "@aws-sdk/client-dynamodb";
 import { MetricUnit } from "@aws-lambda-powertools/metrics";
 import { initMetrics } from "./common/metrics.js";
+import { countAccountsForDate } from "./common/query-inactive-accounts.js";
 const metrics = initMetrics("inactive-account-deletion-forecast");
 
 const logger = new Logger();
@@ -31,31 +31,6 @@ const chunk = <T,>(items: T[], size: number): T[][] =>
   Array.from({ length: Math.ceil(items.length / size) }, (_, i) =>
     items.slice(i * size, i * size + size)
   );
-
-export const countAccountsForDate = async (
-  tableName: string,
-  dateForDeletion: string
-): Promise<number> => {
-  let count = 0;
-  let lastEvaluatedKey: Record<string, unknown> | undefined;
-
-  do {
-    const response = await dynamoDocClient.send(
-      new QueryCommand({
-        TableName: tableName,
-        KeyConditionExpression: "dateForDeletion = :date",
-        ExpressionAttributeValues: { ":date": dateForDeletion },
-        Select: "COUNT",
-        ConsistentRead: false,
-        ExclusiveStartKey: lastEvaluatedKey,
-      })
-    );
-    count += response.Count ?? 0;
-    lastEvaluatedKey = response.LastEvaluatedKey ?? undefined;
-  } while (lastEvaluatedKey);
-
-  return count;
-};
 
 const publishRecordCountMetric = async (tableName: string): Promise<void> => {
   try {

@@ -16,12 +16,24 @@ export const handler = async (
   logger.addContext(context);
   await Promise.all(
     event.Records.map(async (record) => {
+      let userData: UserData;
+
+      try {
+        userData = JSON.parse(record.Sns.Message);
+        validateUserData(userData);
+      } catch (error) {
+        logger.error(
+          `Unable to delete email subscription for message with ID: ${record.Sns.MessageId}. This message will never be actionable and has been skipped: ${
+            (error as Error).message
+          }`
+        );
+        return;
+      }
+
       try {
         logger.info(
           `started processing message with ID: ${record.Sns.MessageId}`
         );
-        const userData: UserData = JSON.parse(record.Sns.Message);
-        validateUserData(userData);
         await retryFunction(
           () => deleteEmailSubscription(userData),
           { functionName: "deleteEmailSubscription" }
@@ -31,7 +43,7 @@ export const handler = async (
         );
       } catch (error) {
         throw new Error(
-          `Unable to delete activity log for message with ID: ${record.Sns.MessageId}, ${
+          `Unable to delete email subscription for message with ID: ${record.Sns.MessageId}, ${
             (error as Error).message
           }`,
           { cause: error }

@@ -74,6 +74,47 @@ describe("handler", () => {
     expect(deleteEmailSubscriptionMock).toHaveBeenCalledWith(TEST_USER_DATA);
   });
 
+  test("that it logs and skips a record without throwing when userData fails validation", async () => {
+    validateUserDataMock.mockImplementation(() => {
+      throw new Error("userData is not valid");
+    });
+
+    await expect(handler(TEST_SNS_EVENT, {} as Context)).resolves.not.toThrow();
+
+    expect(deleteEmailSubscriptionMock).not.toHaveBeenCalled();
+    expect(mockLogger.error).toHaveBeenCalledWith(
+      `Unable to delete email subscription for message with ID: ${TEST_SNS_EVENT.Records[0].Sns.MessageId}. This message will never be actionable and has been skipped: userData is not valid`
+    );
+  });
+
+  test("that a record failing validation does not stop other records in the batch from being processed", async () => {
+    const invalidRecord = {
+      ...TEST_SNS_EVENT.Records[0],
+      Sns: {
+        ...TEST_SNS_EVENT.Records[0].Sns,
+        MessageId: "invalid-message-id",
+        Message: JSON.stringify({ user_id: "user-id" }),
+      },
+    };
+    const validRecord = TEST_SNS_EVENT.Records[0];
+    const multiRecordEvent = { Records: [invalidRecord, validRecord] };
+
+    validateUserDataMock.mockImplementation((data) => {
+      if (!data.public_subject_id) {
+        throw new Error("userData is not valid");
+      }
+      return data;
+    });
+
+    await expect(handler(multiRecordEvent, {} as Context)).resolves.not.toThrow();
+
+    expect(deleteEmailSubscriptionMock).toHaveBeenCalledTimes(1);
+    expect(deleteEmailSubscriptionMock).toHaveBeenCalledWith(TEST_USER_DATA);
+    expect(mockLogger.error).toHaveBeenCalledWith(
+      `Unable to delete email subscription for message with ID: invalid-message-id. This message will never be actionable and has been skipped: userData is not valid`
+    );
+  });
+
   test("that it retries up to 3 times total when deleteEmailSubscription throws error", async () => {
     vi.mocked(deleteEmailSubscriptionMock).mockRejectedValue(
       new Error("deleteEmailSubscription FAIL"),

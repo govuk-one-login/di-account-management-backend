@@ -2691,6 +2691,12 @@ Resources:
       Handler: delete-email-subscriptions.handler
       Role: !GetAtt DeleteEmailSubscriptionsRole.Arn
       Timeout: 30
+      DeploymentPreference:
+        Alarms:
+          Fn::If:
+            - IsNotDevelopmentOrDemo
+            - - !Ref AWS::NoValue
+            - - !Ref AWS::NoValue      
       EventInvokeConfig:
         DestinationConfig:
           OnFailure:

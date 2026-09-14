@@ -40,6 +40,8 @@ const EVENTS_WITHOUT_SESSION_ID = new Set([
   // AUTH_DELETE_ACCOUNT has no session_id when the account deletion is
   // initiated by TSD.
   "AUTH_DELETE_ACCOUNT",
+  // Some historic AUTH_UPDATE_EMAIL events don't have a session ID
+  "AUTH_UPDATE_EMAIL",
 ]);
 
 const EVENTS_WITHOUT_USER_ID = new Set([
@@ -53,6 +55,12 @@ const EVENTS_WITHOUT_CLIENT_ID = new Set([
   // STS_REFRESH_TOKEN_ISSUED does not always have a client_id, but we still
   // want to ingest the event and use it downstream if it is present.
   "STS_REFRESH_TOKEN_ISSUED",
+  // Some historic AUTH_UPDATE_EMAIL events don't have a client ID
+  "AUTH_UPDATE_EMAIL",
+  // Client ID is not always present (e.g. because of manual TSD account deletions)
+  "AUTH_DELETE_ACCOUNT",
+  // Some historic AUTH_CODE_VERIFIED events don't have a client ID
+  "AUTH_CODE_VERIFIED",
 ]);
 
 const getEventId = (): string => {
@@ -154,7 +162,9 @@ export const handler = async (
   logger.addContext(context);
   const batchItemFailures: { itemIdentifier: string }[] = [];
 
-  logger.info(`Raw events handler invoked with incoming batch size: ${event.Records.length}`);
+  logger.info(
+    `Raw events handler invoked with incoming batch size: ${event.Records.length}`
+  );
 
   await Promise.all(
     event.Records.map(async (record) => {

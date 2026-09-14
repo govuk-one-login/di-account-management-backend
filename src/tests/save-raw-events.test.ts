@@ -213,6 +213,19 @@ describe("validateUser", () => {
     );
   });
 
+  test("does not throw when session_id is missing for AUTH_UPDATE_EMAIL", () => {
+    const updateEmailEvent = {
+      ...makeTxmaEvent(),
+      event_name: "AUTH_UPDATE_EMAIL",
+      user: { user_id: user.user_id },
+    };
+    const txmaEvent = JSON.parse(JSON.stringify(updateEmailEvent));
+
+    expect(() => {
+      validateUser(txmaEvent);
+    }).not.toThrow();
+  });
+
   test("does not throw when session_id is missing for AUTH_TOKEN_SENT_TO_ORCHESTRATION", () => {
     const tokenSentEvent = {
       ...makeTxmaEvent(),
@@ -277,6 +290,47 @@ describe("validateTxmaEventBody", () => {
         `Could not validate TxmaEvent with id ${txmaEvent.event_id} and name ${txmaEvent.event_name}: txmaEvent.client_id is null`
       )
     );
+  });
+
+  test("does not throw when client_id key is missing for AUTH_UPDATE_EMAIL", () => {
+    const updateEmailEvent = {
+      ...makeTxmaEvent(),
+      event_name: "AUTH_UPDATE_EMAIL",
+      client_id: undefined,
+    };
+    const txmaEvent = JSON.parse(JSON.stringify(updateEmailEvent));
+
+    expect(() => {
+      validateTxmaEventBody(txmaEvent);
+    }).not.toThrow();
+  });
+
+  test("does not throw when client_id key is missing for AUTH_DELETE_ACCOUNT", () => {
+    const deleteAccountEvent = {
+      ...makeTxmaEvent(),
+      event_name: "AUTH_DELETE_ACCOUNT",
+      client_id: undefined,
+      user: { user_id: user.user_id },
+    };
+    const txmaEvent = JSON.parse(JSON.stringify(deleteAccountEvent));
+
+    expect(() => {
+      validateTxmaEventBody(txmaEvent);
+    }).not.toThrow();
+  });
+
+  test("does not throw when client_id key is missing for AUTH_CODE_VERIFIED", () => {
+    const codeVerifiedEvent = {
+      ...makeTxmaEvent(),
+      event_name: "AUTH_CODE_VERIFIED",
+      client_id: undefined,
+      user: { session_id: user.session_id },
+    };
+    const txmaEvent = JSON.parse(JSON.stringify(codeVerifiedEvent));
+
+    expect(() => {
+      validateTxmaEventBody(txmaEvent);
+    }).not.toThrow();
   });
 
   test("does not throw when client_id key is missing for STS_REFRESH_TOKEN_ISSUED", () => {
@@ -498,6 +552,7 @@ describe("handler only saves allowlisted events", () => {
     "AUTH_CODE_VERIFIED",
     "AUTH_PASSKEY_VERIFICATION_SUCCESSFUL",
     "STS_REFRESH_TOKEN_ISSUED",
+    "AUTH_DELETE_ACCOUNT",
   ])("writes to DynamoDB when event_name is %s", async (allowedEventName) => {
     vi.spyOn(Date, "now").mockImplementation(() => TIMESTAMP);
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment

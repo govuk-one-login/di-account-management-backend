@@ -4,6 +4,7 @@ import { hasAisBlockIntervention } from "./iadGuards/hasAisBlockIntervention.js"
 import { hasUndeliverableEmailAddress } from "./iadGuards/hasUndeliverableEmailAddress.js";
 import { sendInactiveAccountEmailsIsEnabled } from "./iadGuards/sendInactiveAccountEmailsIsEnabled.js";
 import { hasEmailAddress } from "./iadGuards/hasEmailAddress.js";
+import { hasNotSetupMfa } from "./iadGuards/hasNotSetupMfa.js";
 
 export enum Actions {
   continue = "Continue",
@@ -44,6 +45,12 @@ const guardsList = {
     guard: hasEmailAddress,
     contributeToAlarm: true,
   },
+  hasNotSetupMfa: {
+    guard: hasNotSetupMfa,
+    contributeToAlarm: false,
+    skippedNotificationAuditEventReason: "UnusableAccount",
+    skippedNotificationAuditEventName: "HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED"
+  },
 };
 
 export type ProcessConfig = Record<
@@ -80,6 +87,7 @@ export const processConfig: ProcessConfig = {
       guardsList.hasEmailAddress,
       guardsList.hasAisBlockIntervention,
       guardsList.hasUndeliverableEmailAddress,
+      guardsList.hasNotSetupMfa,
     ],
   },
   Warning7Day: {
@@ -94,6 +102,7 @@ export const processConfig: ProcessConfig = {
       guardsList.hasEmailAddress,
       guardsList.hasAisBlockIntervention,
       guardsList.hasUndeliverableEmailAddress,
+      guardsList.hasNotSetupMfa,
     ],
   },
   DeleteAccount: {

@@ -829,7 +829,8 @@ describe("UpdateInactiveAccountTracker handler", () => {
         dateForDeletion: dateStr, 
         userLastActive: new Date(Date.now() - 100000).toISOString(), 
         status: "pending", 
-        emailAddress: "user@example.com" 
+        emailAddress: "user@example.com", 
+        hasSetupMfa: true 
       }],
     });
     dynamoMock.on(TransactWriteCommand).resolves({});
@@ -897,7 +898,8 @@ describe("UpdateInactiveAccountTracker handler", () => {
         dateForDeletion: dateStr, 
         userLastActive: new Date(Date.now() - 100000).toISOString(), 
         status: "pending", 
-        emailAddress: "user@example.com" 
+        emailAddress: "user@example.com", 
+        hasSetupMfa: true 
       }],
     });
     dynamoMock.on(TransactWriteCommand).resolves({});
@@ -953,6 +955,49 @@ describe("UpdateInactiveAccountTracker handler", () => {
     });
   });
 
+  test("does not send account saved email and emits UnusableAccount skipped audit event when user has not set up MFA", async () => {
+    const within30DaysDate = new Date();
+    within30DaysDate.setDate(within30DaysDate.getDate() + 15);
+    const dateStr = within30DaysDate.toISOString().split("T")[0];
+
+    dynamoMock.on(QueryCommand).resolves({
+      Items: [{
+        commonSubjectId: "qwerty",
+        dateForDeletion: dateStr,
+        userLastActive: new Date(Date.now() - 100000).toISOString(),
+        status: "pending",
+        emailAddress: "user@example.com",
+        hasSetupMfa: false
+      }],
+    });
+    dynamoMock.on(TransactWriteCommand).resolves({});
+    sqsMock.on(SendMessageCommand).resolves({});
+
+    const event: DynamoDBStreamEvent = {
+      Records: [generateDynamoStreamRecord("govuk-app-client-id")]
+    };
+
+    await handler(event, {} as Context);
+
+    // No account-saved notification is enqueued to the notification queue.
+    const notificationCalls = sqsMock
+      .commandCalls(SendMessageCommand)
+      .filter((call) => call.args[0].input.QueueUrl === "https://sqsq-url");
+    expect(notificationCalls.length).toEqual(0);
+
+    // A NOTIFICATION_SKIPPED audit event with reason UnusableAccount is emitted.
+    const txmaCall = sqsMock
+      .commandCalls(SendMessageCommand)
+      .find((call) => call.args[0].input.QueueUrl === "TXMA_QUEUE_URL");
+    expect(txmaCall).toBeDefined();
+    const auditEvent = JSON.parse(txmaCall!.args[0].input.MessageBody ?? "");
+    expect(auditEvent.event_name).toBe("HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED");
+    expect(auditEvent.user).toMatchObject({ user_id: "qwerty" });
+    expect(auditEvent.extensions).toMatchObject({
+      accountTrackerNotificationSkipReason: "UnusableAccount",
+    });
+  });
+
   test("sends INACTIVE_ACCOUNT_SAVED_RP to SQS when user is within 30 days of deletion and logs in via an RP that is not GOVUK App or OLH", async () => {
     const within30DaysDate = new Date();
     within30DaysDate.setDate(within30DaysDate.getDate() + 15);
@@ -964,7 +1009,8 @@ describe("UpdateInactiveAccountTracker handler", () => {
         dateForDeletion: dateStr, 
         userLastActive: new Date(Date.now() - 100000).toISOString(), 
         status: "pending", 
-        emailAddress: "user@example.com" 
+        emailAddress: "user@example.com", 
+        hasSetupMfa: true 
       }],
     });
     dynamoMock.on(TransactWriteCommand).resolves({});
@@ -1031,7 +1077,8 @@ describe("UpdateInactiveAccountTracker handler", () => {
         dateForDeletion: dateStr, 
         userLastActive: new Date(Date.now() - 100000).toISOString(), 
         status: "pending", 
-        emailAddress: "user@example.com" 
+        emailAddress: "user@example.com", 
+        hasSetupMfa: true 
       }],
     });
     dynamoMock.on(TransactWriteCommand).resolves({});

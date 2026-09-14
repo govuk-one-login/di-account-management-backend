@@ -2730,7 +2730,7 @@ Resources:
             ]
           NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
-        Alarms: !Ref AWS::NoValue
+        Alarms: []
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -7166,7 +7166,7 @@ Resources:
           NODE_OPTIONS: --enable-source-maps --max-old-space-size=5120
           TABLE_NAME: !Ref ActivityLogsStoreTableName
       DeploymentPreference:
-        Alarms: !Ref AWS::NoValue
+        Alarms: []
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -8108,7 +8108,7 @@ Resources:
           QUERY_AND_DISPATCH_FUNCTION_NAME: !Ref QueryAndDispatchInactiveAccountsFunction
           NODE_OPTIONS: --enable-source-maps
       DeploymentPreference:
-        Alarms: !Ref AWS::NoValue
+        Alarms: []
     Metadata:
       BuildMethod: esbuild
       BuildProperties:

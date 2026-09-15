@@ -51,6 +51,7 @@ const guardsList = {
     guard: hasNotSetupMfa,
     contributeToAlarm: false,
     skippedNotificationAuditEventReason: "UnusableAccount",
+    skippedNotificationAuditEventName: "HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED"
   },
   dateForDeletionIs27October: {
     guard: dateForDeletionIs27October,

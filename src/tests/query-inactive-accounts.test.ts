@@ -72,8 +72,10 @@ describe("countAccountsForDate", () => {
   test("returns the count from a single page", async () => {
     dynamoMock.on(QueryCommand).resolves({ Count: 42 });
 
-    const count = await countAccountsForDate("my-table", "2026-06-01");
-    expect(count).toBe(42);
+    const result = await countAccountsForDate("my-table", "2026-06-01");
+    expect(result.total).toBe(42);
+    expect(result.withMfa).toBeUndefined();
+    expect(result.withoutMfa).toBeUndefined();
   });
 
   test("accumulates counts across paginated responses", async () => {
@@ -88,16 +90,20 @@ describe("countAccountsForDate", () => {
       })
       .resolvesOnce({ Count: 50 });
 
-    const count = await countAccountsForDate("my-table", "2026-06-01");
-    expect(count).toBe(150);
+    const result = await countAccountsForDate("my-table", "2026-06-01");
+    expect(result.total).toBe(150);
+    expect(result.withMfa).toBeUndefined();
+    expect(result.withoutMfa).toBeUndefined();
     expect(dynamoMock.commandCalls(QueryCommand)).toHaveLength(2);
   });
 
   test("returns 0 when Count is undefined", async () => {
     dynamoMock.on(QueryCommand).resolves({});
 
-    const count = await countAccountsForDate("my-table", "2026-06-01");
-    expect(count).toBe(0);
+    const result = await countAccountsForDate("my-table", "2026-06-01");
+    expect(result.total).toBe(0);
+    expect(result.withMfa).toBeUndefined();
+    expect(result.withoutMfa).toBeUndefined();
   });
 
   test("throws on DynamoDB error", async () => {
@@ -106,6 +112,36 @@ describe("countAccountsForDate", () => {
     await expect(
       countAccountsForDate("my-table", "2026-06-01")
     ).rejects.toThrow("DynamoDB failure");
+  });
+
+  test("returns MFA breakdown when requested", async () => {
+    dynamoMock.on(QueryCommand).resolves({ Count: 7, ScannedCount: 10 });
+
+    const result = await countAccountsForDate("my-table", "2026-06-01", {
+      includeMfaBreakdown: true,
+    });
+    expect(result.total).toBe(10);
+    expect(result.withMfa).toBe(7);
+    expect(result.withoutMfa).toBe(3);
+    expect(dynamoMock.commandCalls(QueryCommand)).toHaveLength(1);
+  });
+
+  test("applies FilterExpression when includeMfaBreakdown is true", async () => {
+    dynamoMock.on(QueryCommand).resolves({ Count: 7, ScannedCount: 10 });
+
+    await countAccountsForDate("my-table", "2026-06-01", {
+      includeMfaBreakdown: true,
+    });
+
+    const calls = dynamoMock.commandCalls(QueryCommand);
+    expect(calls).toHaveLength(1);
+
+    const [call] = calls;
+    expect(call.args[0].input.FilterExpression).toBe("hasSetupMfa = :mfaVal");
+    expect(call.args[0].input.ExpressionAttributeValues).toHaveProperty(
+      ":mfaVal",
+      true
+    );
   });
 });
 

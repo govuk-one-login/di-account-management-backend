@@ -17,6 +17,7 @@ const dynamoClient = new DynamoDBClient({});
 const dynamoDocClient = DynamoDBDocumentClient.from(dynamoClient);
 
 const FORECAST_DAYS = 5 * 365;
+const MFA_BREAKDOWN_DAYS = 60;
 const TTL_SECONDS = 365 * 24 * 60 * 60;
 const BATCH_SIZE = 20;
 const REMAINING_TIME_THRESHOLD_MS = 10_000;
@@ -58,26 +59,43 @@ export const handler = async (
   const dates = buildDates(new Date(), FORECAST_DAYS);
   const forecastedAt = new Date().toISOString();
   const ttl = Math.floor(Date.now() / 1000) + TTL_SECONDS;
+  const breakdownCutoffDate = new Date();
+  breakdownCutoffDate.setDate(breakdownCutoffDate.getDate() + MFA_BREAKDOWN_DAYS);
 
   await publishRecordCountMetric(tableName);
 
   let processed = 0;
 
   for (const batch of chunk(dates, BATCH_SIZE)) {
-    const counts = await Promise.all(
-      batch.map((date) => countAccountsForDate(tableName, date))
+    const results = await Promise.all(
+      batch.map((date) => {
+        const parsedDate = new Date(date);
+        return countAccountsForDate(tableName, date, {
+          includeMfaBreakdown: parsedDate <= breakdownCutoffDate,
+        });
+      })
     );
 
     await Promise.all(
       batch.map((date, i) => {
-        logger.info("Deletion forecast", { dateForDeletion: date, accountsToDelete: counts[i] });
+        const { total, withMfa, withoutMfa } = results[i];
+
+        const logData = {
+          dateForDeletion: date,
+          accountsToDelete: total,
+          ...(withMfa !== undefined && {
+            accountsWithMfa: withMfa,
+            accountsWithoutMfa: withoutMfa,
+          }),
+        };
+        logger.info("Deletion forecast", logData);
         return dynamoDocClient.send(
           new PutCommand({
             TableName: forecastTableName,
             Item: {
               dateForDeletion: date,
               forecastedAt,
-              accountsToDelete: counts[i],
+              accountsToDelete: total,
               ttl,
             },
           })

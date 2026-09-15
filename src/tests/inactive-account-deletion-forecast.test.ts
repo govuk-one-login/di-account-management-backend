@@ -65,7 +65,7 @@ describe("handler", () => {
     dynamoMock.on(DescribeTableCommand).resolves({
       Table: { ItemCount: 4500 },
     });
-    dynamoDocumentMock.on(QueryCommand).resolves({ Count: 10 });
+    dynamoDocumentMock.on(QueryCommand).resolves({ Count: 10, ScannedCount: 10 });
     dynamoDocumentMock.on(PutCommand).resolves({});
 
     await handler({}, mockContext());
@@ -102,7 +102,7 @@ describe("handler", () => {
       vi.setSystemTime(new Date("2026-01-01T00:00:00.000Z"));
 
       dynamoMock.on(DescribeTableCommand).resolves({ Table: { ItemCount: 0 } });
-      dynamoDocumentMock.on(QueryCommand).resolves({ Count: 10 });
+      dynamoDocumentMock.on(QueryCommand).resolves({ Count: 10, ScannedCount: 10 });
       dynamoDocumentMock.on(PutCommand).resolves({});
 
       let call = 0;

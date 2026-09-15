@@ -8,6 +8,12 @@ const dynamoDocClient = DynamoDBDocumentClient.from(dynamoClient);
 interface PaginatedQueryPage {
   items?: InactiveAccountTrackerRecord[];
   count: number;
+  scannedCount: number;
+}
+
+interface QueryFilter {
+  expression: string;
+  values: Record<string, unknown>;
 }
 
 // Private — the ONLY place the QueryCommand is constructed for the
@@ -17,16 +23,25 @@ interface PaginatedQueryPage {
 async function* paginatedQuery(
   tableName: string,
   dateForDeletion: string,
-  select: "COUNT" | "ALL_ATTRIBUTES"
+  select: "COUNT" | "ALL_ATTRIBUTES",
+  filter?: QueryFilter
 ): AsyncGenerator<PaginatedQueryPage> {
   let lastEvaluatedKey: Record<string, unknown> | undefined;
 
   do {
+    const expressionAttributeValues: Record<string, unknown> = {
+      ":date": dateForDeletion,
+    };
+    if (filter) {
+      Object.assign(expressionAttributeValues, filter.values);
+    }
+
     const response = await dynamoDocClient.send(
       new QueryCommand({
         TableName: tableName,
         KeyConditionExpression: "dateForDeletion = :date",
-        ExpressionAttributeValues: { ":date": dateForDeletion },
+        ExpressionAttributeValues: expressionAttributeValues,
+        ...(filter && { FilterExpression: filter.expression }),
         Select: select,
         ConsistentRead: false,
         ExclusiveStartKey: lastEvaluatedKey,
@@ -36,6 +51,7 @@ async function* paginatedQuery(
     yield {
       items: response.Items as InactiveAccountTrackerRecord[] | undefined,
       count: response.Count ?? 0,
+      scannedCount: response.ScannedCount ?? 0,
     };
     lastEvaluatedKey = response.LastEvaluatedKey ?? undefined;
   } while (lastEvaluatedKey);
@@ -58,8 +74,33 @@ export async function* queryAccountsByDate(
 
 export const countAccountsForDate = async (
   tableName: string,
-  dateForDeletion: string
-): Promise<number> => {
+  dateForDeletion: string,
+  options?: { includeMfaBreakdown?: boolean }
+): Promise<AccountCountResult> => {
+  if (options?.includeMfaBreakdown) {
+    let total = 0;
+    let withMfa = 0;
+
+    for await (const page of paginatedQuery(
+      tableName,
+      dateForDeletion,
+      "COUNT",
+      {
+        expression: "hasSetupMfa = :mfaVal",
+        values: { ":mfaVal": true },
+      }
+    )) {
+      total += page.scannedCount;
+      withMfa += page.count;
+    }
+
+    return {
+      total,
+      withMfa,
+      withoutMfa: total - withMfa,
+    };
+  }
+
   let count = 0;
   for await (const page of paginatedQuery(
     tableName,
@@ -68,5 +109,13 @@ export const countAccountsForDate = async (
   )) {
     count += page.count;
   }
-  return count;
+  return {
+    total: count,
+  };
 };
+
+export interface AccountCountResult {
+  total: number;
+  withMfa?: number;
+  withoutMfa?: number;
+}

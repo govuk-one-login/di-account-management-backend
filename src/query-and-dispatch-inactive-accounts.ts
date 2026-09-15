@@ -4,6 +4,7 @@ import { Logger } from "@aws-lambda-powertools/logger";
 import { getEnvironmentVariable } from "./common/utils.js";
 import { processConfig } from "./common/process-config.js";
 import { queryAccountsByDate } from "./common/query-inactive-accounts.js";
+import iadQueryLogicHash from "./common/iad-query-logic-hash.json" with { type: "json" };
 
 const logger = new Logger();
 const sqsClient = new SQSClient({});
@@ -30,6 +31,7 @@ export const handler = async (
   context: Context
 ): Promise<void> => {
   logger.addContext(context);
+  logger.info("IAD query logic hash", { iadQueryLogicHash: iadQueryLogicHash.hash });
 
   validateEvent(event);
 

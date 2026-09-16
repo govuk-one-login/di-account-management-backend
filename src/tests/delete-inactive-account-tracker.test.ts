@@ -146,6 +146,7 @@ describe("deleteUserData", () => {
       emailAddress: "user@example.com",
       hasUndeliverableEmailAddress: false,
       hasSetupMfa: true,
+      dateForDeletion: "2030-01-01",
     });
   });
 
@@ -182,7 +183,7 @@ describe("maybeEnqueueDeletionEmail", () => {
   test("enqueues email when user is not blocked and email is deliverable", async () => {
     sqsMock.on(SendMessageCommand).resolves({});
 
-    await maybeEnqueueDeletionEmail("user-id", "user@example.com", false, true);
+    await maybeEnqueueDeletionEmail("user-id", "user@example.com", false, true, "2026-10-20");
 
     expect(sqsMock).toHaveReceivedCommandWith(SendMessageCommand, {
       QueueUrl: "https://sqs.example.com/notification",
@@ -194,7 +195,7 @@ describe("maybeEnqueueDeletionEmail", () => {
   });
 
   test("does not enqueue email when hasUndeliverableEmailAddress is true", async () => {
-    await maybeEnqueueDeletionEmail("user-id", "user@example.com", true, true);
+    await maybeEnqueueDeletionEmail("user-id", "user@example.com", true, true, "2026-10-20");
 
     expect(notificationSendCount()).toEqual(0);
     expect(mockIsUserIdBlocked).not.toHaveBeenCalled();
@@ -203,7 +204,22 @@ describe("maybeEnqueueDeletionEmail", () => {
   test("does not enqueue email when user is blocked", async () => {
     mockIsUserIdBlocked.mockResolvedValue(aisSuspended);
 
-    await maybeEnqueueDeletionEmail("user-id", "user@example.com", false, true);
+    await maybeEnqueueDeletionEmail("user-id", "user@example.com", false, true, "2026-10-20");
+
+    expect(notificationSendCount()).toEqual(0);
+  });
+
+
+  test("does not enqueue email when date for deletion is 27th October 2026", async () => {
+    await maybeEnqueueDeletionEmail("user-id", "user@example.com", false, true, "2026-10-27");
+
+    expect(notificationSendCount()).toEqual(0);
+  });
+
+  test("does not enqueue email when user is blocked", async () => {
+    mockIsUserIdBlocked.mockResolvedValue(aisSuspended);
+
+    await maybeEnqueueDeletionEmail("user-id", "user@example.com", false, true, "2026-10-20");
 
     expect(notificationSendCount()).toEqual(0);
   });
@@ -211,7 +227,7 @@ describe("maybeEnqueueDeletionEmail", () => {
   test("does not enqueue email and emits UnusableAccount skipped audit event when user has not set up MFA", async () => {
     sqsMock.on(SendMessageCommand).resolves({ MessageId: "test-message-id" });
 
-    await maybeEnqueueDeletionEmail("user-id", "user@example.com", false, false);
+    await maybeEnqueueDeletionEmail("user-id", "user@example.com", false, false, "2026-10-20");
 
     expect(notificationSendCount()).toEqual(0);
     expect(mockIsUserIdBlocked).not.toHaveBeenCalled();

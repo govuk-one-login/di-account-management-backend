@@ -11,6 +11,7 @@ import { sendAuditEvent } from "./common/send-audit-event.js";
 import { Logger } from "@aws-lambda-powertools/logger";
 import { sendSqsMessage } from "./common/sqs.js";
 import { isUserIdBlocked } from "./common/account-interventions-service-client.js";
+import checkIfDateIs27October from "./common/check-if-date-is-27-october.js";
 
 const logger = new Logger();
 
@@ -36,7 +37,7 @@ export const validateUserData = (userData: UserData): UserData => {
 
 export const deleteUserData = async (
   userData: UserData
-): Promise<{ deleted: boolean; emailAddress?: string; hasUndeliverableEmailAddress?: boolean; hasSetupMfa?: boolean }> => {
+): Promise<{ deleted: boolean; emailAddress?: string; hasUndeliverableEmailAddress?: boolean; hasSetupMfa?: boolean; dateForDeletion?: string }> => {
   const TABLE_NAME = getEnvironmentVariable("TABLE_NAME");
 
   const queryResponse = await dynamoDocClient.send(
@@ -85,6 +86,7 @@ export const deleteUserData = async (
     emailAddress: item.emailAddress,
     hasUndeliverableEmailAddress: item.hasUndeliverableEmailAddress,
     hasSetupMfa: item.hasSetupMfa,
+    dateForDeletion: item.dateForDeletion,
   };
 };
 
@@ -92,10 +94,16 @@ export const maybeEnqueueDeletionEmail = async (
   userId: string,
   emailAddress: string | undefined,
   hasUndeliverableEmailAddress: boolean | undefined,
-  hasSetupMfa: boolean | undefined
+  hasSetupMfa: boolean | undefined,
+  dateForDeletion: string | undefined
 ): Promise<void> => {
   if (!emailAddress) {
     logger.info("Skipping IAD deletion email: no email address");
+    return;
+  }
+
+  if (checkIfDateIs27October(dateForDeletion ?? "")) {
+    logger.info("Skipping IAD deletion email: user is likely migrated from GOVUK Verify");
     return;
   }
 
@@ -160,7 +168,8 @@ export const handler = async (
             userData.user_id,
             result.emailAddress,
             result.hasUndeliverableEmailAddress,
-            result.hasSetupMfa
+            result.hasSetupMfa,
+            result.dateForDeletion
           );
         }
 

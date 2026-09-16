@@ -126,7 +126,6 @@ export const processConfig: ProcessConfig = {
     guards: [
       guardsList.hasEmailAddress,
       guardsList.hasRecentActivityLogEntry,
-      guardsList.dateForDeletionIs27October,
     ],
   },
   DeletionDryRun: {

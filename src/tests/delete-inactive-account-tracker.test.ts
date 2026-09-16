@@ -302,6 +302,20 @@ describe("handler", () => {
 
     expect(notificationSendCount()).toEqual(0);
   });
+    
+  test("deletes record but does not enqueue email when date for deletion is 27th October 2026", async () => {
+    dynamoMock.on(QueryCommand).resolves({ Items: [{ 
+      dateForDeletion: "2026-10-27", 
+      commonSubjectId: "user-id", 
+      emailAddress: "user@example.com",
+      hasUndeliverableEmailAddress: false, 
+      hasSetupMfa: true 
+    }]});
+    await handler(createSnsEvent({ user_id: "user-id" }), {} as Context);
+
+    expect(dynamoMock.commandCalls(DeleteCommand).length).toEqual(1);
+    expect(notificationSendCount()).toEqual(0);
+  });
 
   test("does not enqueue email when no tracker records found", async () => {
     dynamoMock.on(QueryCommand).resolves({ Items: [] });

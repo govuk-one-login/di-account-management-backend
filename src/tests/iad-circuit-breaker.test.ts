@@ -49,6 +49,12 @@ describe("getIadCircuitBreakerStatus", () => {
     expect(await getIadCircuitBreakerStatus()).toBe(false);
   });
 
+  test("returns false when Items is undefined", async () => {
+    dynamoMock.on(QueryCommand).resolves({ Items: undefined });
+
+    expect(await getIadCircuitBreakerStatus()).toBe(false);
+  });
+
   test("queries with correct parameters", async () => {
     dynamoMock.on(QueryCommand).resolves({ Items: [makeItem(true)] });
 

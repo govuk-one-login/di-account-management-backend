@@ -8,6 +8,9 @@ import {
   QueryCommand,
   UpdateCommand,
 } from "@aws-sdk/lib-dynamodb";
+import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
+
+const sqsMock = mockClient(SQSClient);
 
 vi.mock("@aws-lambda-powertools/parameters/secrets", () => ({
   getSecret: vi.fn(),
@@ -70,7 +73,12 @@ describe("handler", () => {
   beforeEach(() => {
     process.env.NOTIFY_DELIVERY_RECEIPTS_SECRET_ARN = "mock-secret-arn"; // pragma: allowlist secret
     process.env.INACTIVE_ACCOUNT_TRACKER_TABLE_NAME = "mock-tracker-table";
+    sqsMock.reset();
     dynamoMock.reset();
+    sqsMock.on(SendMessageCommand).resolves({ MessageId: "test-message-id" });
+    process.env.TXMA_QUEUE_URL = "https://sqs.eu-west-2.amazonaws.com/123456789012/TxmaQueue";
+    process.env.FEATURE_SEND_IAD_AUDIT_EVENTS = "true";
+    process.env.AWS_REGION = "eu-west-2";
   });
 
   afterEach(() => {
@@ -242,6 +250,49 @@ describe("handler", () => {
         sent_at: "2017-05-14T12:15:30.000000Z",
       }
     );
+
+    expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(2);
+    const sqsCalls = sqsMock.commandCalls(SendMessageCommand);
+
+    const txmaCallInput1 = sqsCalls[0].args[0].input; 
+    expect(txmaCallInput1.QueueUrl).toEqual("https://sqs.eu-west-2.amazonaws.com/123456789012/TxmaQueue");
+    const txmaEventBody1 = JSON.parse(txmaCallInput1.MessageBody ?? "");
+    expect(txmaEventBody1).toEqual({
+      event_name:"HOME_ACCOUNT_TRACKER_NOTIFICATION_DELIVERY_PERMANENTLY_FAILED",
+      component_id:"https://home.account.gov.uk",
+      timestamp: expect.any(Number),
+      event_timestamp_ms: expect.any(Number),
+      event_timestamp_ms_formatted:expect.any(String),
+      user:{
+        user_id: "subject-1",
+        email: "hello@gov.uk",
+      },
+      extensions:{
+        accountTrackerNotificationCompletedAt: "2017-05-14T12:15:30.000000Z",
+        accountTrackerNotificationCallbackSentAt: "2017-05-14T12:15:30.000000Z",
+        accountTrackerNotificationCreatedAt: "2017-05-14T12:15:30.000000Z",
+      }
+    });
+
+    const txmaCallInput2 = sqsCalls[1].args[0].input; 
+    expect(txmaCallInput2.QueueUrl).toEqual("https://sqs.eu-west-2.amazonaws.com/123456789012/TxmaQueue");
+    const txmaEventBody2 = JSON.parse(txmaCallInput2.MessageBody ?? "");
+    expect(txmaEventBody2).toEqual({
+      event_name:"HOME_ACCOUNT_TRACKER_NOTIFICATION_DELIVERY_PERMANENTLY_FAILED",
+      component_id:"https://home.account.gov.uk",
+      timestamp: expect.any(Number),
+      event_timestamp_ms: expect.any(Number),
+      event_timestamp_ms_formatted:expect.any(String),
+      user:{
+        user_id:"subject-2",
+        email:"hello@gov.uk",
+      },
+      extensions:{
+        accountTrackerNotificationCompletedAt: "2017-05-14T12:15:30.000000Z",
+        accountTrackerNotificationCallbackSentAt: "2017-05-14T12:15:30.000000Z",
+        accountTrackerNotificationCreatedAt: "2017-05-14T12:15:30.000000Z",
+      }
+    });
   });
 
   test("does not query dynamo when notification_type is not email", async () => {

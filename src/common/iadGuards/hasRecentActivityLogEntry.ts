@@ -9,7 +9,8 @@ const FIVE_YEARS_MINUS_30_DAYS = 5 * 365 * 24 * 60 * 60 - 30 * 24 * 60 * 60;
 
 export const hasRecentActivityLogEntry: Guard = async (commonSubjectId) => {
   const tableName = getEnvironmentVariable("ACTIVITY_LOG_TABLE_NAME");
-  const cutoffTimestamp = Date.now() / 1000 - FIVE_YEARS_MINUS_30_DAYS;
+  const cutoffTimestamp =
+    Math.ceil(Date.now() / 1000) - FIVE_YEARS_MINUS_30_DAYS;
   const { Count } = await dynamoDocClient.send(
     new QueryCommand({
       TableName: tableName,

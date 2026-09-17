@@ -63,12 +63,12 @@ describe("hasRecentActivityLogEntry", () => {
     await hasRecentActivityLogEntry("user-123");
     const after = Date.now();
 
-    const fiveYearsMinus30DaysMs = (5 * 365 * 24 * 60 * 60 - 30 * 24 * 60 * 60) * 1000;
+    const fiveYearsMinus30DaysS = 5 * 365 * 24 * 60 * 60 - 30 * 24 * 60 * 60;
     const call = dynamoMock.commandCalls(QueryCommand)[0];
     const cutoff = call.args[0].input.ExpressionAttributeValues![":cutoff"] as number;
 
-    expect(cutoff).toBeGreaterThanOrEqual(before - fiveYearsMinus30DaysMs);
-    expect(cutoff).toBeLessThanOrEqual(after - fiveYearsMinus30DaysMs);
+    expect(cutoff).toBeGreaterThanOrEqual(before / 1000 - fiveYearsMinus30DaysS);
+    expect(cutoff).toBeLessThanOrEqual(after / 1000 - fiveYearsMinus30DaysS);
   });
 
   test("propagates errors from DynamoDB", async () => {

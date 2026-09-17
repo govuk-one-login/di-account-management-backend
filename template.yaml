@@ -28,6 +28,9 @@ Parameters:
   InactiveAccountDailyDeletionForecastTableName:
     Type: String
     Default: inactive_account_daily_deletion_forecast
+  InactiveAccountCircuitBreakerTableName:
+    Type: String
+    Default: inactive_account_circuit_breaker
   Environment:
     Description: "The environment type"
     Type: "String"
@@ -723,7 +726,7 @@ Resources:
         - Key: Source
           Value: "https://github.com/alphagov/di-account-management-backend/blob/main/infrastructure/template.yaml"
         - Key: BackupFrequency
-          Value: !If [ BackupEnabled, "Daily", "" ]
+          Value: !If [BackupEnabled, "Daily", ""]
 
   ######################################
   # Inactive Account Tracker store
@@ -773,7 +776,7 @@ Resources:
         - Key: Source
           Value: "https://github.com/alphagov/di-account-management-backend/blob/main/infrastructure/template.yaml"
         - Key: BackupFrequency
-          Value: !If [ BackupEnabled, "Daily", "" ]
+          Value: !If [BackupEnabled, "Daily", ""]
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
       SSESpecification:
@@ -2690,7 +2693,7 @@ Resources:
       PackageType: Zip
       Handler: delete-email-subscriptions.handler
       Role: !GetAtt DeleteEmailSubscriptionsRole.Arn
-      Timeout: 30    
+      Timeout: 30
       EventInvokeConfig:
         DestinationConfig:
           OnFailure:
@@ -5445,11 +5448,12 @@ Resources:
       Role: !GetAtt SendConfEmailRole.Arn
       Environment:
         Variables:
-          NOTIFY_API_KEY_SECRET_ARN: !FindInMap [
-            EnvironmentConfiguration,
-            !Ref Environment,
-            notifyApiKeySecretArn,
-          ]
+          NOTIFY_API_KEY_SECRET_ARN:
+            !FindInMap [
+              EnvironmentConfiguration,
+              !Ref Environment,
+              notifyApiKeySecretArn,
+            ]
           TEMPLATE_ID:
             !FindInMap [
               EnvironmentVariables,
@@ -6911,11 +6915,12 @@ Resources:
       Environment:
         Variables:
           NODE_OPTIONS: --enable-source-maps
-          NOTIFY_API_KEY_SECRET_ARN: !FindInMap [
-            EnvironmentConfiguration,
-            !Ref Environment,
-            notifyApiKeySecretArn,
-          ]
+          NOTIFY_API_KEY_SECRET_ARN:
+            !FindInMap [
+              EnvironmentConfiguration,
+              !Ref Environment,
+              notifyApiKeySecretArn,
+            ]
           NOTIFY_TEMPLATE_IDS:
             !FindInMap [
               EnvironmentVariables,
@@ -7412,6 +7417,7 @@ Resources:
           INACTIVE_ACCOUNT_TRACKER_TABLE_NAME: !Ref InactiveAccountTrackerStore
           ACCOUNT_DELETION_QUEUE_URL: !Ref AccountDeletionQueue
           ACTIVITY_LOG_TABLE_NAME: !Ref ActivityLogsStoreTableName
+          INACTIVE_ACCOUNT_CIRCUIT_BREAKER_TABLE_NAME: !Ref InactiveAccountCircuitBreakerTableName
           TXMA_QUEUE_URL: !Ref AuditOutputQueue
           ACCOUNT_INTERVENTIONS_SERVICE_API_URL:
             !FindInMap [
@@ -7521,10 +7527,17 @@ Resources:
               - !GetAtt QueueKmsKey.Arn
               - !GetAtt DatabaseKmsKey.Arn
               - !GetAtt AuditEncryptionKey.Arn
+              - !GetAtt InactiveAccountCircuitBreakerStoreKey.Arn
           - Effect: Allow
             Action:
               - "cloudwatch:PutMetricData"
             Resource: "*"
+          - Effect: Allow
+            Action:
+              - dynamodb:Query
+              - dynamodb:PutItem
+            Resource:
+              - !GetAtt InactiveAccountCircuitBreakerStore.Arn
 
   ProcessInactiveAccountDeadLetterQueue:
     Type: AWS::SQS::Queue
@@ -7705,7 +7718,7 @@ Resources:
           - Effect: Allow
             Action:
               - dynamodb:Query
-              - dynamodb:DescribeTable 
+              - dynamodb:DescribeTable
             Resource:
               - !GetAtt InactiveAccountTrackerStore.Arn
           - Effect: Allow
@@ -7917,7 +7930,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-notify-delivery-receipts"
-      RetentionInDays: 90 
+      RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   NotifyDeliveryReceiptsLambdaErrorsAlarm:
@@ -8090,6 +8103,95 @@ Resources:
             Resource:
               - !GetAtt DatabaseKmsKey.Arn
               - !GetAtt LoggingKmsKey.Arn
+
+  ###########################################
+  # Inactive Account Deletions circuit breaker table
+  ###########################################
+
+  InactiveAccountCircuitBreakerStoreKey:
+    Type: AWS::KMS::Key
+    Properties:
+      EnableKeyRotation: true
+      KeyPolicy:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub arn:aws:iam::${AWS::AccountId}:root
+            Action:
+              - kms:*
+            Resource:
+              - "*"
+          - !If
+            - "UseExternalEvents"
+            - Effect: Allow
+              Principal:
+                Service: "dynamodb.amazonaws.com"
+              Action:
+                - kms:Decrypt
+                - kms:GenerateDataKey*
+              Resource:
+                - "*"
+              Condition:
+                StringEquals:
+                  kms:CallerAccount:
+                    !FindInMap [
+                      AuthenticationAccounts,
+                      !Ref Environment,
+                      "AccountNumber",
+                    ]
+            - !Ref AWS::NoValue
+
+  InactiveAccountCircuitBreakerStoreKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub "alias/${AWS::StackName}/${Environment}/InactiveAccountCircuitBreakerStoreKey"
+      TargetKeyId: !Ref InactiveAccountCircuitBreakerStoreKey
+
+  InactiveAccountCircuitBreakerStore:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: pk
+          AttributeType: S
+        - AttributeName: datetime
+          AttributeType: N
+      BillingMode: PAY_PER_REQUEST
+      TableName: !Ref InactiveAccountCircuitBreakerTableName
+      KeySchema:      
+        - AttributeName: pk
+          KeyType: HASH
+        - AttributeName: datetime
+          KeyType: RANGE
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+        SSEType: KMS
+        KMSMasterKeyId: !GetAtt InactiveAccountCircuitBreakerStoreKey.Arn
+      ResourcePolicy: !If
+        - UseExternalEvents
+        - PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: AllowAuthAccountReadWrite
+                Effect: Allow
+                Principal:
+                  AWS: !Sub
+                    - "arn:aws:iam::${AccountId}:root"
+                    - AccountId:
+                        !FindInMap [
+                          AuthenticationAccounts,
+                          !Ref Environment,
+                          AccountNumber,
+                        ]
+                Action:
+                  - dynamodb:Query
+                  - dynamodb:PutItem
+                Resource: "*"
+        - !Ref AWS::NoValue
 
 Outputs:
   GeneratorKey:

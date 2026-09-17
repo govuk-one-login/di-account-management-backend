@@ -16,7 +16,7 @@ const circuitBreakerSchema = v.optional(
   v.array(
     v.object({
       pk: v.literal(pk),
-      datetime: v.pipe(v.string(), v.toDate()),
+      datetime: v.number(),
       enabled: v.boolean(),
       metadataJson: v.optional(v.pipe(v.string(), v.parseJson())),
     })
@@ -54,7 +54,7 @@ export const disableIad = async (metadata: unknown) => {
       TableName: tableName,
       Item: {
         pk,
-        datetime: new Date().toISOString(),
+        datetime: Date.now(),
         enabled: false,
         metadataJson: JSON.stringify(metadata),
       },

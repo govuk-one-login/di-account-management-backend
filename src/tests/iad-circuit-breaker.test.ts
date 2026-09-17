@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, afterEach } from "vitest";
+import { describe, test, expect, beforeEach, afterEach, vi } from "vitest";
 import { mockClient } from "aws-sdk-client-mock";
 import {
   DynamoDBDocumentClient,
@@ -16,7 +16,7 @@ const TABLE_NAME = "test-iad-table";
 
 const makeItem = (enabled: boolean, metadata?: unknown) => ({
   pk: "IAD",
-  datetime: "2024-01-15T10:30:00.000Z",
+  datetime: 1705315800000,
   enabled,
   ...(metadata !== undefined ? { metadataJson: JSON.stringify(metadata) } : {}),
 });
@@ -99,16 +99,16 @@ describe("disableIad", () => {
     });
   });
 
-  test("puts an item with a valid ISO datetime", async () => {
-    const before = new Date().toISOString();
+  test("puts an item with a valid unix timestamp in milliseconds", async () => {
+    const fixedDate = new Date("2024-01-15T10:30:00.000Z");
+    vi.setSystemTime(fixedDate);
     await disableIad({});
-    const after = new Date().toISOString();
+    vi.useRealTimers();
 
-    const call = dynamoMock.commandCalls(PutCommand)[0];
-    const datetime = call.args[0].input.Item?.datetime as string;
-
-    expect(datetime >= before).toBe(true);
-    expect(datetime <= after).toBe(true);
+    expect(dynamoMock).toHaveReceivedCommandWith(PutCommand, {
+      TableName: TABLE_NAME,
+      Item: expect.objectContaining({ datetime: fixedDate.getTime() }),
+    });
   });
 
   test("serialises metadata as JSON", async () => {

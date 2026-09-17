@@ -8157,10 +8157,10 @@ Resources:
         - AttributeName: pk
           AttributeType: S
         - AttributeName: datetime
-          AttributeType: S
+          AttributeType: N
       BillingMode: PAY_PER_REQUEST
       TableName: !Ref InactiveAccountCircuitBreakerTableName
-      KeySchema:
+      KeySchema:      
         - AttributeName: pk
           KeyType: HASH
         - AttributeName: datetime

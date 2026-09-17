@@ -15,6 +15,7 @@ import {
   QueryCommand,
   UpdateCommand,
 } from "@aws-sdk/lib-dynamodb";
+import { sendAuditEvent } from "./common/send-audit-event.js";
 
 const metrics = initMetrics("notify-delivery-receipts");
 const dynamoClient = new DynamoDBClient({});
@@ -74,8 +75,8 @@ const handleUndeliverableEmail = async (
   );
 
   await Promise.all(
-    (inactiveAccountTrackerResult.Items ?? []).map((item) =>
-      dynamoDocClient.send(
+    (inactiveAccountTrackerResult.Items ?? []).map(async (item) => {
+      await dynamoDocClient.send(
         new UpdateCommand({
           TableName: process.env["INACTIVE_ACCOUNT_TRACKER_TABLE_NAME"],
           Key: {
@@ -88,8 +89,20 @@ const handleUndeliverableEmail = async (
             ":hasUndeliverableEmailAddress": true,
           },
         })
-      )
-    )
+      );
+
+      await sendAuditEvent("HOME_ACCOUNT_TRACKER_NOTIFICATION_DELIVERY_PERMANENTLY_FAILED", {
+        user: {
+          email: to,
+          user_id: item.commonSubjectId,
+        },
+        extensions: {
+          accountTrackerNotificationCompletedAt: completed_at,
+          accountTrackerNotificationCallbackSentAt: sent_at,
+          accountTrackerNotificationCreatedAt: created_at,
+        },
+      });
+    })
   );
 
   logger.info("Undeliverable email notification handled", {

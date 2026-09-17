@@ -31,26 +31,22 @@ describe("getIadCircuitBreakerStatus", () => {
     delete process.env.INACTIVE_ACCOUNT_CIRCUIT_BREAKER_TABLE_NAME;
   });
 
-  test("returns item with enabled: true", async () => {
+  test("returns true when latest item has enabled: true", async () => {
     dynamoMock.on(QueryCommand).resolves({ Items: [makeItem(true)] });
 
-    const result = await getIadCircuitBreakerStatus();
-    expect(result.enabled).toBe(true);
+    expect(await getIadCircuitBreakerStatus()).toBe(true);
   });
 
-  test("returns item with enabled: false", async () => {
+  test("returns false when latest item has enabled: false", async () => {
     dynamoMock.on(QueryCommand).resolves({ Items: [makeItem(false)] });
 
-    const result = await getIadCircuitBreakerStatus();
-    expect(result.enabled).toBe(false);
+    expect(await getIadCircuitBreakerStatus()).toBe(false);
   });
 
-  test("returns datetime as a Date object", async () => {
-    dynamoMock.on(QueryCommand).resolves({ Items: [makeItem(true)] });
+  test("returns false when no items are returned", async () => {
+    dynamoMock.on(QueryCommand).resolves({ Items: [] });
 
-    const result = await getIadCircuitBreakerStatus();
-    expect(result.datetime).toBeInstanceOf(Date);
-    expect(result.datetime.toISOString()).toBe("2024-01-15T10:30:00.000Z");
+    expect(await getIadCircuitBreakerStatus()).toBe(false);
   });
 
   test("queries with correct parameters", async () => {
@@ -66,12 +62,6 @@ describe("getIadCircuitBreakerStatus", () => {
       Limit: 1,
       ConsistentRead: true,
     });
-  });
-
-  test("throws when no items are returned", async () => {
-    dynamoMock.on(QueryCommand).resolves({ Items: [] });
-
-    await expect(getIadCircuitBreakerStatus()).rejects.toThrow();
   });
 
   test("throws when env var is not set", async () => {

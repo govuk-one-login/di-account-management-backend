@@ -12,14 +12,16 @@ const dynamoDocClient = DynamoDBDocumentClient.from(dynamoClient);
 
 const pk = "IAD";
 
-const circuitBreakerSchema = v.tuple([
-  v.object({
-    pk: v.literal("IAD"),
-    datetime: v.pipe(v.string(), v.toDate()),
-    enabled: v.boolean(),
-    metadataJson: v.optional(v.pipe(v.string(), v.parseJson())),
-  }),
-]);
+const circuitBreakerSchema = v.optional(
+  v.array(
+    v.object({
+      pk: v.literal("IAD"),
+      datetime: v.pipe(v.string(), v.toDate()),
+      enabled: v.boolean(),
+      metadataJson: v.optional(v.pipe(v.string(), v.parseJson())),
+    })
+  )
+);
 
 export const getIadCircuitBreakerStatus = async () => {
   const tableName = getEnvironmentVariable(
@@ -37,9 +39,9 @@ export const getIadCircuitBreakerStatus = async () => {
     })
   );
 
-  const [latest] = v.parse(circuitBreakerSchema, result.Items);
+  const latest = v.parse(circuitBreakerSchema, result.Items);
 
-  return latest;
+  return latest?.[0]?.enabled ?? false;
 };
 
 export const disableIad = async (metadata: unknown) => {

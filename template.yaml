@@ -7158,7 +7158,7 @@ Resources:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-inactive-accounts-processor
       CodeUri: src
       PackageType: Zip
-      Timeout: 60
+      Timeout: 900
       Events:
         Warning30DayScheduleEvent:
           Type: Schedule

@@ -4,10 +4,20 @@ import { Logger } from "@aws-lambda-powertools/logger";
 import { getEnvironmentVariable } from "./common/utils.js";
 import { processConfig } from "./common/process-config.js";
 import { queryAccountsByDate } from "./common/query-inactive-accounts.js";
+import { retryFunction } from "./common/retry-function.js";
 import iadQueryLogicHash from "./common/iad-query-logic-hash.json" with { type: "json" };
 
 const logger = new Logger();
-const sqsClient = new SQSClient({});
+
+// Cap on how many SendMessageBatch calls are in flight at once. Dispatching
+// every chunk of a page concurrently exhausts the SQS client's connection pool
+// under load (tens of thousands of records), causing ECONNRESET/TLS socket
+// disconnects. Bounding the fan-out keeps the socket count sane.
+const MAX_CONCURRENT_BATCHES = 20;
+
+// maxAttempts lets the SDK transparently retry transient connection errors
+// (e.g. ECONNRESET) rather than surfacing them on the first attempt.
+const sqsClient = new SQSClient({ maxAttempts: 5 });
 
 export interface QueryAndDispatchEvent {
   processName: string;
@@ -65,27 +75,36 @@ export const handler = async (
         chunks.push(eligible.slice(i, i + 10));
       }
 
-      await Promise.all(
-        chunks.map(async (chunk) => {
-          try {
-            const result = await sqsClient.send(
-              new SendMessageBatchCommand({
-                QueueUrl: queueUrl,
-                Entries: chunk.map((record, i) => ({
-                  Id: String(i),
-                  MessageBody: JSON.stringify({ ...record, processName: event.processName }),
-                })),
-              })
-            );
-            dispatched += chunk.length - (result.Failed?.length ?? 0);
-            for (const failure of result.Failed ?? []) {
-              logger.error(`Failed to dispatch account in batch`, { failure });
-            }
-          } catch (err) {
-            logger.error(`Failed to send batch`, { err });
+      const sendChunk = async (chunk: typeof eligible): Promise<void> => {
+        try {
+          const result = await retryFunction(
+            () =>
+              sqsClient.send(
+                new SendMessageBatchCommand({
+                  QueueUrl: queueUrl,
+                  Entries: chunk.map((record, i) => ({
+                    Id: String(i),
+                    MessageBody: JSON.stringify({ ...record, processName: event.processName }),
+                  })),
+                })
+              ),
+            { functionName: "SendMessageBatch" }
+          );
+          dispatched += chunk.length - (result.Failed?.length ?? 0);
+          for (const failure of result.Failed ?? []) {
+            logger.error(`Failed to dispatch account in batch`, { failure });
           }
-        })
-      );
+        } catch (err) {
+          logger.error(`Failed to send batch`, { err });
+        }
+      };
+
+      // Dispatch in bounded waves to avoid exhausting the SQS connection pool.
+      for (let i = 0; i < chunks.length; i += MAX_CONCURRENT_BATCHES) {
+        await Promise.all(
+          chunks.slice(i, i + MAX_CONCURRENT_BATCHES).map(sendChunk)
+        );
+      }
     }
 
     if (isDryRun) {

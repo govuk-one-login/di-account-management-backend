@@ -1,4 +1,5 @@
 import { vi, describe, test, expect, beforeEach } from "vitest";
+import { Logger } from "@aws-lambda-powertools/logger";
 import { Context, SQSEvent } from "aws-lambda";
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 import {
@@ -40,6 +41,14 @@ vi.mock("../common/iadGuards/sendInactiveAccountEmailsIsDisabled.js", () => ({
 
 vi.mock("../common/iadGuards/doesNotHaveEmailAddress.js", () => ({
   doesNotHaveEmailAddress: mockDoesNotHaveEmailAddress,
+}));
+
+const mockGetIadCircuitBreakerStatus = vi.hoisted(() =>
+  vi.fn().mockResolvedValue(false)
+);
+
+vi.mock("../common/iad-circuit-breaker.js", () => ({
+  getIadCircuitBreakerStatus: mockGetIadCircuitBreakerStatus,
 }));
 
 import { handler } from "../process-inactive-account.js";
@@ -108,6 +117,7 @@ describe("process-inactive-account handler", () => {
     mockDoesNotHaveEmailAddress.mockResolvedValue(
       doesNotHaveEmailAddressContinue
     );
+    mockGetIadCircuitBreakerStatus.mockResolvedValue(false);
 
     process.env.NOTIFICATION_QUEUE_URL =
       "https://sqs.eu-west-2.amazonaws.com/123456789012/NotificationQueue";
@@ -119,6 +129,75 @@ describe("process-inactive-account handler", () => {
       "https://sqs.eu-west-2.amazonaws.com/123456789012/TxmaQueue";
     process.env.AWS_REGION = "eu-west-2";
     process.env.FEATURE_SEND_IAD_AUDIT_EVENTS = "true";
+  });
+
+  test("aborts early and logs when circuit breaker is active", async () => {
+    mockGetIadCircuitBreakerStatus.mockResolvedValue(true);
+
+    const infoSpy = vi.spyOn(Logger.prototype, "info");
+
+    const body = {
+      commonSubjectId: "user-123",
+      emailAddress: "test@example.com",
+      dateForDeletion: "2026-08-15",
+      processName: "Warning30Day",
+      status: "pending",
+      statusLastUpdated: "2026-01-01T00:00:00.000Z",
+      userLastActive: "2021-06-20T00:00:00.000Z",
+      userLastActiveSource: "AUTH_AUTH_CODE_ISSUED",
+      userLastActiveSourceId: "event-guid",
+      userLastActiveUpdated: "2026-01-01T00:00:00.000Z",
+      emailAddressLastUpdated: "2026-01-01T00:00:00.000Z",
+      emailAddressSource: "AUTH_AUTH_CODE_ISSUED",
+      emailAddressSourceId: "email-event-guid",
+      hasSetupMfa: "false",
+    };
+
+    await handler(buildSqsEvent([body]), {} as Context);
+
+    expect(sqsMock).not.toHaveReceivedCommand(SendMessageCommand);
+    expect(dynamoMock).not.toHaveReceivedCommand(UpdateCommand);
+    expect(infoSpy).toHaveBeenCalledWith(
+      "GuardrailAbortedProcessInactiveAccounts",
+      {
+        dateForDeletion: body.dateForDeletion,
+        processName: body.processName,
+        status: body.status,
+        statusLastUpdated: body.statusLastUpdated,
+        userLastActive: body.userLastActive,
+        userLastActiveSource: body.userLastActiveSource,
+        userLastActiveSourceId: body.userLastActiveSourceId,
+        userLastActiveUpdated: body.userLastActiveUpdated,
+        emailAddressLastUpdated: body.emailAddressLastUpdated,
+        emailAddressSource: body.emailAddressSource,
+        emailAddressSourceId: body.emailAddressSourceId,
+        hasSetupMfa: body.hasSetupMfa,
+        guardrailType: "CircuitBreakerAlreadyTripped",
+        contributeToAlarm: true,
+        furtherProcessingAborted: true,
+      }
+    );
+
+    infoSpy.mockRestore();
+  });
+
+  test("continues processing when circuit breaker is inactive", async () => {
+    mockGetIadCircuitBreakerStatus.mockResolvedValue(false);
+
+    await handler(
+      buildSqsEvent([
+        {
+          commonSubjectId: "user-123",
+          emailAddress: "test@example.com",
+          dateForDeletion: "2026-08-15",
+          processName: "Warning30Day",
+          status: "pending",
+        },
+      ]),
+      {} as Context
+    );
+
+    expect(dynamoMock).toHaveReceivedCommand(UpdateCommand);
   });
 
   test("enqueues a 30-day warning notification to the NotificationQueue", async () => {

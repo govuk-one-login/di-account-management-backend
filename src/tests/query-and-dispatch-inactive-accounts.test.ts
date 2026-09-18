@@ -10,6 +10,12 @@ import {
 } from "../query-and-dispatch-inactive-accounts.js";
 import type { Context } from "aws-lambda";
 
+vi.mock("../common/iad-circuit-breaker.js", () => ({
+  getIadCircuitBreakerStatus: vi.fn().mockResolvedValue(false),
+}));
+
+import { getIadCircuitBreakerStatus } from "../common/iad-circuit-breaker.js";
+
 const dynamoMock = mockClient(DynamoDBDocumentClient);
 const sqsMock = mockClient(SQSClient);
 
@@ -70,6 +76,45 @@ describe("handler", () => {
 
   afterEach(() => {
     vi.clearAllMocks();
+    vi.mocked(getIadCircuitBreakerStatus).mockResolvedValue(false);
+  });
+
+  test("aborts early and logs when circuit breaker is active", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-06-17T12:00:00.000Z"));
+
+    vi.mocked(getIadCircuitBreakerStatus).mockResolvedValue(true);
+    dynamoMock.on(QueryCommand).resolves({ Items: [mockRecord] });
+
+    const infoSpy = vi.spyOn(Logger.prototype, "info");
+
+    await handler({ processName: "Warning30Day" }, {} as Context);
+
+    expect(sqsMock.commandCalls(SendMessageBatchCommand)).toHaveLength(0);
+    expect(infoSpy).toHaveBeenCalledWith(
+      "GuardrailAbortedQueryAndDispatchInactiveAccounts",
+      {
+        guardrailType: "CircuitBreakerAlreadyTripped",
+        contributeToAlarm: true,
+        furtherProcessingAborted: true,
+        processName: "Warning30Day",
+        targetDate: "2026-07-17",
+        dispatchedBeforeAbort: 0,
+      }
+    );
+
+    infoSpy.mockRestore();
+    vi.useRealTimers();
+  });
+
+  test("continues dispatching when circuit breaker is inactive", async () => {
+    vi.mocked(getIadCircuitBreakerStatus).mockResolvedValue(false);
+    dynamoMock.on(QueryCommand).resolves({ Items: [mockRecord] });
+    sqsMock.on(SendMessageBatchCommand).resolves({ Successful: [], Failed: [] });
+
+    await handler({ processName: "Warning30Day" }, {} as Context);
+
+    expect(sqsMock.commandCalls(SendMessageBatchCommand).length).toBeGreaterThan(0);
   });
 
   test("does not send messages when no records found", async () => {

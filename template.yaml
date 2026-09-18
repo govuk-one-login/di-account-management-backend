@@ -7192,6 +7192,7 @@ Resources:
           WARNING_7_DAY_NOTIFICATION_QUEUE_URL: !Ref 7DayNotificationQueue
           ACCOUNT_DELETION_QUEUE_URL: !Ref AccountDeletionProcessQueue
           NODE_OPTIONS: --enable-source-maps
+          INACTIVE_ACCOUNT_CIRCUIT_BREAKER_TABLE_NAME: !Ref InactiveAccountCircuitBreakerTableName
       DeploymentPreference:
         Alarms:
           Fn::If:
@@ -7263,6 +7264,18 @@ Resources:
               - kms:GenerateDataKey*
             Resource:
               - !GetAtt QueueKmsKey.Arn
+          - Effect: Allow
+            Action:
+              - kms:Decrypt
+              - kms:GenerateDataKey*
+            Resource:
+              - !GetAtt InactiveAccountCircuitBreakerStoreKey.Arn
+          - Effect: Allow
+            Action:
+              - dynamodb:Query
+              - dynamodb:PutItem
+            Resource:
+              - !GetAtt InactiveAccountCircuitBreakerStore.Arn
 
   QueryAndDispatchInactiveAccountsFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -7607,18 +7620,39 @@ Resources:
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
 
-  GuardrailPreventedInactiveAccountDeletionFilter:
+  QueryAndDispatchInactiveAccountsIADGuardrailTriggeredFilter:
     Type: AWS::Logs::MetricFilter
     Properties:
-      FilterPattern: '{ $.message = "GuardrailAbortedInactiveAccountDeletionProcess" && $.contributeToAlarm = true && $.processName = "DeleteAccount" }'
+      FilterPattern: '{ $.message = "GuardrailAbortedQueryAndDispatchInactiveAccounts" }'
+      LogGroupName: !Ref QueryAndDispatchInactiveAccountsFunctionLogGroup
+      MetricTransformations:
+        - MetricName: GuardrailPreventedInactiveAccountDeletion
+          MetricNamespace: IAD
+          MetricValue: 1
+          Unit: Count
+          Dimensions:
+            - Key: ContributeToAlarm
+              Value: $.contributeToAlarm          
+            - Key: GuardrailType
+              Value: $.guardrailType
+
+  ProcessInactiveAccountsIADGuardrailTriggeredFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      FilterPattern: '{ $.message = "GuardrailAbortedProcessInactiveAccounts" || $.message = "GuardrailAbortedInactiveAccountDeletionProcess" }'
       LogGroupName: !Ref ProcessInactiveAccountFunctionLogGroup
       MetricTransformations:
         - MetricName: GuardrailPreventedInactiveAccountDeletion
-          MetricNamespace: !Ref SystemTagValue
+          MetricNamespace: IAD
           MetricValue: 1
           Unit: Count
-
-  GuardrailPreventedInactiveAccountDeletionAlarm:
+          Dimensions:
+            - Key: ContributeToAlarm
+              Value: $.contributeToAlarm          
+            - Key: GuardrailType
+              Value: $.guardrailType
+  
+  IADGuardrailTriggeredAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
       AlarmName:
@@ -7627,13 +7661,15 @@ Resources:
           [
             !Ref AWS::StackName,
             !Ref Environment,
-            GuardrailPreventedInactiveAccountDeletionAlarm,
+            IADGuardrailTriggered,
           ],
         ]
-      Namespace: !Ref SystemTagValue
-      MetricName: GuardrailPreventedInactiveAccountDeletion
-      Statistic: Sum
-      Period: 10
+      Metrics:
+        - Id: iadGuardrailTriggered
+          Expression: "SUM(SEARCH('Namespace=\"IAD\" MetricName=\"GuardrailPreventedInactiveAccountDeletion\" ContributeToAlarm=\"true\"', 'Sum'))"
+          Label: "IAD guardrail triggered"
+          Period: 10
+          ReturnData: true
       EvaluationPeriods: 1
       Threshold: 1
       TreatMissingData: notBreaching

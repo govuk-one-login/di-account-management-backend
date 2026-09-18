@@ -5,6 +5,7 @@ import { getEnvironmentVariable } from "./common/utils.js";
 import { processConfig } from "./common/process-config.js";
 import { queryAccountsByDate } from "./common/query-inactive-accounts.js";
 import iadQueryLogicHash from "./common/iad-query-logic-hash.json" with { type: "json" };
+import { getIadCircuitBreakerStatus } from "./common/iad-circuit-breaker.js";
 
 const logger = new Logger();
 const sqsClient = new SQSClient({});
@@ -31,13 +32,16 @@ export const handler = async (
   context: Context
 ): Promise<void> => {
   logger.addContext(context);
-  logger.info("IAD query logic hash", { iadQueryLogicHash: iadQueryLogicHash.hash });
+  logger.info("IAD query logic hash", {
+    iadQueryLogicHash: iadQueryLogicHash.hash,
+  });
 
   validateEvent(event);
 
   const tableName = getEnvironmentVariable("TABLE_NAME");
 
-  const { queueUrlEnvVar, daysToDeletion, allowedStatuses, isDryRun } = processConfig[event.processName];
+  const { queueUrlEnvVar, daysToDeletion, allowedStatuses, isDryRun } =
+    processConfig[event.processName];
   const queueUrl = getEnvironmentVariable(queueUrlEnvVar);
 
   let dispatched = 0;
@@ -49,9 +53,25 @@ export const handler = async (
     let eligibleForDate = 0;
 
     for await (const page of queryAccountsByDate(tableName, targetDate)) {
-      const eligible = page.filter((record) =>
-        allowedStatuses.includes(record.status) &&
-        (!event.manualTestOnly || record.userLastActiveSource === "MANUAL_TEST")
+      const iadCircuitBreakerActive = await getIadCircuitBreakerStatus();
+
+      if (iadCircuitBreakerActive) {
+        logger.info("GuardrailAbortedQueryAndDispatchInactiveAccounts", {
+          guardrailType: "CircuitBreakerAlreadyTripped",
+          contributeToAlarm: true,
+          furtherProcessingAborted: true,
+          processName: event.processName,
+          targetDate,
+          dispatchedBeforeAbort: dispatched,
+        });
+        return;
+      }
+
+      const eligible = page.filter(
+        (record) =>
+          allowedStatuses.includes(record.status) &&
+          (!event.manualTestOnly ||
+            record.userLastActiveSource === "MANUAL_TEST")
       );
 
       eligibleForDate += eligible.length;
@@ -73,7 +93,10 @@ export const handler = async (
                 QueueUrl: queueUrl,
                 Entries: chunk.map((record, i) => ({
                   Id: String(i),
-                  MessageBody: JSON.stringify({ ...record, processName: event.processName }),
+                  MessageBody: JSON.stringify({
+                    ...record,
+                    processName: event.processName,
+                  }),
                 })),
               })
             );

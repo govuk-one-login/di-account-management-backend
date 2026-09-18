@@ -1,7 +1,12 @@
 import { vi, describe, test, expect, beforeEach } from "vitest";
 import { Context, SQSEvent } from "aws-lambda";
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
-import { DynamoDBDocumentClient, UpdateCommand, QueryCommand, TransactWriteCommand } from "@aws-sdk/lib-dynamodb";
+import {
+  DynamoDBDocumentClient,
+  UpdateCommand,
+  QueryCommand,
+  TransactWriteCommand,
+} from "@aws-sdk/lib-dynamodb";
 import { mockClient } from "aws-sdk-client-mock";
 import "aws-sdk-client-mock-vitest";
 
@@ -14,8 +19,8 @@ const mockInitMetrics = vi.hoisted(() => vi.fn(() => mockMetrics));
 
 const mockHasAisBlockIntervention = vi.hoisted(() => vi.fn());
 const mockHasRecentActivityLogEntry = vi.hoisted(() => vi.fn());
-const mockSendInactiveAccountEmailsIsEnabled = vi.hoisted(() => vi.fn());
-const mockHasEmailAddress = vi.hoisted(() => vi.fn());
+const mockSendInactiveAccountEmailsIsDisabled = vi.hoisted(() => vi.fn());
+const mockDoesNotHaveEmailAddress = vi.hoisted(() => vi.fn());
 
 vi.mock("../common/metrics.js", () => ({
   initMetrics: mockInitMetrics,
@@ -29,12 +34,12 @@ vi.mock("../common/iadGuards/hasRecentActivityLogEntry.js", () => ({
   hasRecentActivityLogEntry: mockHasRecentActivityLogEntry,
 }));
 
-vi.mock("../common/iadGuards/sendInactiveAccountEmailsIsEnabled.js", () => ({
-  sendInactiveAccountEmailsIsEnabled: mockSendInactiveAccountEmailsIsEnabled,
+vi.mock("../common/iadGuards/sendInactiveAccountEmailsIsDisabled.js", () => ({
+  sendInactiveAccountEmailsIsDisabled: mockSendInactiveAccountEmailsIsDisabled,
 }));
 
-vi.mock("../common/iadGuards/hasEmailAddress.js", () => ({
-  hasEmailAddress: mockHasEmailAddress,
+vi.mock("../common/iadGuards/doesNotHaveEmailAddress.js", () => ({
+  doesNotHaveEmailAddress: mockDoesNotHaveEmailAddress,
 }));
 
 import { handler } from "../process-inactive-account.js";
@@ -63,12 +68,27 @@ const buildSqsEvent = (bodies: object[]): SQSEvent => ({
 
 const notBlocked = { continue: "Continue", guardName: "AIS" };
 const blocked = { continue: "Abort", guardName: "AIS" };
-const noRecentActivity = { continue: "Continue", guardName: "HomeUserActivityLog" };
+const noRecentActivity = {
+  continue: "Continue",
+  guardName: "HomeUserActivityLog",
+};
 const recentActivity = { continue: "Abort", guardName: "HomeUserActivityLog" };
-const inactiveAccountEmailsFeatureFlagDisabled = { continue: "Abort", guardName: "SendInactiveAccountEmailsFeatureFlag" };
-const inactiveAccountEmailsFeatureFlagEnabled = { continue: "Continue", guardName: "SendInactiveAccountEmailsFeatureFlag" };
-const hasEmailAddressContinue = { continue: "Continue", guardName: "SendInactiveAccountEmailsFeatureFlag" };
-const hasEmailAddressAbort = { continue: "Abort", guardName: "SendInactiveAccountEmailsFeatureFlag" };
+const inactiveAccountEmailsFeatureFlagDisabled = {
+  continue: "Abort",
+  guardName: "SendInactiveAccountEmailsFeatureFlag",
+};
+const inactiveAccountEmailsFeatureFlagEnabled = {
+  continue: "Continue",
+  guardName: "SendInactiveAccountEmailsFeatureFlag",
+};
+const doesNotHaveEmailAddressContinue = {
+  continue: "Continue",
+  guardName: "DoesNotHaveEmailAddress",
+};
+const doesNotHaveEmailAddressAbort = {
+  continue: "Abort",
+  guardName: "DoesNotHaveEmailAddress",
+};
 
 describe("process-inactive-account handler", () => {
   beforeEach(() => {
@@ -82,16 +102,21 @@ describe("process-inactive-account handler", () => {
 
     mockHasAisBlockIntervention.mockResolvedValue(notBlocked);
     mockHasRecentActivityLogEntry.mockResolvedValue(noRecentActivity);
-    mockSendInactiveAccountEmailsIsEnabled.mockResolvedValue(inactiveAccountEmailsFeatureFlagEnabled);
-    mockHasEmailAddress.mockResolvedValue(hasEmailAddressContinue);
+    mockSendInactiveAccountEmailsIsDisabled.mockResolvedValue(
+      inactiveAccountEmailsFeatureFlagEnabled
+    );
+    mockDoesNotHaveEmailAddress.mockResolvedValue(
+      doesNotHaveEmailAddressContinue
+    );
 
     process.env.NOTIFICATION_QUEUE_URL =
       "https://sqs.eu-west-2.amazonaws.com/123456789012/NotificationQueue";
     process.env.INACTIVE_ACCOUNT_TRACKER_TABLE_NAME =
       "test-inactive-tracker-table";
-    process.env.SEND_INACTIVE_ACCOUNT_DELETION_EMAILS = '1';
+    process.env.SEND_INACTIVE_ACCOUNT_DELETION_EMAILS = "1";
     process.env.FEATURE_SEND_IAD_AUDIT_EVENTS = "false";
-    process.env.TXMA_QUEUE_URL = "https://sqs.eu-west-2.amazonaws.com/123456789012/TxmaQueue";
+    process.env.TXMA_QUEUE_URL =
+      "https://sqs.eu-west-2.amazonaws.com/123456789012/TxmaQueue";
     process.env.AWS_REGION = "eu-west-2";
     process.env.FEATURE_SEND_IAD_AUDIT_EVENTS = "true";
   });
@@ -229,24 +254,26 @@ describe("process-inactive-account handler", () => {
     expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(1);
     // check the correct txma event is being sent out
     const sqsCalls = sqsMock.commandCalls(SendMessageCommand);
-    const txmaCallInput = sqsCalls[0].args[0].input; 
-    
-    expect(txmaCallInput.QueueUrl).toEqual("https://sqs.eu-west-2.amazonaws.com/123456789012/TxmaQueue");
+    const txmaCallInput = sqsCalls[0].args[0].input;
+
+    expect(txmaCallInput.QueueUrl).toEqual(
+      "https://sqs.eu-west-2.amazonaws.com/123456789012/TxmaQueue"
+    );
 
     const txmaEventBody = JSON.parse(txmaCallInput.MessageBody ?? "");
 
     expect(txmaEventBody).toEqual({
-      event_name:"HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED",
-      component_id:"https://home.account.gov.uk",
+      event_name: "HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED",
+      component_id: "https://home.account.gov.uk",
       timestamp: expect.any(Number),
       event_timestamp_ms: expect.any(Number),
-      event_timestamp_ms_formatted:expect.any(String),
-      user:{
-        user_id: "blocked-user-123"
+      event_timestamp_ms_formatted: expect.any(String),
+      user: {
+        user_id: "blocked-user-123",
       },
-      extensions:{
-        accountTrackerNotificationSkipReason: "IndefiniteSuspension"
-      }
+      extensions: {
+        accountTrackerNotificationSkipReason: "IndefiniteSuspension",
+      },
     });
     expect(dynamoMock).not.toHaveReceivedCommand(UpdateCommand);
     expect(mockMetrics.addMetric).not.toHaveBeenCalled();
@@ -289,7 +316,9 @@ describe("process-inactive-account handler", () => {
       );
     expect(txmaCall).toBeDefined();
     const auditEvent = JSON.parse(txmaCall!.args[0].input.MessageBody ?? "");
-    expect(auditEvent.event_name).toBe("HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED");
+    expect(auditEvent.event_name).toBe(
+      "HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED"
+    );
     expect(auditEvent.user).toMatchObject({ user_id: "no-mfa-user" });
     expect(auditEvent.extensions).toMatchObject({
       accountTrackerNotificationSkipReason: "UnusableAccount",
@@ -340,28 +369,30 @@ describe("process-inactive-account handler", () => {
 
     const sqsCalls = sqsMock.commandCalls(SendMessageCommand);
 
-    // 1st call to SQS is the HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED txma event for the blocked user 
-    const txmaCallInput1 = sqsCalls[0].args[0].input; 
-    
-    expect(txmaCallInput1.QueueUrl).toEqual("https://sqs.eu-west-2.amazonaws.com/123456789012/TxmaQueue");
+    // 1st call to SQS is the HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED txma event for the blocked user
+    const txmaCallInput1 = sqsCalls[0].args[0].input;
+
+    expect(txmaCallInput1.QueueUrl).toEqual(
+      "https://sqs.eu-west-2.amazonaws.com/123456789012/TxmaQueue"
+    );
 
     const txmaEventBody1 = JSON.parse(txmaCallInput1.MessageBody ?? "");
 
     expect(txmaEventBody1).toEqual({
-      event_name:"HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED",
-      component_id:"https://home.account.gov.uk",
+      event_name: "HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED",
+      component_id: "https://home.account.gov.uk",
       timestamp: expect.any(Number),
       event_timestamp_ms: expect.any(Number),
-      event_timestamp_ms_formatted:expect.any(String),
-      user:{
-        user_id:"blocked-user"
+      event_timestamp_ms_formatted: expect.any(String),
+      user: {
+        user_id: "blocked-user",
       },
-      extensions:{
-        accountTrackerNotificationSkipReason: "IndefiniteSuspension"
-      }
+      extensions: {
+        accountTrackerNotificationSkipReason: "IndefiniteSuspension",
+      },
     });
 
-    // 2nd call to SQS is the notification for the non blocked user 
+    // 2nd call to SQS is the notification for the non blocked user
     expect(sqsMock).toHaveReceivedNthCommandWith(SendMessageCommand, 2, {
       QueueUrl:
         "https://sqs.eu-west-2.amazonaws.com/123456789012/NotificationQueue",
@@ -372,25 +403,27 @@ describe("process-inactive-account handler", () => {
       }),
     });
 
-    // 3rd call to SQS is the HOME_ACCOUNT_TRACKER_ACCOUNT_FIRST_PERIOD_ENTERED txma event for the non blocked user 
-    const txmaCallInput2 = sqsCalls[2].args[0].input; 
-    
-    expect(txmaCallInput2.QueueUrl).toEqual("https://sqs.eu-west-2.amazonaws.com/123456789012/TxmaQueue");
+    // 3rd call to SQS is the HOME_ACCOUNT_TRACKER_ACCOUNT_FIRST_PERIOD_ENTERED txma event for the non blocked user
+    const txmaCallInput2 = sqsCalls[2].args[0].input;
+
+    expect(txmaCallInput2.QueueUrl).toEqual(
+      "https://sqs.eu-west-2.amazonaws.com/123456789012/TxmaQueue"
+    );
 
     const txmaEventBody2 = JSON.parse(txmaCallInput2.MessageBody ?? "");
 
     expect(txmaEventBody2).toEqual({
-      event_name:"HOME_ACCOUNT_TRACKER_ACCOUNT_FIRST_PERIOD_ENTERED",
-      component_id:"https://home.account.gov.uk",
+      event_name: "HOME_ACCOUNT_TRACKER_ACCOUNT_FIRST_PERIOD_ENTERED",
+      component_id: "https://home.account.gov.uk",
       timestamp: expect.any(Number),
       event_timestamp_ms: expect.any(Number),
-      event_timestamp_ms_formatted:expect.any(String),
-      user:{
-        user_id:"active-user"
+      event_timestamp_ms_formatted: expect.any(String),
+      user: {
+        user_id: "active-user",
       },
-      extensions:{
-        accountTrackerAccountDeletionDate: "2026-08-20"
-      }
+      extensions: {
+        accountTrackerAccountDeletionDate: "2026-08-20",
+      },
     });
   });
 
@@ -507,7 +540,9 @@ describe("process-inactive-account handler", () => {
       );
     expect(txmaCall).toBeDefined();
 
-    const auditEvent = JSON.parse(txmaCall!.args[0].input.MessageBody as string);
+    const auditEvent = JSON.parse(
+      txmaCall!.args[0].input.MessageBody as string
+    );
     expect(auditEvent.event_name).toBe(
       "HOME_ACCOUNT_TRACKER_ACCOUNT_DELETION_REQUESTED"
     );
@@ -559,9 +594,10 @@ describe("process-inactive-account handler", () => {
     });
 
     expect(sqsMock).toHaveReceivedNthCommandWith(SendMessageCommand, 2, {
-      QueueUrl:
-        "https://sqs.eu-west-2.amazonaws.com/123456789012/TxmaQueue",
-      MessageBody: expect.stringContaining('"event_name":"HOME_ACCOUNT_TRACKER_ACCOUNT_FIRST_PERIOD_ENTERED"'),
+      QueueUrl: "https://sqs.eu-west-2.amazonaws.com/123456789012/TxmaQueue",
+      MessageBody: expect.stringContaining(
+        '"event_name":"HOME_ACCOUNT_TRACKER_ACCOUNT_FIRST_PERIOD_ENTERED"'
+      ),
     });
   });
 
@@ -605,19 +641,21 @@ describe("process-inactive-account handler", () => {
   });
 
   test("skips when record has hasUndeliverableEmailAddress", async () => {
-    dynamoMock.on(QueryCommand, {
-      TableName: "test-inactive-tracker-table",
-      IndexName: "CommonSubjectIdIndex",
-    }).resolves({
-      Items: [
-        {
-          commonSubjectId: "undeliverablee",
-          emailAddress: "i-am-not-deliverable@undlvrbl.com",
-          dateForDeletion: "2026-08-30",
-          hasUndeliverableEmailAddress: true,
-        },
-      ],
-    });
+    dynamoMock
+      .on(QueryCommand, {
+        TableName: "test-inactive-tracker-table",
+        IndexName: "CommonSubjectIdIndex",
+      })
+      .resolves({
+        Items: [
+          {
+            commonSubjectId: "undeliverablee",
+            emailAddress: "i-am-not-deliverable@undlvrbl.com",
+            dateForDeletion: "2026-08-30",
+            hasUndeliverableEmailAddress: true,
+          },
+        ],
+      });
 
     const event = buildSqsEvent([
       {
@@ -644,43 +682,50 @@ describe("process-inactive-account handler", () => {
     // expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(1);
     // check the correct txma event is being sent out
     const sqsCalls = sqsMock.commandCalls(SendMessageCommand);
-    const txmaCallInput = sqsCalls[0].args[0].input; 
-    
-    expect(txmaCallInput.QueueUrl).toEqual("https://sqs.eu-west-2.amazonaws.com/123456789012/TxmaQueue");
+    const txmaCallInput = sqsCalls[0].args[0].input;
+
+    expect(txmaCallInput.QueueUrl).toEqual(
+      "https://sqs.eu-west-2.amazonaws.com/123456789012/TxmaQueue"
+    );
 
     const txmaEventBody = JSON.parse(txmaCallInput.MessageBody ?? "");
 
     expect(txmaEventBody).toEqual({
-      event_name:"HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED",
-      component_id:"https://home.account.gov.uk",
+      event_name: "HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED",
+      component_id: "https://home.account.gov.uk",
       timestamp: expect.any(Number),
       event_timestamp_ms: expect.any(Number),
-      event_timestamp_ms_formatted:expect.any(String),
-      user:{
-        user_id:"undeliverablee"
+      event_timestamp_ms_formatted: expect.any(String),
+      user: {
+        user_id: "undeliverablee",
       },
-      extensions:{
-        accountTrackerNotificationSkipReason: "PreviouslyUndeliverable"
-      }
+      extensions: {
+        accountTrackerNotificationSkipReason: "PreviouslyUndeliverable",
+      },
     });
-    expect(mockMetrics.addMetric).not.toHaveBeenCalledWith("notificationEnqueued", expect.anything());
+    expect(mockMetrics.addMetric).not.toHaveBeenCalledWith(
+      "notificationEnqueued",
+      expect.anything()
+    );
     // status should still be updated in the inactive account tracker
     expect(dynamoMock).toHaveReceivedCommand(UpdateCommand);
   });
 
   test("continue as expected where there is no hasUndeliverableEmailAddress flag", async () => {
-    dynamoMock.on(QueryCommand, {
-      TableName: "test-inactive-tracker-table",
-      IndexName: "EmailAddressIndex",
-    }).resolves({
-      Items: [
-        {
-          commonSubjectId: "deliverable",
-          emailAddress: "deliverable@asdf.com",
-          dateForDeletion: "2026-08-12",
-        },
-      ],
-    });
+    dynamoMock
+      .on(QueryCommand, {
+        TableName: "test-inactive-tracker-table",
+        IndexName: "EmailAddressIndex",
+      })
+      .resolves({
+        Items: [
+          {
+            commonSubjectId: "deliverable",
+            emailAddress: "deliverable@asdf.com",
+            dateForDeletion: "2026-08-12",
+          },
+        ],
+      });
 
     const event = buildSqsEvent([
       {
@@ -696,11 +741,15 @@ describe("process-inactive-account handler", () => {
     expect(sqsMock).toHaveReceivedCommand(SendMessageCommand);
     expect(dynamoMock).toHaveReceivedCommand(QueryCommand);
     expect(dynamoMock).toHaveReceivedCommand(UpdateCommand);
-    expect(mockMetrics.addMetric).toHaveBeenCalledWith("notificationEnqueued", expect.anything(), 1);
+    expect(mockMetrics.addMetric).toHaveBeenCalledWith(
+      "notificationEnqueued",
+      expect.anything(),
+      1
+    );
   });
 
-  test("skips processing when hasEmailAddress guard returns Abort", async () => {
-    mockHasEmailAddress.mockResolvedValue(hasEmailAddressAbort);
+  test("skips processing when doesNotHaveEmailAddress guard returns Abort", async () => {
+    mockDoesNotHaveEmailAddress.mockResolvedValue(doesNotHaveEmailAddressAbort);
 
     const event = buildSqsEvent([
       {
@@ -714,13 +763,19 @@ describe("process-inactive-account handler", () => {
 
     await handler(event, {} as Context);
 
-    expect(mockHasEmailAddress).toHaveBeenCalledWith("user-no-email", "", "2026-08-15");
+    expect(mockDoesNotHaveEmailAddress).toHaveBeenCalledWith(
+      "user-no-email",
+      "",
+      "2026-08-15"
+    );
     expect(sqsMock).not.toHaveReceivedCommand(SendMessageCommand);
     expect(dynamoMock).not.toHaveReceivedCommand(UpdateCommand);
   });
 
   test("skips processing when inactive account deletion feature flag guard returns Abort", async () => {
-    mockSendInactiveAccountEmailsIsEnabled.mockResolvedValue(inactiveAccountEmailsFeatureFlagDisabled);
+    mockSendInactiveAccountEmailsIsDisabled.mockResolvedValue(
+      inactiveAccountEmailsFeatureFlagDisabled
+    );
 
     const event = buildSqsEvent([
       {
@@ -734,7 +789,7 @@ describe("process-inactive-account handler", () => {
 
     await handler(event, {} as Context);
 
-    expect(mockSendInactiveAccountEmailsIsEnabled).toHaveBeenCalled();
+    expect(mockSendInactiveAccountEmailsIsDisabled).toHaveBeenCalled();
     expect(sqsMock).not.toHaveReceivedCommand(SendMessageCommand);
     expect(dynamoMock).not.toHaveReceivedCommand(UpdateCommand);
     expect(mockMetrics.addMetric).not.toHaveBeenCalled();
@@ -770,7 +825,9 @@ describe("process-inactive-account handler", () => {
       );
     expect(txmaCall).toBeDefined();
 
-    const auditEvent = JSON.parse(txmaCall!.args[0].input.MessageBody as string);
+    const auditEvent = JSON.parse(
+      txmaCall!.args[0].input.MessageBody as string
+    );
     expect(auditEvent.event_name).toBe(
       "HOME_ACCOUNT_TRACKER_ACCOUNT_DELETION_REQUESTED"
     );
@@ -815,7 +872,9 @@ describe("process-inactive-account handler", () => {
       );
     expect(txmaCall).toBeDefined();
 
-    const auditEvent = JSON.parse(txmaCall!.args[0].input.MessageBody as string);
+    const auditEvent = JSON.parse(
+      txmaCall!.args[0].input.MessageBody as string
+    );
     expect(auditEvent.user).toEqual({ user_id: "user-123" });
     expect(auditEvent.extensions).toEqual({
       accountTrackerAccountDeletionDate: "2026-08-15",
@@ -823,18 +882,20 @@ describe("process-inactive-account handler", () => {
   });
 
   test("does not send emails when dateForDeletion is 27th October", async () => {
-    dynamoMock.on(QueryCommand, {
-      TableName: "test-inactive-tracker-table",
-      IndexName: "CommonSubjectIdIndex",
-    }).resolves({
-      Items: [
-        {
-          commonSubjectId: "migratedverifyuser",
-          emailAddress: "i-might-be-a-migrated-verify@user.com",
-          dateForDeletion: "2026-10-27",
-        },
-      ],
-    });
+    dynamoMock
+      .on(QueryCommand, {
+        TableName: "test-inactive-tracker-table",
+        IndexName: "CommonSubjectIdIndex",
+      })
+      .resolves({
+        Items: [
+          {
+            commonSubjectId: "migratedverifyuser",
+            emailAddress: "i-might-be-a-migrated-verify@user.com",
+            dateForDeletion: "2026-10-27",
+          },
+        ],
+      });
 
     const event = buildSqsEvent([
       {
@@ -861,38 +922,43 @@ describe("process-inactive-account handler", () => {
     expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(2);
     // check the correct txma event is being sent out
     const sqsCalls = sqsMock.commandCalls(SendMessageCommand);
-    const txmaCallInput = sqsCalls[0].args[0].input; 
-    
-    expect(txmaCallInput.QueueUrl).toEqual("https://sqs.eu-west-2.amazonaws.com/123456789012/TxmaQueue");
+    const txmaCallInput = sqsCalls[0].args[0].input;
+
+    expect(txmaCallInput.QueueUrl).toEqual(
+      "https://sqs.eu-west-2.amazonaws.com/123456789012/TxmaQueue"
+    );
 
     const txmaEventBody = JSON.parse(txmaCallInput.MessageBody ?? "");
 
     expect(txmaEventBody).toEqual({
-      event_name:"HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED",
-      component_id:"https://home.account.gov.uk",
+      event_name: "HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED",
+      component_id: "https://home.account.gov.uk",
       timestamp: expect.any(Number),
       event_timestamp_ms: expect.any(Number),
-      event_timestamp_ms_formatted:expect.any(String),
-      user:{
-        user_id:"migratedverifyuser"
+      event_timestamp_ms_formatted: expect.any(String),
+      user: {
+        user_id: "migratedverifyuser",
       },
-      extensions:{
-        accountTrackerNotificationSkipReason: "LikelyVerifyMigratedUser"
-      }
+      extensions: {
+        accountTrackerNotificationSkipReason: "LikelyVerifyMigratedUser",
+      },
     });
 
-    const txmaCallInput2 = sqsCalls[1].args[0].input; 
+    const txmaCallInput2 = sqsCalls[1].args[0].input;
     const txmaEventBody2 = JSON.parse(txmaCallInput2.MessageBody ?? "");
     expect(txmaEventBody2).toEqual(
       expect.objectContaining({
         event_name: "HOME_ACCOUNT_TRACKER_ACCOUNT_FIRST_PERIOD_ENTERED",
         extensions: {
-          accountTrackerAccountDeletionDate: "2026-10-27"
-        }
+          accountTrackerAccountDeletionDate: "2026-10-27",
+        },
       })
     );
 
-    expect(mockMetrics.addMetric).not.toHaveBeenCalledWith("notificationEnqueued", expect.anything());
+    expect(mockMetrics.addMetric).not.toHaveBeenCalledWith(
+      "notificationEnqueued",
+      expect.anything()
+    );
     // status should still be updated in the inactive account tracker
     expect(dynamoMock).toHaveReceivedCommand(UpdateCommand);
   });
@@ -968,7 +1034,10 @@ describe("process-inactive-account handler", () => {
           expect.objectContaining({
             Delete: expect.objectContaining({
               TableName: "test-inactive-tracker-table",
-              Key: { dateForDeletion: "2031-01-01", commonSubjectId: "dup-user" },
+              Key: {
+                dateForDeletion: "2031-01-01",
+                commonSubjectId: "dup-user",
+              },
             }),
           }),
         ]),
@@ -977,7 +1046,10 @@ describe("process-inactive-account handler", () => {
         TransactItems: expect.not.arrayContaining([
           expect.objectContaining({
             Delete: expect.objectContaining({
-              Key: { dateForDeletion: "2031-06-01", commonSubjectId: "dup-user" },
+              Key: {
+                dateForDeletion: "2031-06-01",
+                commonSubjectId: "dup-user",
+              },
             }),
           }),
         ]),
@@ -991,7 +1063,8 @@ describe("process-inactive-account handler", () => {
           dateForDeletion: "2031-06-01",
           commonSubjectId: "dup-user",
         },
-        UpdateExpression: "SET #status = :status, statusLastUpdated = :timestamp",
+        UpdateExpression:
+          "SET #status = :status, statusLastUpdated = :timestamp",
         ExpressionAttributeNames: { "#status": "status" },
         ExpressionAttributeValues: {
           ":status": "7DayWarningSent",
@@ -1034,7 +1107,8 @@ describe("process-inactive-account handler", () => {
       expect(dynamoMock).toHaveReceivedCommandWith(UpdateCommand, {
         TableName: "test-inactive-tracker-table",
         Key: { dateForDeletion: "2026-08-15", commonSubjectId: "single-user" },
-        UpdateExpression: "SET #status = :status, statusLastUpdated = :timestamp",
+        UpdateExpression:
+          "SET #status = :status, statusLastUpdated = :timestamp",
         ExpressionAttributeNames: { "#status": "status" },
         ExpressionAttributeValues: {
           ":status": "30DayWarningSent",

@@ -3,24 +3,25 @@ import { Logger } from "@aws-lambda-powertools/logger";
 import { MetricUnit } from "@aws-lambda-powertools/metrics";
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import {
-  DynamoDBDocumentClient,
-  UpdateCommand,
-} from "@aws-sdk/lib-dynamodb";
+import { DynamoDBDocumentClient, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import assert from "node:assert/strict";
 import { initMetrics } from "./common/metrics.js";
-import { processConfig, ProcessConfig, Actions } from "./common/process-config.js";
+import {
+  processConfig,
+  ProcessConfig,
+  Actions,
+} from "./common/process-config.js";
 import type { InactiveAccountStatus } from "./common/model.js";
 import { getEnvironmentVariable } from "./common/utils.js";
 import { sendAuditEvent } from "./common/send-audit-event.js";
 import { mergeTrackerRecords } from "./common/merge-tracker-records.js";
+import { getIadCircuitBreakerStatus } from "./common/iad-circuit-breaker.js";
 
 const logger = new Logger();
 const metrics = initMetrics("process-inactive-account");
 const sqsClient = new SQSClient();
 const dynamoClient = new DynamoDBClient({});
 const dynamoDocClient = DynamoDBDocumentClient.from(dynamoClient);
-
 
 async function runGuards(
   guards: ProcessConfig[number]["guards"],
@@ -29,11 +30,21 @@ async function runGuards(
   if (!guards) return Actions.continue;
 
   for (const guard of guards) {
-    const guardResult = await guard.guard(body.commonSubjectId, body.emailAddress, body.dateForDeletion);
+    const guardResult = await guard.guard(
+      body.commonSubjectId,
+      body.emailAddress,
+      body.dateForDeletion
+    );
     const typeOfGuardResult = guardResult.continue;
 
-    if (typeOfGuardResult === Actions.continueWithoutActions || typeOfGuardResult === Actions.abort) {
-      const message = typeOfGuardResult === Actions.abort ? "GuardrailAbortedInactiveAccountDeletionProcess" : "GuardrailInactiveAccountDeletionProcessContinuedWithoutActions";
+    if (
+      typeOfGuardResult === Actions.continueWithoutActions ||
+      typeOfGuardResult === Actions.abort
+    ) {
+      const message =
+        typeOfGuardResult === Actions.abort
+          ? "GuardrailAbortedInactiveAccountDeletionProcess"
+          : "GuardrailInactiveAccountDeletionProcessContinuedWithoutActions";
       logger.info(message, {
         dateForDeletion: body.dateForDeletion,
         processName: body.processName,
@@ -47,8 +58,9 @@ async function runGuards(
         emailAddressSource: body.emailAddressSource,
         emailAddressSourceId: body.emailAddressSourceId,
         hasSetupMfa: body.hasSetupMfa,
-        guard: guardResult.guardName,
-        contributeToAlarm: guard.contributeToAlarm,
+        guardrailType: guardResult.guardName,
+        contributeToAlarm: guard.contributeToAlarm ? "1" : "0",
+        furtherProcessingAborted: "0",
       });
 
       if (guard.skippedNotificationAuditEventName) {
@@ -57,7 +69,8 @@ async function runGuards(
             user_id: body.commonSubjectId,
           },
           extensions: {
-            accountTrackerNotificationSkipReason: guard.skippedNotificationAuditEventReason ?? "",
+            accountTrackerNotificationSkipReason:
+              guard.skippedNotificationAuditEventReason ?? "",
           },
         });
       }
@@ -164,7 +177,8 @@ async function emitAuditEvent(
       ...(process.sendAdditionalAuditEventDetails && {
         accountTrackerAccountLastAccessDate: body.userLastActive,
         accountTrackerAccountLastAccessSource: body.userLastActiveSource,
-        accountTrackerAccountLastAccessSourceEventId: body.userLastActiveSourceId,
+        accountTrackerAccountLastAccessSourceEventId:
+          body.userLastActiveSourceId,
       }),
     },
   });
@@ -177,7 +191,7 @@ async function processRecord(
 ): Promise<void> {
   const process = processConfig[body.processName];
 
-  logger.info("Processing inactive account warning", {
+  logger.info("Processing inactive account record", {
     commonSubjectId: body.commonSubjectId,
     processName: body.processName,
   });
@@ -241,6 +255,30 @@ export const handler = async (
 
   for (const record of event.Records) {
     const body = JSON.parse(record.body);
+
+    const iadCircuitBreakerActive = await getIadCircuitBreakerStatus();
+
+    if (iadCircuitBreakerActive) {
+      logger.info("GuardrailAbortedProcessInactiveAccounts", {
+        dateForDeletion: body.dateForDeletion,
+        processName: body.processName,
+        status: body.status,
+        statusLastUpdated: body.statusLastUpdated,
+        userLastActive: body.userLastActive,
+        userLastActiveSource: body.userLastActiveSource,
+        userLastActiveSourceId: body.userLastActiveSourceId,
+        userLastActiveUpdated: body.userLastActiveUpdated,
+        emailAddressLastUpdated: body.emailAddressLastUpdated,
+        emailAddressSource: body.emailAddressSource,
+        emailAddressSourceId: body.emailAddressSourceId,
+        hasSetupMfa: body.hasSetupMfa,
+        guardrailType: "CircuitBreakerAlreadyTripped",
+        contributeToAlarm: "1",
+        furtherProcessingAborted: "1",
+      });
+      return;
+    }
+
     await processRecord(
       body,
       notificationQueueUrl,

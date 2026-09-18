@@ -7667,7 +7667,7 @@ Resources:
       Metrics:
         - Id: iADGuardrailTriggered
           Expression: SELECT SUM(GuardrailPreventedInactiveAccountDeletion) FROM "IAD" WHERE ContributeToAlarm = '1'
-          Period: 10
+          Period: 60
           ReturnData: true
       EvaluationPeriods: 1
       Threshold: 1

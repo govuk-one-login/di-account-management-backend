@@ -19,7 +19,7 @@ const mockInitMetrics = vi.hoisted(() => vi.fn(() => mockMetrics));
 
 const mockHasAisBlockIntervention = vi.hoisted(() => vi.fn());
 const mockHasRecentActivityLogEntry = vi.hoisted(() => vi.fn());
-const mockSendInactiveAccountEmailsIsEnabled = vi.hoisted(() => vi.fn());
+const mockSendInactiveAccountEmailsIsDisabled = vi.hoisted(() => vi.fn());
 const mockDoesNotHaveEmailAddress = vi.hoisted(() => vi.fn());
 
 vi.mock("../common/metrics.js", () => ({
@@ -34,8 +34,8 @@ vi.mock("../common/iadGuards/hasRecentActivityLogEntry.js", () => ({
   hasRecentActivityLogEntry: mockHasRecentActivityLogEntry,
 }));
 
-vi.mock("../common/iadGuards/sendInactiveAccountEmailsIsEnabled.js", () => ({
-  sendInactiveAccountEmailsIsEnabled: mockSendInactiveAccountEmailsIsEnabled,
+vi.mock("../common/iadGuards/sendInactiveAccountEmailsIsDisabled.js", () => ({
+  sendInactiveAccountEmailsIsDisabled: mockSendInactiveAccountEmailsIsDisabled,
 }));
 
 vi.mock("../common/iadGuards/doesNotHaveEmailAddress.js", () => ({
@@ -102,7 +102,7 @@ describe("process-inactive-account handler", () => {
 
     mockHasAisBlockIntervention.mockResolvedValue(notBlocked);
     mockHasRecentActivityLogEntry.mockResolvedValue(noRecentActivity);
-    mockSendInactiveAccountEmailsIsEnabled.mockResolvedValue(
+    mockSendInactiveAccountEmailsIsDisabled.mockResolvedValue(
       inactiveAccountEmailsFeatureFlagEnabled
     );
     mockDoesNotHaveEmailAddress.mockResolvedValue(
@@ -773,7 +773,7 @@ describe("process-inactive-account handler", () => {
   });
 
   test("skips processing when inactive account deletion feature flag guard returns Abort", async () => {
-    mockSendInactiveAccountEmailsIsEnabled.mockResolvedValue(
+    mockSendInactiveAccountEmailsIsDisabled.mockResolvedValue(
       inactiveAccountEmailsFeatureFlagDisabled
     );
 
@@ -789,7 +789,7 @@ describe("process-inactive-account handler", () => {
 
     await handler(event, {} as Context);
 
-    expect(mockSendInactiveAccountEmailsIsEnabled).toHaveBeenCalled();
+    expect(mockSendInactiveAccountEmailsIsDisabled).toHaveBeenCalled();
     expect(sqsMock).not.toHaveReceivedCommand(SendMessageCommand);
     expect(dynamoMock).not.toHaveReceivedCommand(UpdateCommand);
     expect(mockMetrics.addMetric).not.toHaveBeenCalled();

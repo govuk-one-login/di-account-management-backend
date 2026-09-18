@@ -2,7 +2,7 @@ import type { InactiveAccountStatus } from "./model.js";
 import { hasRecentActivityLogEntry } from "./iadGuards/hasRecentActivityLogEntry.js";
 import { hasAisBlockIntervention } from "./iadGuards/hasAisBlockIntervention.js";
 import { hasUndeliverableEmailAddress } from "./iadGuards/hasUndeliverableEmailAddress.js";
-import { sendInactiveAccountEmailsIsEnabled } from "./iadGuards/sendInactiveAccountEmailsIsEnabled.js";
+import { sendInactiveAccountEmailsIsDisabled } from "./iadGuards/sendInactiveAccountEmailsIsDisabled.js";
 import { dateForDeletionIs27October } from "./iadGuards/dateForDeletionIs27October.js";
 import { doesNotHaveEmailAddress } from "./iadGuards/doesNotHaveEmailAddress.js";
 import { hasNotSetupMfa } from "./iadGuards/hasNotSetupMfa.js";
@@ -41,8 +41,8 @@ const guardsList = {
     skippedNotificationAuditEventName:
       "HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED",
   },
-  sendInactiveAccountEmailsIsEnabled: {
-    guard: sendInactiveAccountEmailsIsEnabled,
+  sendInactiveAccountEmailsIsDisabled: {
+    guard: sendInactiveAccountEmailsIsDisabled,
     contributeToAlarm: false,
   },
   doesNotHaveEmailAddress: {
@@ -95,7 +95,7 @@ export const processConfig: ProcessConfig = {
     notificationType: "INACTIVE_ACCOUNT_WARNING_30_DAY",
     auditEventName: "HOME_ACCOUNT_TRACKER_ACCOUNT_FIRST_PERIOD_ENTERED",
     guards: [
-      guardsList.sendInactiveAccountEmailsIsEnabled,
+      guardsList.sendInactiveAccountEmailsIsDisabled,
       guardsList.doesNotHaveEmailAddress,
       guardsList.hasAisBlockIntervention,
       guardsList.hasUndeliverableEmailAddress,
@@ -111,7 +111,7 @@ export const processConfig: ProcessConfig = {
     notificationType: "INACTIVE_ACCOUNT_WARNING_7_DAY",
     auditEventName: "HOME_ACCOUNT_TRACKER_ACCOUNT_SECOND_PERIOD_ENTERED",
     guards: [
-      guardsList.sendInactiveAccountEmailsIsEnabled,
+      guardsList.sendInactiveAccountEmailsIsDisabled,
       guardsList.doesNotHaveEmailAddress,
       guardsList.hasAisBlockIntervention,
       guardsList.hasUndeliverableEmailAddress,

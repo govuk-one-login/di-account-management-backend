@@ -57,18 +57,20 @@ describe("hasRecentActivityLogEntry", () => {
   });
 
   test("uses a cutoff timestamp within the expected range", async () => {
+    const fixedNow = 1700000000000;
+    vi.useFakeTimers();
+    vi.setSystemTime(fixedNow);
+
     dynamoMock.on(QueryCommand).resolves({ Count: 0 });
-
-    const before = Date.now();
     await hasRecentActivityLogEntry("user-123");
-    const after = Date.now();
 
-    const fiveYearsMinus30DaysMs = (5 * 365 * 24 * 60 * 60 - 30 * 24 * 60 * 60) * 1000;
+    vi.useRealTimers();
+
+    const fiveYearsMinus30DaysS = 5 * 365 * 24 * 60 * 60 - 30 * 24 * 60 * 60;
     const call = dynamoMock.commandCalls(QueryCommand)[0];
     const cutoff = call.args[0].input.ExpressionAttributeValues![":cutoff"] as number;
 
-    expect(cutoff).toBeGreaterThanOrEqual(before - fiveYearsMinus30DaysMs);
-    expect(cutoff).toBeLessThanOrEqual(after - fiveYearsMinus30DaysMs);
+    expect(cutoff).toBe(fixedNow / 1000 - fiveYearsMinus30DaysS);
   });
 
   test("propagates errors from DynamoDB", async () => {

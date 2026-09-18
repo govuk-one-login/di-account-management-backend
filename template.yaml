@@ -7651,7 +7651,7 @@ Resources:
   QueryAndDispatchInactiveAccountsIADGuardrailTriggeredFilterForAlarm:
     Type: AWS::Logs::MetricFilter
     Properties:
-      FilterPattern: '{ $.contributeToAlarm = true && $.message = "GuardrailAbortedQueryAndDispatchInactiveAccounts" }'
+      FilterPattern: '{ $.contributeToAlarm = "1" && $.message = "GuardrailAbortedQueryAndDispatchInactiveAccounts" }'
       LogGroupName: !Ref QueryAndDispatchInactiveAccountsFunctionLogGroup
       MetricTransformations:
         - MetricName: GuardrailPreventedInactiveAccountDeletionForAlarm
@@ -7662,7 +7662,7 @@ Resources:
   ProcessInactiveAccountsIADGuardrailTriggeredFilterForAlarm:
     Type: AWS::Logs::MetricFilter
     Properties:
-      FilterPattern: '{ $.contributeToAlarm = true && ($.message = "GuardrailAbortedProcessInactiveAccounts" || $.message = "GuardrailAbortedInactiveAccountDeletionProcess") }'
+      FilterPattern: '{ $.contributeToAlarm = "1" && ($.message = "GuardrailAbortedProcessInactiveAccounts" || $.message = "GuardrailAbortedInactiveAccountDeletionProcess") }'
       LogGroupName: !Ref ProcessInactiveAccountFunctionLogGroup
       MetricTransformations:
         - MetricName: GuardrailPreventedInactiveAccountDeletionForAlarm

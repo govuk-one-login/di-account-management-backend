@@ -58,8 +58,8 @@ export const handler = async (
       if (iadCircuitBreakerActive) {
         logger.info("GuardrailAbortedQueryAndDispatchInactiveAccounts", {
           guardrailType: "CircuitBreakerAlreadyTripped",
-          contributeToAlarm: true,
-          furtherProcessingAborted: true,
+          contributeToAlarm: "1",
+          furtherProcessingAborted: "1",
           processName: event.processName,
           targetDate,
           dispatchedBeforeAbort: dispatched,

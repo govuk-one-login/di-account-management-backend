@@ -59,8 +59,8 @@ async function runGuards(
         emailAddressSourceId: body.emailAddressSourceId,
         hasSetupMfa: body.hasSetupMfa,
         guardrailType: guardResult.guardName,
-        contributeToAlarm: guard.contributeToAlarm,
-        furtherProcessingAborted: false,
+        contributeToAlarm: guard.contributeToAlarm ? "1" : "0",
+        furtherProcessingAborted: "0",
       });
 
       if (guard.skippedNotificationAuditEventName) {
@@ -273,8 +273,8 @@ export const handler = async (
         emailAddressSourceId: body.emailAddressSourceId,
         hasSetupMfa: body.hasSetupMfa,
         guardrailType: "CircuitBreakerAlreadyTripped",
-        contributeToAlarm: true,
-        furtherProcessingAborted: true,
+        contributeToAlarm: "1",
+        furtherProcessingAborted: "1",
       });
       return;
     }

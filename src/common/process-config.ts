@@ -4,7 +4,7 @@ import { hasAisBlockIntervention } from "./iadGuards/hasAisBlockIntervention.js"
 import { hasUndeliverableEmailAddress } from "./iadGuards/hasUndeliverableEmailAddress.js";
 import { sendInactiveAccountEmailsIsEnabled } from "./iadGuards/sendInactiveAccountEmailsIsEnabled.js";
 import { dateForDeletionIs27October } from "./iadGuards/dateForDeletionIs27October.js";
-import { hasEmailAddress } from "./iadGuards/hasEmailAddress.js";
+import { doesNotHaveEmailAddress } from "./iadGuards/doesNotHaveEmailAddress.js";
 import { hasNotSetupMfa } from "./iadGuards/hasNotSetupMfa.js";
 
 export enum Actions {
@@ -27,7 +27,8 @@ const guardsList = {
     guard: hasAisBlockIntervention,
     contributeToAlarm: false,
     skippedNotificationAuditEventReason: "IndefiniteSuspension",
-    skippedNotificationAuditEventName: "HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED"
+    skippedNotificationAuditEventName:
+      "HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED",
   },
   hasRecentActivityLogEntry: {
     guard: hasRecentActivityLogEntry,
@@ -37,27 +38,30 @@ const guardsList = {
     guard: hasUndeliverableEmailAddress,
     contributeToAlarm: false,
     skippedNotificationAuditEventReason: "PreviouslyUndeliverable",
-    skippedNotificationAuditEventName: "HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED"
+    skippedNotificationAuditEventName:
+      "HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED",
   },
   sendInactiveAccountEmailsIsEnabled: {
     guard: sendInactiveAccountEmailsIsEnabled,
     contributeToAlarm: false,
   },
-  hasEmailAddress: {
-    guard: hasEmailAddress,
+  doesNotHaveEmailAddress: {
+    guard: doesNotHaveEmailAddress,
     contributeToAlarm: true,
   },
   hasNotSetupMfa: {
     guard: hasNotSetupMfa,
     contributeToAlarm: false,
     skippedNotificationAuditEventReason: "UnusableAccount",
-    skippedNotificationAuditEventName: "HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED"
+    skippedNotificationAuditEventName:
+      "HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED",
   },
   dateForDeletionIs27October: {
     guard: dateForDeletionIs27October,
     contributeToAlarm: false,
     skippedNotificationAuditEventReason: "LikelyVerifyMigratedUser",
-    skippedNotificationAuditEventName: "HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED"
+    skippedNotificationAuditEventName:
+      "HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED",
   },
 };
 
@@ -92,7 +96,7 @@ export const processConfig: ProcessConfig = {
     auditEventName: "HOME_ACCOUNT_TRACKER_ACCOUNT_FIRST_PERIOD_ENTERED",
     guards: [
       guardsList.sendInactiveAccountEmailsIsEnabled,
-      guardsList.hasEmailAddress,
+      guardsList.doesNotHaveEmailAddress,
       guardsList.hasAisBlockIntervention,
       guardsList.hasUndeliverableEmailAddress,
       guardsList.hasNotSetupMfa,
@@ -108,7 +112,7 @@ export const processConfig: ProcessConfig = {
     auditEventName: "HOME_ACCOUNT_TRACKER_ACCOUNT_SECOND_PERIOD_ENTERED",
     guards: [
       guardsList.sendInactiveAccountEmailsIsEnabled,
-      guardsList.hasEmailAddress,
+      guardsList.doesNotHaveEmailAddress,
       guardsList.hasAisBlockIntervention,
       guardsList.hasUndeliverableEmailAddress,
       guardsList.hasNotSetupMfa,
@@ -117,14 +121,16 @@ export const processConfig: ProcessConfig = {
   },
   DeleteAccount: {
     queueUrlEnvVar: "ACCOUNT_DELETION_QUEUE_URL",
-    daysToDeletion: [0, -1, -2, -3, -4, -5, -6, -7, -8, -9, -10, -11, -12, -13, -14],
+    daysToDeletion: [
+      0, -1, -2, -3, -4, -5, -6, -7, -8, -9, -10, -11, -12, -13, -14,
+    ],
     allowedStatuses: ["pending", "30DayWarningSent", "7DayWarningSent"],
     targetStatus: "deleting",
     targetQueueUrlEnvVar: "ACCOUNT_DELETION_QUEUE_URL",
     auditEventName: "HOME_ACCOUNT_TRACKER_ACCOUNT_DELETION_REQUESTED",
     sendAdditionalAuditEventDetails: true,
     guards: [
-      guardsList.hasEmailAddress,
+      guardsList.doesNotHaveEmailAddress,
       guardsList.hasRecentActivityLogEntry,
     ],
   },

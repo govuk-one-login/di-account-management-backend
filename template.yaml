@@ -7633,6 +7633,8 @@ Resources:
           Dimensions:        
             - Key: GuardrailType
               Value: $.guardrailType
+            - Key: ContributeToAlarm
+              Value: $.contributeToAlarm
 
   ProcessInactiveAccountsIADGuardrailTriggeredFilter:
     Type: AWS::Logs::MetricFilter
@@ -7647,28 +7649,8 @@ Resources:
           Dimensions:        
             - Key: GuardrailType
               Value: $.guardrailType
-
-  QueryAndDispatchInactiveAccountsIADGuardrailTriggeredFilterForAlarm:
-    Type: AWS::Logs::MetricFilter
-    Properties:
-      FilterPattern: '{ $.contributeToAlarm = "1" && $.message = "GuardrailAbortedQueryAndDispatchInactiveAccounts" }'
-      LogGroupName: !Ref QueryAndDispatchInactiveAccountsFunctionLogGroup
-      MetricTransformations:
-        - MetricName: GuardrailPreventedInactiveAccountDeletionForAlarm
-          MetricNamespace: IAD
-          MetricValue: 1
-          Unit: Count
-
-  ProcessInactiveAccountsIADGuardrailTriggeredFilterForAlarm:
-    Type: AWS::Logs::MetricFilter
-    Properties:
-      FilterPattern: '{ $.contributeToAlarm = "1" && ($.message = "GuardrailAbortedProcessInactiveAccounts" || $.message = "GuardrailAbortedInactiveAccountDeletionProcess") }'
-      LogGroupName: !Ref ProcessInactiveAccountFunctionLogGroup
-      MetricTransformations:
-        - MetricName: GuardrailPreventedInactiveAccountDeletionForAlarm
-          MetricNamespace: IAD
-          MetricValue: 1
-          Unit: Count         
+            - Key: ContributeToAlarm
+              Value: $.contributeToAlarm
   
   IADGuardrailTriggeredAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -7682,10 +7664,11 @@ Resources:
             IADGuardrailTriggered,
           ],
         ]
-      Namespace: IAD
-      MetricName: GuardrailPreventedInactiveAccountDeletionForAlarm
-      Statistic: Sum
-      Period: 10
+      Metrics:
+        - Id: iADGuardrailTriggered
+          Expression: SELECT SUM(GuardrailPreventedInactiveAccountDeletion) FROM "IAD" WHERE ContributeToAlarm = '1'
+          Period: 10
+          ReturnData: true
       EvaluationPeriods: 1
       Threshold: 1
       TreatMissingData: notBreaching

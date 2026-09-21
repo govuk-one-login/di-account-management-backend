@@ -12,7 +12,7 @@ const sqsClient = new SQSClient({});
 
 export interface QueryAndDispatchEvent {
   processName: string;
-  manualTestOnly?: boolean;
+  manualTest?: boolean;
 }
 
 export const calculateTargetDate = (daysToDeletion: number): string => {
@@ -70,8 +70,9 @@ export const handler = async (
       const eligible = page.filter(
         (record) =>
           allowedStatuses.includes(record.status) &&
-          (!event.manualTestOnly ||
-            record.userLastActiveSource === "MANUAL_TEST")
+          ((!event.manualTest &&
+            record.userLastActiveSource !== "MANUAL_TEST") ||
+            (event.manualTest && record.userLastActiveSource === "MANUAL_TEST"))
       );
 
       eligibleForDate += eligible.length;

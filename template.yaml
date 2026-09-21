@@ -7630,7 +7630,7 @@ Resources:
           MetricNamespace: IAD
           MetricValue: 1
           Unit: Count
-          Dimensions:        
+          Dimensions:
             - Key: GuardrailType
               Value: $.guardrailType
             - Key: ContributeToAlarm
@@ -7646,23 +7646,19 @@ Resources:
           MetricNamespace: IAD
           MetricValue: 1
           Unit: Count
-          Dimensions:        
+          Dimensions:
             - Key: GuardrailType
               Value: $.guardrailType
             - Key: ContributeToAlarm
               Value: $.contributeToAlarm
-  
+
   IADGuardrailTriggeredAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
       AlarmName:
         !Join [
           "-",
-          [
-            !Ref AWS::StackName,
-            !Ref Environment,
-            IADGuardrailTriggered,
-          ],
+          [!Ref AWS::StackName, !Ref Environment, IADGuardrailTriggered],
         ]
       Metrics:
         - Id: iADGuardrailTriggered
@@ -8195,7 +8191,7 @@ Resources:
           AttributeType: N
       BillingMode: PAY_PER_REQUEST
       TableName: !Ref InactiveAccountCircuitBreakerTableName
-      KeySchema:      
+      KeySchema:
         - AttributeName: pk
           KeyType: HASH
         - AttributeName: datetime

@@ -398,8 +398,15 @@ describe("handler", () => {
     expect(Logger.prototype.warn).toHaveBeenCalledWith(
       'The client: "UNKNOWN" is not in the RP registry.'
     );
-    expect(mockMetrics.addDimension).toHaveBeenCalledWith("clientId", "UNKNOWN");
-    expect(mockMetrics.addMetric).toHaveBeenCalledWith("unknownClientIdReceived", "Count", 1);
+    expect(mockMetrics.addDimension).toHaveBeenCalledWith(
+      "clientId",
+      "UNKNOWN"
+    );
+    expect(mockMetrics.addMetric).toHaveBeenCalledWith(
+      "unknownClientIdReceived",
+      "Count",
+      1
+    );
     expect(mockMetrics.publishStoredMetrics).toHaveBeenCalled();
   });
 

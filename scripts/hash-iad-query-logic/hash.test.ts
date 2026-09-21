@@ -25,7 +25,9 @@ describe("computeHash", () => {
     const file = writeFile("a.ts", "content");
     const input = {
       localFiles: [file],
-      dependencies: [{ name: "tslib", version: "2.8.1", integrity: "sha512-x" }],
+      dependencies: [
+        { name: "tslib", version: "2.8.1", integrity: "sha512-x" },
+      ],
     };
 
     expect(computeHash(input, { repoRoot })).toBe(
@@ -48,11 +50,15 @@ describe("computeHash", () => {
   test("changes when a dependency's version changes", () => {
     const inputV1 = {
       localFiles: [],
-      dependencies: [{ name: "tslib", version: "2.8.1", integrity: "sha512-x" }],
+      dependencies: [
+        { name: "tslib", version: "2.8.1", integrity: "sha512-x" },
+      ],
     };
     const inputV2 = {
       localFiles: [],
-      dependencies: [{ name: "tslib", version: "2.8.2", integrity: "sha512-y" }],
+      dependencies: [
+        { name: "tslib", version: "2.8.2", integrity: "sha512-y" },
+      ],
     };
 
     expect(computeHash(inputV1, { repoRoot })).not.toBe(
@@ -93,7 +99,9 @@ describe("computeHash", () => {
     const inputWithoutDep = { localFiles: [], dependencies: [] };
     const inputWithDep = {
       localFiles: [],
-      dependencies: [{ name: "tslib", version: "2.8.1", integrity: "sha512-x" }],
+      dependencies: [
+        { name: "tslib", version: "2.8.1", integrity: "sha512-x" },
+      ],
     };
 
     expect(computeHash(inputWithoutDep, { repoRoot })).not.toBe(

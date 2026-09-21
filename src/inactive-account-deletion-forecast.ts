@@ -1,7 +1,4 @@
-import {
-  DynamoDBDocumentClient,
-  PutCommand,
-} from "@aws-sdk/lib-dynamodb";
+import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
 import { Context } from "aws-lambda";
 import { Logger } from "@aws-lambda-powertools/logger";
 import { getEnvironmentVariable } from "./common/utils.js";
@@ -29,7 +26,7 @@ export const buildDates = (fromDate: Date, days: number): string[] =>
     return d.toISOString().split("T")[0];
   });
 
-const chunk = <T,>(items: T[], size: number): T[][] =>
+const chunk = <T>(items: T[], size: number): T[][] =>
   Array.from({ length: Math.ceil(items.length / size) }, (_, i) =>
     items.slice(i * size, i * size + size)
   );
@@ -40,10 +37,17 @@ const publishRecordCountMetric = async (tableName: string): Promise<void> => {
     const tableInfo = await dynamoClient.send(describeCommand);
     const itemCount = tableInfo.Table?.ItemCount ?? 0;
 
-    metrics.addMetric("InactiveAccountTrackerRecordCount", MetricUnit.Count, itemCount);
+    metrics.addMetric(
+      "InactiveAccountTrackerRecordCount",
+      MetricUnit.Count,
+      itemCount
+    );
     metrics.publishStoredMetrics();
   } catch (metricError) {
-    logger.error("Failed to retrieve and/or publish InactiveAccountTrackerRecordCount metric", { error: metricError });
+    logger.error(
+      "Failed to retrieve and/or publish InactiveAccountTrackerRecordCount metric",
+      { error: metricError }
+    );
   }
 };
 
@@ -52,7 +56,9 @@ export const handler = async (
   context: Context
 ): Promise<void> => {
   logger.addContext(context);
-  logger.info("IAD query logic hash", { iadQueryLogicHash: iadQueryLogicHash.hash });
+  logger.info("IAD query logic hash", {
+    iadQueryLogicHash: iadQueryLogicHash.hash,
+  });
 
   const tableName = getEnvironmentVariable("TABLE_NAME");
   const forecastTableName = getEnvironmentVariable("FORECAST_TABLE_NAME");
@@ -60,7 +66,9 @@ export const handler = async (
   const forecastedAt = new Date().toISOString();
   const ttl = Math.floor(Date.now() / 1000) + TTL_SECONDS;
   const breakdownCutoffDate = new Date();
-  breakdownCutoffDate.setDate(breakdownCutoffDate.getDate() + MFA_BREAKDOWN_DAYS);
+  breakdownCutoffDate.setDate(
+    breakdownCutoffDate.getDate() + MFA_BREAKDOWN_DAYS
+  );
 
   await publishRecordCountMetric(tableName);
 

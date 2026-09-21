@@ -44,7 +44,9 @@ export function computeHash(
     hash.update(readFileSync(file));
   }
 
-  for (const dep of [...dependencies].sort((a, b) => a.name.localeCompare(b.name))) {
+  for (const dep of [...dependencies].sort((a, b) =>
+    a.name.localeCompare(b.name)
+  )) {
     hash.update(`${dep.name}@${dep.version}:${dep.integrity}`);
   }
 

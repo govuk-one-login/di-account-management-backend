@@ -1,4 +1,13 @@
-import { vi, describe, test, expect, beforeEach, afterEach, Mock, MockInstance } from "vitest";
+import {
+  vi,
+  describe,
+  test,
+  expect,
+  beforeEach,
+  afterEach,
+  Mock,
+  MockInstance,
+} from "vitest";
 import {
   decryptEventType,
   handler,

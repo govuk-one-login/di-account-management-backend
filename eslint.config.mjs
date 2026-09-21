@@ -6,38 +6,38 @@ import eslintPluginPrettier from "eslint-plugin-prettier";
 import tsEslintParser from "@typescript-eslint/parser";
 
 export default [
-  {files: ["**/*.{js,mjs,cjs,ts}"]},
-  {languageOptions: { globals: globals.node, parser: tsEslintParser }},
+  { files: ["**/*.{js,mjs,cjs,ts}"] },
+  { languageOptions: { globals: globals.node, parser: tsEslintParser } },
   pluginJs.configs.recommended,
   ...tsEslint.configs.recommended,
   ...tsEslint.configs.stylistic,
   {
-    ignores: [".aws-sam/"]
+    ignores: [".aws-sam/"],
   },
   {
-    "rules": {
+    rules: {
       "no-console": "off",
       "@typescript-eslint/no-unused-vars": [
         "error",
         {
-          "vars": "all",
-          "args": "after-used",
-          "ignoreRestSiblings": true,
-          "caughtErrors": "none"
-        }
-      ]
-    }
+          vars: "all",
+          args: "after-used",
+          ignoreRestSiblings: true,
+          caughtErrors: "none",
+        },
+      ],
+    },
   },
   {
-    "files": ["**/*.test.ts", "**/*.spec.ts"],
-    "rules": {
+    files: ["**/*.test.ts", "**/*.spec.ts"],
+    rules: {
       "@typescript-eslint/no-unused-expressions": "off",
-      "@typescript-eslint/no-require-imports": "off"
-    }
+      "@typescript-eslint/no-require-imports": "off",
+    },
   },
   eslintConfigPrettier,
   {
     plugins: { prettier: eslintPluginPrettier },
-    rules: { "prettier/prettier": "error" }
+    rules: { "prettier/prettier": "error" },
   },
 ];

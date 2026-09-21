@@ -17,15 +17,13 @@ const logger = new Logger();
 const metrics = initMetrics("format-user-services");
 
 const validateUserService = (service: Service): void => {
-  if (
-    !(
-      service.client_id !== undefined &&
-      service.count_successful_logins &&
-      service.count_successful_logins >= 0 &&
-      service.last_accessed !== undefined &&
-      service.last_accessed_pretty !== undefined
-    )
-  ) {
+  if (!(
+    service.client_id !== undefined &&
+    service.count_successful_logins &&
+    service.count_successful_logins >= 0 &&
+    service.last_accessed !== undefined &&
+    service.last_accessed_pretty !== undefined
+  )) {
     throw new Error(`Could not validate Service ${JSON.stringify(service)}`);
   }
 };
@@ -168,7 +166,8 @@ export const handler = async (
           throw new Error(
             `Unable to format user services for message with ID: ${record.messageId}, ${
               (error as Error).message
-            }`, { cause: error }
+            }`,
+            { cause: error }
           );
         }
       }

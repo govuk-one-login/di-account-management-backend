@@ -1,5 +1,5 @@
-import { Guard } from "../process-config.js";
-import checkIfDateIs27October from "../check-if-date-is-27-october.js";
+import { Guard } from "../../process-config.js";
+import checkIfDateIs27October from "../../check-if-date-is-27-october.js";
 
 export const dateForDeletionIs27October: Guard = async (
   _,

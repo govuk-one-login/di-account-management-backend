@@ -1,7 +1,7 @@
 import { vi, describe, test, expect, beforeEach } from "vitest";
 import { DynamoDBDocumentClient, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { mockClient } from "aws-sdk-client-mock";
-import { hasUndeliverableEmailAddress } from "../../common/iadGuards/hasUndeliverableEmailAddress.js";
+import { hasUndeliverableEmailAddress } from "../../../common/iadGuards/processGuards/hasUndeliverableEmailAddress.js";
 import "aws-sdk-client-mock-vitest";
 
 const dynamoMock = mockClient(DynamoDBDocumentClient);
@@ -10,27 +10,38 @@ describe("hasUndeliverableEmailAddress", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     dynamoMock.reset();
-    process.env.INACTIVE_ACCOUNT_TRACKER_TABLE_NAME = "test-inactive-account-table";
+    process.env.INACTIVE_ACCOUNT_TRACKER_TABLE_NAME =
+      "test-inactive-account-table";
   });
 
   test("returns guardActivated: false when record has hasUndeliverableEmailAddress: false", async () => {
     dynamoMock.on(QueryCommand).resolves({
-      Items: [{ commonSubjectId: "user-123", hasUndeliverableEmailAddress: false }]
+      Items: [
+        { commonSubjectId: "user-123", hasUndeliverableEmailAddress: false },
+      ],
     });
 
     const result = await hasUndeliverableEmailAddress("user-123");
 
-    expect(result).toEqual({ guardActivated: false, guardName: "undeliverableEmailAddress" });
+    expect(result).toEqual({
+      guardActivated: false,
+      guardName: "undeliverableEmailAddress",
+    });
   });
 
   test("returns guardActivated: true when record exists with hasUndeliverableEmailAddress: true", async () => {
     dynamoMock.on(QueryCommand).resolves({
-      Items: [{ commonSubjectId: "user-123", hasUndeliverableEmailAddress: true }]
+      Items: [
+        { commonSubjectId: "user-123", hasUndeliverableEmailAddress: true },
+      ],
     });
 
     const result = await hasUndeliverableEmailAddress("user-123");
 
-    expect(result).toEqual({ guardActivated: true, guardName: "undeliverableEmailAddress" });
+    expect(result).toEqual({
+      guardActivated: true,
+      guardName: "undeliverableEmailAddress",
+    });
   });
 
   test("returns guardActivated: false when Items array is undefined", async () => {
@@ -38,7 +49,10 @@ describe("hasUndeliverableEmailAddress", () => {
 
     const result = await hasUndeliverableEmailAddress("user-123");
 
-    expect(result).toEqual({ guardActivated: false, guardName: "undeliverableEmailAddress" });
+    expect(result).toEqual({
+      guardActivated: false,
+      guardName: "undeliverableEmailAddress",
+    });
   });
 
   test("queries the correct table with the correct parameters", async () => {
@@ -51,14 +65,16 @@ describe("hasUndeliverableEmailAddress", () => {
       IndexName: "CommonSubjectIdIndex",
       KeyConditionExpression: "commonSubjectId = :id",
       ExpressionAttributeValues: {
-        ":id": "user-456"
-      }
+        ":id": "user-456",
+      },
     });
   });
 
   test("propagates errors from DynamoDB", async () => {
     dynamoMock.on(QueryCommand).rejects(new Error("DynamoDB error"));
 
-    await expect(hasUndeliverableEmailAddress("user-123")).rejects.toThrow("DynamoDB error");
+    await expect(hasUndeliverableEmailAddress("user-123")).rejects.toThrow(
+      "DynamoDB error"
+    );
   });
 });

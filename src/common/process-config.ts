@@ -1,11 +1,11 @@
 import type { InactiveAccountStatus } from "./model.js";
-import { hasRecentActivityLogEntry } from "./iadGuards/hasRecentActivityLogEntry.js";
-import { hasAisBlockIntervention } from "./iadGuards/hasAisBlockIntervention.js";
-import { hasUndeliverableEmailAddress } from "./iadGuards/hasUndeliverableEmailAddress.js";
-import { sendInactiveAccountEmailsIsDisabled } from "./iadGuards/sendInactiveAccountEmailsIsDisabled.js";
-import { dateForDeletionIs27October } from "./iadGuards/dateForDeletionIs27October.js";
-import { doesNotHaveEmailAddress } from "./iadGuards/doesNotHaveEmailAddress.js";
-import { hasNotSetupMfa } from "./iadGuards/hasNotSetupMfa.js";
+import { hasRecentActivityLogEntry } from "./iadGuards/processGuards/hasRecentActivityLogEntry.js";
+import { hasAisBlockIntervention } from "./iadGuards/processGuards/hasAisBlockIntervention.js";
+import { hasUndeliverableEmailAddress } from "./iadGuards/processGuards/hasUndeliverableEmailAddress.js";
+import { sendInactiveAccountEmailsIsDisabled } from "./iadGuards/processGuards/sendInactiveAccountEmailsIsDisabled.js";
+import { dateForDeletionIs27October } from "./iadGuards/processGuards/dateForDeletionIs27October.js";
+import { doesNotHaveEmailAddress } from "./iadGuards/processGuards/doesNotHaveEmailAddress.js";
+import { hasNotSetupMfa } from "./iadGuards/processGuards/hasNotSetupMfa.js";
 
 export type Guard = (
   commonSubjectId?: string,

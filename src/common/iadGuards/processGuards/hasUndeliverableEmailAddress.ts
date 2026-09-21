@@ -1,15 +1,15 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, QueryCommand } from "@aws-sdk/lib-dynamodb";
-import { getEnvironmentVariable } from "../utils.js";
-import { Guard } from "../process-config.js";
+import { getEnvironmentVariable } from "../../utils.js";
+import { Guard } from "../../process-config.js";
 
 const dynamoDocClient = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 
-export const hasNotSetupMfa: Guard = async (commonSubjectId) => {
+export const hasUndeliverableEmailAddress: Guard = async (commonSubjectId) => {
   const inactiveAccountTrackerTableName = getEnvironmentVariable(
     "INACTIVE_ACCOUNT_TRACKER_TABLE_NAME"
   );
-  const mfaQueryResponse = await dynamoDocClient.send(
+  const emailQueryResponse = await dynamoDocClient.send(
     new QueryCommand({
       TableName: inactiveAccountTrackerTableName,
       IndexName: "CommonSubjectIdIndex",
@@ -20,8 +20,8 @@ export const hasNotSetupMfa: Guard = async (commonSubjectId) => {
     })
   );
 
-  const recordItem = mfaQueryResponse.Items?.[0];
-  const guardActivated = recordItem?.hasSetupMfa === false;
+  const recordItem = emailQueryResponse.Items?.[0];
+  const guardActivated = recordItem?.hasUndeliverableEmailAddress === true;
 
-  return { guardActivated, guardName: "hasNotSetupMfa" };
+  return { guardActivated, guardName: "undeliverableEmailAddress" };
 };

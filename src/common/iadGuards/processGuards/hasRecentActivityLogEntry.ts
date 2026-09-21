@@ -1,7 +1,7 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, QueryCommand } from "@aws-sdk/lib-dynamodb";
-import { getEnvironmentVariable } from "../utils.js";
-import { Guard } from "../process-config.js";
+import { getEnvironmentVariable } from "../../utils.js";
+import { Guard } from "../../process-config.js";
 
 const dynamoDocClient = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 

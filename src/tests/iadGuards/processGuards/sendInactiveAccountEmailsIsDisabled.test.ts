@@ -1,5 +1,5 @@
 import { describe, afterEach, test, expect } from "vitest";
-import { sendInactiveAccountEmailsIsDisabled } from "../../common/iadGuards/sendInactiveAccountEmailsIsDisabled.js";
+import { sendInactiveAccountEmailsIsDisabled } from "../../../common/iadGuards/processGuards/sendInactiveAccountEmailsIsDisabled.js";
 
 describe("sendInactiveAccountEmailsIsDisabled", () => {
   afterEach(() => {
@@ -11,7 +11,10 @@ describe("sendInactiveAccountEmailsIsDisabled", () => {
 
     const result = await sendInactiveAccountEmailsIsDisabled();
 
-    expect(result).toEqual({ guardActivated: false, guardName: "SendInactiveAccountEmailsFeatureFlag" });
+    expect(result).toEqual({
+      guardActivated: false,
+      guardName: "SendInactiveAccountEmailsFeatureFlag",
+    });
   });
 
   test("returns guardActivated: true when the feature flag is disabled", async () => {
@@ -19,6 +22,9 @@ describe("sendInactiveAccountEmailsIsDisabled", () => {
 
     const result = await sendInactiveAccountEmailsIsDisabled();
 
-    expect(result).toEqual({ guardActivated: true, guardName: "SendInactiveAccountEmailsFeatureFlag" });
+    expect(result).toEqual({
+      guardActivated: true,
+      guardName: "SendInactiveAccountEmailsFeatureFlag",
+    });
   });
 });

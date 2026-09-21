@@ -6,7 +6,7 @@ vi.mock("../../common/account-interventions-service-client.js", () => ({
   isUserIdBlocked: mockIsUserIdBlocked,
 }));
 
-import { hasAisBlockIntervention } from "../../common/iadGuards/hasAisBlockIntervention.js";
+import { hasAisBlockIntervention } from "../../../common/iadGuards/processGuards/hasAisBlockIntervention.js";
 
 describe("hasAisBlockIntervention", () => {
   beforeEach(() => {

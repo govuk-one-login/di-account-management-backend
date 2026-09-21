@@ -1,5 +1,5 @@
-import { Guard } from "../process-config.js";
-import { getEnvironmentVariable } from "../utils.js";
+import { Guard } from "../../process-config.js";
+import { getEnvironmentVariable } from "../../utils.js";
 
 export const sendInactiveAccountEmailsIsDisabled: Guard = async () => {
   const guardActivated =

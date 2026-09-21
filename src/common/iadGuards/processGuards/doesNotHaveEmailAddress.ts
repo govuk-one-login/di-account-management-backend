@@ -1,4 +1,4 @@
-import { Guard } from "../process-config.js";
+import { Guard } from "../../process-config.js";
 
 export const doesNotHaveEmailAddress: Guard = async (_, emailAddress) => {
   const guardActivated =

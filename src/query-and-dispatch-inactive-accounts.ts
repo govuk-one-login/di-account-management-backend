@@ -9,14 +9,8 @@ import iadQueryLogicHash from "./common/iad-query-logic-hash.json" with { type: 
 
 const logger = new Logger();
 
-// Cap on how many SendMessageBatch calls are in flight at once. Dispatching
-// every chunk of a page concurrently exhausts the SQS client's connection pool
-// under load (tens of thousands of records), causing ECONNRESET/TLS socket
-// disconnects. Bounding the fan-out keeps the socket count sane.
-const MAX_CONCURRENT_BATCHES = 20;
 
-// maxAttempts lets the SDK transparently retry transient connection errors
-// (e.g. ECONNRESET) rather than surfacing them on the first attempt.
+const MAX_CONCURRENT_BATCHES = 20;
 const sqsClient = new SQSClient({ maxAttempts: 5 });
 
 export interface QueryAndDispatchEvent {

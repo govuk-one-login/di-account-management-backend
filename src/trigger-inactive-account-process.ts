@@ -102,7 +102,7 @@ export const handler = async (
       FunctionName: queryAndDispatchFunctionName,
       InvocationType: "RequestResponse",
       Payload: Buffer.from(
-        JSON.stringify({ processName, manualTestOnly: true })
+        JSON.stringify({ processName, manualTest: true })
       ),
     })
   );

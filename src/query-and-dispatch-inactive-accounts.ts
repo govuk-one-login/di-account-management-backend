@@ -17,7 +17,7 @@ const sqsClient = new SQSClient({ maxAttempts: 5 });
 
 export interface QueryAndDispatchEvent {
   processName: string;
-  manualTestOnly?: boolean;
+  manualTest?: boolean;
 }
 
 export const calculateTargetDate = (daysToDeletion: number): string => {
@@ -50,12 +50,13 @@ const logCircuitBreakerAbort = (
 const filterEligible = (
   page: InactiveAccountTrackerRecord[],
   allowedStatuses: string[],
-  manualTestOnly: boolean
+  manualTest: boolean
 ): InactiveAccountTrackerRecord[] =>
   page.filter(
     (record) =>
       allowedStatuses.includes(record.status) &&
-      (!manualTestOnly || record.userLastActiveSource === "MANUAL_TEST")
+      ((!manualTest && record.userLastActiveSource !== "MANUAL_TEST") ||
+        (manualTest && record.userLastActiveSource === "MANUAL_TEST"))
   );
 
 const chunkRecords = (
@@ -150,7 +151,7 @@ export const handler = async (
       const eligible = filterEligible(
         page,
         allowedStatuses,
-        Boolean(event.manualTestOnly)
+        Boolean(event.manualTest)
       );
       eligibleForDate += eligible.length;
 

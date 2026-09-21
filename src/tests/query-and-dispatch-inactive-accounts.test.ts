@@ -163,7 +163,7 @@ describe("handler", () => {
     expect(sqsMock.commandCalls(SendMessageBatchCommand)).toHaveLength(1);
   });
 
-  test("when manualTestOnly is true, only dispatches records with userLastActiveSource MANUAL_TEST", async () => {
+  test("when manualTest is true, only dispatches records with userLastActiveSource MANUAL_TEST", async () => {
     const manualRecord = { ...mockRecord, userLastActiveSource: "MANUAL_TEST" };
     dynamoMock.on(QueryCommand).resolves({ Items: [mockRecord, manualRecord] });
     sqsMock
@@ -171,7 +171,7 @@ describe("handler", () => {
       .resolves({ Successful: [], Failed: [] });
 
     await handler(
-      { processName: "Warning30Day", manualTestOnly: true },
+      { processName: "Warning30Day", manualTest: true },
       {} as Context
     );
 
@@ -190,7 +190,7 @@ describe("handler", () => {
     ).toHaveLength(1);
   });
 
-  test("when manualTestOnly is false, dispatches all eligible records regardless of userLastActiveSource", async () => {
+  test("when manualTest is false, excludes records with userLastActiveSource MANUAL_TEST", async () => {
     const manualRecord = {
       ...mockRecord,
       commonSubjectId: "user-2",
@@ -202,13 +202,23 @@ describe("handler", () => {
       .resolves({ Successful: [], Failed: [] });
 
     await handler(
-      { processName: "Warning30Day", manualTestOnly: false },
+      { processName: "Warning30Day", manualTest: false },
       {} as Context
     );
 
     expect(
       sqsMock.commandCalls(SendMessageBatchCommand)[0].args[0].input.Entries
-    ).toHaveLength(2);
+    ).toHaveLength(1);
+    expect(sqsMock).toHaveReceivedCommandWith(SendMessageBatchCommand, {
+      Entries: [
+        expect.objectContaining({
+          MessageBody: JSON.stringify({
+            ...mockRecord,
+            processName: "Warning30Day",
+          }),
+        }),
+      ],
+    });
   });
 
   test("dry run does not send any messages to SQS but still queries accounts", async () => {

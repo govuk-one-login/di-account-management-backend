@@ -70,14 +70,14 @@ describe("TriggerInactiveAccountProcess handler", () => {
     });
   });
 
-  test("invokes query-and-dispatch lambda with processName and manualTestOnly flag", async () => {
+  test("invokes query-and-dispatch lambda with processName and manualTest flag", async () => {
     await handler({ emailAddress, processName });
 
     expect(lambdaMock).toHaveReceivedCommandWith(InvokeCommand, {
       FunctionName: "test-dispatch-fn",
       InvocationType: "RequestResponse",
       Payload: Buffer.from(
-        JSON.stringify({ processName, manualTestOnly: true })
+        JSON.stringify({ processName, manualTest: true })
       ),
     });
   });

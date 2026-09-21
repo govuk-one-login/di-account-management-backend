@@ -1,7 +1,7 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { getEnvironmentVariable } from "../utils.js";
-import { Guard, Actions } from "../process-config.js";
+import { Guard } from "../process-config.js";
 
 const dynamoDocClient = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 
@@ -15,13 +15,13 @@ export const hasUndeliverableEmailAddress: Guard = async (commonSubjectId) => {
       IndexName: "CommonSubjectIdIndex",
       KeyConditionExpression: "commonSubjectId = :id",
       ExpressionAttributeValues: {
-          ":id": commonSubjectId
-      }
+        ":id": commonSubjectId,
+      },
     })
   );
 
   const recordItem = emailQueryResponse.Items?.[0];
-  const continueAction = recordItem?.hasUndeliverableEmailAddress ? Actions.continueWithoutActions : Actions.continue;
-  
-  return { continue: continueAction, guardName: "undeliverableEmailAddress" };
+  const guardActivated = recordItem?.hasUndeliverableEmailAddress === true;
+
+  return { guardActivated, guardName: "undeliverableEmailAddress" };
 };

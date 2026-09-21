@@ -1,13 +1,11 @@
-import { Guard, Actions } from "../process-config.js";
+import { Guard } from "../process-config.js";
 import { getEnvironmentVariable } from "../utils.js";
 
 export const sendInactiveAccountEmailsIsDisabled: Guard = async () => {
-  const continueAction =
-    getEnvironmentVariable("SEND_INACTIVE_ACCOUNT_DELETION_EMAILS") === "1"
-      ? Actions.continue
-      : Actions.continueWithoutActions;
+  const guardActivated =
+    getEnvironmentVariable("SEND_INACTIVE_ACCOUNT_DELETION_EMAILS") !== "1";
   return {
-    continue: continueAction,
+    guardActivated,
     guardName: "SendInactiveAccountEmailsFeatureFlag",
   };
 };

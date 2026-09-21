@@ -14,28 +14,28 @@ describe("hasRecentActivityLogEntry", () => {
     process.env.ACTIVITY_LOG_TABLE_NAME = "test-activity-log-table";
   });
 
-  test("returns continue: 'Continue' when no recent activity exists", async () => {
+  test("returns guardActivated: false when no recent activity exists", async () => {
     dynamoMock.on(QueryCommand).resolves({ Count: 0 });
 
     const result = await hasRecentActivityLogEntry("user-123");
 
-    expect(result).toEqual({ continue: 'Continue', guardName: "HomeUserActivityLog" });
+    expect(result).toEqual({ guardActivated: false, guardName: "HomeUserActivityLog" });
   });
 
-  test("returns continue: 'Abort' when recent activity exists", async () => {
+  test("returns guardActivated: true when recent activity exists", async () => {
     dynamoMock.on(QueryCommand).resolves({ Count: 3 });
 
     const result = await hasRecentActivityLogEntry("user-123");
 
-    expect(result).toEqual({ continue: 'Abort', guardName: "HomeUserActivityLog" });
+    expect(result).toEqual({ guardActivated: true, guardName: "HomeUserActivityLog" });
   });
 
-  test("returns continue: 'Continue' when Count is undefined", async () => {
+  test("returns guardActivated: false when Count is undefined", async () => {
     dynamoMock.on(QueryCommand).resolves({});
 
     const result = await hasRecentActivityLogEntry("user-123");
 
-    expect(result).toEqual({ continue: 'Continue', guardName: "HomeUserActivityLog" });
+    expect(result).toEqual({ guardActivated: false, guardName: "HomeUserActivityLog" });
   });
 
   test("queries the correct table with the correct user_id", async () => {

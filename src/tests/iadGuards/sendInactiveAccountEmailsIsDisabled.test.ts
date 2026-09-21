@@ -1,34 +1,24 @@
-import { vi, describe, afterEach, test, expect, beforeEach } from "vitest";
-import { Actions } from "../../common/process-config.js";
+import { describe, afterEach, test, expect } from "vitest";
 import { sendInactiveAccountEmailsIsDisabled } from "../../common/iadGuards/sendInactiveAccountEmailsIsDisabled.js";
-describe("sendInactiveAccountEmailsIsDisabled", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
 
+describe("sendInactiveAccountEmailsIsDisabled", () => {
   afterEach(() => {
     delete process.env["SEND_INACTIVE_ACCOUNT_DELETION_EMAILS"];
   });
 
-  test("returns continue when the feature flag is enabled", async () => {
+  test("returns guardActivated: false when the feature flag is enabled", async () => {
     process.env["SEND_INACTIVE_ACCOUNT_DELETION_EMAILS"] = "1";
 
     const result = await sendInactiveAccountEmailsIsDisabled();
 
-    expect(result).toEqual({
-      continue: Actions.continue,
-      guardName: "SendInactiveAccountEmailsFeatureFlag",
-    });
+    expect(result).toEqual({ guardActivated: false, guardName: "SendInactiveAccountEmailsFeatureFlag" });
   });
 
-  test("returns continueWithoutActions when the feature flag is disabled", async () => {
+  test("returns guardActivated: true when the feature flag is disabled", async () => {
     process.env["SEND_INACTIVE_ACCOUNT_DELETION_EMAILS"] = "0";
 
     const result = await sendInactiveAccountEmailsIsDisabled();
 
-    expect(result).toEqual({
-      continue: Actions.continueWithoutActions,
-      guardName: "SendInactiveAccountEmailsFeatureFlag",
-    });
+    expect(result).toEqual({ guardActivated: true, guardName: "SendInactiveAccountEmailsFeatureFlag" });
   });
 });

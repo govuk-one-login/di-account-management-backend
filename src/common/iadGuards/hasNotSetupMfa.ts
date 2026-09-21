@@ -1,7 +1,7 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { getEnvironmentVariable } from "../utils.js";
-import { Guard, Actions } from "../process-config.js";
+import { Guard } from "../process-config.js";
 
 const dynamoDocClient = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 
@@ -21,9 +21,7 @@ export const hasNotSetupMfa: Guard = async (commonSubjectId) => {
   );
 
   const recordItem = mfaQueryResponse.Items?.[0];
-  const continueAction = recordItem?.hasSetupMfa === false
-    ? Actions.continueWithoutActions
-    : Actions.continue;
+  const guardActivated = recordItem?.hasSetupMfa === false;
 
-  return { continue: continueAction, guardName: "hasNotSetupMfa" };
+  return { guardActivated, guardName: "hasNotSetupMfa" };
 };

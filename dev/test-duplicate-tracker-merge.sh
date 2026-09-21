@@ -28,7 +28,7 @@
 #      picks the user up), status "pending", and userLastActiveSource "MANUAL_TEST"
 #      (so the manual-test dispatch filter matches).
 #   2. Triggers the processor by invoking the query-and-dispatch lambda with
-#      {processName, manualTestOnly: true} -- exactly how trigger-inactive-account-process
+#      {processName, manualTest: true} -- exactly how trigger-inactive-account-process
 #      drives a manual test. (Use --no-trigger to only seed and skip this.)
 #   3. Polls the tracker table until the duplicates collapse into a single merged
 #      row, then prints the result.
@@ -169,7 +169,7 @@ put_tracker_row() {
   local description="$8"
 
   echo "  Seeding row ($description)"
-  # userLastActiveSource MUST be MANUAL_TEST: query-and-dispatch's manualTestOnly
+  # userLastActiveSource MUST be MANUAL_TEST: query-and-dispatch's manualTest
   # filter only dispatches rows whose userLastActiveSource == "MANUAL_TEST".
   aws dynamodb put-item $PROFILE_ARG --region "$REGION" \
     --table-name "$TRACKER_TABLE" \
@@ -270,13 +270,13 @@ if [[ -z "$DISPATCH_FUNCTION" ]]; then
 fi
 echo ""
 
-echo "Step 2b: invoking $DISPATCH_FUNCTION with {processName: $PROCESS_NAME, manualTestOnly: true}..."
+echo "Step 2b: invoking $DISPATCH_FUNCTION with {processName: $PROCESS_NAME, manualTest: true}..."
 INVOKE_OUT="$(mktemp)"
 aws lambda invoke $PROFILE_ARG --region "$REGION" \
   --function-name "$DISPATCH_FUNCTION" \
   --invocation-type RequestResponse \
   --cli-binary-format raw-in-base64-out \
-  --payload "{\"processName\": \"$PROCESS_NAME\", \"manualTestOnly\": true}" \
+  --payload "{\"processName\": \"$PROCESS_NAME\", \"manualTest\": true}" \
   "$INVOKE_OUT" >/dev/null
 echo "  Dispatch lambda response: $(cat "$INVOKE_OUT")"
 rm -f "$INVOKE_OUT"

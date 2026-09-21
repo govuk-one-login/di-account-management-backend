@@ -8,7 +8,7 @@ import {
 import {
   disableIad,
   getIadCircuitBreakerStatus,
-} from "../common/iad-circuit-breaker.js";
+} from "../common/iadGuards/circuitBreaker.js";
 
 const dynamoMock = mockClient(DynamoDBDocumentClient);
 

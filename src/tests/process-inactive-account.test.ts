@@ -54,7 +54,7 @@ const mockGetIadCircuitBreakerStatus = vi.hoisted(() =>
   vi.fn().mockResolvedValue(false)
 );
 
-vi.mock("../common/iad-circuit-breaker.js", () => ({
+vi.mock("../common/iadGuards/circuitBreaker.js", () => ({
   getIadCircuitBreakerStatus: mockGetIadCircuitBreakerStatus,
 }));
 
@@ -129,6 +129,8 @@ describe("process-inactive-account handler", () => {
     );
     mockGetIadCircuitBreakerStatus.mockResolvedValue(false);
 
+    process.env.INACTIVE_ACCOUNT_CIRCUIT_BREAKER_TABLE_NAME =
+      "circuit-breaker-table";
     process.env.NOTIFICATION_QUEUE_URL =
       "https://sqs.eu-west-2.amazonaws.com/123456789012/NotificationQueue";
     process.env.INACTIVE_ACCOUNT_TRACKER_TABLE_NAME =

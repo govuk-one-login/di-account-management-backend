@@ -4,7 +4,7 @@ import {
   QueryCommand,
 } from "@aws-sdk/lib-dynamodb";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { getEnvironmentVariable } from "./utils.js";
+import { getEnvironmentVariable } from "../utils.js";
 import * as v from "valibot";
 
 const dynamoClient = new DynamoDBClient({});
@@ -44,7 +44,7 @@ export const getIadCircuitBreakerStatus = async () => {
   return latest?.[0]?.enabled ?? false;
 };
 
-export const disableIad = async (metadata: unknown) => {
+export const disableIad = async (metadata?: unknown) => {
   const tableName = getEnvironmentVariable(
     "INACTIVE_ACCOUNT_CIRCUIT_BREAKER_TABLE_NAME"
   );

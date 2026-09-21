@@ -10,11 +10,22 @@ import {
 } from "../query-and-dispatch-inactive-accounts.js";
 import type { Context } from "aws-lambda";
 
-vi.mock("../common/iad-circuit-breaker.js", () => ({
+vi.mock("../common/iadGuards/circuitBreaker.js", () => ({
   getIadCircuitBreakerStatus: vi.fn().mockResolvedValue(false),
+  disableIad: vi.fn().mockResolvedValue(undefined),
 }));
 
-import { getIadCircuitBreakerStatus } from "../common/iad-circuit-breaker.js";
+vi.mock(
+  "../common/iadGuards/getNumberOfAccountsForecastForDeletion.js",
+  () => ({
+    getNumberOfAccountsForecastForDeletion: vi
+      .fn()
+      .mockResolvedValue(undefined),
+  })
+);
+
+import { getIadCircuitBreakerStatus, disableIad } from "../common/iadGuards/circuitBreaker.js";
+import { getNumberOfAccountsForecastForDeletion } from "../common/iadGuards/getNumberOfAccountsForecastForDeletion.js";
 
 const dynamoMock = mockClient(DynamoDBDocumentClient);
 const sqsMock = mockClient(SQSClient);
@@ -70,6 +81,7 @@ describe("handler", () => {
     dynamoMock.reset();
     sqsMock.reset();
     process.env.TABLE_NAME = "inactive-accounts-table";
+    process.env.FORECAST_TABLE_NAME = "forecast-table";
     process.env.WARNING_30_DAY_NOTIFICATION_QUEUE_URL =
       "https://sqs.eu-west-2.amazonaws.com/123/queue";
     process.env.ACCOUNT_DELETION_QUEUE_URL =
@@ -79,6 +91,52 @@ describe("handler", () => {
   afterEach(() => {
     vi.clearAllMocks();
     vi.mocked(getIadCircuitBreakerStatus).mockResolvedValue(false);
+    vi.mocked(disableIad).mockResolvedValue(undefined);
+    vi.mocked(getNumberOfAccountsForecastForDeletion).mockResolvedValue(
+      undefined
+    );
+    delete process.env.FORECAST_TABLE_NAME;
+  });
+
+  test("aborts and calls disableIad when forecast count does not match actual count", async () => {
+    vi.mocked(getNumberOfAccountsForecastForDeletion).mockResolvedValue(99);
+    dynamoMock.on(QueryCommand).resolves({ Count: 1, ScannedCount: 1 });
+    sqsMock.on(SendMessageBatchCommand).resolves({ Successful: [], Failed: [] });
+
+    await handler({ processName: "DeleteAccount" }, {} as Context);
+
+    expect(sqsMock.commandCalls(SendMessageBatchCommand)).toHaveLength(0);
+    expect(vi.mocked(disableIad)).toHaveBeenCalledOnce();
+  });
+
+  test("aborts and calls disableIad when no forecast exists for the date", async () => {
+    vi.mocked(getNumberOfAccountsForecastForDeletion).mockResolvedValue(undefined);
+    dynamoMock.on(QueryCommand).resolves({ Items: [mockRecord] });
+    sqsMock.on(SendMessageBatchCommand).resolves({ Successful: [], Failed: [] });
+
+    await handler({ processName: "DeleteAccount" }, {} as Context);
+
+    expect(sqsMock.commandCalls(SendMessageBatchCommand)).toHaveLength(0);
+    expect(vi.mocked(disableIad)).toHaveBeenCalledOnce();
+  });
+
+  test("continues when forecast count matches actual count", async () => {
+    vi.mocked(getNumberOfAccountsForecastForDeletion).mockResolvedValue(0);
+    dynamoMock.on(QueryCommand).resolves({ Count: 0, ScannedCount: 0, Items: [] });
+    sqsMock.on(SendMessageBatchCommand).resolves({ Successful: [], Failed: [] });
+
+    await handler({ processName: "DeleteAccount" }, {} as Context);
+
+    expect(vi.mocked(disableIad)).not.toHaveBeenCalled();
+  });
+
+  test("does not run forecast check for non-DeleteAccount processes", async () => {
+    dynamoMock.on(QueryCommand).resolves({ Items: [] });
+
+    await handler({ processName: "Warning30Day" }, {} as Context);
+
+    expect(vi.mocked(getNumberOfAccountsForecastForDeletion)).not.toHaveBeenCalled();
+    expect(vi.mocked(disableIad)).not.toHaveBeenCalled();
   });
 
   test("aborts early and logs when circuit breaker is active", async () => {

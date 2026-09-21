@@ -3,9 +3,16 @@ import { SQSClient, SendMessageBatchCommand } from "@aws-sdk/client-sqs";
 import { Logger } from "@aws-lambda-powertools/logger";
 import { getEnvironmentVariable } from "./common/utils.js";
 import { processConfig } from "./common/process-config.js";
-import { queryAccountsByDate } from "./common/query-inactive-accounts.js";
+import {
+  queryAccountsByDate,
+  countAccountsForDate,
+} from "./common/query-inactive-accounts.js";
 import iadQueryLogicHash from "./common/iad-query-logic-hash.json" with { type: "json" };
-import { getIadCircuitBreakerStatus } from "./common/iad-circuit-breaker.js";
+import {
+  disableIad,
+  getIadCircuitBreakerStatus,
+} from "./common/iadGuards/circuitBreaker.js";
+import { getNumberOfAccountsForecastForDeletion } from "./common/iadGuards/getNumberOfAccountsForecastForDeletion.js";
 
 const logger = new Logger();
 const sqsClient = new SQSClient({});
@@ -51,6 +58,25 @@ export const handler = async (
     logger.info(`Querying accounts for deletion date: ${targetDate}`);
 
     let eligibleForDate = 0;
+
+    if (event.processName === "DeleteAccount") {
+      const forecastedCount =
+        await getNumberOfAccountsForecastForDeletion(targetDate);
+
+      if (forecastedCount !== undefined) {
+        const { total: actualCount } = await countAccountsForDate(
+          tableName,
+          targetDate
+        );
+        if (forecastedCount !== actualCount) {
+          await disableIad("TODO");
+          return;
+        }
+      } else {
+        await disableIad("TODO");
+        return;
+      }
+    }
 
     for await (const page of queryAccountsByDate(tableName, targetDate)) {
       const iadCircuitBreakerActive = await getIadCircuitBreakerStatus();

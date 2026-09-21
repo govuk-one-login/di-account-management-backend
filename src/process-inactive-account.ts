@@ -62,6 +62,7 @@ async function runSubsetOfGuards(
         await sendAuditEvent(guard.skippedNotificationAuditEventName, {
           user: {
             user_id: body.commonSubjectId,
+            ...(body.emailAddress && { email: body.emailAddress }),
           },
           extensions: {
             accountTrackerNotificationSkipReason:
@@ -188,8 +189,8 @@ async function emitAuditEvent(
   await sendAuditEvent(process.auditEventName, {
     user: {
       user_id: body.commonSubjectId,
+      ...(body.emailAddress && { email: body.emailAddress }),
       ...(process.sendAdditionalAuditEventDetails && {
-        email: body.emailAddress,
         public_subject_id: body.publicSubjectId,
       }),
     },

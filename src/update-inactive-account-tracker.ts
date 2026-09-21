@@ -259,6 +259,7 @@ const processRecord = async (
       await sendAuditEvent("HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED", {
         user: {
           user_id: newItem.commonSubjectId,
+          ...(newItem.emailAddress && { email: newItem.emailAddress }),
         },
         extensions: {
           accountTrackerNotificationSkipReason: "UnusableAccount",
@@ -287,6 +288,7 @@ const processRecord = async (
       await sendAuditEvent(currentEventConfiguration.auditEvent ?? "", {
         user: {
           user_id: newItem.commonSubjectId,
+          ...(newItem.emailAddress && { email: newItem.emailAddress }),
         },
         extensions: {
           accountTrackerNotificationType: currentEventConfiguration.auditEventNotificationType,
@@ -304,6 +306,7 @@ const processRecord = async (
       await sendAuditEvent("HOME_ACCOUNT_TRACKER_ACCOUNT_REACTIVATED", {
         user: {
           user_id: newItem.commonSubjectId,
+          ...(newItem.emailAddress && { email: newItem.emailAddress }),
         },
         extensions: {
           accountTrackerRecordPreviousStatus: previousTrackerRecord.status,
@@ -328,6 +331,7 @@ const processRecord = async (
     await sendAuditEvent("HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED", {
       user: {
         user_id: newItem.commonSubjectId,
+        ...(newItem.emailAddress && { email: newItem.emailAddress }),
       },
       extensions: {
         accountTrackerNotificationType: "LikelyVerifyMigratedUser",

@@ -874,6 +874,7 @@ describe("UpdateInactiveAccountTracker handler", () => {
     expect(txmaEventBody).toEqual({
       user: {
         user_id: "qwerty",
+        email: "foo@bar.com",
       },
       component_id: "https://home.account.gov.uk",
       event_name: "HOME_ACCOUNT_TRACKER_NOTIFICATION_REQUESTED",
@@ -943,6 +944,7 @@ describe("UpdateInactiveAccountTracker handler", () => {
     expect(txmaEventBody).toEqual({
       user: {
         user_id: "qwerty",
+        email: "foo@bar.com",
       },
       component_id: "https://home.account.gov.uk",
       event_name: "HOME_ACCOUNT_TRACKER_NOTIFICATION_REQUESTED",
@@ -1054,6 +1056,7 @@ describe("UpdateInactiveAccountTracker handler", () => {
     expect(txmaEventBody).toEqual({
       user: {
         user_id: "qwerty",
+        email: "foo@bar.com",
       },
       component_id: "https://home.account.gov.uk",
       event_name: "HOME_ACCOUNT_TRACKER_NOTIFICATION_REQUESTED",
@@ -1289,7 +1292,8 @@ describe("UpdateInactiveAccountTracker handler", () => {
       event_timestamp_ms: expect.any(Number),
       event_timestamp_ms_formatted:expect.any(String),
       user:{
-        user_id: "qwerty"
+        user_id: "qwerty",
+        email: "foo@bar.com"
       },
       extensions: {
         accountTrackerRecordPreviousStatus: "pending",

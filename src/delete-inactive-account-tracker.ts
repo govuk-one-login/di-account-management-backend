@@ -73,6 +73,7 @@ export const deleteUserData = async (
       await sendAuditEvent("HOME_ACCOUNT_TRACKER_RECORD_DELETED", {
         user: {
           user_id: i.commonSubjectId,
+          ...(i.emailAddress && { email: i.emailAddress }),
         },
         extensions: {
           accountTrackerAccountDeletionDate: i.dateForDeletion,
@@ -112,6 +113,7 @@ export const maybeEnqueueDeletionEmail = async (
     await sendAuditEvent("HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED", {
       user: {
         user_id: userId,
+        ...(emailAddress && { email: emailAddress }),
       },
       extensions: {
         accountTrackerNotificationSkipReason: "UnusableAccount",

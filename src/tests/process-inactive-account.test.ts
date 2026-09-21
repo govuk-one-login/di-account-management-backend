@@ -421,7 +421,7 @@ describe("process-inactive-account handler", () => {
     // 1st call: NOTIFICATION_SKIPPED for blocked user
     const skippedEvent = JSON.parse(sqsCalls[0].args[0].input.MessageBody ?? "");
     expect(skippedEvent.event_name).toBe("HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED");
-    expect(skippedEvent.user).toEqual({ user_id: "blocked-user" });
+    expect(skippedEvent.user).toEqual({ user_id: "blocked-user", email: "blocked@example.com" });
     expect(skippedEvent.extensions).toEqual({
       accountTrackerNotificationSkipReason: "IndefiniteSuspension",
     });
@@ -429,7 +429,7 @@ describe("process-inactive-account handler", () => {
     // 2nd call: main audit event for blocked user (status still updated)
     const blockedMainEvent = JSON.parse(sqsCalls[1].args[0].input.MessageBody ?? "");
     expect(blockedMainEvent.event_name).toBe("HOME_ACCOUNT_TRACKER_ACCOUNT_FIRST_PERIOD_ENTERED");
-    expect(blockedMainEvent.user).toEqual({ user_id: "blocked-user" });
+    expect(blockedMainEvent.user).toEqual({ user_id: "blocked-user", email: "blocked@example.com" });
 
     // 3rd call: notification for active user
     expect(sqsMock).toHaveReceivedNthCommandWith(SendMessageCommand, 3, {
@@ -444,7 +444,7 @@ describe("process-inactive-account handler", () => {
     // 4th call: main audit event for active user
     const activeMainEvent = JSON.parse(sqsCalls[3].args[0].input.MessageBody ?? "");
     expect(activeMainEvent.event_name).toBe("HOME_ACCOUNT_TRACKER_ACCOUNT_FIRST_PERIOD_ENTERED");
-    expect(activeMainEvent.user).toEqual({ user_id: "active-user" });
+    expect(activeMainEvent.user).toEqual({ user_id: "active-user", email: "active@example.com" });
     expect(activeMainEvent.extensions).toEqual({
       accountTrackerAccountDeletionDate: "2026-08-20",
     });
@@ -721,6 +721,7 @@ describe("process-inactive-account handler", () => {
       event_timestamp_ms_formatted: expect.any(String),
       user: {
         user_id: "undeliverablee",
+        email: "i-am-not-deliverable@undlvrbl.com",
       },
       extensions: {
         accountTrackerNotificationSkipReason: "PreviouslyUndeliverable",
@@ -900,7 +901,7 @@ describe("process-inactive-account handler", () => {
     const auditEvent = JSON.parse(
       txmaCall!.args[0].input.MessageBody as string
     );
-    expect(auditEvent.user).toEqual({ user_id: "user-123" });
+    expect(auditEvent.user).toEqual({ user_id: "user-123", email: "test@example.com" });
     expect(auditEvent.extensions).toEqual({
       accountTrackerAccountDeletionDate: "2026-08-15",
     });
@@ -963,6 +964,7 @@ describe("process-inactive-account handler", () => {
       event_timestamp_ms_formatted: expect.any(String),
       user: {
         user_id: "migratedverifyuser",
+        email: "i-might-be-a-migrated-verify@user.com",
       },
       extensions: {
         accountTrackerNotificationSkipReason: "LikelyVerifyMigratedUser",

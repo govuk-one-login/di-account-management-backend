@@ -1,12 +1,10 @@
-import { Guard, Actions } from "../process-config.js";
+import { Guard } from "../process-config.js";
 
 export const doesNotHaveEmailAddress: Guard = async (_, emailAddress) => {
-  const continueAction =
-    typeof emailAddress === "string" && emailAddress.length > 0
-      ? Actions.continue
-      : Actions.abort;
+  const guardActivated =
+    typeof emailAddress !== "string" || !emailAddress.length;
   return {
-    continue: continueAction,
+    guardActivated,
     guardName: "DoesNotHaveEmailAddress",
   };
 };

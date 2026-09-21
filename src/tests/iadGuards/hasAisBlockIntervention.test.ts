@@ -13,27 +13,29 @@ describe("hasAisBlockIntervention", () => {
     vi.clearAllMocks();
   });
 
-  test("returns continue: 'Continue' when user is not blocked", async () => {
+  test("returns guardActivated: false when user is not blocked", async () => {
     mockIsUserIdBlocked.mockResolvedValue(false);
 
     const result = await hasAisBlockIntervention("user-123");
 
-    expect(result).toEqual({ continue: 'Continue', guardName: "AIS" });
+    expect(result).toEqual({ guardActivated: false, guardName: "AIS" });
     expect(mockIsUserIdBlocked).toHaveBeenCalledWith("user-123");
   });
 
-  test("returns continue: 'ContinueWithoutPerformingActions' when user is blocked", async () => {
+  test("returns guardActivated: true when user is blocked", async () => {
     mockIsUserIdBlocked.mockResolvedValue(true);
 
     const result = await hasAisBlockIntervention("blocked-user");
 
-    expect(result).toEqual({ continue: 'ContinueWithoutPerformingActions', guardName: "AIS" });
+    expect(result).toEqual({ guardActivated: true, guardName: "AIS" });
     expect(mockIsUserIdBlocked).toHaveBeenCalledWith("blocked-user");
   });
 
   test("propagates errors from isUserIdBlocked", async () => {
     mockIsUserIdBlocked.mockRejectedValue(new Error("AIS unavailable"));
 
-    await expect(hasAisBlockIntervention("user-123")).rejects.toThrow("AIS unavailable");
+    await expect(hasAisBlockIntervention("user-123")).rejects.toThrow(
+      "AIS unavailable"
+    );
   });
 });

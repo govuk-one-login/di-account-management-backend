@@ -6,11 +6,7 @@ import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import assert from "node:assert/strict";
 import { initMetrics } from "./common/metrics.js";
-import {
-  processConfig,
-  ProcessConfig,
-  Actions,
-} from "./common/process-config.js";
+import { processConfig, ProcessConfig } from "./common/process-config.js";
 import type { InactiveAccountStatus } from "./common/model.js";
 import { getEnvironmentVariable } from "./common/utils.js";
 import { sendAuditEvent } from "./common/send-audit-event.js";
@@ -23,29 +19,28 @@ const sqsClient = new SQSClient();
 const dynamoClient = new DynamoDBClient({});
 const dynamoDocClient = DynamoDBDocumentClient.from(dynamoClient);
 
-async function runGuards(
-  guards: ProcessConfig[number]["guards"],
-  body: Record<string, string>
-): Promise<Actions> {
-  if (!guards) return Actions.continue;
+enum GuardsOutcome {
+  continue = "continue",
+  continueWithoutActions = "continueWithoutActions",
+  abort = "abort",
+}
 
-  for (const guard of guards) {
+async function runSubsetOfGuards(
+  guards: NonNullable<ProcessConfig[number]["guards"]>[keyof NonNullable<
+    ProcessConfig[number]["guards"]
+  >],
+  logMessage: string,
+  body: Record<string, string>
+): Promise<{ guardActivated: boolean }> {
+  for (const guard of guards ?? []) {
     const guardResult = await guard.guard(
       body.commonSubjectId,
       body.emailAddress,
       body.dateForDeletion
     );
-    const typeOfGuardResult = guardResult.continue;
 
-    if (
-      typeOfGuardResult === Actions.continueWithoutActions ||
-      typeOfGuardResult === Actions.abort
-    ) {
-      const message =
-        typeOfGuardResult === Actions.abort
-          ? "GuardrailAbortedInactiveAccountDeletionProcess"
-          : "GuardrailInactiveAccountDeletionProcessContinuedWithoutActions";
-      logger.info(message, {
+    if (guardResult.guardActivated) {
+      logger.info(logMessage, {
         dateForDeletion: body.dateForDeletion,
         processName: body.processName,
         status: body.status,
@@ -60,7 +55,7 @@ async function runGuards(
         hasSetupMfa: body.hasSetupMfa,
         guardrailType: guardResult.guardName,
         contributeToAlarm: guard.contributeToAlarm ? "1" : "0",
-        furtherProcessingAborted: "0",
+        continueProcessingRecords: "1",
       });
 
       if (guard.skippedNotificationAuditEventName) {
@@ -74,10 +69,36 @@ async function runGuards(
           },
         });
       }
-      return guardResult.continue;
+
+      return { guardActivated: true };
     }
   }
-  return Actions.continue;
+
+  return { guardActivated: false };
+}
+
+async function runGuards(
+  guards: ProcessConfig[number]["guards"],
+  body: Record<string, string>
+): Promise<GuardsOutcome> {
+  const abortGuardsResult = await runSubsetOfGuards(
+    guards?.abort,
+    "GuardrailAbortedInactiveAccountDeletionProcess",
+    body
+  );
+
+  if (abortGuardsResult.guardActivated) return GuardsOutcome.abort;
+
+  const continueWithoutActionsGuardsResult = await runSubsetOfGuards(
+    guards?.continueWithoutActions,
+    "GuardrailInactiveAccountDeletionProcessContinuedWithoutActions",
+    body
+  );
+
+  if (continueWithoutActionsGuardsResult.guardActivated)
+    return GuardsOutcome.continueWithoutActions;
+
+  return GuardsOutcome.continue;
 }
 
 type ProcessDefinition = ProcessConfig[string];
@@ -225,9 +246,9 @@ async function processRecord(
 
   const runGuardsOutcome = await runGuards(process.guards, body);
 
-  if (runGuardsOutcome === Actions.abort) return;
+  if (runGuardsOutcome === GuardsOutcome.abort) return;
 
-  if (runGuardsOutcome === Actions.continue) {
+  if (runGuardsOutcome === GuardsOutcome.continue) {
     await enqueueNotification(process, body, notificationQueueUrl);
     await enqueueTargetMessage(process, body);
   }
@@ -274,7 +295,7 @@ export const handler = async (
         hasSetupMfa: body.hasSetupMfa,
         guardrailType: "CircuitBreakerAlreadyTripped",
         contributeToAlarm: "1",
-        furtherProcessingAborted: "1",
+        continueProcessingRecords: "0",
       });
       return;
     }

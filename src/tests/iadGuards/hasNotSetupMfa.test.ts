@@ -13,42 +13,42 @@ describe("hasNotSetupMfa", () => {
     process.env.INACTIVE_ACCOUNT_TRACKER_TABLE_NAME = "test-inactive-account-table";
   });
 
-  test("returns continue: 'Continue' when record has hasSetupMfa: true", async () => {
+  test("returns guardActivated: false when record has hasSetupMfa: true", async () => {
     dynamoMock.on(QueryCommand).resolves({
       Items: [{ commonSubjectId: "user-123", hasSetupMfa: true }]
     });
 
     const result = await hasNotSetupMfa("user-123");
 
-    expect(result).toEqual({ continue: 'Continue', guardName: "hasNotSetupMfa" });
+    expect(result).toEqual({ guardActivated: false, guardName: "hasNotSetupMfa" });
   });
 
-  test("returns continue: 'ContinueWithoutPerformingActions' when record exists with hasSetupMfa: false", async () => {
+  test("returns guardActivated: true when record exists with hasSetupMfa: false", async () => {
     dynamoMock.on(QueryCommand).resolves({
       Items: [{ commonSubjectId: "user-123", hasSetupMfa: false }]
     });
 
     const result = await hasNotSetupMfa("user-123");
 
-    expect(result).toEqual({ continue: 'ContinueWithoutPerformingActions', guardName: "hasNotSetupMfa" });
+    expect(result).toEqual({ guardActivated: true, guardName: "hasNotSetupMfa" });
   });
 
-  test("returns continue: 'Continue' when Items array is undefined", async () => {
+  test("returns guardActivated: false when Items array is undefined", async () => {
     dynamoMock.on(QueryCommand).resolves({});
 
     const result = await hasNotSetupMfa("user-123");
 
-    expect(result).toEqual({ continue: 'Continue', guardName: "hasNotSetupMfa" });
+    expect(result).toEqual({ guardActivated: false, guardName: "hasNotSetupMfa" });
   });
 
-  test("returns continue: 'Continue' when record has no hasSetupMfa attribute", async () => {
+  test("returns guardActivated: false when record has no hasSetupMfa attribute", async () => {
     dynamoMock.on(QueryCommand).resolves({
       Items: [{ commonSubjectId: "user-123" }]
     });
 
     const result = await hasNotSetupMfa("user-123");
 
-    expect(result).toEqual({ continue: 'Continue', guardName: "hasNotSetupMfa" });
+    expect(result).toEqual({ guardActivated: false, guardName: "hasNotSetupMfa" });
   });
 
   test("queries the correct table with the correct parameters", async () => {

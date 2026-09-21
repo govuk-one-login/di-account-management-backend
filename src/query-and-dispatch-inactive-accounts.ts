@@ -63,7 +63,7 @@ export const handler = async (
         logger.info("GuardrailAbortedQueryAndDispatchInactiveAccounts", {
           guardrailType: "CircuitBreakerAlreadyTripped",
           contributeToAlarm: "1",
-          furtherProcessingAborted: "1",
+          continueProcessingRecords: "0",
           processName: event.processName,
           targetDate,
           dispatchedBeforeAbort: dispatched,

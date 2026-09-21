@@ -1,7 +1,7 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { getEnvironmentVariable } from "../utils.js";
-import { Guard, Actions } from "../process-config.js";
+import { Guard } from "../process-config.js";
 
 const dynamoDocClient = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 
@@ -24,6 +24,6 @@ export const hasRecentActivityLogEntry: Guard = async (commonSubjectId) => {
       Select: "COUNT",
     })
   );
-  const continueAction = (Count ?? 0) === 0 ? Actions.continue : Actions.abort;
-  return { continue: continueAction, guardName: "HomeUserActivityLog" };
+  const guardActivated = (Count ?? 0) !== 0;
+  return { guardActivated, guardName: "HomeUserActivityLog" };
 };

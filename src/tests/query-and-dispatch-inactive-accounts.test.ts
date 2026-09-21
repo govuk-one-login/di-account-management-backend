@@ -98,7 +98,7 @@ describe("handler", () => {
       {
         guardrailType: "CircuitBreakerAlreadyTripped",
         contributeToAlarm: "1",
-        furtherProcessingAborted: "1",
+        continueProcessingRecords: "0",
         processName: "Warning30Day",
         targetDate: "2026-07-17",
         dispatchedBeforeAbort: 0,

@@ -137,7 +137,7 @@ describe("handler", () => {
     ).rejects.toThrow("Unknown processName: unknown");
   });
 
-  test("logs error and continues when batch send throws", async () => {
+  test("retries then logs error and continues when batch send keeps throwing", async () => {
     dynamoMock.on(QueryCommand).resolves({ Items: [mockRecord] });
     sqsMock.on(SendMessageBatchCommand).rejects(new Error("SQS failure"));
 
@@ -145,7 +145,8 @@ describe("handler", () => {
       handler({ processName: "Warning30Day" }, {} as Context)
     ).resolves.toBeUndefined();
 
-    expect(sqsMock.commandCalls(SendMessageBatchCommand)).toHaveLength(1);
+    // retryFunction attempts the send 3 times before giving up and logging.
+    expect(sqsMock.commandCalls(SendMessageBatchCommand)).toHaveLength(3);
   });
 
   test("logs partial failures returned in batch response", async () => {

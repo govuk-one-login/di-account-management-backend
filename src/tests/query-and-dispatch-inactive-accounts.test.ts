@@ -268,15 +268,15 @@ describe("handler", () => {
     vi.useRealTimers();
   });
 
-  test("DeleteAccount: disables IAD and returns early when forecast count does not match actual count", async () => {
+  test("DeleteAccount: disables IAD and returns early when actual count exceeds forecast", async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-06-17T12:00:00.000Z"));
 
-    vi.mocked(getNumberOfAccountsForecastForDeletion).mockResolvedValue(5);
-    // countAccountsForDate uses QueryCommand; return a count of 3 (not 5)
+    vi.mocked(getNumberOfAccountsForecastForDeletion).mockResolvedValue(3);
+    // countAccountsForDate returns a count of 5, which exceeds the forecast of 3
     dynamoMock
       .on(QueryCommand)
-      .resolves({ Count: 3, ScannedCount: 3, Items: [] });
+      .resolves({ Count: 5, ScannedCount: 5, Items: [] });
 
     const infoSpy = vi.spyOn(Logger.prototype, "info");
 
@@ -287,6 +287,8 @@ describe("handler", () => {
       processName: "DeleteAccount",
       targetDate: "2026-06-17",
       dispatchedBeforeAbort: 0,
+      forecastedCount: 3,
+      actualCount: 5,
     });
     expect(infoSpy).toHaveBeenCalledWith(
       "GuardrailAbortedQueryAndDispatchInactiveAccounts",
@@ -297,6 +299,8 @@ describe("handler", () => {
         processName: "DeleteAccount",
         targetDate: "2026-06-17",
         dispatchedBeforeAbort: 0,
+        forecastedCount: 3,
+        actualCount: 5,
       }
     );
     expect(sqsMock.commandCalls(SendMessageBatchCommand)).toHaveLength(0);
@@ -325,6 +329,8 @@ describe("handler", () => {
       processName: "DeleteAccount",
       targetDate: "2026-06-17",
       dispatchedBeforeAbort: 0,
+      forecastedCount: undefined,
+      actualCount: 3,
     });
     expect(infoSpy).toHaveBeenCalledWith(
       "GuardrailAbortedQueryAndDispatchInactiveAccounts",
@@ -335,6 +341,8 @@ describe("handler", () => {
         processName: "DeleteAccount",
         targetDate: "2026-06-17",
         dispatchedBeforeAbort: 0,
+        forecastedCount: undefined,
+        actualCount: 3,
       }
     );
     expect(sqsMock.commandCalls(SendMessageBatchCommand)).toHaveLength(0);
@@ -350,8 +358,30 @@ describe("handler", () => {
     vi.mocked(getNumberOfAccountsForecastForDeletion).mockResolvedValue(1);
     dynamoMock
       .on(QueryCommand)
-      // countAccountsForDate calls (one per daysToDeletion entry) return count=1
       .resolves({ Count: 1, ScannedCount: 1, Items: [mockRecord] });
+    sqsMock
+      .on(SendMessageBatchCommand)
+      .resolves({ Successful: [], Failed: [] });
+
+    await handler({ processName: "DeleteAccount" }, {} as Context);
+
+    expect(disableIad).not.toHaveBeenCalled();
+    expect(
+      sqsMock.commandCalls(SendMessageBatchCommand).length
+    ).toBeGreaterThan(0);
+
+    vi.useRealTimers();
+  });
+
+  test("DeleteAccount: proceeds normally when forecast exceeds actual count", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-06-17T12:00:00.000Z"));
+
+    vi.mocked(getNumberOfAccountsForecastForDeletion).mockResolvedValue(5);
+    // actual count of 3 is less than forecast of 5 — should not abort
+    dynamoMock
+      .on(QueryCommand)
+      .resolves({ Count: 3, ScannedCount: 3, Items: [mockRecord] });
     sqsMock
       .on(SendMessageBatchCommand)
       .resolves({ Successful: [], Failed: [] });

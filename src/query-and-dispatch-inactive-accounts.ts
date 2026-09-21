@@ -43,7 +43,8 @@ const logAbort = (
   guardrailType: string,
   processName: string,
   targetDate: string,
-  dispatchedBeforeAbort: number
+  dispatchedBeforeAbort: number,
+  otherProps?: object
 ): void => {
   logger.info("GuardrailAbortedQueryAndDispatchInactiveAccounts", {
     guardrailType,
@@ -52,6 +53,7 @@ const logAbort = (
     processName,
     targetDate,
     dispatchedBeforeAbort,
+    ...otherProps,
   });
 };
 
@@ -128,22 +130,23 @@ const dispatchEligibleRecords = async (
 const forecastNumberOfDeletionsMatchesReality = async (
   targetDate: string,
   tableName: string
-) => {
+): Promise<{
+  matches: boolean;
+  forecastedCount: number | undefined;
+  actualCount: number;
+}> => {
   const forecastedCount =
     await getNumberOfAccountsForecastForDeletion(targetDate);
+  const { total: actualCount } = await countAccountsForDate(
+    tableName,
+    targetDate
+  );
 
-  if (forecastedCount !== undefined) {
-    const { total: actualCount } = await countAccountsForDate(
-      tableName,
-      targetDate
-    );
-    if (forecastedCount !== actualCount) {
-      return false;
-    }
-  } else {
-    return false;
+  if (forecastedCount === undefined || forecastedCount < actualCount) {
+    return { matches: false, forecastedCount, actualCount };
   }
-  return true;
+
+  return { matches: true, forecastedCount, actualCount };
 };
 
 export const handler = async (
@@ -168,23 +171,27 @@ export const handler = async (
   for (const days of daysToDeletion) {
     const targetDate = calculateTargetDate(days);
 
-    if (
-      event.processName === "DeleteAccount" &&
-      !(await forecastNumberOfDeletionsMatchesReality(targetDate, tableName))
-    ) {
-      await disableIad({
-        guardrailType: "HomeToDeleteMoreThanForecast",
-        processName: event.processName,
-        targetDate,
-        dispatchedBeforeAbort: dispatched,
-      });
-      logAbort(
-        "HomeToDeleteMoreThanForecast",
-        event.processName,
-        targetDate,
-        dispatched
-      );
-      return;
+    if (event.processName === "DeleteAccount") {
+      const { matches, actualCount, forecastedCount } =
+        await forecastNumberOfDeletionsMatchesReality(targetDate, tableName);
+      if (!matches) {
+        await disableIad({
+          guardrailType: "HomeToDeleteMoreThanForecast",
+          processName: event.processName,
+          targetDate,
+          dispatchedBeforeAbort: dispatched,
+          forecastedCount,
+          actualCount,
+        });
+        logAbort(
+          "HomeToDeleteMoreThanForecast",
+          event.processName,
+          targetDate,
+          dispatched,
+          { forecastedCount, actualCount }
+        );
+        return;
+      }
     }
 
     logger.info(`Querying accounts for deletion date: ${targetDate}`);

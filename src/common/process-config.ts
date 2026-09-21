@@ -93,10 +93,10 @@ export const processConfig: ProcessConfig = {
     guards: [
       guardsList.sendInactiveAccountEmailsIsEnabled,
       guardsList.hasEmailAddress,
-      guardsList.hasAisBlockIntervention,
       guardsList.hasUndeliverableEmailAddress,
       guardsList.hasNotSetupMfa,
       guardsList.dateForDeletionIs27October,
+      guardsList.hasAisBlockIntervention,
     ],
   },
   Warning7Day: {
@@ -109,10 +109,10 @@ export const processConfig: ProcessConfig = {
     guards: [
       guardsList.sendInactiveAccountEmailsIsEnabled,
       guardsList.hasEmailAddress,
-      guardsList.hasAisBlockIntervention,
       guardsList.hasUndeliverableEmailAddress,
       guardsList.hasNotSetupMfa,
       guardsList.dateForDeletionIs27October,
+      guardsList.hasAisBlockIntervention,
     ],
   },
   DeleteAccount: {

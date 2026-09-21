@@ -2,6 +2,7 @@ import globals from "globals";
 import pluginJs from "@eslint/js";
 import tsEslint from "typescript-eslint";
 import eslintConfigPrettier from "eslint-config-prettier";
+import eslintPluginPrettier from "eslint-plugin-prettier";
 import tsEslintParser from "@typescript-eslint/parser";
 
 export default [
@@ -35,4 +36,8 @@ export default [
     }
   },
   eslintConfigPrettier,
+  {
+    plugins: { prettier: eslintPluginPrettier },
+    rules: { "prettier/prettier": "error" }
+  },
 ];

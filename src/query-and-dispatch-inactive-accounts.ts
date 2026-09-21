@@ -3,11 +3,18 @@ import { SQSClient, SendMessageBatchCommand } from "@aws-sdk/client-sqs";
 import { Logger } from "@aws-lambda-powertools/logger";
 import { getEnvironmentVariable } from "./common/utils.js";
 import { processConfig } from "./common/process-config.js";
-import { queryAccountsByDate } from "./common/query-inactive-accounts.js";
+import {
+  countAccountsForDate,
+  queryAccountsByDate,
+} from "./common/query-inactive-accounts.js";
 import { retryFunction } from "./common/retry-function.js";
 import type { InactiveAccountTrackerRecord } from "./common/model.js";
 import iadQueryLogicHash from "./common/iad-query-logic-hash.json" with { type: "json" };
-import { getIadCircuitBreakerStatus } from "./common/iad-circuit-breaker.js";
+import {
+  disableIad,
+  getIadCircuitBreakerStatus,
+} from "./common/iad-circuit-breaker.js";
+import { getNumberOfAccountsForecastForDeletion } from "./common/getNumberOfAccountsForecastForDeletion.js";
 
 const logger = new Logger();
 
@@ -32,13 +39,14 @@ export const validateEvent = (event: QueryAndDispatchEvent): void => {
   }
 };
 
-const logCircuitBreakerAbort = (
+const logAbort = (
+  guardrailType: string,
   processName: string,
   targetDate: string,
   dispatchedBeforeAbort: number
 ): void => {
   logger.info("GuardrailAbortedQueryAndDispatchInactiveAccounts", {
-    guardrailType: "CircuitBreakerAlreadyTripped",
+    guardrailType,
     contributeToAlarm: "1",
     continueProcessingRecords: "0",
     processName,
@@ -117,6 +125,27 @@ const dispatchEligibleRecords = async (
   return dispatched;
 };
 
+const forecastNumberOfDeletionsMatchesReality = async (
+  targetDate: string,
+  tableName: string
+) => {
+  const forecastedCount =
+    await getNumberOfAccountsForecastForDeletion(targetDate);
+
+  if (forecastedCount !== undefined) {
+    const { total: actualCount } = await countAccountsForDate(
+      tableName,
+      targetDate
+    );
+    if (forecastedCount !== actualCount) {
+      return false;
+    }
+  } else {
+    return false;
+  }
+  return true;
+};
+
 export const handler = async (
   event: QueryAndDispatchEvent,
   context: Context
@@ -138,13 +167,38 @@ export const handler = async (
 
   for (const days of daysToDeletion) {
     const targetDate = calculateTargetDate(days);
+
+    if (
+      event.processName === "DeleteAccount" &&
+      !(await forecastNumberOfDeletionsMatchesReality(targetDate, tableName))
+    ) {
+      await disableIad({
+        guardrailType: "HomeToDeleteMoreThanForecast",
+        processName: event.processName,
+        targetDate,
+        dispatchedBeforeAbort: dispatched,
+      });
+      logAbort(
+        "HomeToDeleteMoreThanForecast",
+        event.processName,
+        targetDate,
+        dispatched
+      );
+      return;
+    }
+
     logger.info(`Querying accounts for deletion date: ${targetDate}`);
 
     let eligibleForDate = 0;
 
     for await (const page of queryAccountsByDate(tableName, targetDate)) {
       if (await getIadCircuitBreakerStatus()) {
-        logCircuitBreakerAbort(event.processName, targetDate, dispatched);
+        logAbort(
+          "CircuitBreakerAlreadyTripped",
+          event.processName,
+          targetDate,
+          dispatched
+        );
         return;
       }
 

@@ -6,6 +6,7 @@ import { processConfig } from "./common/process-config.js";
 import { queryAccountsByDate } from "./common/query-inactive-accounts.js";
 import { retryFunction } from "./common/retry-function.js";
 import iadQueryLogicHash from "./common/iad-query-logic-hash.json" with { type: "json" };
+import { getIadCircuitBreakerStatus } from "./common/iad-circuit-breaker.js";
 
 const logger = new Logger();
 
@@ -35,13 +36,16 @@ export const handler = async (
   context: Context
 ): Promise<void> => {
   logger.addContext(context);
-  logger.info("IAD query logic hash", { iadQueryLogicHash: iadQueryLogicHash.hash });
+  logger.info("IAD query logic hash", {
+    iadQueryLogicHash: iadQueryLogicHash.hash,
+  });
 
   validateEvent(event);
 
   const tableName = getEnvironmentVariable("TABLE_NAME");
 
-  const { queueUrlEnvVar, daysToDeletion, allowedStatuses, isDryRun } = processConfig[event.processName];
+  const { queueUrlEnvVar, daysToDeletion, allowedStatuses, isDryRun } =
+    processConfig[event.processName];
   const queueUrl = getEnvironmentVariable(queueUrlEnvVar);
 
   let dispatched = 0;
@@ -53,9 +57,25 @@ export const handler = async (
     let eligibleForDate = 0;
 
     for await (const page of queryAccountsByDate(tableName, targetDate)) {
-      const eligible = page.filter((record) =>
-        allowedStatuses.includes(record.status) &&
-        (!event.manualTestOnly || record.userLastActiveSource === "MANUAL_TEST")
+      const iadCircuitBreakerActive = await getIadCircuitBreakerStatus();
+
+      if (iadCircuitBreakerActive) {
+        logger.info("GuardrailAbortedQueryAndDispatchInactiveAccounts", {
+          guardrailType: "CircuitBreakerAlreadyTripped",
+          contributeToAlarm: "1",
+          furtherProcessingAborted: "1",
+          processName: event.processName,
+          targetDate,
+          dispatchedBeforeAbort: dispatched,
+        });
+        return;
+      }
+
+      const eligible = page.filter(
+        (record) =>
+          allowedStatuses.includes(record.status) &&
+          (!event.manualTestOnly ||
+            record.userLastActiveSource === "MANUAL_TEST")
       );
 
       eligibleForDate += eligible.length;

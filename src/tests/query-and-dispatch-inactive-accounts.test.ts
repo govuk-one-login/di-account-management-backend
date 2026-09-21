@@ -10,6 +10,12 @@ import {
 } from "../query-and-dispatch-inactive-accounts.js";
 import type { Context } from "aws-lambda";
 
+vi.mock("../common/iad-circuit-breaker.js", () => ({
+  getIadCircuitBreakerStatus: vi.fn().mockResolvedValue(false),
+}));
+
+import { getIadCircuitBreakerStatus } from "../common/iad-circuit-breaker.js";
+
 const dynamoMock = mockClient(DynamoDBDocumentClient);
 const sqsMock = mockClient(SQSClient);
 
@@ -64,12 +70,57 @@ describe("handler", () => {
     dynamoMock.reset();
     sqsMock.reset();
     process.env.TABLE_NAME = "inactive-accounts-table";
-    process.env.WARNING_30_DAY_NOTIFICATION_QUEUE_URL = "https://sqs.eu-west-2.amazonaws.com/123/queue";
-    process.env.ACCOUNT_DELETION_QUEUE_URL = "https://sqs.eu-west-2.amazonaws.com/123/deletion-queue";
+    process.env.WARNING_30_DAY_NOTIFICATION_QUEUE_URL =
+      "https://sqs.eu-west-2.amazonaws.com/123/queue";
+    process.env.ACCOUNT_DELETION_QUEUE_URL =
+      "https://sqs.eu-west-2.amazonaws.com/123/deletion-queue";
   });
 
   afterEach(() => {
     vi.clearAllMocks();
+    vi.mocked(getIadCircuitBreakerStatus).mockResolvedValue(false);
+  });
+
+  test("aborts early and logs when circuit breaker is active", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-06-17T12:00:00.000Z"));
+
+    vi.mocked(getIadCircuitBreakerStatus).mockResolvedValue(true);
+    dynamoMock.on(QueryCommand).resolves({ Items: [mockRecord] });
+
+    const infoSpy = vi.spyOn(Logger.prototype, "info");
+
+    await handler({ processName: "Warning30Day" }, {} as Context);
+
+    expect(sqsMock.commandCalls(SendMessageBatchCommand)).toHaveLength(0);
+    expect(infoSpy).toHaveBeenCalledWith(
+      "GuardrailAbortedQueryAndDispatchInactiveAccounts",
+      {
+        guardrailType: "CircuitBreakerAlreadyTripped",
+        contributeToAlarm: "1",
+        furtherProcessingAborted: "1",
+        processName: "Warning30Day",
+        targetDate: "2026-07-17",
+        dispatchedBeforeAbort: 0,
+      }
+    );
+
+    infoSpy.mockRestore();
+    vi.useRealTimers();
+  });
+
+  test("continues dispatching when circuit breaker is inactive", async () => {
+    vi.mocked(getIadCircuitBreakerStatus).mockResolvedValue(false);
+    dynamoMock.on(QueryCommand).resolves({ Items: [mockRecord] });
+    sqsMock
+      .on(SendMessageBatchCommand)
+      .resolves({ Successful: [], Failed: [] });
+
+    await handler({ processName: "Warning30Day" }, {} as Context);
+
+    expect(
+      sqsMock.commandCalls(SendMessageBatchCommand).length
+    ).toBeGreaterThan(0);
   });
 
   test("does not send messages when no records found", async () => {
@@ -115,29 +166,56 @@ describe("handler", () => {
   test("when manualTestOnly is true, only dispatches records with userLastActiveSource MANUAL_TEST", async () => {
     const manualRecord = { ...mockRecord, userLastActiveSource: "MANUAL_TEST" };
     dynamoMock.on(QueryCommand).resolves({ Items: [mockRecord, manualRecord] });
-    sqsMock.on(SendMessageBatchCommand).resolves({ Successful: [], Failed: [] });
+    sqsMock
+      .on(SendMessageBatchCommand)
+      .resolves({ Successful: [], Failed: [] });
 
-    await handler({ processName: "Warning30Day", manualTestOnly: true }, {} as Context);
+    await handler(
+      { processName: "Warning30Day", manualTestOnly: true },
+      {} as Context
+    );
 
     expect(sqsMock).toHaveReceivedCommandWith(SendMessageBatchCommand, {
-      Entries: [expect.objectContaining({ MessageBody: JSON.stringify({ ...manualRecord, processName: "Warning30Day" }) })],
+      Entries: [
+        expect.objectContaining({
+          MessageBody: JSON.stringify({
+            ...manualRecord,
+            processName: "Warning30Day",
+          }),
+        }),
+      ],
     });
-    expect(sqsMock.commandCalls(SendMessageBatchCommand)[0].args[0].input.Entries).toHaveLength(1);
+    expect(
+      sqsMock.commandCalls(SendMessageBatchCommand)[0].args[0].input.Entries
+    ).toHaveLength(1);
   });
 
   test("when manualTestOnly is false, dispatches all eligible records regardless of userLastActiveSource", async () => {
-    const manualRecord = { ...mockRecord, commonSubjectId: "user-2", userLastActiveSource: "MANUAL_TEST" };
+    const manualRecord = {
+      ...mockRecord,
+      commonSubjectId: "user-2",
+      userLastActiveSource: "MANUAL_TEST",
+    };
     dynamoMock.on(QueryCommand).resolves({ Items: [mockRecord, manualRecord] });
-    sqsMock.on(SendMessageBatchCommand).resolves({ Successful: [], Failed: [] });
+    sqsMock
+      .on(SendMessageBatchCommand)
+      .resolves({ Successful: [], Failed: [] });
 
-    await handler({ processName: "Warning30Day", manualTestOnly: false }, {} as Context);
+    await handler(
+      { processName: "Warning30Day", manualTestOnly: false },
+      {} as Context
+    );
 
-    expect(sqsMock.commandCalls(SendMessageBatchCommand)[0].args[0].input.Entries).toHaveLength(2);
+    expect(
+      sqsMock.commandCalls(SendMessageBatchCommand)[0].args[0].input.Entries
+    ).toHaveLength(2);
   });
 
   test("dry run does not send any messages to SQS but still queries accounts", async () => {
     dynamoMock.on(QueryCommand).resolves({ Items: [mockRecord] });
-    sqsMock.on(SendMessageBatchCommand).resolves({ Successful: [], Failed: [] });
+    sqsMock
+      .on(SendMessageBatchCommand)
+      .resolves({ Successful: [], Failed: [] });
 
     await handler({ processName: "DeletionDryRun" }, {} as Context);
 
@@ -152,7 +230,9 @@ describe("handler", () => {
     const infoSpy = vi.spyOn(Logger.prototype, "info");
 
     // daysToDeletion[0] is 0 -> target date equals the system date.
-    dynamoMock.on(QueryCommand).resolves({ Items: [mockRecord, { ...mockRecord, commonSubjectId: "user-2" }] });
+    dynamoMock.on(QueryCommand).resolves({
+      Items: [mockRecord, { ...mockRecord, commonSubjectId: "user-2" }],
+    });
 
     await handler({ processName: "DeletionDryRun" }, {} as Context);
 

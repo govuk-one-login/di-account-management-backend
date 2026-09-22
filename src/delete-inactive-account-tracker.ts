@@ -37,7 +37,8 @@ export const validateUserData = (userData: UserData): UserData => {
 };
 
 export const deleteUserData = async (
-  userData: UserData
+  userData: UserData,
+  accountDeletionReason?: string
 ): Promise<{ deleted: boolean; emailAddress?: string; hasUndeliverableEmailAddress?: boolean; hasSetupMfa?: boolean; dateForDeletion?: string }> => {
   const TABLE_NAME = getEnvironmentVariable("TABLE_NAME");
 
@@ -70,7 +71,8 @@ export const deleteUserData = async (
       );
 
       // Emit one audit event per deleted tracker record so TxMA has a record of
-      // the deletion. The extension carries the deleted record's deletion date.
+      // the deletion. The extensions carry the deleted record's status and the
+      // reason the account was deleted.
       await sendAuditEvent("HOME_ACCOUNT_TRACKER_RECORD_DELETED", {
         user: {
           user_id: i.commonSubjectId,
@@ -78,7 +80,10 @@ export const deleteUserData = async (
           ...(i.publicSubjectId && { public_subject_id: i.publicSubjectId }),
         },
         extensions: {
-          accountTrackerAccountDeletionDate: i.dateForDeletion,
+          accountTrackerRecordStatus: i.status,
+          ...(accountDeletionReason && {
+            accountTrackerRecordDeletionReason: accountDeletionReason,
+          }),
         },
       });
     })
@@ -165,10 +170,11 @@ export const handler = async (
         );
         const userData: UserData = JSON.parse(record.Sns.Message);
         validateUserData(userData);
-        const result = await deleteUserData(userData);
 
         const accountDeletionReason =
           record.Sns.MessageAttributes?.account_deletion_reason?.Value;
+
+        const result = await deleteUserData(userData, accountDeletionReason);
 
         if (
           result.deleted &&

@@ -25,5 +25,5 @@ export const hasRecentActivityLogEntry: Guard = async (commonSubjectId) => {
     })
   );
   const guardActivated = (Count ?? 0) !== 0;
-  return { guardActivated, guardName: "HomeActivityLogContradiction" };
+  return { guardActivated, guardName: "HomeUserActivityLog" };
 };

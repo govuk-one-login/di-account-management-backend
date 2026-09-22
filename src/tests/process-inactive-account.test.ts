@@ -77,14 +77,8 @@ const buildSqsEvent = (bodies: object[]): SQSEvent => ({
 
 const notBlocked = { guardActivated: false, guardName: "AIS" };
 const blocked = { guardActivated: true, guardName: "AIS" };
-const noRecentActivity = {
-  guardActivated: false,
-  guardName: "HomeActivityLogContradiction",
-};
-const recentActivity = {
-  guardActivated: true,
-  guardName: "HomeActivityLogContradiction",
-};
+const noRecentActivity = { guardActivated: false, guardName: "HomeUserActivityLog" };
+const recentActivity = { guardActivated: true, guardName: "HomeUserActivityLog" };
 const inactiveAccountEmailsFeatureFlagDisabled = {
   guardActivated: true,
   guardName: "SendInactiveAccountEmailsFeatureFlag",
@@ -336,22 +330,14 @@ describe("process-inactive-account handler", () => {
     expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(2);
     const sqsCalls = sqsMock.commandCalls(SendMessageCommand);
 
-    const skippedEvent = JSON.parse(
-      sqsCalls[0].args[0].input.MessageBody ?? ""
-    );
-    expect(skippedEvent.event_name).toBe(
-      "HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED"
-    );
+    const skippedEvent = JSON.parse(sqsCalls[0].args[0].input.MessageBody ?? "");
+    expect(skippedEvent.event_name).toBe("HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED");
     expect(skippedEvent.extensions).toEqual({
       accountTrackerNotificationSkipReason: "IndefiniteSuspension",
     });
 
     expect(dynamoMock).toHaveReceivedCommand(UpdateCommand);
-    expect(mockMetrics.addMetric).not.toHaveBeenCalledWith(
-      "notificationEnqueued",
-      expect.anything(),
-      1
-    );
+    expect(mockMetrics.addMetric).not.toHaveBeenCalledWith("notificationEnqueued", expect.anything(), 1);
   });
 
   test("skips warning notification and emits UnusableAccount skipped audit event when user has not set up MFA", async () => {
@@ -433,30 +419,21 @@ describe("process-inactive-account handler", () => {
     const sqsCalls = sqsMock.commandCalls(SendMessageCommand);
 
     // 1st call: NOTIFICATION_SKIPPED for blocked user
-    const skippedEvent = JSON.parse(
-      sqsCalls[0].args[0].input.MessageBody ?? ""
-    );
-    expect(skippedEvent.event_name).toBe(
-      "HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED"
-    );
+    const skippedEvent = JSON.parse(sqsCalls[0].args[0].input.MessageBody ?? "");
+    expect(skippedEvent.event_name).toBe("HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED");
     expect(skippedEvent.user).toEqual({ user_id: "blocked-user" });
     expect(skippedEvent.extensions).toEqual({
       accountTrackerNotificationSkipReason: "IndefiniteSuspension",
     });
 
     // 2nd call: main audit event for blocked user (status still updated)
-    const blockedMainEvent = JSON.parse(
-      sqsCalls[1].args[0].input.MessageBody ?? ""
-    );
-    expect(blockedMainEvent.event_name).toBe(
-      "HOME_ACCOUNT_TRACKER_ACCOUNT_FIRST_PERIOD_ENTERED"
-    );
+    const blockedMainEvent = JSON.parse(sqsCalls[1].args[0].input.MessageBody ?? "");
+    expect(blockedMainEvent.event_name).toBe("HOME_ACCOUNT_TRACKER_ACCOUNT_FIRST_PERIOD_ENTERED");
     expect(blockedMainEvent.user).toEqual({ user_id: "blocked-user" });
 
     // 3rd call: notification for active user
     expect(sqsMock).toHaveReceivedNthCommandWith(SendMessageCommand, 3, {
-      QueueUrl:
-        "https://sqs.eu-west-2.amazonaws.com/123456789012/NotificationQueue",
+      QueueUrl: "https://sqs.eu-west-2.amazonaws.com/123456789012/NotificationQueue",
       MessageBody: JSON.stringify({
         notificationType: "INACTIVE_ACCOUNT_WARNING_30_DAY",
         emailAddress: "active@example.com",
@@ -465,12 +442,8 @@ describe("process-inactive-account handler", () => {
     });
 
     // 4th call: main audit event for active user
-    const activeMainEvent = JSON.parse(
-      sqsCalls[3].args[0].input.MessageBody ?? ""
-    );
-    expect(activeMainEvent.event_name).toBe(
-      "HOME_ACCOUNT_TRACKER_ACCOUNT_FIRST_PERIOD_ENTERED"
-    );
+    const activeMainEvent = JSON.parse(sqsCalls[3].args[0].input.MessageBody ?? "");
+    expect(activeMainEvent.event_name).toBe("HOME_ACCOUNT_TRACKER_ACCOUNT_FIRST_PERIOD_ENTERED");
     expect(activeMainEvent.user).toEqual({ user_id: "active-user" });
     expect(activeMainEvent.extensions).toEqual({
       accountTrackerAccountDeletionDate: "2026-08-20",
@@ -841,15 +814,10 @@ describe("process-inactive-account handler", () => {
 
     expect(mockSendInactiveAccountEmailsIsDisabled).toHaveBeenCalled();
     expect(sqsMock).not.toHaveReceivedCommandWith(SendMessageCommand, {
-      QueueUrl:
-        "https://sqs.eu-west-2.amazonaws.com/123456789012/NotificationQueue",
+      QueueUrl: "https://sqs.eu-west-2.amazonaws.com/123456789012/NotificationQueue",
     });
     expect(dynamoMock).toHaveReceivedCommand(UpdateCommand);
-    expect(mockMetrics.addMetric).not.toHaveBeenCalledWith(
-      "notificationEnqueued",
-      expect.anything(),
-      1
-    );
+    expect(mockMetrics.addMetric).not.toHaveBeenCalledWith("notificationEnqueued", expect.anything(), 1);
   });
 
   test("includes additional user and extension details in the audit event when sendAdditionalAuditEventDetails is set", async () => {
@@ -1022,9 +990,7 @@ describe("process-inactive-account handler", () => {
 
   describe("guard short-circuit behaviour", () => {
     test("when an abort guard activates, continueWithoutActions guards are not run", async () => {
-      mockDoesNotHaveEmailAddress.mockResolvedValue(
-        doesNotHaveEmailAddressAbort
-      );
+      mockDoesNotHaveEmailAddress.mockResolvedValue(doesNotHaveEmailAddressAbort);
 
       await handler(
         buildSqsEvent([

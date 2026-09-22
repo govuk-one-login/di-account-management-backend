@@ -127,26 +127,40 @@ const dispatchEligibleRecords = async (
   return dispatched;
 };
 
-const forecastNumberOfDeletionsMatchesReality = async (
+const forecastNumberOfDeletionsAlignsWithReality = async (
+  processName: string,
   targetDate: string,
-  tableName: string
-): Promise<{
-  matches: boolean;
-  forecastedCount: number | undefined;
-  actualCount: number;
-}> => {
+  tableName: string,
+  dispatched: number
+): Promise<boolean> => {
+  if (processName !== "DeleteAccount") return true;
   const forecastedCount =
     await getNumberOfAccountsForecastForDeletion(targetDate);
   const { total: actualCount } = await countAccountsForDate(
     tableName,
     targetDate
   );
-
-  if (forecastedCount === undefined || forecastedCount < actualCount) {
-    return { matches: false, forecastedCount, actualCount };
-  }
-
-  return { matches: true, forecastedCount, actualCount };
+  if (forecastedCount !== undefined && forecastedCount >= actualCount)
+    return true;
+  await disableIad({
+    guardrailType: "HomeToDeleteMoreThanForecast",
+    processName,
+    targetDate,
+    dispatchedBeforeAbort: dispatched,
+    forecastedCount,
+    actualCount,
+  });
+  logAbort(
+    "HomeToDeleteMoreThanForecast",
+    processName,
+    targetDate,
+    dispatched,
+    {
+      forecastedCount,
+      actualCount,
+    }
+  );
+  return false;
 };
 
 export const handler = async (
@@ -171,27 +185,15 @@ export const handler = async (
   for (const days of daysToDeletion) {
     const targetDate = calculateTargetDate(days);
 
-    if (event.processName === "DeleteAccount") {
-      const { matches, actualCount, forecastedCount } =
-        await forecastNumberOfDeletionsMatchesReality(targetDate, tableName);
-      if (!matches) {
-        await disableIad({
-          guardrailType: "HomeToDeleteMoreThanForecast",
-          processName: event.processName,
-          targetDate,
-          dispatchedBeforeAbort: dispatched,
-          forecastedCount,
-          actualCount,
-        });
-        logAbort(
-          "HomeToDeleteMoreThanForecast",
-          event.processName,
-          targetDate,
-          dispatched,
-          { forecastedCount, actualCount }
-        );
-        return;
-      }
+    if (
+      !(await forecastNumberOfDeletionsAlignsWithReality(
+        event.processName,
+        targetDate,
+        tableName,
+        dispatched
+      ))
+    ) {
+      return;
     }
 
     logger.info(`Querying accounts for deletion date: ${targetDate}`);

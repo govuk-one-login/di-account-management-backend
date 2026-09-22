@@ -1113,7 +1113,7 @@ Resources:
         Alarms:
           Fn::If:
             - IsNotDevelopmentOrDemo
-            - - !Ref AWS::NoValue
+            - - !Ref SaveRawEventsFunctionSuccessRate
             - - !Ref AWS::NoValue
     Metadata:
       BuildMethod: esbuild

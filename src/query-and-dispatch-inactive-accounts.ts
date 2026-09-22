@@ -142,8 +142,7 @@ const forecastNumberOfDeletionsAlignsWithReality = async (
     tableName,
     targetDate
   );
-  if (forecastedCount !== undefined && forecastedCount >= actualCount)
-    return true;
+  if (forecastedCount >= actualCount) return true;
   await disableIad({
     guardrailType: "HomeToDeleteMoreThanForecast",
     processName,

@@ -75,6 +75,7 @@ export const deleteUserData = async (
         user: {
           user_id: i.commonSubjectId,
           ...(i.emailAddress && { email: i.emailAddress }),
+          ...(i.publicSubjectId && { public_subject_id: i.publicSubjectId }),
         },
         extensions: {
           accountTrackerAccountDeletionDate: i.dateForDeletion,

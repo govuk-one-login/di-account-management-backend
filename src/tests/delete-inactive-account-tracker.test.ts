@@ -41,7 +41,7 @@ vi.mock("../common/account-interventions-service-client.js", () => ({
 const aisNotSuspended = false;
 const aisSuspended = true;
 
-const trackerItem = { dateForDeletion: "2030-01-01", commonSubjectId: "user-id", emailAddress: "user@example.com", hasUndeliverableEmailAddress: false, hasSetupMfa: true };
+const trackerItem = { dateForDeletion: "2030-01-01", commonSubjectId: "user-id", publicSubjectId: "public-user-id", emailAddress: "user@example.com", hasUndeliverableEmailAddress: false, hasSetupMfa: true };
 
 // The handler sends to two SQS queues: the TxMA audit queue (per deleted
 // record) and the notification queue (deletion-confirmation email). These
@@ -93,7 +93,11 @@ describe("deleteUserData", () => {
     expect(txmaCall).toBeDefined();
     const auditEvent = JSON.parse(txmaCall!.args[0].input.MessageBody as string);
     expect(auditEvent.event_name).toBe("HOME_ACCOUNT_TRACKER_RECORD_DELETED");
-    expect(auditEvent.user).toMatchObject({ user_id: TEST_USER_DATA.user_id });
+    expect(auditEvent.user).toMatchObject({
+      user_id: TEST_USER_DATA.user_id,
+      email: "user@example.com",
+      public_subject_id: "public-user-id",
+    });
     expect(auditEvent.extensions).toMatchObject({
       accountTrackerAccountDeletionDate: "2030-01-01",
     });

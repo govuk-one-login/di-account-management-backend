@@ -75,9 +75,11 @@ import { handler } from "../notification-service.js";
 import { setUpNotifyClient } from "../notification-service-client.js";
 import { processNotification } from "../notification-service-utils.js";
 
+const initMetricsCallArgsOnImport = mockInitMetrics.mock.calls[0];
+
 describe("module initialization", () => {
   it("should initialize metrics with correct namespace", () => {
-    expect(mockInitMetrics).toHaveBeenCalledWith("notification-service");
+    expect(initMetricsCallArgsOnImport).toEqual(["notification-service"]);
   });
 });
 

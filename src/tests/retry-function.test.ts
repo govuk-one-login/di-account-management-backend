@@ -23,7 +23,9 @@ describe("retryFunction", () => {
 
   it("should resolve immediately if the function succeeds on the first attempt", async () => {
     const mockFn = vi.fn().mockResolvedValue("Success");
-    const result = await retryFunction(mockFn, { functionName: "test function" });
+    const result = await retryFunction(mockFn, {
+      functionName: "test function",
+    });
     expect(result).toBe("Success");
     expect(mockFn).toHaveBeenCalledTimes(1);
     expect(mockLogger.warn).not.toHaveBeenCalled();
@@ -36,7 +38,11 @@ describe("retryFunction", () => {
       .mockRejectedValueOnce(new Error("Second Fail"))
       .mockResolvedValueOnce("Third success");
 
-    const promise = retryFunction(mockFn, { retries: 3, delay: 300, functionName: "test function" });
+    const promise = retryFunction(mockFn, {
+      retries: 3,
+      delay: 300,
+      functionName: "test function",
+    });
 
     await vi.advanceTimersByTimeAsync(300);
     await vi.advanceTimersByTimeAsync(300);
@@ -56,7 +62,11 @@ describe("retryFunction", () => {
     const finalError = new Error("Permanent Failure");
     const mockFn = vi.fn().mockRejectedValue(finalError);
 
-    const promise = retryFunction(mockFn, { retries: 5, delay: 100, functionName: "my test func" });
+    const promise = retryFunction(mockFn, {
+      retries: 5,
+      delay: 100,
+      functionName: "my test func",
+    });
 
     const [, errorReason] = await Promise.all([
       vi.runAllTimersAsync(),

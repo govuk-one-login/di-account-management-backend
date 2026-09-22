@@ -65,7 +65,9 @@ describe("handler", () => {
     dynamoMock.on(DescribeTableCommand).resolves({
       Table: { ItemCount: 4500 },
     });
-    dynamoDocumentMock.on(QueryCommand).resolves({ Count: 10, ScannedCount: 10 });
+    dynamoDocumentMock
+      .on(QueryCommand)
+      .resolves({ Count: 10, ScannedCount: 10 });
     dynamoDocumentMock.on(PutCommand).resolves({});
 
     await handler({}, mockContext());
@@ -89,7 +91,11 @@ describe("handler", () => {
   });
 
   test.each([
-    { label: "stops on the first batch", remainingTimesMs: [5_000], expectedProcessed: 20 },
+    {
+      label: "stops on the first batch",
+      remainingTimesMs: [5_000],
+      expectedProcessed: 20,
+    },
     {
       label: "continues past the first check and stops on a later batch",
       remainingTimesMs: [900_000, 600_000, 300_000, 5_000],
@@ -102,7 +108,9 @@ describe("handler", () => {
       vi.setSystemTime(new Date("2026-01-01T00:00:00.000Z"));
 
       dynamoMock.on(DescribeTableCommand).resolves({ Table: { ItemCount: 0 } });
-      dynamoDocumentMock.on(QueryCommand).resolves({ Count: 10, ScannedCount: 10 });
+      dynamoDocumentMock
+        .on(QueryCommand)
+        .resolves({ Count: 10, ScannedCount: 10 });
       dynamoDocumentMock.on(PutCommand).resolves({});
 
       let call = 0;
@@ -112,8 +120,12 @@ describe("handler", () => {
 
       await handler({}, context);
 
-      expect(dynamoDocumentMock.commandCalls(QueryCommand)).toHaveLength(expectedProcessed);
-      expect(dynamoDocumentMock.commandCalls(PutCommand)).toHaveLength(expectedProcessed);
+      expect(dynamoDocumentMock.commandCalls(QueryCommand)).toHaveLength(
+        expectedProcessed
+      );
+      expect(dynamoDocumentMock.commandCalls(PutCommand)).toHaveLength(
+        expectedProcessed
+      );
 
       const forecastedDates = dynamoDocumentMock
         .commandCalls(PutCommand)

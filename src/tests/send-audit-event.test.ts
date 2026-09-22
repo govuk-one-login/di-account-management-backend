@@ -1,11 +1,4 @@
-import {
-  vi,
-  describe,
-  test,
-  expect,
-  beforeEach,
-  afterEach,
-} from "vitest";
+import { vi, describe, test, expect, beforeEach, afterEach } from "vitest";
 import { SendMessageCommand, SQSClient } from "@aws-sdk/client-sqs";
 import { mockClient } from "aws-sdk-client-mock";
 import "aws-sdk-client-mock-vitest";

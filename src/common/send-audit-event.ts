@@ -1,7 +1,11 @@
 import { SendMessageCommandOutput } from "@aws-sdk/client-sqs";
 import { Logger } from "@aws-lambda-powertools/logger";
 import { sendSqsMessage } from "./sqs.js";
-import { getCurrentTimestamp, getEnvironmentVariable, isSendIadAuditEventsEnabled } from "./utils.js";
+import {
+  getCurrentTimestamp,
+  getEnvironmentVariable,
+  isSendIadAuditEventsEnabled,
+} from "./utils.js";
 import { COMPONENT_ID } from "./constants.js";
 import { TxmaEvent, UserData, Extensions } from "./model.js";
 
@@ -72,11 +76,11 @@ const IAD_EVENTS_ARRAY = [
   "HOME_ACCOUNT_TRACKER_NOTIFICATION_DELIVERY_PERMANENTLY_FAILED",
   "HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED",
   "HOME_ACCOUNT_TRACKER_NOTIFICATION_REQUESTED",
-  "HOME_ACCOUNT_TRACKER_RECORD_DELETED"
+  "HOME_ACCOUNT_TRACKER_RECORD_DELETED",
 ] as const;
 
 const IAD_EVENTS = new Set<string>(IAD_EVENTS_ARRAY);
-export type IadEvent = typeof IAD_EVENTS_ARRAY[number];
+export type IadEvent = (typeof IAD_EVENTS_ARRAY)[number];
 
 /**
  * Builds a TxMA audit event from the given event name and parameters and sends
@@ -93,7 +97,9 @@ export async function sendAuditEvent(
   parameters: AuditEventParameters
 ): Promise<SendMessageCommandOutput | undefined> {
   if (IAD_EVENTS.has(eventName) && !isSendIadAuditEventsEnabled()) {
-    logger.info(`Skipping IAD event ${eventName} because IAD audit events are disabled`);
+    logger.info(
+      `Skipping IAD event ${eventName} because IAD audit events are disabled`
+    );
     return;
   }
 
@@ -108,7 +114,8 @@ export async function sendAuditEvent(
     return result;
   } catch (error: unknown) {
     logger.error(
-      `Error occurred trying to send the audit event to the TxMA queue: ${(error as Error).message
+      `Error occurred trying to send the audit event to the TxMA queue: ${
+        (error as Error).message
       }`
     );
     throw error;

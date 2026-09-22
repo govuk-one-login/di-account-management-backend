@@ -106,7 +106,9 @@ describe("handler", () => {
       return data;
     });
 
-    await expect(handler(multiRecordEvent, {} as Context)).resolves.not.toThrow();
+    await expect(
+      handler(multiRecordEvent, {} as Context)
+    ).resolves.not.toThrow();
 
     expect(deleteEmailSubscriptionMock).toHaveBeenCalledTimes(1);
     expect(deleteEmailSubscriptionMock).toHaveBeenCalledWith(TEST_USER_DATA);
@@ -117,9 +119,11 @@ describe("handler", () => {
 
   test("that it retries up to 3 times total when deleteEmailSubscription throws error", async () => {
     vi.mocked(deleteEmailSubscriptionMock).mockRejectedValue(
-      new Error("deleteEmailSubscription FAIL"),
+      new Error("deleteEmailSubscription FAIL")
     );
-    await expect(handler(TEST_SNS_EVENT, {} as Context)).rejects.toThrow("deleteEmailSubscription FAIL");
+    await expect(handler(TEST_SNS_EVENT, {} as Context)).rejects.toThrow(
+      "deleteEmailSubscription FAIL"
+    );
     expect(deleteEmailSubscriptionMock).toHaveBeenCalledTimes(3);
     expect(mockLogger.warn).toHaveBeenCalledWith(
       "deleteEmailSubscription failed (attempt 1 out of 3)."

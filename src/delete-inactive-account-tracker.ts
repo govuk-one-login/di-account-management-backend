@@ -37,7 +37,13 @@ export const validateUserData = (userData: UserData): UserData => {
 
 export const deleteUserData = async (
   userData: UserData
-): Promise<{ deleted: boolean; emailAddress?: string; hasUndeliverableEmailAddress?: boolean; hasSetupMfa?: boolean; dateForDeletion?: string }> => {
+): Promise<{
+  deleted: boolean;
+  emailAddress?: string;
+  hasUndeliverableEmailAddress?: boolean;
+  hasSetupMfa?: boolean;
+  dateForDeletion?: string;
+}> => {
   const TABLE_NAME = getEnvironmentVariable("TABLE_NAME");
 
   const queryResponse = await dynamoDocClient.send(
@@ -103,7 +109,9 @@ export const maybeEnqueueDeletionEmail = async (
   }
 
   if (checkIfDateIs27October(dateForDeletion ?? "")) {
-    logger.info("Skipping IAD deletion email: user is likely migrated from GOVUK Verify");
+    logger.info(
+      "Skipping IAD deletion email: user is likely migrated from GOVUK Verify"
+    );
     return;
   }
 
@@ -121,7 +129,9 @@ export const maybeEnqueueDeletionEmail = async (
   }
 
   if (hasUndeliverableEmailAddress) {
-    logger.info("Skipping IAD deletion email: user has undeliverable email address");
+    logger.info(
+      "Skipping IAD deletion email: user has undeliverable email address"
+    );
     return;
   }
 
@@ -160,10 +170,7 @@ export const handler = async (
         const accountDeletionReason =
           record.Sns.MessageAttributes?.account_deletion_reason?.Value;
 
-        if (
-          result.deleted &&
-          accountDeletionReason === "INACTIVE_ACCOUNT"
-        ) {
+        if (result.deleted && accountDeletionReason === "INACTIVE_ACCOUNT") {
           await maybeEnqueueDeletionEmail(
             userData.user_id,
             result.emailAddress,
@@ -180,7 +187,8 @@ export const handler = async (
         throw new Error(
           `Unable to delete inactive account tracker data for message with ID: ${record.Sns.MessageId}, ${
             (error as Error).message
-          }`, { cause: error }
+          }`,
+          { cause: error }
         );
       }
     })

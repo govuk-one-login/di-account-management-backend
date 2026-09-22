@@ -53,7 +53,10 @@ describe("extractImportSpecifiers", () => {
 
   test("ignores the string 'import' appearing in a comment", () => {
     const file = join(fixtureDir, "a.ts");
-    writeFileSync(file, `// import { notReal } from "./nope.js";\nexport const x = 1;\n`);
+    writeFileSync(
+      file,
+      `// import { notReal } from "./nope.js";\nexport const x = 1;\n`
+    );
 
     expect(extractImportSpecifiers(file)).toEqual([]);
   });
@@ -163,18 +166,15 @@ describe("walkLocalImportGraph", () => {
         join(fixtureDir, "model.ts"),
       ].sort()
     );
-    expect([...npmRoots].sort()).toEqual(["@aws-sdk/client-dynamodb", "valibot"]);
+    expect([...npmRoots].sort()).toEqual([
+      "@aws-sdk/client-dynamodb",
+      "valibot",
+    ]);
   });
 
   test("does not revisit a file more than once when imports are circular", () => {
-    writeFileSync(
-      join(fixtureDir, "a.ts"),
-      `import { b } from "./b.js";\n`
-    );
-    writeFileSync(
-      join(fixtureDir, "b.ts"),
-      `import { a } from "./a.js";\n`
-    );
+    writeFileSync(join(fixtureDir, "a.ts"), `import { b } from "./b.js";\n`);
+    writeFileSync(join(fixtureDir, "b.ts"), `import { a } from "./a.js";\n`);
 
     const { localFiles } = walkLocalImportGraph(join(fixtureDir, "a.ts"));
 

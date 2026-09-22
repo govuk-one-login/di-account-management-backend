@@ -91,17 +91,20 @@ const handleUndeliverableEmail = async (
         })
       );
 
-      await sendAuditEvent("HOME_ACCOUNT_TRACKER_NOTIFICATION_DELIVERY_PERMANENTLY_FAILED", {
-        user: {
-          email: to,
-          user_id: item.commonSubjectId,
-        },
-        extensions: {
-          accountTrackerNotificationCompletedAt: completed_at,
-          accountTrackerNotificationCallbackSentAt: sent_at,
-          accountTrackerNotificationCreatedAt: created_at,
-        },
-      });
+      await sendAuditEvent(
+        "HOME_ACCOUNT_TRACKER_NOTIFICATION_DELIVERY_PERMANENTLY_FAILED",
+        {
+          user: {
+            email: to,
+            user_id: item.commonSubjectId,
+          },
+          extensions: {
+            accountTrackerNotificationCompletedAt: completed_at,
+            accountTrackerNotificationCallbackSentAt: sent_at,
+            accountTrackerNotificationCreatedAt: created_at,
+          },
+        }
+      );
     })
   );
 

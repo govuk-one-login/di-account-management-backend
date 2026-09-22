@@ -18,11 +18,9 @@ export const getRequestConfig = (token: string | undefined) => {
 };
 
 export const validateUserData = (userData: UserData): UserData => {
-  if (
-    !(
-      userData.user_id !== undefined && userData.public_subject_id !== undefined
-    )
-  ) {
+  if (!(
+    userData.user_id !== undefined && userData.public_subject_id !== undefined
+  )) {
     throw new Error(`userData is not valid`);
   }
   return userData;

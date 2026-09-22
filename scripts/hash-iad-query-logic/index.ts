@@ -30,7 +30,10 @@ function main(): void {
       .join(", ")}`
   );
 
-  const hash = computeHash({ localFiles, dependencies }, { repoRoot: REPO_ROOT });
+  const hash = computeHash(
+    { localFiles, dependencies },
+    { repoRoot: REPO_ROOT }
+  );
   console.log(`Query logic hash: ${hash}`);
 
   const output = {

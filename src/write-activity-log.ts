@@ -69,7 +69,8 @@ export const handler = async (
         throw new Error(
           `Unable to write activity log for message with ID: ${record.messageId}, ${
             (error as Error).message
-          }`, { cause: error }
+          }`,
+          { cause: error }
         );
       }
     })

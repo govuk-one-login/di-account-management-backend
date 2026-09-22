@@ -76,9 +76,7 @@ describe("TriggerInactiveAccountProcess handler", () => {
     expect(lambdaMock).toHaveReceivedCommandWith(InvokeCommand, {
       FunctionName: "test-dispatch-fn",
       InvocationType: "RequestResponse",
-      Payload: Buffer.from(
-        JSON.stringify({ processName, manualTest: true })
-      ),
+      Payload: Buffer.from(JSON.stringify({ processName, manualTest: true })),
     });
   });
 

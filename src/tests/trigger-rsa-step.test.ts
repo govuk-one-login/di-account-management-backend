@@ -18,7 +18,9 @@ describe("handler", () => {
     vi.resetModules();
     process.env.STATE_MACHINE_ARN = "ReportSuspiciousActivityStepFunction";
     process.env.AWS_REGION = "AWS_REGION";
-    (callAsyncStepFunction as unknown as ReturnType<typeof vi.fn>).mockImplementation(() => {
+    (
+      callAsyncStepFunction as unknown as ReturnType<typeof vi.fn>
+    ).mockImplementation(() => {
       return {
         executionArn: "dummy-executionArn",
       };

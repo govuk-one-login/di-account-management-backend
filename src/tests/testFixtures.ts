@@ -208,10 +208,12 @@ export const generateDynamoStreamRecord = (
               user_id: { S: userId },
               session_id: { S: sessionId },
               email: { S: "foo@bar.com" },
-              public_subject_id: { S: "public-subject-id-123" } 
+              public_subject_id: { S: "public-subject-id-123" },
             },
           },
-          ...(omitClientId ? {} : { client_id: { S: customClientId ?? clientId } }),
+          ...(omitClientId
+            ? {}
+            : { client_id: { S: customClientId ?? clientId } }),
           txma: { M: { configVersion: { S: "2.2.1" } } },
           timestamp: { N: `${timestamp}` },
         },

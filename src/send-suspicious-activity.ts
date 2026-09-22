@@ -1,5 +1,8 @@
 import { SendMessageCommandOutput } from "@aws-sdk/client-sqs";
-import { ReportSuspiciousActivityEvent, TxMAAuditEvent } from "./common/model.js";
+import {
+  ReportSuspiciousActivityEvent,
+  TxMAAuditEvent,
+} from "./common/model.js";
 import {
   COMPONENT_ID,
   EventNamesEnum,
@@ -123,7 +126,8 @@ export const handler = async (
     await sendAuditEvent(txMAEvent, TXMA_QUEUE_URL);
   } catch (err: unknown) {
     throw new Error(
-      `Error occurred sending event to TxMA: ${(err as Error).message}`, { cause: err }
+      `Error occurred sending event to TxMA: ${(err as Error).message}`,
+      { cause: err }
     );
   }
 };

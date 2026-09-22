@@ -34,10 +34,9 @@ export const handler = async (
         logger.info(
           `started processing message with ID: ${record.Sns.MessageId}`
         );
-        await retryFunction(
-          () => deleteEmailSubscription(userData),
-          { functionName: "deleteEmailSubscription" }
-        );
+        await retryFunction(() => deleteEmailSubscription(userData), {
+          functionName: "deleteEmailSubscription",
+        });
         logger.info(
           `finished processing message with ID: ${record.Sns.MessageId}`
         );

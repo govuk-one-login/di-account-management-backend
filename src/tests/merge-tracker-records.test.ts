@@ -1,5 +1,9 @@
 import { describe, test, expect, beforeEach } from "vitest";
-import { DynamoDBDocumentClient, QueryCommand, TransactWriteCommand } from "@aws-sdk/lib-dynamodb";
+import {
+  DynamoDBDocumentClient,
+  QueryCommand,
+  TransactWriteCommand,
+} from "@aws-sdk/lib-dynamodb";
 import { mockClient } from "aws-sdk-client-mock";
 import "aws-sdk-client-mock-vitest";
 import type { InactiveAccountTrackerRecord } from "../common/model.js";
@@ -83,8 +87,14 @@ describe("computeMergedTrackerRecord (pure merge)", () => {
   });
 
   test("takes status from the record with the newest statusLastUpdated", () => {
-    const older = baseRecord({ status: "pending", statusLastUpdated: "2026-01-01T00:00:00.000Z" });
-    const newer = baseRecord({ status: "30DayWarningSent", statusLastUpdated: "2026-09-01T00:00:00.000Z" });
+    const older = baseRecord({
+      status: "pending",
+      statusLastUpdated: "2026-01-01T00:00:00.000Z",
+    });
+    const newer = baseRecord({
+      status: "30DayWarningSent",
+      statusLastUpdated: "2026-09-01T00:00:00.000Z",
+    });
 
     const merged = computeMergedTrackerRecord([older, newer]);
 
@@ -93,8 +103,16 @@ describe("computeMergedTrackerRecord (pure merge)", () => {
   });
 
   test("treats hasSetupMfa and hasUndeliverableEmailAddress as sticky-true across duplicates", () => {
-    const a = baseRecord({ hasSetupMfa: false, hasUndeliverableEmailAddress: false, userLastActiveUpdated: "2026-06-01T00:00:00.000Z" });
-    const b = baseRecord({ hasSetupMfa: true, hasUndeliverableEmailAddress: true, userLastActiveUpdated: "2020-01-01T00:00:00.000Z" });
+    const a = baseRecord({
+      hasSetupMfa: false,
+      hasUndeliverableEmailAddress: false,
+      userLastActiveUpdated: "2026-06-01T00:00:00.000Z",
+    });
+    const b = baseRecord({
+      hasSetupMfa: true,
+      hasUndeliverableEmailAddress: true,
+      userLastActiveUpdated: "2020-01-01T00:00:00.000Z",
+    });
 
     const merged = computeMergedTrackerRecord([a, b]);
 
@@ -115,7 +133,10 @@ describe("computeMergedTrackerRecord (pure merge)", () => {
   });
 
   test("returns the single record unchanged in shape when only one is provided", () => {
-    const only = baseRecord({ emailAddress: "solo@example.com", emailAddressLastUpdated: "2026-01-01T00:00:00.000Z" });
+    const only = baseRecord({
+      emailAddress: "solo@example.com",
+      emailAddressLastUpdated: "2026-01-01T00:00:00.000Z",
+    });
 
     const merged = computeMergedTrackerRecord([only]);
 
@@ -185,7 +206,10 @@ describe("mergeTrackerRecords (query + merge + persist)", () => {
   });
 
   test("returns the single row unchanged and runs no transaction", async () => {
-    const only = baseRecord({ dateForDeletion: "2031-06-01", emailAddress: "solo@example.com" });
+    const only = baseRecord({
+      dateForDeletion: "2031-06-01",
+      emailAddress: "solo@example.com",
+    });
     seedRows([only]);
 
     const merged = await mergeTrackerRecords(USER_ID, docClient, TABLE);
@@ -248,23 +272,41 @@ describe("mergeTrackerRecords (query + merge + persist)", () => {
 
   test("deduplicates stale deletion dates so each stale row is deleted once", async () => {
     // Three rows, two of which share the same stale dateForDeletion.
-    const staleA = baseRecord({ dateForDeletion: "2031-01-01", userLastActiveUpdated: "2026-01-01T00:00:00.000Z" });
-    const staleB = baseRecord({ dateForDeletion: "2031-01-01", userLastActiveUpdated: "2026-02-01T00:00:00.000Z" });
-    const winner = baseRecord({ dateForDeletion: "2031-06-01", userLastActiveUpdated: "2026-06-01T00:00:00.000Z" });
+    const staleA = baseRecord({
+      dateForDeletion: "2031-01-01",
+      userLastActiveUpdated: "2026-01-01T00:00:00.000Z",
+    });
+    const staleB = baseRecord({
+      dateForDeletion: "2031-01-01",
+      userLastActiveUpdated: "2026-02-01T00:00:00.000Z",
+    });
+    const winner = baseRecord({
+      dateForDeletion: "2031-06-01",
+      userLastActiveUpdated: "2026-06-01T00:00:00.000Z",
+    });
     seedRows([staleA, staleB, winner]);
 
     await mergeTrackerRecords(USER_ID, docClient, TABLE);
 
     const call = dynamoMock.commandCalls(TransactWriteCommand)[0];
-    const transactItems = (call.args[0].input as { TransactItems: unknown[] }).TransactItems;
-    const deletes = transactItems.filter((item) => (item as { Delete?: unknown }).Delete);
+    const transactItems = (call.args[0].input as { TransactItems: unknown[] })
+      .TransactItems;
+    const deletes = transactItems.filter(
+      (item) => (item as { Delete?: unknown }).Delete
+    );
 
     expect(deletes).toHaveLength(1);
   });
 
   test("does not run a transaction when all duplicate rows share the merged dateForDeletion", async () => {
-    const a = baseRecord({ dateForDeletion: "2031-06-01", userLastActiveUpdated: "2026-01-01T00:00:00.000Z" });
-    const b = baseRecord({ dateForDeletion: "2031-06-01", userLastActiveUpdated: "2026-06-01T00:00:00.000Z" });
+    const a = baseRecord({
+      dateForDeletion: "2031-06-01",
+      userLastActiveUpdated: "2026-01-01T00:00:00.000Z",
+    });
+    const b = baseRecord({
+      dateForDeletion: "2031-06-01",
+      userLastActiveUpdated: "2026-06-01T00:00:00.000Z",
+    });
     seedRows([a, b]);
 
     const merged = await mergeTrackerRecords(USER_ID, docClient, TABLE);
@@ -274,10 +316,18 @@ describe("mergeTrackerRecords (query + merge + persist)", () => {
   });
 
   test("propagates a transaction failure to the caller", async () => {
-    const older = baseRecord({ dateForDeletion: "2031-01-01", userLastActiveUpdated: "2026-01-01T00:00:00.000Z" });
-    const newer = baseRecord({ dateForDeletion: "2031-06-01", userLastActiveUpdated: "2026-06-01T00:00:00.000Z" });
+    const older = baseRecord({
+      dateForDeletion: "2031-01-01",
+      userLastActiveUpdated: "2026-01-01T00:00:00.000Z",
+    });
+    const newer = baseRecord({
+      dateForDeletion: "2031-06-01",
+      userLastActiveUpdated: "2026-06-01T00:00:00.000Z",
+    });
     seedRows([older, newer]);
-    dynamoMock.on(TransactWriteCommand).rejects(new Error("Transaction failed"));
+    dynamoMock
+      .on(TransactWriteCommand)
+      .rejects(new Error("Transaction failed"));
 
     await expect(
       mergeTrackerRecords(USER_ID, docClient, TABLE)

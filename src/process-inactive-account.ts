@@ -138,6 +138,21 @@ async function enqueueNotification(
     notificationType: process.notificationType,
   });
   metrics.addMetric("notificationEnqueued", MetricUnit.Count, 1);
+
+  const accountTrackerNotificationType =
+    notificationConfiguration[process.notificationType]?.auditEventNotificationType;
+
+  await sendAuditEvent("HOME_ACCOUNT_TRACKER_NOTIFICATION_REQUESTED", {
+    user: {
+      user_id: body.commonSubjectId,
+      ...(body.emailAddress && { email: body.emailAddress }),
+    },
+    extensions: {
+      ...(accountTrackerNotificationType && {
+        accountTrackerNotificationType,
+      }),
+    },
+  });
 }
 
 async function enqueueTargetMessage(

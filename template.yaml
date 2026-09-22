@@ -7188,6 +7188,7 @@ Resources:
       Environment:
         Variables:
           TABLE_NAME: !Ref InactiveAccountTrackerStoreTableName
+          FORECAST_TABLE_NAME: !Ref InactiveAccountDailyDeletionForecastTableName
           WARNING_30_DAY_NOTIFICATION_QUEUE_URL: !Ref 30DayNotificationQueue
           WARNING_7_DAY_NOTIFICATION_QUEUE_URL: !Ref 7DayNotificationQueue
           ACCOUNT_DELETION_QUEUE_URL: !Ref AccountDeletionProcessQueue

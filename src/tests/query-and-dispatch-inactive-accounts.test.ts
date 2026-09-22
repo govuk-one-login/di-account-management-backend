@@ -12,9 +12,13 @@ import type { Context } from "aws-lambda";
 
 vi.mock("../common/iad-circuit-breaker.js", () => ({
   getIadCircuitBreakerStatus: vi.fn().mockResolvedValue(false),
+  disableIad: vi.fn().mockResolvedValue(undefined),
 }));
 
-import { getIadCircuitBreakerStatus } from "../common/iad-circuit-breaker.js";
+import {
+  getIadCircuitBreakerStatus,
+  disableIad,
+} from "../common/iad-circuit-breaker.js";
 
 const dynamoMock = mockClient(DynamoDBDocumentClient);
 const sqsMock = mockClient(SQSClient);
@@ -74,11 +78,13 @@ describe("handler", () => {
       "https://sqs.eu-west-2.amazonaws.com/123/queue";
     process.env.ACCOUNT_DELETION_QUEUE_URL =
       "https://sqs.eu-west-2.amazonaws.com/123/deletion-queue";
+    process.env.FORECAST_TABLE_NAME = "forecast-table";
   });
 
   afterEach(() => {
     vi.clearAllMocks();
     vi.mocked(getIadCircuitBreakerStatus).mockResolvedValue(false);
+    vi.mocked(disableIad).mockResolvedValue(undefined);
   });
 
   test("aborts early and logs when circuit breaker is active", async () => {
@@ -251,6 +257,94 @@ describe("handler", () => {
     );
 
     infoSpy.mockRestore();
+    vi.useRealTimers();
+  });
+
+  test("DeleteAccount: disables IAD and returns early when actual count exceeds forecast", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-06-17T12:00:00.000Z"));
+
+    // first QueryCommand call: forecast table returns 3
+    // second QueryCommand call: tracker table returns 5 (actual exceeds forecast)
+    dynamoMock
+      .on(QueryCommand)
+      .resolvesOnce({ Count: 3 })
+      .resolves({ Count: 5, ScannedCount: 5, Items: [] });
+
+    const infoSpy = vi.spyOn(Logger.prototype, "info");
+
+    await handler({ processName: "DeleteAccount" }, {} as Context);
+
+    expect(disableIad).toHaveBeenCalledWith({
+      guardrailType: "HomeToDeleteMoreThanForecast",
+      processName: "DeleteAccount",
+      targetDate: "2026-06-17",
+      dispatchedBeforeAbort: 0,
+      forecastedCount: 3,
+      actualCount: 5,
+    });
+    expect(infoSpy).toHaveBeenCalledWith(
+      "GuardrailAbortedQueryAndDispatchInactiveAccounts",
+      {
+        guardrailType: "HomeToDeleteMoreThanForecast",
+        contributeToAlarm: "1",
+        continueProcessingRecords: "0",
+        processName: "DeleteAccount",
+        targetDate: "2026-06-17",
+        dispatchedBeforeAbort: 0,
+        forecastedCount: 3,
+        actualCount: 5,
+      }
+    );
+    expect(sqsMock.commandCalls(SendMessageBatchCommand)).toHaveLength(0);
+
+    infoSpy.mockRestore();
+    vi.useRealTimers();
+  });
+
+  test("DeleteAccount: proceeds normally when forecast matches actual count", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-06-17T12:00:00.000Z"));
+
+    // forecast: 1, actual: 1 — should not abort
+    dynamoMock
+      .on(QueryCommand)
+      .resolvesOnce({ Count: 1 })
+      .resolves({ Count: 1, ScannedCount: 1, Items: [mockRecord] });
+    sqsMock
+      .on(SendMessageBatchCommand)
+      .resolves({ Successful: [], Failed: [] });
+
+    await handler({ processName: "DeleteAccount" }, {} as Context);
+
+    expect(disableIad).not.toHaveBeenCalled();
+    expect(
+      sqsMock.commandCalls(SendMessageBatchCommand).length
+    ).toBeGreaterThan(0);
+
+    vi.useRealTimers();
+  });
+
+  test("DeleteAccount: proceeds normally when forecast exceeds actual count", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-06-17T12:00:00.000Z"));
+
+    // forecast: 5, actual: 3 — should not abort
+    dynamoMock
+      .on(QueryCommand)
+      .resolvesOnce({ Count: 5 })
+      .resolves({ Count: 3, ScannedCount: 3, Items: [mockRecord] });
+    sqsMock
+      .on(SendMessageBatchCommand)
+      .resolves({ Successful: [], Failed: [] });
+
+    await handler({ processName: "DeleteAccount" }, {} as Context);
+
+    expect(disableIad).not.toHaveBeenCalled();
+    expect(
+      sqsMock.commandCalls(SendMessageBatchCommand).length
+    ).toBeGreaterThan(0);
+
     vi.useRealTimers();
   });
 

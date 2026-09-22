@@ -113,7 +113,7 @@ export const maybeEnqueueDeletionEmail = async (
     await sendAuditEvent("HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED", {
       user: {
         user_id: userId,
-        ...(emailAddress && { email: emailAddress }),
+        email: emailAddress,
       },
       extensions: {
         accountTrackerNotificationSkipReason: "UnusableAccount",

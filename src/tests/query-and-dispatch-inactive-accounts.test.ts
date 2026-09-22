@@ -15,15 +15,10 @@ vi.mock("../common/iad-circuit-breaker.js", () => ({
   disableIad: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock("../common/getNumberOfAccountsForecastForDeletion.js", () => ({
-  getNumberOfAccountsForecastForDeletion: vi.fn().mockResolvedValue(undefined),
-}));
-
 import {
   getIadCircuitBreakerStatus,
   disableIad,
 } from "../common/iad-circuit-breaker.js";
-import { getNumberOfAccountsForecastForDeletion } from "../common/getNumberOfAccountsForecastForDeletion.js";
 
 const dynamoMock = mockClient(DynamoDBDocumentClient);
 const sqsMock = mockClient(SQSClient);
@@ -90,9 +85,6 @@ describe("handler", () => {
     vi.clearAllMocks();
     vi.mocked(getIadCircuitBreakerStatus).mockResolvedValue(false);
     vi.mocked(disableIad).mockResolvedValue(undefined);
-    vi.mocked(getNumberOfAccountsForecastForDeletion).mockResolvedValue(
-      undefined
-    );
   });
 
   test("aborts early and logs when circuit breaker is active", async () => {
@@ -272,10 +264,11 @@ describe("handler", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-06-17T12:00:00.000Z"));
 
-    vi.mocked(getNumberOfAccountsForecastForDeletion).mockResolvedValue(3);
-    // countAccountsForDate returns a count of 5, which exceeds the forecast of 3
+    // first QueryCommand call: forecast table returns 3
+    // second QueryCommand call: tracker table returns 5 (actual exceeds forecast)
     dynamoMock
       .on(QueryCommand)
+      .resolvesOnce({ Count: 3 })
       .resolves({ Count: 5, ScannedCount: 5, Items: [] });
 
     const infoSpy = vi.spyOn(Logger.prototype, "info");
@@ -309,55 +302,14 @@ describe("handler", () => {
     vi.useRealTimers();
   });
 
-  test("DeleteAccount: disables IAD and returns early when forecast is undefined", async () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-06-17T12:00:00.000Z"));
-
-    vi.mocked(getNumberOfAccountsForecastForDeletion).mockResolvedValue(
-      undefined
-    );
-    dynamoMock
-      .on(QueryCommand)
-      .resolves({ Count: 3, ScannedCount: 3, Items: [] });
-
-    const infoSpy = vi.spyOn(Logger.prototype, "info");
-
-    await handler({ processName: "DeleteAccount" }, {} as Context);
-
-    expect(disableIad).toHaveBeenCalledWith({
-      guardrailType: "HomeToDeleteMoreThanForecast",
-      processName: "DeleteAccount",
-      targetDate: "2026-06-17",
-      dispatchedBeforeAbort: 0,
-      forecastedCount: undefined,
-      actualCount: 3,
-    });
-    expect(infoSpy).toHaveBeenCalledWith(
-      "GuardrailAbortedQueryAndDispatchInactiveAccounts",
-      {
-        guardrailType: "HomeToDeleteMoreThanForecast",
-        contributeToAlarm: "1",
-        continueProcessingRecords: "0",
-        processName: "DeleteAccount",
-        targetDate: "2026-06-17",
-        dispatchedBeforeAbort: 0,
-        forecastedCount: undefined,
-        actualCount: 3,
-      }
-    );
-    expect(sqsMock.commandCalls(SendMessageBatchCommand)).toHaveLength(0);
-
-    infoSpy.mockRestore();
-    vi.useRealTimers();
-  });
-
   test("DeleteAccount: proceeds normally when forecast matches actual count", async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-06-17T12:00:00.000Z"));
 
-    vi.mocked(getNumberOfAccountsForecastForDeletion).mockResolvedValue(1);
+    // forecast: 1, actual: 1 — should not abort
     dynamoMock
       .on(QueryCommand)
+      .resolvesOnce({ Count: 1 })
       .resolves({ Count: 1, ScannedCount: 1, Items: [mockRecord] });
     sqsMock
       .on(SendMessageBatchCommand)
@@ -377,10 +329,10 @@ describe("handler", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-06-17T12:00:00.000Z"));
 
-    vi.mocked(getNumberOfAccountsForecastForDeletion).mockResolvedValue(5);
-    // actual count of 3 is less than forecast of 5 — should not abort
+    // forecast: 5, actual: 3 — should not abort
     dynamoMock
       .on(QueryCommand)
+      .resolvesOnce({ Count: 5 })
       .resolves({ Count: 3, ScannedCount: 3, Items: [mockRecord] });
     sqsMock
       .on(SendMessageBatchCommand)

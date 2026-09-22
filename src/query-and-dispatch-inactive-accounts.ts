@@ -5,6 +5,7 @@ import { getEnvironmentVariable } from "./common/utils.js";
 import { processConfig } from "./common/process-config.js";
 import {
   countAccountsForDate,
+  countForecastedAccountsForDate,
   queryAccountsByDate,
 } from "./common/query-inactive-accounts.js";
 import { retryFunction } from "./common/retry-function.js";
@@ -14,7 +15,6 @@ import {
   disableIad,
   getIadCircuitBreakerStatus,
 } from "./common/iad-circuit-breaker.js";
-import { getNumberOfAccountsForecastForDeletion } from "./common/getNumberOfAccountsForecastForDeletion.js";
 
 const logger = new Logger();
 
@@ -134,8 +134,10 @@ const forecastNumberOfDeletionsAlignsWithReality = async (
   dispatched: number
 ): Promise<boolean> => {
   if (processName !== "DeleteAccount") return true;
-  const forecastedCount =
-    await getNumberOfAccountsForecastForDeletion(targetDate);
+  const forecastedCount = await countForecastedAccountsForDate(
+    getEnvironmentVariable("FORECAST_TABLE_NAME"),
+    targetDate
+  );
   const { total: actualCount } = await countAccountsForDate(
     tableName,
     targetDate

@@ -119,7 +119,11 @@ export const countForecastedAccountsForDate = async (
   dateForDeletion: string
 ): Promise<number> => {
   let count = 0;
-  for await (const page of paginatedQuery(tableName, dateForDeletion, "COUNT")) {
+  for await (const page of paginatedQuery(
+    tableName,
+    dateForDeletion,
+    "COUNT"
+  )) {
     count += page.count;
   }
   return count;

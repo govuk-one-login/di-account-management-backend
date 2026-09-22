@@ -72,45 +72,57 @@ export async function* queryAccountsByDate(
   }
 }
 
-export const countAccountsForDate = async (
+const countWithFilter = async (
   tableName: string,
   dateForDeletion: string,
-  options?: { includeMfaBreakdown?: boolean }
-): Promise<AccountCountResult> => {
-  if (options?.includeMfaBreakdown) {
-    let total = 0;
-    let withMfa = 0;
-
-    for await (const page of paginatedQuery(
-      tableName,
-      dateForDeletion,
-      "COUNT",
-      {
-        expression: "hasSetupMfa = :mfaVal",
-        values: { ":mfaVal": true },
-      }
-    )) {
-      total += page.scannedCount;
-      withMfa += page.count;
-    }
-
-    return {
-      total,
-      withMfa,
-      withoutMfa: total - withMfa,
-    };
-  }
-
-  let count = 0;
+  filter?: QueryFilter
+): Promise<{ scannedTotal: number; filteredCount: number }> => {
+  let scannedTotal = 0;
+  let filteredCount = 0;
   for await (const page of paginatedQuery(
     tableName,
     dateForDeletion,
-    "COUNT"
+    "COUNT",
+    filter
   )) {
-    count += page.count;
+    scannedTotal += page.scannedCount;
+    filteredCount += page.count;
   }
+  return { scannedTotal, filteredCount };
+};
+
+export const countAccountsForDate = async (
+  tableName: string,
+  dateForDeletion: string,
+  options?: { includeSkipEmailReasonBreakdown?: boolean }
+): Promise<AccountCountResult> => {
+  if (!options?.includeSkipEmailReasonBreakdown) {
+    const { filteredCount } = await countWithFilter(tableName, dateForDeletion);
+    return { total: filteredCount };
+  }
+
+  const [noMfaResult, undeliverableResult] = await Promise.all([
+    countWithFilter(tableName, dateForDeletion, {
+      expression: "hasSetupMfa = :val",
+      values: { ":val": false },
+    }),
+    countWithFilter(tableName, dateForDeletion, {
+      expression: "hasUndeliverableEmailAddress = :val",
+      values: { ":val": true },
+    }),
+  ]);
+
+  const total = noMfaResult.scannedTotal;
+  const skippedNoMfa = noMfaResult.filteredCount;
+  const skippedUndeliverable = undeliverableResult.filteredCount;
+
   return {
-    total: count,
+    total,
+    emailForecast: {
+      willSendWarningEmails: total - skippedNoMfa - skippedUndeliverable,
+      skippedNoMfa,
+      skippedUndeliverable,
+    },
   };
 };
 
@@ -118,19 +130,15 @@ export const countForecastedAccountsForDate = async (
   tableName: string,
   dateForDeletion: string
 ): Promise<number> => {
-  let count = 0;
-  for await (const page of paginatedQuery(
-    tableName,
-    dateForDeletion,
-    "COUNT"
-  )) {
-    count += page.count;
-  }
-  return count;
+  const { filteredCount } = await countWithFilter(tableName, dateForDeletion);
+  return filteredCount;
 };
 
 export interface AccountCountResult {
   total: number;
-  withMfa?: number;
-  withoutMfa?: number;
+  emailForecast?: {
+    willSendWarningEmails: number;
+    skippedNoMfa: number;
+    skippedUndeliverable: number;
+  };
 }

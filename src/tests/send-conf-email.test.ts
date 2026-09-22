@@ -220,7 +220,7 @@ describe("handler", () => {
   };
   beforeEach(() => {
     process.env.ENVIRONMENT_NAME = "local";
-    process.env.NOTIFY_API_KEY = "mock-api-key";
+    process.env.NOTIFY_API_KEY_SECRET_ARN = "mock-api-key";
     process.env.TEMPLATE_ID = "mock-template-id";
     mockGetSecret.mockResolvedValue("your-mock-value");
     getTranslationsMock = vi

@@ -16,7 +16,7 @@ Parameters:
     Description: The name of the stack that defines the Alerting resources
     Type: String
     Default: platform-alerting
-  InactveAccountTrackerStoreTableName:
+  InactiveAccountTrackerStoreTableName:
     Type: String
     Default: inactive_account_tracker_store
   UserNotificationsTableName:
@@ -25,6 +25,12 @@ Parameters:
   DummyEventStoreTableName:
     Type: String
     Default: dummy_events
+  InactiveAccountDailyDeletionForecastTableName:
+    Type: String
+    Default: inactive_account_daily_deletion_forecast
+  InactiveAccountCircuitBreakerTableName:
+    Type: String
+    Default: inactive_account_circuit_breaker
   Environment:
     Description: "The environment type"
     Type: "String"
@@ -230,6 +236,25 @@ Mappings:
     production:
       QueueArn: "arn:aws:sqs:eu-west-2:451773080033:self-production-EC-SQS-Output-Queue-accounts"
       KeyArn: "arn:aws:kms:eu-west-2:451773080033:key/e95d47b6-613d-4bea-93c9-d400cdfb31ee"
+  IADInputQueue:
+    demo:
+      QueueArn: ""
+      KeyArn: ""
+    dev:
+      QueueArn: ""
+      KeyArn: ""
+    build:
+      QueueArn: ""
+      KeyArn: ""
+    staging:
+      QueueArn: "arn:aws:sqs:eu-west-2:178023842775:self-staging-EC-SQS-Output-Queue-homeIAD"
+      KeyArn: "arn:aws:kms:eu-west-2:178023842775:key/5d01677f-6080-494c-9ef0-03abab218bb9"
+    integration:
+      QueueArn: "arn:aws:sqs:eu-west-2:729485541398:self-integration-EC-SQS-Output-Queue-homeIAD"
+      KeyArn: "arn:aws:kms:eu-west-2:729485541398:key/6f10940b-6a40-42e9-a295-6ebed7c60a68"
+    production:
+      QueueArn: "arn:aws:sqs:eu-west-2:451773080033:self-production-EC-SQS-Output-Queue-homeIAD"
+      KeyArn: "arn:aws:kms:eu-west-2:451773080033:key/27cc5a43-8373-4125-a378-af88555abc50"
 
   OrchestrationAccounts:
     demo:
@@ -265,63 +290,111 @@ Mappings:
     ### We are passing the version ID of AWS secrets as cloudformation does not retrieve updated secrets unless there is a change in the template file related to it.
     demo:
       OLHCLIENTID: "oneLoginHome"
+      GOVUKAPPCLIENTID: "govukApp"
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.integration.publishing.service.gov.uk"
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "2b3170b5-159e-457f-a282-f30f6006dc32"
+      AUTHBACKFILLCOMPLETEDATETIME: ""
+      FEATURESENDIADAUDITEVENTS: "true"
+      FEATUREDELETEEMAILSUBSCRIPTIONS: "false"
       NOTIFYTEMPLATEIDS: |
         {
           "GLOBAL_LOGOUT": "a92761ef-213b-4fb6-a53c-5912a931c159",
-          "INACTIVE_ACCOUNT_WARNING_30_DAY": "2891a677-8273-4704-8521-db8190405ba3",
-          "INACTIVE_ACCOUNT_WARNING_7_DAY": "d665bcf9-4dc3-45cb-af35-a5757912bd10"
+          "INACTIVE_ACCOUNT_WARNING_30_DAY": "e8609334-32b5-4d8a-8023-9c38206ae048",
+          "INACTIVE_ACCOUNT_WARNING_7_DAY": "3f4c9c34-33c0-4ded-8028-1cb8a5d48d64",
+          "INACTIVE_ACCOUNT_SAVED_APP": "7591b854-2c10-4209-97bf-0facbf2c2588",
+          "INACTIVE_ACCOUNT_SAVED_HOME": "bbde3b58-62ea-4ccd-8a41-ebd421745af8",
+          "INACTIVE_ACCOUNT_SAVED_RP": "cb230404-a787-4199-ad4a-7d638838d3e8",
+          "INACTIVE_ACCOUNT_DELETED_CONFIRMATION": "47bc9e96-105c-4a15-b60e-75094a55dc2f"
         }
     dev:
       OLHCLIENTID: "oneLoginHome"
+      GOVUKAPPCLIENTID: "govukApp"
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.integration.publishing.service.gov.uk"
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "2b3170b5-159e-457f-a282-f30f6006dc32"
+      AUTHBACKFILLCOMPLETEDATETIME: ""
+      FEATURESENDIADAUDITEVENTS: "true"
+      FEATUREDELETEEMAILSUBSCRIPTIONS: "true"
       NOTIFYTEMPLATEIDS: |
         {
           "GLOBAL_LOGOUT": "a92761ef-213b-4fb6-a53c-5912a931c159",
-          "INACTIVE_ACCOUNT_WARNING_30_DAY": "2891a677-8273-4704-8521-db8190405ba3",
-          "INACTIVE_ACCOUNT_WARNING_7_DAY": "d665bcf9-4dc3-45cb-af35-a5757912bd10"
+          "INACTIVE_ACCOUNT_WARNING_30_DAY": "e8609334-32b5-4d8a-8023-9c38206ae048",
+          "INACTIVE_ACCOUNT_WARNING_7_DAY": "3f4c9c34-33c0-4ded-8028-1cb8a5d48d64",
+          "INACTIVE_ACCOUNT_SAVED_APP": "7591b854-2c10-4209-97bf-0facbf2c2588",
+          "INACTIVE_ACCOUNT_SAVED_HOME": "bbde3b58-62ea-4ccd-8a41-ebd421745af8",
+          "INACTIVE_ACCOUNT_SAVED_RP": "cb230404-a787-4199-ad4a-7d638838d3e8",
+          "INACTIVE_ACCOUNT_DELETED_CONFIRMATION": "47bc9e96-105c-4a15-b60e-75094a55dc2f"
         }
     build:
       OLHCLIENTID: "oneLoginHome"
+      GOVUKAPPCLIENTID: "govukApp"
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.staging.publishing.service.gov.uk"
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "2b3170b5-159e-457f-a282-f30f6006dc32"
+      AUTHBACKFILLCOMPLETEDATETIME: ""
+      FEATURESENDIADAUDITEVENTS: "false"
+      FEATUREDELETEEMAILSUBSCRIPTIONS: "false"
       NOTIFYTEMPLATEIDS: |
         {
           "GLOBAL_LOGOUT": "a92761ef-213b-4fb6-a53c-5912a931c159",
-          "INACTIVE_ACCOUNT_WARNING_30_DAY": "2891a677-8273-4704-8521-db8190405ba3",
-          "INACTIVE_ACCOUNT_WARNING_7_DAY": "d665bcf9-4dc3-45cb-af35-a5757912bd10"
+          "INACTIVE_ACCOUNT_WARNING_30_DAY": "e8609334-32b5-4d8a-8023-9c38206ae048",
+          "INACTIVE_ACCOUNT_WARNING_7_DAY": "3f4c9c34-33c0-4ded-8028-1cb8a5d48d64",
+          "INACTIVE_ACCOUNT_SAVED_APP": "7591b854-2c10-4209-97bf-0facbf2c2588",
+          "INACTIVE_ACCOUNT_SAVED_HOME": "bbde3b58-62ea-4ccd-8a41-ebd421745af8",
+          "INACTIVE_ACCOUNT_SAVED_RP": "cb230404-a787-4199-ad4a-7d638838d3e8",
+          "INACTIVE_ACCOUNT_DELETED_CONFIRMATION": "47bc9e96-105c-4a15-b60e-75094a55dc2f"
         }
     staging:
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.staging.publishing.service.gov.uk"
       OLHCLIENTID: "EMGmY82k-92QSakDl_9keKDFmZY"
+      GOVUKAPPCLIENTID: "govukApp"
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "2b3170b5-159e-457f-a282-f30f6006dc32"
+      AUTHBACKFILLCOMPLETEDATETIME: "2026-08-18T12:18:31.557Z"
+      FEATURESENDIADAUDITEVENTS: "false"
+      FEATUREDELETEEMAILSUBSCRIPTIONS: "false"
       NOTIFYTEMPLATEIDS: |
         {
           "GLOBAL_LOGOUT": "a92761ef-213b-4fb6-a53c-5912a931c159",
-          "INACTIVE_ACCOUNT_WARNING_30_DAY": "bfc551ea-4c23-4765-bdf5-df29173d54a8",
-          "INACTIVE_ACCOUNT_WARNING_7_DAY": "af7393e6-1231-47f3-98fc-172a1b2e2367"
+          "INACTIVE_ACCOUNT_WARNING_30_DAY": "5a060281-74a2-4e36-898f-087cf8e21e42",
+          "INACTIVE_ACCOUNT_WARNING_7_DAY": "6866587c-ee90-4829-9d23-30fe8335d5a9",
+          "INACTIVE_ACCOUNT_SAVED_APP": "184d7ecc-12d3-46a9-9c89-d2316c623e4a",
+          "INACTIVE_ACCOUNT_SAVED_HOME": "b75a1a17-7679-40bf-8f67-fd399dc26025",
+          "INACTIVE_ACCOUNT_SAVED_RP": "42e46ff0-8944-436c-8c4e-8cd06bd26c8a",
+          "INACTIVE_ACCOUNT_DELETED_CONFIRMATION": "98a7c674-760b-4e05-b66c-4150a4bf87f5"
         }
     integration:
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.integration.publishing.service.gov.uk"
       OLHCLIENTID: "Y8xi2wDAaRvWYlEkoExOUZbAPaYyBEhB"
+      GOVUKAPPCLIENTID: "EznkQXGrWxi0cQMSACY15UzvG1Q"
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "0674c6e3-219c-4e3a-b04c-3786bac7f228"
+      AUTHBACKFILLCOMPLETEDATETIME: "2026-08-21T09:55:05.000Z"
+      FEATURESENDIADAUDITEVENTS: "false"
+      FEATUREDELETEEMAILSUBSCRIPTIONS: "false"
       NOTIFYTEMPLATEIDS: |
         {
           "GLOBAL_LOGOUT": "fb33515d-41cb-40df-93c2-e1bf76c3672a",
-          "INACTIVE_ACCOUNT_WARNING_30_DAY": "bfc551ea-4c23-4765-bdf5-df29173d54a8",
-          "INACTIVE_ACCOUNT_WARNING_7_DAY": "af7393e6-1231-47f3-98fc-172a1b2e2367"
+          "INACTIVE_ACCOUNT_WARNING_30_DAY": "03dcb13e-b751-49d7-9e28-0c2467895bbc",
+          "INACTIVE_ACCOUNT_WARNING_7_DAY": "1ae786a1-daa1-4abc-99df-6f9d39fb84c8",
+          "INACTIVE_ACCOUNT_SAVED_APP": "9a33fe6a-4df8-46fb-a83e-f199b3625c7d",
+          "INACTIVE_ACCOUNT_SAVED_HOME": "caf7501c-9d1f-40b4-9831-b6d83c1459d5",
+          "INACTIVE_ACCOUNT_SAVED_RP": "a5e3f809-1da5-483c-a682-90894ee52a40",
+          "INACTIVE_ACCOUNT_DELETED_CONFIRMATION": "133ad904-90af-4251-997d-e4919bb72f7d"
         }
     production:
       OLHCLIENTID: "KcKmx2g1GH6ersWFvzMi1bhehq4"
+      GOVUKAPPCLIENTID: "EznkQXGrWxi0cQMSACY15UzvG1Q"
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.publishing.service.gov.uk"
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "0674c6e3-219c-4e3a-b04c-3786bac7f228"
+      FEATURESENDIADAUDITEVENTS: "false"
+      FEATUREDELETEEMAILSUBSCRIPTIONS: "true"
+      AUTHBACKFILLCOMPLETEDATETIME: "2026-08-25T13:23:45.424Z"
       NOTIFYTEMPLATEIDS: |
         {
           "GLOBAL_LOGOUT": "fb33515d-41cb-40df-93c2-e1bf76c3672a",
-          "INACTIVE_ACCOUNT_WARNING_30_DAY": "7cd0d104-a108-4d07-8a09-3a49435e580b",
-          "INACTIVE_ACCOUNT_WARNING_7_DAY": "65517b6d-4fab-4756-8da1-c0960df8a1da"
+          "INACTIVE_ACCOUNT_WARNING_30_DAY": "e85c4c06-9e82-4cc8-ab21-cd0aaf128bc0",
+          "INACTIVE_ACCOUNT_WARNING_7_DAY": "a710513b-876f-4ac4-ba8d-4a3684206903",
+          "INACTIVE_ACCOUNT_SAVED_APP": "87d6a191-30a3-401a-b56c-370b56fdbdd6",
+          "INACTIVE_ACCOUNT_SAVED_HOME": "0301c3c4-0aaa-4300-b643-d97951626509",
+          "INACTIVE_ACCOUNT_SAVED_RP": "d8363a39-770c-47d3-8e19-468625312056",
+          "INACTIVE_ACCOUNT_DELETED_CONFIRMATION": "fe27c1e1-e89c-4935-9bea-7806e409413d"
         }
 
   AccountInterventionsService:
@@ -364,6 +437,9 @@ Mappings:
       notifyApiKeySecretArn: arn:aws:secretsmanager:eu-west-2:654654326096:secret:/account-mgmt-backend/notify-api-key-rUzQp4
       publishingApiKeyArn: arn:aws:secretsmanager:eu-west-2:654654326096:secret:/account-mgmt-frontend/Config/Publishing/API/Key-BVQ1hM
       publishingApiKeyVersionId: "2c654686-68a5-459d-005a-39689b8b6937"
+      accountInterventionsServiceApiUrl: https://ais-stub.home.dev.account.gov.uk/v1
+      notifyDontSendEmailsTo: "^(perftest.+?@digital.cabinet-office.gov.uk)|(testuser@test.null.local)$"
+      sendInactiveAccountDeletionEmails: "1"
     dev:
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
       zendeskGroupIdSecretArn: arn:aws:secretsmanager:eu-west-2:985326104449:secret:/account-mgmt-backend/zendesk-group-id-token-1O5AvL
@@ -375,6 +451,9 @@ Mappings:
       notifyApiKeySecretArn: arn:aws:secretsmanager:eu-west-2:985326104449:secret:/account-mgmt-backend/notify-api-key-4P84y7
       publishingApiKeyArn: arn:aws:secretsmanager:eu-west-2:985326104449:secret:/account-mgmt-frontend/Config/Publishing/API/Key-FecC4U
       publishingApiKeyVersionId: "1795b84e-bda5-449e-b7de-172aeded65de"
+      accountInterventionsServiceApiUrl: https://ais-stub.home.dev.account.gov.uk/v1
+      notifyDontSendEmailsTo: "^(perftest.+?@digital.cabinet-office.gov.uk)|(testuser@test.null.local)$"
+      sendInactiveAccountDeletionEmails: "1"
     build:
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
       zendeskGroupIdSecretArn: arn:aws:secretsmanager:eu-west-2:301577035144:secret:/account-mgmt-backend/zendesk-group-id-token-Ve5ojs
@@ -386,6 +465,9 @@ Mappings:
       notifyApiKeySecretArn: arn:aws:secretsmanager:eu-west-2:301577035144:secret:/account-mgmt-backend/notify-api-key-8vHJMb
       publishingApiKeyArn: arn:aws:secretsmanager:eu-west-2:301577035144:secret:/account-mgmt-frontend/Config/Publishing/API/Key-BnpEHJ
       publishingApiKeyVersionId: "b6b498c9-64d7-4655-a6cc-828aa82f0136"
+      accountInterventionsServiceApiUrl: https://ais-stub.home.build.account.gov.uk/v1
+      notifyDontSendEmailsTo: "^(perftest.+?@digital.cabinet-office.gov.uk)|(testuser@test.null.local)$"
+      sendInactiveAccountDeletionEmails: "1"
     staging:
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
       zendeskGroupIdSecretArn: arn:aws:secretsmanager:eu-west-2:539729775994:secret:/account-mgmt-backend/zendesk-group-id-token-HE0BjN
@@ -397,6 +479,9 @@ Mappings:
       notifyApiKeySecretArn: arn:aws:secretsmanager:eu-west-2:539729775994:secret:/account-mgmt-backend/notify-api-key-lSCNeM
       publishingApiKeyArn: arn:aws:secretsmanager:eu-west-2:539729775994:secret:/account-mgmt-frontend/Config/Publishing/API/Key-ubkHIz
       publishingApiKeyVersionId: "1fec2ee5-a02c-41e5-9227-185ac11bc1eb"
+      accountInterventionsServiceApiUrl: https://vjdj6kjrj2.execute-api.eu-west-2.amazonaws.com/v1
+      notifyDontSendEmailsTo: "^(perftest.+?@digital.cabinet-office.gov.uk)|(testuser@test.null.local)$"
+      sendInactiveAccountDeletionEmails: "1"
     integration:
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceNonProductionVariables
       zendeskGroupIdSecretArn: arn:aws:secretsmanager:eu-west-2:666500506359:secret:/account-mgmt-backend/zendesk-group-id-token-djJbv6
@@ -408,6 +493,9 @@ Mappings:
       notifyApiKeySecretArn: arn:aws:secretsmanager:eu-west-2:666500506359:secret:/account-mgmt-backend/notify-api-key-nvDui4
       publishingApiKeyArn: arn:aws:secretsmanager:eu-west-2:666500506359:secret:/account-mgmt-frontend/Config/Publishing/API/Key-qWrhy3
       publishingApiKeyVersionId: "279a0631-b5c2-4224-94bf-b8d94bda588b"
+      accountInterventionsServiceApiUrl: https://65zhj32bjb.execute-api.eu-west-2.amazonaws.com/v1
+      notifyDontSendEmailsTo: "^(perftest.+?@digital.cabinet-office.gov.uk)|(testuser@test.null.local)$"
+      sendInactiveAccountDeletionEmails: "0"
     production:
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceProductionVariables
       zendeskGroupIdSecretArn: arn:aws:secretsmanager:eu-west-2:026991849909:secret:/account-mgmt-backend/zendesk-group-id-token-mE55Wr
@@ -419,6 +507,9 @@ Mappings:
       notifyApiKeySecretArn: arn:aws:secretsmanager:eu-west-2:026991849909:secret:/account-mgmt-backend/notify-api-key-Ve4Yk1
       publishingApiKeyArn: arn:aws:secretsmanager:eu-west-2:026991849909:secret:/account-mgmt-frontend/Config/Publishing/API/Key-3ZxzC4
       publishingApiKeyVersionId: "a95cff2e-397a-4103-a032-864e0727e618"
+      accountInterventionsServiceApiUrl: https://ruz07ekh4b.execute-api.eu-west-2.amazonaws.com/v1
+      notifyDontSendEmailsTo: "^(perftest.+?@digital.cabinet-office.gov.uk)|(testuser@test.null.local)$"
+      sendInactiveAccountDeletionEmails: "0"
 
 Resources:
   ######################################
@@ -594,6 +685,50 @@ Resources:
         KMSMasterKeyId: !GetAtt DatabaseKmsKey.Arn
 
   ######################################
+  # Inactive Account Daily Deletion Forecast store
+  ######################################
+
+  InactiveAccountDailyDeletionForecastStore:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: dateForDeletion
+          AttributeType: S
+        - AttributeName: forecastedAt
+          AttributeType: S
+      BillingMode: PAY_PER_REQUEST
+      TableName: !Ref InactiveAccountDailyDeletionForecastTableName
+      KeySchema:
+        - AttributeName: dateForDeletion
+          KeyType: HASH
+        - AttributeName: forecastedAt
+          KeyType: RANGE
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+        SSEType: KMS
+        KMSMasterKeyId: !GetAtt DatabaseKmsKey.Arn
+      Tags:
+        - Key: Product
+          Value: GOV.UK Sign In
+        - Key: System
+          Value: Account Management Backend
+        - Key: Owner
+          Value: govuk-accounts-tech@digital.cabinet-office.gov.uk
+        - Key: Environment
+          Value: !Ref "Environment"
+        - Key: Source
+          Value: "https://github.com/alphagov/di-account-management-backend/blob/main/infrastructure/template.yaml"
+        - Key: BackupFrequency
+          Value: !If [BackupEnabled, "Daily", ""]
+
+  ######################################
   # Inactive Account Tracker store
   ######################################
 
@@ -607,6 +742,8 @@ Resources:
           AttributeType: S
         - AttributeName: commonSubjectId
           AttributeType: S
+        - AttributeName: emailAddress
+          AttributeType: S
       GlobalSecondaryIndexes:
         - IndexName: CommonSubjectIdIndex
           KeySchema:
@@ -614,8 +751,14 @@ Resources:
               KeyType: HASH
           Projection:
             ProjectionType: ALL
+        - IndexName: EmailAddressIndex
+          KeySchema:
+            - AttributeName: emailAddress
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
       BillingMode: PAY_PER_REQUEST
-      TableName: !Ref InactveAccountTrackerStoreTableName      
+      TableName: !Ref InactiveAccountTrackerStoreTableName
       KeySchema:
         - AttributeName: dateForDeletion
           KeyType: HASH
@@ -632,56 +775,38 @@ Resources:
           Value: !Ref "Environment"
         - Key: Source
           Value: "https://github.com/alphagov/di-account-management-backend/blob/main/infrastructure/template.yaml"
+        - Key: BackupFrequency
+          Value: !If [BackupEnabled, "Daily", ""]
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
       SSESpecification:
         SSEEnabled: true
         SSEType: KMS
         KMSMasterKeyId: !GetAtt DatabaseKmsKey.Arn
-
-  InactiveAccountTrackerStoreCrossAccountRole:
-    Type: AWS::IAM::Role
-    Condition: UseExternalEvents
-    Properties:
-      PermissionsBoundary: !If
-        - UsePermissionsBoundary
-        - !Ref PermissionsBoundary
-        - !Ref AWS::NoValue
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: Allow
-            Principal:
-              AWS: !Sub
-                - "arn:aws:iam::${AccountId}:root"
-                - AccountId: !FindInMap [AuthenticationAccounts, !Ref Environment, AccountNumber]
-            Action: sts:AssumeRole
-      Policies:
-        - PolicyName: InactiveAccountTrackerStoreWritePolicy
-          PolicyDocument:
+      ResourcePolicy: !If
+        - UseExternalEvents
+        - PolicyDocument:
             Version: "2012-10-17"
             Statement:
-              - Effect: Allow
+              - Sid: AllowAuthAccountRead
+                Effect: Allow
+                Principal:
+                  AWS: !Sub
+                    - "arn:aws:iam::${AccountId}:root"
+                    - AccountId:
+                        !FindInMap [
+                          AuthenticationAccounts,
+                          !Ref Environment,
+                          AccountNumber,
+                        ]
                 Action:
-                  - dynamodb:PutItem
-                  - dynamodb:BatchWriteItem
-                Resource: !GetAtt InactiveAccountTrackerStore.Arn
-              - Effect: Allow
-                Action:
-                  - kms:Encrypt
-                  - kms:Decrypt
-                  - kms:GenerateDataKey*
-                  - kms:DescribeKey
-                Resource: !GetAtt DatabaseKmsKey.Arn
-
-  InactiveAccountTrackerStoreCrossAccountRoleArnParameter:
-    Type: AWS::SSM::Parameter
-    Condition: UseExternalEvents
-    Properties:
-      Description: The ARN of the cross-account role for the authentication account to write to the InactiveAccountTrackerStore
-      Name: !Sub "/${AWS::StackName}/IAM/InactiveAccountTrackerStoreCrossAccountRole/ARN"
-      Type: String
-      Value: !GetAtt InactiveAccountTrackerStoreCrossAccountRole.Arn
+                  - dynamodb:DescribeTable
+                  - dynamodb:BatchGetItem
+                  - dynamodb:GetItem
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                Resource: !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${InactiveAccountTrackerStoreTableName}"
+        - !Ref AWS::NoValue
 
   ######################################
   # User Notifications store
@@ -719,7 +844,7 @@ Resources:
         KMSMasterKeyId: !GetAtt DatabaseKmsKey.Arn
 
   ######################################
-  # TxMA Event Queue (Dummy for now)
+  # TxMA Event Queues (Dummy for now)
   ######################################
 
   TxMAInputDummyQueue:
@@ -751,6 +876,38 @@ Resources:
       Dimensions:
         - Name: QueueName
           Value: !GetAtt TxMAInputDummyQueue.QueueName
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+
+  TxMAIADInputDummyQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+
+  TxMAIADInputDummyQueueOldestMessageAgeAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            TxMAIADInputDummyQueueOldestMessageAgeAlarm,
+          ],
+        ]
+      MetricName: ApproximateAgeOfOldestMessage
+      Namespace: AWS/SQS
+      Statistic: Maximum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 300
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt TxMAIADInputDummyQueue.QueueName
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
 
@@ -925,6 +1082,23 @@ Resources:
             MaximumBatchingWindowInSeconds: 10
             FunctionResponseTypes:
               - ReportBatchItemFailures
+            MetricsConfig:
+              Metrics:
+                - EventCount
+        IADInputQueue:
+          Type: SQS
+          Properties:
+            Queue: !If
+              - UseInternalEvents
+              - !GetAtt TxMAIADInputDummyQueue.Arn
+              - !FindInMap [IADInputQueue, !Ref Environment, QueueArn]
+            BatchSize: 100
+            MaximumBatchingWindowInSeconds: 10
+            FunctionResponseTypes:
+              - ReportBatchItemFailures
+            MetricsConfig:
+              Metrics:
+                - EventCount
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt SaveRawEventsDeadLetterQueue.Arn
@@ -995,10 +1169,15 @@ Resources:
               - sqs:ReceiveMessage
               - sqs:DeleteMessage
               - sqs:GetQueueAttributes
-            Resource: !If
-              - UseInternalEvents
-              - !GetAtt TxMAInputDummyQueue.Arn
-              - !FindInMap [InputQueue, !Ref Environment, QueueArn]
+            Resource:
+              - !If
+                - UseInternalEvents
+                - !GetAtt TxMAInputDummyQueue.Arn
+                - !FindInMap [InputQueue, !Ref Environment, QueueArn]
+              - !If
+                - UseInternalEvents
+                - !GetAtt TxMAIADInputDummyQueue.Arn
+                - !FindInMap [IADInputQueue, !Ref Environment, QueueArn]
           - Effect: Allow
             Action:
               - sqs:SendMessage
@@ -1024,12 +1203,16 @@ Resources:
                 - UseInternalEvents
                 - !Ref AWS::NoValue
                 - !FindInMap [InputQueue, !Ref Environment, KeyArn]
+              - !If
+                - UseInternalEvents
+                - !Ref AWS::NoValue
+                - !FindInMap [IADInputQueue, !Ref Environment, KeyArn]
 
   SaveRawEventsFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-save-raw-events"
-      RetentionInDays: 30
+      RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   SaveRawEventsCSLSSubscription:
@@ -1307,7 +1490,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-query-user-services"
-      RetentionInDays: 30
+      RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   QueryUserServicesCSLSSubscription:
@@ -1553,7 +1736,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-format-user-services"
-      RetentionInDays: 30
+      RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   FormatUserServicesCSLSSubscription:
@@ -1846,7 +2029,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-write-user-services"
-      RetentionInDays: 30
+      RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   WriteUserServicesCSLSSubscription:
@@ -2034,6 +2217,126 @@ Resources:
       Value: !Ref UserAccountDeletionTopic
 
   ################################
+  # Account Deletion Queue
+  ################################
+
+  AccountDeletionQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt AccountDeletionDeadLetterQueue.Arn
+        maxReceiveCount: 5
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+
+  AccountDeletionQueuePolicy:
+    Condition: UseExternalEvents
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues:
+        - !Ref AccountDeletionQueue
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub
+                - "arn:aws:iam::${AccountId}:root"
+                - AccountId:
+                    !FindInMap [
+                      AuthenticationAccounts,
+                      !Ref Environment,
+                      AccountNumber,
+                    ]
+            Action:
+              - sqs:ChangeMessageVisibility
+              - sqs:ReceiveMessage
+              - sqs:GetQueueAttributes
+              - sqs:DeleteMessage
+            Resource: !GetAtt AccountDeletionQueue.Arn
+
+  AccountDeletionDeadLetterQueue:
+    Type: AWS::SQS::Queue
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      MessageRetentionPeriod: 1209600
+      KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
+
+  AccountDeletionDLQAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [!Ref AWS::StackName, !Ref Environment, AccountDeletionDLQAlarm],
+        ]
+      AlarmDescription: More than 1 account deletion message failed in the last 5 minutes.
+      Namespace: "AWS/SQS"
+      MetricName: "ApproximateNumberOfMessagesVisible"
+      Dimensions:
+        - Name: "QueueName"
+          Value: !GetAtt AccountDeletionDeadLetterQueue.QueueName
+      Statistic: "Sum"
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: "GreaterThanOrEqualToThreshold"
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      ActionsEnabled: true
+
+  AccountDeletionDeadLetterQueueOldestMessageAgeAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            AccountDeletionDeadLetterQueueOldestMessageAgeAlarm,
+          ],
+        ]
+      MetricName: ApproximateAgeOfOldestMessage
+      Namespace: AWS/SQS
+      Statistic: Maximum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 300
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt AccountDeletionDeadLetterQueue.QueueName
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+
+  AccountDeletionQueueOldestMessageAgeAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            AccountDeletionQueueOldestMessageAgeAlarm,
+          ],
+        ]
+      MetricName: ApproximateAgeOfOldestMessage
+      Namespace: AWS/SQS
+      Statistic: Maximum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 300
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt AccountDeletionQueue.QueueName
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+
+  ################################
   # Deleting User Services Records
   ################################
 
@@ -2146,7 +2449,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-delete-user-services"
-      RetentionInDays: 30
+      RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   DeleteUserServicesCSLSSubscription:
@@ -2422,7 +2725,15 @@ Resources:
               !Ref Environment,
               GOVACCOUNTSPUBLISHINGAPIURL,
             ]
+          FEATURE_DELETE_EMAIL_SUBSCRIPTIONS:
+            !FindInMap [
+              EnvironmentVariables,
+              !Ref Environment,
+              FEATUREDELETEEMAILSUBSCRIPTIONS,
+            ]
           NODE_OPTIONS: --enable-source-maps
+      DeploymentPreference:
+        Alarms: []
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -2490,7 +2801,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${DeleteEmailSubscriptionsFunction}"
-      RetentionInDays: 30
+      RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   DeleteEmailSubscriptionsCSLSSubscription:
@@ -2763,7 +3074,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-write-activity-log"
-      RetentionInDays: 30
+      RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   WriteActivityLogCSLSSubscription:
@@ -3011,7 +3322,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-format-activity-log"
-      RetentionInDays: 30
+      RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   FormatActivityLogCSLSSubscription:
@@ -3207,12 +3518,16 @@ Resources:
         DynamoStream:
           Type: DynamoDB
           Properties:
-            BatchSize: 1
+            BatchSize: 50
+            ParallelizationFactor: 10
+            BisectBatchOnFunctionError: true
             Stream: !GetAtt RawEventsStore.StreamArn
             DestinationConfig:
               OnFailure:
                 Destination: !GetAtt UpdateInactiveAccountTrackerDeadLetterQueue.Arn
             StartingPosition: LATEST
+            FunctionResponseTypes:
+              - ReportBatchItemFailures
             FilterCriteria:
               Filters:
                 - Pattern: '{ "eventName": ["INSERT"], "dynamodb": { "NewImage": { "event": { "M": { "event_name": { "S": ["AUTH_TOKEN_SENT_TO_ORCHESTRATION", "AUTH_CODE_VERIFIED", "AUTH_PASSKEY_VERIFICATION_SUCCESSFUL", "STS_REFRESH_TOKEN_ISSUED"] } } } } } }'
@@ -3220,18 +3535,42 @@ Resources:
         Type: SQS
         TargetArn: !GetAtt UpdateInactiveAccountTrackerDeadLetterQueue.Arn
       Handler: update-inactive-account-tracker.handler
+      MemorySize: 192
+      ReservedConcurrentExecutions: 80
+      Timeout: 180
       Role: !GetAtt UpdateInactiveAccountTrackerRole.Arn
       Environment:
         Variables:
           NODE_OPTIONS: --enable-source-maps
           ACCOUNT_SAVED_NOTIFICATION_QUEUE_URL: !Ref AccountSavedNotificationQueue
-          INACTIVE_ACCOUNT_TRACKER_TABLE_NAME: !Ref InactveAccountTrackerStoreTableName
+          INACTIVE_ACCOUNT_TRACKER_TABLE_NAME: !Ref InactiveAccountTrackerStoreTableName
           USER_NOTIFICATIONS_TABLE_NAME: !Ref UserNotificationsTableName
           OLH_CLIENT_ID:
+            !FindInMap [EnvironmentVariables, !Ref Environment, OLHCLIENTID]
+          AUTH_BACKFILL_COMPLETE_DATETIME:
             !FindInMap [
               EnvironmentVariables,
               !Ref Environment,
-              OLHCLIENTID,
+              AUTHBACKFILLCOMPLETEDATETIME,
+            ]
+          GOV_UK_APP_CLIENT_ID:
+            !FindInMap [
+              EnvironmentVariables,
+              !Ref Environment,
+              GOVUKAPPCLIENTID,
+            ]
+          NOTIFICATION_QUEUE_URL: !Ref NotificationQueue
+          NOTIFY_TEMPLATE_IDS:
+            !FindInMap [
+              EnvironmentVariables,
+              !Ref Environment,
+              NOTIFYTEMPLATEIDS,
+            ]
+          SEND_INACTIVE_ACCOUNT_DELETION_EMAILS:
+            !FindInMap [
+              EnvironmentConfiguration,
+              !Ref Environment,
+              sendInactiveAccountDeletionEmails,
             ]
       DeploymentPreference:
         Alarms:
@@ -3282,7 +3621,7 @@ Resources:
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
 
-  AccountDeletionQueue:
+  AccountDeletionProcessQueue:
     Type: AWS::SQS::Queue
     Properties:
       KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
@@ -3347,6 +3686,7 @@ Resources:
             Resource:
               - !GetAtt UpdateInactiveAccountTrackerDeadLetterQueue.Arn
               - !GetAtt AccountSavedNotificationQueue.Arn
+              - !GetAtt NotificationQueue.Arn
           - Effect: Allow
             Action:
               - dynamodb:DescribeStream
@@ -3387,27 +3727,8 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-update-inactive-account-tracker"
-      RetentionInDays: 30
+      RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
-
-  UpdateInactiveAccountTrackerCSLSSubscription:
-    Condition: ExportLogsToSplunk
-    Type: AWS::Logs::SubscriptionFilter
-    Properties:
-      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
-      FilterPattern: ""
-      LogGroupName: !Ref UpdateInactiveAccountTrackerFunctionLogGroup
-
-  AuthEventTriggeredOnMissingEmailFilter:
-    Type: AWS::Logs::MetricFilter
-    Properties:
-      FilterPattern: "AUTH_EVENT_NO_EMAIL for userId"
-      LogGroupName: !Ref UpdateInactiveAccountTrackerFunctionLogGroup
-      MetricTransformations:
-        - MetricName: AuthEventTriggeredOnMissingEmailCount
-          MetricNamespace: !Ref SystemTagValue
-          MetricValue: 1
-          Unit: Count
 
   AuthEventTriggeredOnAlreadyDeletingAccountFilter:
     Type: AWS::Logs::MetricFilter
@@ -3419,31 +3740,6 @@ Resources:
           MetricNamespace: !Ref SystemTagValue
           MetricValue: 1
           Unit: Count
-
-  AuthEventTriggeredOnMissingEmailAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Properties:
-      AlarmName:
-        !Join [
-          "-",
-          [
-            !Ref AWS::StackName,
-            !Ref Environment,
-            AuthEventTriggeredOnMissingEmailAlarm,
-          ],
-        ]
-      AlarmDescription: Triggers when an auth event is processed without an email address.
-      MetricName: AuthEventTriggeredOnMissingEmailCount
-      Namespace: !Ref SystemTagValue
-      Statistic: Sum
-      Period: 300
-      EvaluationPeriods: 1
-      Threshold: 1
-      ComparisonOperator: GreaterThanOrEqualToThreshold
-      TreatMissingData: notBreaching
-      ActionsEnabled: true
-      AlarmActions:
-        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
 
   AuthEventTriggeredOnAlreadyDeletingAccountAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -3549,7 +3845,7 @@ Resources:
       Environment:
         Variables:
           NODE_OPTIONS: --enable-source-maps
-          INACTIVE_ACCOUNT_TRACKER_TABLE_NAME: !Ref InactveAccountTrackerStoreTableName
+          INACTIVE_ACCOUNT_TRACKER_TABLE_NAME: !Ref InactiveAccountTrackerStoreTableName
       DeploymentPreference:
         Alarms:
           Fn::If:
@@ -3639,7 +3935,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-update-user-email"
-      RetentionInDays: 30
+      RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   UpdateUserEmailCSLSSubscription:
@@ -3723,7 +4019,6 @@ Resources:
   #########################################
 
   PublishAccountDeletionFunction:
-    Condition: IsDevelopment
     Type: AWS::Serverless::Function
     DependsOn:
       - PublishAccountDeletionFunctionLogGroup
@@ -3772,7 +4067,6 @@ Resources:
           - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
 
   PublishAccountDeletionDeadLetterQueue:
-    Condition: IsDevelopment
     Type: AWS::SQS::Queue
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
@@ -3781,7 +4075,6 @@ Resources:
       KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
 
   PublishAccountDeletionRole:
-    Condition: IsDevelopment
     Type: AWS::IAM::Role
     Properties:
       PermissionsBoundary: !If
@@ -3803,7 +4096,6 @@ Resources:
               - "sts:AssumeRole"
 
   PublishAccountDeletionPolicy:
-    Condition: IsDevelopment
     Type: AWS::IAM::ManagedPolicy
     Properties:
       PolicyDocument:
@@ -3838,11 +4130,10 @@ Resources:
               - !GetAtt SnsKmsKey.Arn
 
   PublishAccountDeletionFunctionLogGroup:
-    Condition: IsDevelopment
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-publish-account-deletion"
-      RetentionInDays: 30
+      RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   ################################
@@ -4013,7 +4304,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-delete-activity-log"
-      RetentionInDays: 30
+      RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   DeleteActivityLogCSLSSubscription:
@@ -4253,7 +4544,8 @@ Resources:
       Principal: sns.amazonaws.com
       SourceArn:
         Ref: UserAccountDeletionTopic
-      FunctionName: !Join [":", [!GetAtt DeleteUserNotificationsFunction.Arn, live]]
+      FunctionName:
+        !Join [":", [!GetAtt DeleteUserNotificationsFunction.Arn, live]]
 
   DeleteUserNotificationsRole:
     Type: AWS::IAM::Role
@@ -4309,7 +4601,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-delete-user-notifications"
-      RetentionInDays: 30
+      RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   DeleteUserNotificationsCSLSSubscription:
@@ -4501,7 +4793,8 @@ Resources:
     DependsOn: DeleteInactiveAccountTrackerFunctionAliaslive
     Type: AWS::SNS::Subscription
     Properties:
-      Endpoint: !Join [":", [!GetAtt DeleteInactiveAccountTrackerFunction.Arn, live]]
+      Endpoint:
+        !Join [":", [!GetAtt DeleteInactiveAccountTrackerFunction.Arn, live]]
       Protocol: lambda
       RedrivePolicy:
         deadLetterTargetArn: !GetAtt DeleteInactiveAccountTrackerSubscriptionDeadLetterQueue.Arn
@@ -4546,8 +4839,22 @@ Resources:
       Role: !GetAtt DeleteInactiveAccountTrackerRole.Arn
       Environment:
         Variables:
-          TABLE_NAME: !Ref InactveAccountTrackerStoreTableName
+          TABLE_NAME: !Ref InactiveAccountTrackerStoreTableName
           NODE_OPTIONS: --enable-source-maps
+          TXMA_QUEUE_URL: !Ref AuditOutputQueue
+          FEATURE_SEND_IAD_AUDIT_EVENTS:
+            !FindInMap [
+              EnvironmentVariables,
+              !Ref Environment,
+              FEATURESENDIADAUDITEVENTS,
+            ]
+          NOTIFICATION_QUEUE_URL: !Ref NotificationQueue
+          ACCOUNT_INTERVENTIONS_SERVICE_API_URL:
+            !FindInMap [
+              EnvironmentConfiguration,
+              !Ref Environment,
+              accountInterventionsServiceApiUrl,
+            ]
       DeploymentPreference:
         Alarms:
           Fn::If:
@@ -4576,7 +4883,8 @@ Resources:
       Principal: sns.amazonaws.com
       SourceArn:
         Ref: UserAccountDeletionTopic
-      FunctionName: !Join [":", [!GetAtt DeleteInactiveAccountTrackerFunction.Arn, live]]
+      FunctionName:
+        !Join [":", [!GetAtt DeleteInactiveAccountTrackerFunction.Arn, live]]
 
   DeleteInactiveAccountTrackerRole:
     Type: AWS::IAM::Role
@@ -4608,7 +4916,10 @@ Resources:
           - Effect: Allow
             Action:
               - sqs:SendMessage
-            Resource: !GetAtt DeleteInactiveAccountTrackerDeadLetterQueue.Arn
+            Resource:
+              - !GetAtt DeleteInactiveAccountTrackerDeadLetterQueue.Arn
+              - !GetAtt AuditOutputQueue.Arn
+              - !GetAtt NotificationQueue.Arn
           - Effect: Allow
             Action:
               - dynamodb:Query
@@ -4636,7 +4947,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-delete-inactive-account-tracker"
-      RetentionInDays: 30
+      RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   DeleteInactiveAccountTrackerCSLSSubscription:
@@ -4922,7 +5233,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-mark-activity-reported"
-      RetentionInDays: 30
+      RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   MarkActivityReportedFunctionSuccessRate:
@@ -5065,7 +5376,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-send-suspicious-activity"
-      RetentionInDays: 30
+      RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   SendSuspiciousActivityToTxMACSLSSubscription:
@@ -5137,7 +5448,12 @@ Resources:
       Role: !GetAtt SendConfEmailRole.Arn
       Environment:
         Variables:
-          NOTIFY_API_KEY: /account-mgmt-backend/notify-api-key
+          NOTIFY_API_KEY_SECRET_ARN:
+            !FindInMap [
+              EnvironmentConfiguration,
+              !Ref Environment,
+              notifyApiKeySecretArn,
+            ]
           TEMPLATE_ID:
             !FindInMap [
               EnvironmentVariables,
@@ -5221,7 +5537,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-send-conf-email"
-      RetentionInDays: 30
+      RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   SendConfEmailToTxMACSLSSubscription:
@@ -5421,7 +5737,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-create-support-ticket"
-      RetentionInDays: 30
+      RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   CreateSupportTicketToTxMACSLSSubscription:
@@ -5640,7 +5956,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-trigger-rsa"
-      RetentionInDays: 30
+      RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   TriggerSuspiciousActivityStepToTxMACSLSSubscription:
@@ -5826,7 +6142,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-rsa-step"
-      RetentionInDays: 30
+      RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   ReportSuspiciousActivityStepFunctionCSLSSubscription:
@@ -5995,6 +6311,23 @@ Resources:
               - kms:GenerateDataKey
             Resource:
               - "*"
+          - !If
+            - UseExternalEvents
+            - Effect: Allow
+              Principal:
+                AWS: !Sub
+                  - "arn:aws:iam::${AccountId}:root"
+                  - AccountId:
+                      !FindInMap [
+                        AuthenticationAccounts,
+                        !Ref Environment,
+                        AccountNumber,
+                      ]
+              Action:
+                - kms:Decrypt
+              Resource:
+                - "*"
+            - !Ref AWS::NoValue
 
   QueueKmsKeyAlias:
     Type: AWS::KMS::Alias
@@ -6058,7 +6391,12 @@ Resources:
                 - "*"
               Condition:
                 StringEquals:
-                  kms:CallerAccount: !FindInMap [AuthenticationAccounts, !Ref Environment, "AccountNumber"]
+                  kms:CallerAccount:
+                    !FindInMap [
+                      AuthenticationAccounts,
+                      !Ref Environment,
+                      "AccountNumber",
+                    ]
             - !Ref AWS::NoValue
 
   DatabaseKmsKeyAlias:
@@ -6567,7 +6905,9 @@ Resources:
           Type: SQS
           Properties:
             Queue: !GetAtt NotificationQueue.Arn
-            BatchSize: 10
+            BatchSize: 1
+            ScalingConfig:
+              MaximumConcurrency: 2
             FunctionResponseTypes:
               - ReportBatchItemFailures
       Handler: notification-service.handler
@@ -6575,12 +6915,23 @@ Resources:
       Environment:
         Variables:
           NODE_OPTIONS: --enable-source-maps
-          NOTIFY_API_KEY: /account-mgmt-backend/notify-api-key
+          NOTIFY_API_KEY_SECRET_ARN:
+            !FindInMap [
+              EnvironmentConfiguration,
+              !Ref Environment,
+              notifyApiKeySecretArn,
+            ]
           NOTIFY_TEMPLATE_IDS:
             !FindInMap [
               EnvironmentVariables,
               !Ref Environment,
               NOTIFYTEMPLATEIDS,
+            ]
+          NOTIFY_DONT_SEND_EMAILS_TO:
+            !FindInMap [
+              EnvironmentConfiguration,
+              !Ref Environment,
+              notifyDontSendEmailsTo,
             ]
       DeploymentPreference:
         Alarms:
@@ -6657,7 +7008,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-notification-service"
-      RetentionInDays: 30
+      RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   NotificationServiceCSLSSubscription:
@@ -6734,6 +7085,8 @@ Resources:
         Variables:
           NODE_OPTIONS: --enable-source-maps --max-old-space-size=5120
           TABLE_NAME: !Ref ActivityLogsStoreTableName
+      DeploymentPreference:
+        Alarms: []
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -6795,7 +7148,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-analyse-activity-log"
-      RetentionInDays: 30
+      RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   ################################################
@@ -6810,7 +7163,7 @@ Resources:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-inactive-accounts-processor
       CodeUri: src
       PackageType: Zip
-      Timeout: 60
+      Timeout: 900
       Events:
         Warning30DayScheduleEvent:
           Type: Schedule
@@ -6822,12 +7175,11 @@ Resources:
           Properties:
             Schedule: "cron(0 9 * * ? *)"
             Input: '{"processName": "Warning7Day"}'
-        AccountDeletionScheduleEvent:
+        DeletionDryRunScheduleEvent:
           Type: Schedule
           Properties:
-            Schedule: "cron(0 9 * * ? *)"
-            Input: '{"processName": "DeleteAccount"}'
-
+            Schedule: "cron(0 1 * * ? *)"
+            Input: '{"processName": "DeletionDryRun"}'
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt QueryAndDispatchInactiveAccountsDeadLetterQueue.Arn
@@ -6835,11 +7187,12 @@ Resources:
       Role: !GetAtt QueryAndDispatchInactiveAccountsRole.Arn
       Environment:
         Variables:
-          TABLE_NAME: !Ref InactveAccountTrackerStoreTableName
+          TABLE_NAME: !Ref InactiveAccountTrackerStoreTableName
           WARNING_30_DAY_NOTIFICATION_QUEUE_URL: !Ref 30DayNotificationQueue
           WARNING_7_DAY_NOTIFICATION_QUEUE_URL: !Ref 7DayNotificationQueue
-          ACCOUNT_DELETION_QUEUE_URL: !Ref AccountDeletionQueue
+          ACCOUNT_DELETION_QUEUE_URL: !Ref AccountDeletionProcessQueue
           NODE_OPTIONS: --enable-source-maps
+          INACTIVE_ACCOUNT_CIRCUIT_BREAKER_TABLE_NAME: !Ref InactiveAccountCircuitBreakerTableName
       DeploymentPreference:
         Alarms:
           Fn::If:
@@ -6895,7 +7248,7 @@ Resources:
               - !GetAtt AccountSavedNotificationQueue.Arn
               - !GetAtt 30DayNotificationQueue.Arn
               - !GetAtt 7DayNotificationQueue.Arn
-              - !GetAtt AccountDeletionQueue.Arn
+              - !GetAtt AccountDeletionProcessQueue.Arn
           - Effect: Allow
             Action:
               - dynamodb:Query
@@ -6911,12 +7264,24 @@ Resources:
               - kms:GenerateDataKey*
             Resource:
               - !GetAtt QueueKmsKey.Arn
+          - Effect: Allow
+            Action:
+              - kms:Decrypt
+              - kms:GenerateDataKey*
+            Resource:
+              - !GetAtt InactiveAccountCircuitBreakerStoreKey.Arn
+          - Effect: Allow
+            Action:
+              - dynamodb:Query
+              - dynamodb:PutItem
+            Resource:
+              - !GetAtt InactiveAccountCircuitBreakerStore.Arn
 
   QueryAndDispatchInactiveAccountsFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-inactive-accounts-processor"
-      RetentionInDays: 30
+      RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   QueryAndDispatchInactiveAccountsCSLSSubscription:
@@ -7041,15 +7406,28 @@ Resources:
       CodeUri: src
       Handler: process-inactive-account.handler
       PackageType: Zip
+      # Override the global ReservedConcurrentExecutions (10) so the per-source
+      # SQS ScalingConfig.MaximumConcurrency (50 each) can actually scale up.
+      ReservedConcurrentExecutions: 150
       Events:
         30DayNotificationEvent:
           Type: SQS
           Properties:
             Queue: !GetAtt 30DayNotificationQueue.Arn
+            ScalingConfig:
+              MaximumConcurrency: 50
         7DayNotificationEvent:
           Type: SQS
           Properties:
             Queue: !GetAtt 7DayNotificationQueue.Arn
+            ScalingConfig:
+              MaximumConcurrency: 50
+        DeleteAccountEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt AccountDeletionProcessQueue.Arn
+            ScalingConfig:
+              MaximumConcurrency: 50
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt ProcessInactiveAccountDeadLetterQueue.Arn
@@ -7059,6 +7437,28 @@ Resources:
           NODE_OPTIONS: --enable-source-maps
           NOTIFICATION_QUEUE_URL: !Ref NotificationQueue
           INACTIVE_ACCOUNT_TRACKER_TABLE_NAME: !Ref InactiveAccountTrackerStore
+          ACCOUNT_DELETION_QUEUE_URL: !Ref AccountDeletionQueue
+          ACTIVITY_LOG_TABLE_NAME: !Ref ActivityLogsStoreTableName
+          INACTIVE_ACCOUNT_CIRCUIT_BREAKER_TABLE_NAME: !Ref InactiveAccountCircuitBreakerTableName
+          TXMA_QUEUE_URL: !Ref AuditOutputQueue
+          ACCOUNT_INTERVENTIONS_SERVICE_API_URL:
+            !FindInMap [
+              EnvironmentConfiguration,
+              !Ref Environment,
+              accountInterventionsServiceApiUrl,
+            ]
+          SEND_INACTIVE_ACCOUNT_DELETION_EMAILS:
+            !FindInMap [
+              EnvironmentConfiguration,
+              !Ref Environment,
+              sendInactiveAccountDeletionEmails,
+            ]
+          FEATURE_SEND_IAD_AUDIT_EVENTS:
+            !FindInMap [
+              EnvironmentVariables,
+              !Ref Environment,
+              FEATURESENDIADAUDITEVENTS,
+            ]
       DeploymentPreference:
         Alarms:
           Fn::If:
@@ -7114,17 +7514,33 @@ Resources:
             Resource:
               - !GetAtt 30DayNotificationQueue.Arn
               - !GetAtt 7DayNotificationQueue.Arn
+              - !GetAtt AccountDeletionProcessQueue.Arn
           - Effect: Allow
             Action:
               - sqs:SendMessage
             Resource:
               - !GetAtt ProcessInactiveAccountDeadLetterQueue.Arn
               - !GetAtt NotificationQueue.Arn
+              - !GetAtt AccountDeletionQueue.Arn
+              - !GetAtt AuditOutputQueue.Arn
           - Effect: Allow
             Action:
               - dynamodb:UpdateItem
+              - dynamodb:GetItem
+              - dynamodb:Query
+              - dynamodb:PutItem
+              - dynamodb:DeleteItem
+              - dynamodb:TransactWriteItems
             Resource:
               - !GetAtt InactiveAccountTrackerStore.Arn
+              - !Sub "${InactiveAccountTrackerStore.Arn}/index/CommonSubjectIdIndex"
+          - Effect: Allow
+            Action:
+              - dynamodb:Query
+            Resource:
+              - !GetAtt UserActivityLogsStore.Arn
+              - !GetAtt InactiveAccountTrackerStore.Arn
+              - !Sub "${InactiveAccountTrackerStore.Arn}/index/CommonSubjectIdIndex"
           - Effect: Allow
             Action:
               - kms:Decrypt
@@ -7132,10 +7548,18 @@ Resources:
             Resource:
               - !GetAtt QueueKmsKey.Arn
               - !GetAtt DatabaseKmsKey.Arn
+              - !GetAtt AuditEncryptionKey.Arn
+              - !GetAtt InactiveAccountCircuitBreakerStoreKey.Arn
           - Effect: Allow
             Action:
               - "cloudwatch:PutMetricData"
             Resource: "*"
+          - Effect: Allow
+            Action:
+              - dynamodb:Query
+              - dynamodb:PutItem
+            Resource:
+              - !GetAtt InactiveAccountCircuitBreakerStore.Arn
 
   ProcessInactiveAccountDeadLetterQueue:
     Type: AWS::SQS::Queue
@@ -7149,7 +7573,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-process-inactive-account"
-      RetentionInDays: 30
+      RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   ProcessInactiveAccountCSLSSubscription:
@@ -7205,6 +7629,58 @@ Resources:
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
 
+  QueryAndDispatchInactiveAccountsIADGuardrailTriggeredFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      FilterPattern: '{ $.message = "GuardrailAbortedQueryAndDispatchInactiveAccounts" }'
+      LogGroupName: !Ref QueryAndDispatchInactiveAccountsFunctionLogGroup
+      MetricTransformations:
+        - MetricName: GuardrailPreventedInactiveAccountDeletion
+          MetricNamespace: IAD
+          MetricValue: 1
+          Unit: Count
+          Dimensions:
+            - Key: GuardrailType
+              Value: $.guardrailType
+            - Key: ContributeToAlarm
+              Value: $.contributeToAlarm
+
+  ProcessInactiveAccountsIADGuardrailTriggeredFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      FilterPattern: '{ $.message = "GuardrailAbortedProcessInactiveAccounts" || $.message = "GuardrailAbortedInactiveAccountDeletionProcess" }'
+      LogGroupName: !Ref ProcessInactiveAccountFunctionLogGroup
+      MetricTransformations:
+        - MetricName: GuardrailPreventedInactiveAccountDeletion
+          MetricNamespace: IAD
+          MetricValue: 1
+          Unit: Count
+          Dimensions:
+            - Key: GuardrailType
+              Value: $.guardrailType
+            - Key: ContributeToAlarm
+              Value: $.contributeToAlarm
+
+  IADGuardrailTriggeredAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [!Ref AWS::StackName, !Ref Environment, IADGuardrailTriggered],
+        ]
+      Metrics:
+        - Id: iADGuardrailTriggered
+          Expression: SELECT SUM(GuardrailPreventedInactiveAccountDeletion) FROM "IAD" WHERE ContributeToAlarm = '1'
+          Period: 60
+          ReturnData: true
+      EvaluationPeriods: 1
+      Threshold: 1
+      TreatMissingData: notBreaching
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/HighAlertNotificationTopic/ARN}}"
+
   #########################################
   # Inactive Account Deletion Forecast
   #########################################
@@ -7217,7 +7693,7 @@ Resources:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-inactive-acc-del-forecast
       CodeUri: src
       PackageType: Zip
-      Timeout: 300
+      Timeout: 900
       Events:
         DailySchedule:
           Type: Schedule
@@ -7231,7 +7707,8 @@ Resources:
       Role: !GetAtt InactiveAccountDeletionForecastRole.Arn
       Environment:
         Variables:
-          TABLE_NAME: !Ref InactveAccountTrackerStoreTableName
+          TABLE_NAME: !Ref InactiveAccountTrackerStoreTableName
+          FORECAST_TABLE_NAME: !Ref InactiveAccountDailyDeletionForecastTableName
           NODE_OPTIONS: --enable-source-maps
     Metadata:
       BuildMethod: esbuild
@@ -7281,11 +7758,18 @@ Resources:
           - Effect: Allow
             Action:
               - dynamodb:Query
+              - dynamodb:DescribeTable
             Resource:
               - !GetAtt InactiveAccountTrackerStore.Arn
           - Effect: Allow
             Action:
+              - dynamodb:PutItem
+            Resource:
+              - !GetAtt InactiveAccountDailyDeletionForecastStore.Arn
+          - Effect: Allow
+            Action:
               - kms:Decrypt
+              - kms:GenerateDataKey*
             Resource:
               - !GetAtt DatabaseKmsKey.Arn
           - Effect: Allow
@@ -7298,7 +7782,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-inactive-acc-del-forecast"
-      RetentionInDays: 30
+      RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   InactiveAccountDeletionForecastCSLSSubscription:
@@ -7366,7 +7850,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/apigateway/${PublicApiGateway}/${Environment}"
-      RetentionInDays: 30
+      RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   PublicApiGateway5XXErrorsAlarm:
@@ -7438,6 +7922,7 @@ Resources:
       Environment:
         Variables:
           NOTIFY_DELIVERY_RECEIPTS_SECRET_ARN: !Ref NotifyDeliveryReceiptsSecret
+          INACTIVE_ACCOUNT_TRACKER_TABLE_NAME: !Ref InactiveAccountTrackerStoreTableName
       Policies:
         - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
         - Statement:
@@ -7447,6 +7932,19 @@ Resources:
             - Effect: Allow
               Action: kms:Decrypt
               Resource: !GetAtt SecretsKmsKey.Arn
+            - Effect: Allow
+              Action:
+                - dynamodb:Query
+              Resource: !Sub "${InactiveAccountTrackerStore.Arn}/index/EmailAddressIndex"
+            - Effect: Allow
+              Action:
+                - dynamodb:UpdateItem
+              Resource: !GetAtt InactiveAccountTrackerStore.Arn
+            - Effect: Allow
+              Action:
+                - kms:Decrypt
+                - kms:GenerateDataKey*
+              Resource: !GetAtt DatabaseKmsKey.Arn
       Events:
         DeliveryReceipts:
           Type: Api
@@ -7472,7 +7970,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-notify-delivery-receipts"
-      RetentionInDays: 30
+      RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
   NotifyDeliveryReceiptsLambdaErrorsAlarm:
@@ -7519,7 +8017,7 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       TreatMissingData: notBreaching
       AlarmActions:
-        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/HighAlertNotificationTopic/ARN}}"         
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/HighAlertNotificationTopic/ARN}}"
 
   NotifyDeliveryReceiptsLambdaThrottlesAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -7557,6 +8055,184 @@ Resources:
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
 
+  ###########################################
+  # Trigger Inactive Account Process (manual test helper)
+  ###########################################
+
+  TriggerInactiveAccountProcessFunction:
+    Type: AWS::Serverless::Function
+    DependsOn:
+      - TriggerInactiveAccountProcessFunctionLogGroup
+    Properties:
+      Timeout: 15
+      FunctionName: !Sub ${Environment}-${AWS::StackName}-trigger-iad-process
+      CodeUri: src
+      PackageType: Zip
+      Handler: trigger-inactive-account-process.handler
+      Role: !GetAtt TriggerInactiveAccountProcessRole.Arn
+      Environment:
+        Variables:
+          INACTIVE_ACCOUNT_TRACKER_TABLE_NAME: !Ref InactiveAccountTrackerStore
+          QUERY_AND_DISPATCH_FUNCTION_NAME: !Ref QueryAndDispatchInactiveAccountsFunction
+          NODE_OPTIONS: --enable-source-maps
+      DeploymentPreference:
+        Alarms: []
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Format: "esm"
+        OutExtension:
+          - .js=.mjs
+        Target: "es2022"
+        Sourcemap: true
+        EntryPoints:
+          - trigger-inactive-account-process.ts
+        Banner:
+          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
+
+  TriggerInactiveAccountProcessFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-trigger-inactive-account-process"
+      RetentionInDays: 90
+      KmsKeyId: !GetAtt LoggingKmsKey.Arn
+
+  TriggerInactiveAccountProcessRole:
+    Type: AWS::IAM::Role
+    Properties:
+      PermissionsBoundary: !If
+        - UsePermissionsBoundary
+        - !Ref PermissionsBoundary
+        - !Ref AWS::NoValue
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+        - !Ref TriggerInactiveAccountProcessPolicy
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+
+  TriggerInactiveAccountProcessPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - dynamodb:PutItem
+              - dynamodb:Query
+            Resource:
+              - !GetAtt InactiveAccountTrackerStore.Arn
+              - !Sub "${InactiveAccountTrackerStore.Arn}/index/CommonSubjectIdIndex"
+          - Effect: Allow
+            Action:
+              - lambda:InvokeFunction
+            Resource: !GetAtt QueryAndDispatchInactiveAccountsFunction.Arn
+          - Effect: Allow
+            Action:
+              - kms:Decrypt
+              - kms:GenerateDataKey*
+            Resource:
+              - !GetAtt DatabaseKmsKey.Arn
+              - !GetAtt LoggingKmsKey.Arn
+
+  ###########################################
+  # Inactive Account Deletions circuit breaker table
+  ###########################################
+
+  InactiveAccountCircuitBreakerStoreKey:
+    Type: AWS::KMS::Key
+    Properties:
+      EnableKeyRotation: true
+      KeyPolicy:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub arn:aws:iam::${AWS::AccountId}:root
+            Action:
+              - kms:*
+            Resource:
+              - "*"
+          - !If
+            - "UseExternalEvents"
+            - Effect: Allow
+              Principal:
+                Service: "dynamodb.amazonaws.com"
+              Action:
+                - kms:Decrypt
+                - kms:GenerateDataKey*
+              Resource:
+                - "*"
+              Condition:
+                StringEquals:
+                  kms:CallerAccount:
+                    !FindInMap [
+                      AuthenticationAccounts,
+                      !Ref Environment,
+                      "AccountNumber",
+                    ]
+            - !Ref AWS::NoValue
+
+  InactiveAccountCircuitBreakerStoreKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub "alias/${AWS::StackName}/${Environment}/InactiveAccountCircuitBreakerStoreKey"
+      TargetKeyId: !Ref InactiveAccountCircuitBreakerStoreKey
+
+  InactiveAccountCircuitBreakerStore:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: pk
+          AttributeType: S
+        - AttributeName: datetime
+          AttributeType: N
+      BillingMode: PAY_PER_REQUEST
+      TableName: !Ref InactiveAccountCircuitBreakerTableName
+      KeySchema:
+        - AttributeName: pk
+          KeyType: HASH
+        - AttributeName: datetime
+          KeyType: RANGE
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+        SSEType: KMS
+        KMSMasterKeyId: !GetAtt InactiveAccountCircuitBreakerStoreKey.Arn
+      ResourcePolicy: !If
+        - UseExternalEvents
+        - PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: AllowAuthAccountReadWrite
+                Effect: Allow
+                Principal:
+                  AWS: !Sub
+                    - "arn:aws:iam::${AccountId}:root"
+                    - AccountId:
+                        !FindInMap [
+                          AuthenticationAccounts,
+                          !Ref Environment,
+                          AccountNumber,
+                        ]
+                Action:
+                  - dynamodb:Query
+                  - dynamodb:PutItem
+                Resource: "*"
+        - !Ref AWS::NoValue
+
 Outputs:
   GeneratorKey:
     Description: A generator key for generating a plaintext data key
@@ -7568,12 +8244,6 @@ Outputs:
     Value: !GetAtt WrapperKey.Arn
     Export:
       Name: !Sub "${AWS::StackName}-WrappingKey"
-  InactiveAccountTrackerStoreCrossAccountRoleArn:
-    Condition: UseExternalEvents
-    Description: The ARN of the cross-account role for the authentication account to write to the InactiveAccountTrackerStore
-    Value: !GetAtt InactiveAccountTrackerStoreCrossAccountRole.Arn
-    Export:
-      Name: !Sub "${AWS::StackName}-InactiveAccountTrackerStoreCrossAccountRoleArn"
 
 # NOTES
 #

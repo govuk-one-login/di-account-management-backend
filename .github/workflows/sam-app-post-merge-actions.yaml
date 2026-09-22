@@ -55,7 +55,7 @@ jobs:
 
       - name: Login to Amazon ECR
         id: login-ecr
-        uses: aws-actions/amazon-ecr-login@d539f0932e70871a027e9d5a9d8fc38589180a64 #pin@v2.1.6
+        uses: aws-actions/amazon-ecr-login@03f1aad4c6c7ffd436567f42f9384779290529bd #pin@v2.1.7
 
       - name: Build, tag, and push testing image to Amazon ECR
         env:
@@ -69,11 +69,17 @@ jobs:
       - name: SAM validate
         run: sam validate
 
+      - name: Generate IAD query logic hash
+        run: |
+          esbuild scripts/hash-iad-query-logic/index.ts --bundle --platform=node --format=esm --packages=external --outfile=.tmp-hash-iad-query-logic.mjs
+          node .tmp-hash-iad-query-logic.mjs
+          rm .tmp-hash-iad-query-logic.mjs
+
       - name: SAM build
         run: sam build --manifest package.json
 
       - name: Deploy SAM app
-        uses: govuk-one-login/devplatform-upload-action@64e46134b4108ebfa1cf2a64fee00782f8e2e8cf # pin@v3
+        uses: govuk-one-login/devplatform-upload-action@ec09f4b1f8648fe21dd18a40a2d8e2fa94d0ad41 # pin@v3
         with:
           artifact-bucket-name: ${{ secrets.ARTIFACT_BUCKET_NAME }}
           signing-profile-name: ${{ secrets.SIGNING_PROFILE_NAME }}

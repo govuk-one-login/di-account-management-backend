@@ -1,7 +1,11 @@
 import { Context, DynamoDBStreamEvent } from "aws-lambda";
 import { AttributeValue } from "@aws-sdk/client-dynamodb";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
-import { ActivityLogEntry, DroppedEventError, TxmaEvent } from "./common/model.js";
+import {
+  ActivityLogEntry,
+  DroppedEventError,
+  TxmaEvent,
+} from "./common/model.js";
 import {
   allowedTxmaEvents,
   REPORT_SUSPICIOUS_ACTIVITY_DEFAULT,
@@ -99,7 +103,8 @@ export const handler = async (
           throw new Error(
             `Unable to format activity log for event with ID: ${record.eventID}, ${
               (error as Error).message
-            }`, { cause: error }
+            }`,
+            { cause: error }
           );
         }
       }

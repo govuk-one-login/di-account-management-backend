@@ -7,7 +7,11 @@ import {
 } from "@aws-sdk/lib-dynamodb";
 import { UserData } from "./common/model.js";
 import { getEnvironmentVariable } from "./common/utils.js";
+import { sendAuditEvent } from "./common/send-audit-event.js";
 import { Logger } from "@aws-lambda-powertools/logger";
+import { sendSqsMessage } from "./common/sqs.js";
+import { isUserIdBlocked } from "./common/account-interventions-service-client.js";
+import checkIfDateIs27October from "./common/check-if-date-is-27-october.js";
 
 const logger = new Logger();
 
@@ -33,7 +37,13 @@ export const validateUserData = (userData: UserData): UserData => {
 
 export const deleteUserData = async (
   userData: UserData
-): Promise<void> => {
+): Promise<{
+  deleted: boolean;
+  emailAddress?: string;
+  hasUndeliverableEmailAddress?: boolean;
+  hasSetupMfa?: boolean;
+  dateForDeletion?: string;
+}> => {
   const TABLE_NAME = getEnvironmentVariable("TABLE_NAME");
 
   const queryResponse = await dynamoDocClient.send(
@@ -47,22 +57,99 @@ export const deleteUserData = async (
 
   if (!queryResponse.Items || queryResponse.Items.length === 0) {
     logger.info("no inactive account tracker records found for user");
-    return;
+    return { deleted: false };
   }
 
+  const item = queryResponse.Items[0];
+
   await Promise.all(
-    queryResponse.Items.map((item) =>
-      dynamoDocClient.send(
+    queryResponse.Items.map(async (i) => {
+      await dynamoDocClient.send(
         new DeleteCommand({
           TableName: TABLE_NAME,
           Key: {
-            dateForDeletion: item.dateForDeletion,
-            commonSubjectId: item.commonSubjectId,
+            dateForDeletion: i.dateForDeletion,
+            commonSubjectId: i.commonSubjectId,
           },
         })
-      )
-    )
+      );
+
+      // Emit one audit event per deleted tracker record so TxMA has a record of
+      // the deletion. The extension carries the deleted record's deletion date.
+      await sendAuditEvent("HOME_ACCOUNT_TRACKER_RECORD_DELETED", {
+        user: {
+          user_id: i.commonSubjectId,
+        },
+        extensions: {
+          accountTrackerAccountDeletionDate: i.dateForDeletion,
+        },
+      });
+    })
   );
+
+  return {
+    deleted: true,
+    emailAddress: item.emailAddress,
+    hasUndeliverableEmailAddress: item.hasUndeliverableEmailAddress,
+    hasSetupMfa: item.hasSetupMfa,
+    dateForDeletion: item.dateForDeletion,
+  };
+};
+
+export const maybeEnqueueDeletionEmail = async (
+  userId: string,
+  emailAddress: string | undefined,
+  hasUndeliverableEmailAddress: boolean | undefined,
+  hasSetupMfa: boolean | undefined,
+  dateForDeletion: string | undefined
+): Promise<void> => {
+  if (!emailAddress) {
+    logger.info("Skipping IAD deletion email: no email address");
+    return;
+  }
+
+  if (checkIfDateIs27October(dateForDeletion ?? "")) {
+    logger.info(
+      "Skipping IAD deletion email: user is likely migrated from GOVUK Verify"
+    );
+    return;
+  }
+
+  if (hasSetupMfa === false) {
+    logger.info("Skipping IAD deletion email: user has not set up MFA");
+    await sendAuditEvent("HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED", {
+      user: {
+        user_id: userId,
+      },
+      extensions: {
+        accountTrackerNotificationSkipReason: "UnusableAccount",
+      },
+    });
+    return;
+  }
+
+  if (hasUndeliverableEmailAddress) {
+    logger.info(
+      "Skipping IAD deletion email: user has undeliverable email address"
+    );
+    return;
+  }
+
+  if (await isUserIdBlocked(userId)) {
+    logger.info("Skipping IAD deletion email: user is blocked");
+    return;
+  }
+
+  const notificationQueueUrl = getEnvironmentVariable("NOTIFICATION_QUEUE_URL");
+  await sendSqsMessage(
+    JSON.stringify({
+      notificationType: "INACTIVE_ACCOUNT_DELETED_CONFIRMATION",
+      emailAddress,
+    }),
+    notificationQueueUrl
+  );
+
+  logger.info("Enqueued IAD deletion confirmation email");
 };
 
 export const handler = async (
@@ -78,7 +165,21 @@ export const handler = async (
         );
         const userData: UserData = JSON.parse(record.Sns.Message);
         validateUserData(userData);
-        await deleteUserData(userData);
+        const result = await deleteUserData(userData);
+
+        const accountDeletionReason =
+          record.Sns.MessageAttributes?.account_deletion_reason?.Value;
+
+        if (result.deleted && accountDeletionReason === "INACTIVE_ACCOUNT") {
+          await maybeEnqueueDeletionEmail(
+            userData.user_id,
+            result.emailAddress,
+            result.hasUndeliverableEmailAddress,
+            result.hasSetupMfa,
+            result.dateForDeletion
+          );
+        }
+
         logger.info(
           `finished processing message with ID: ${record.Sns.MessageId}`
         );
@@ -86,7 +187,8 @@ export const handler = async (
         throw new Error(
           `Unable to delete inactive account tracker data for message with ID: ${record.Sns.MessageId}, ${
             (error as Error).message
-          }`, { cause: error }
+          }`,
+          { cause: error }
         );
       }
     })

@@ -58,6 +58,7 @@ describe("handler", () => {
     process.env.AWS_REGION = "AWS_REGION";
     process.env.GOV_ACCOUNTS_PUBLISHING_API_TOKEN = "test-token";
     process.env.GOV_ACCOUNTS_PUBLISHING_API_URL = "https://api.example.com";
+    process.env.FEATURE_DELETE_EMAIL_SUBSCRIPTIONS = "true";
   });
 
   afterEach(() => {
@@ -73,11 +74,56 @@ describe("handler", () => {
     expect(deleteEmailSubscriptionMock).toHaveBeenCalledWith(TEST_USER_DATA);
   });
 
+  test("that it logs and skips a record without throwing when userData fails validation", async () => {
+    validateUserDataMock.mockImplementation(() => {
+      throw new Error("userData is not valid");
+    });
+
+    await expect(handler(TEST_SNS_EVENT, {} as Context)).resolves.not.toThrow();
+
+    expect(deleteEmailSubscriptionMock).not.toHaveBeenCalled();
+    expect(mockLogger.error).toHaveBeenCalledWith(
+      `Unable to delete email subscription for message with ID: ${TEST_SNS_EVENT.Records[0].Sns.MessageId}. This message will never be actionable and has been skipped: userData is not valid`
+    );
+  });
+
+  test("that a record failing validation does not stop other records in the batch from being processed", async () => {
+    const invalidRecord = {
+      ...TEST_SNS_EVENT.Records[0],
+      Sns: {
+        ...TEST_SNS_EVENT.Records[0].Sns,
+        MessageId: "invalid-message-id",
+        Message: JSON.stringify({ user_id: "user-id" }),
+      },
+    };
+    const validRecord = TEST_SNS_EVENT.Records[0];
+    const multiRecordEvent = { Records: [invalidRecord, validRecord] };
+
+    validateUserDataMock.mockImplementation((data) => {
+      if (!data.public_subject_id) {
+        throw new Error("userData is not valid");
+      }
+      return data;
+    });
+
+    await expect(
+      handler(multiRecordEvent, {} as Context)
+    ).resolves.not.toThrow();
+
+    expect(deleteEmailSubscriptionMock).toHaveBeenCalledTimes(1);
+    expect(deleteEmailSubscriptionMock).toHaveBeenCalledWith(TEST_USER_DATA);
+    expect(mockLogger.error).toHaveBeenCalledWith(
+      `Unable to delete email subscription for message with ID: invalid-message-id. This message will never be actionable and has been skipped: userData is not valid`
+    );
+  });
+
   test("that it retries up to 3 times total when deleteEmailSubscription throws error", async () => {
     vi.mocked(deleteEmailSubscriptionMock).mockRejectedValue(
-      new Error("deleteEmailSubscription FAIL"),
+      new Error("deleteEmailSubscription FAIL")
     );
-    await expect(handler(TEST_SNS_EVENT, {} as Context)).rejects.toThrow("deleteEmailSubscription FAIL");
+    await expect(handler(TEST_SNS_EVENT, {} as Context)).rejects.toThrow(
+      "deleteEmailSubscription FAIL"
+    );
     expect(deleteEmailSubscriptionMock).toHaveBeenCalledTimes(3);
     expect(mockLogger.warn).toHaveBeenCalledWith(
       "deleteEmailSubscription failed (attempt 1 out of 3)."
@@ -161,6 +207,7 @@ describe("deleteEmailSubscription", () => {
     );
     process.env.GOV_ACCOUNTS_PUBLISHING_API_TOKEN = "test-token";
     process.env.GOV_ACCOUNTS_PUBLISHING_API_URL = "https://api.example.com";
+    process.env.FEATURE_DELETE_EMAIL_SUBSCRIPTIONS = "true";
   });
 
   afterEach(() => {
@@ -228,5 +275,26 @@ describe("deleteEmailSubscription", () => {
       "https://api.example.com/api/oidc-users/public_subject_id",
       { headers: { Authorization: "Bearer test-token" }, method: "DELETE" }
     );
+  });
+
+  test("skips sending the DELETE request when FEATURE_DELETE_EMAIL_SUBSCRIPTIONS is 'false'", async () => {
+    process.env.FEATURE_DELETE_EMAIL_SUBSCRIPTIONS = "false";
+
+    await expect(
+      deleteEmailSubscription(TEST_USER_DATA)
+    ).resolves.not.toThrow();
+    expect(mockFetch).not.toHaveBeenCalled();
+    expect(mockLogger.info).toHaveBeenCalledWith(
+      "Skipping GOV.UK API call: FEATURE_DELETE_EMAIL_SUBSCRIPTIONS is disabled."
+    );
+  });
+
+  test("throws when FEATURE_DELETE_EMAIL_SUBSCRIPTIONS is not set", async () => {
+    delete process.env.FEATURE_DELETE_EMAIL_SUBSCRIPTIONS;
+
+    await expect(deleteEmailSubscription(TEST_USER_DATA)).rejects.toThrow(
+      'Environment variable "FEATURE_DELETE_EMAIL_SUBSCRIPTIONS" is not set.'
+    );
+    expect(mockFetch).not.toHaveBeenCalled();
   });
 });

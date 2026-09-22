@@ -32,7 +32,13 @@ export const handler = async (
     await snsClient.send(
       new PublishCommand({
         TopicArn: topicArn,
-        Message: JSON.stringify({ user_id: userId }),
+        Message: JSON.stringify({
+          user_id: userId,
+          public_subject_id: txmaEvent.user.public_subject_id,
+          legacy_subject_id: txmaEvent.user.legacy_subject_id,
+          account_deletion_reason:
+            txmaEvent.extensions?.account_deletion_reason,
+        }),
       })
     );
   }

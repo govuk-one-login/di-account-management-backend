@@ -3,7 +3,10 @@ import { SendMessageCommand, SQSClient } from "@aws-sdk/client-sqs";
 import { mockClient } from "aws-sdk-client-mock";
 
 import { handler, sendAuditEvent } from "../send-suspicious-activity.js";
-import { ReportSuspiciousActivityEvent, TxMAAuditEvent } from "../common/model.js";
+import {
+  ReportSuspiciousActivityEvent,
+  TxMAAuditEvent,
+} from "../common/model.js";
 import { sendSqsMessage } from "../common/sqs.js";
 import { Context } from "aws-lambda";
 import { Logger } from "@aws-lambda-powertools/logger";

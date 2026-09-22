@@ -5,3 +5,4 @@ build.toml
 .vscode/
 node_modules/
 coverage/
+.tmp-hash-iad-query-logic.mjs

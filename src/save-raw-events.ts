@@ -30,12 +30,37 @@ const ALLOWED_EVENT_NAMES = new Set([
   "AUTH_CODE_VERIFIED",
   "AUTH_PASSKEY_VERIFICATION_SUCCESSFUL",
   "STS_REFRESH_TOKEN_ISSUED",
+  "AUTH_DELETE_ACCOUNT",
 ]);
 
 const EVENTS_WITHOUT_SESSION_ID = new Set([
   // AUTH_TOKEN_SENT_TO_ORCHESTRATION has no session_id in its schema, as the
   // authentication session is already over by the time the token is exchanged.
   "AUTH_TOKEN_SENT_TO_ORCHESTRATION",
+  // AUTH_DELETE_ACCOUNT has no session_id when the account deletion is
+  // initiated by TSD.
+  "AUTH_DELETE_ACCOUNT",
+  // Some historic AUTH_UPDATE_EMAIL events don't have a session ID
+  "AUTH_UPDATE_EMAIL",
+]);
+
+const EVENTS_WITHOUT_USER_ID = new Set([
+  // AUTH_CODE_VERIFIED does not always have a user a user ID, for example
+  // when a new user is verifying their email address prior to their account
+  // actually being created
+  "AUTH_CODE_VERIFIED",
+]);
+
+const EVENTS_WITHOUT_CLIENT_ID = new Set([
+  // STS_REFRESH_TOKEN_ISSUED does not always have a client_id, but we still
+  // want to ingest the event and use it downstream if it is present.
+  "STS_REFRESH_TOKEN_ISSUED",
+  // Some historic AUTH_UPDATE_EMAIL events don't have a client ID
+  "AUTH_UPDATE_EMAIL",
+  // Client ID is not always present (e.g. because of manual TSD account deletions)
+  "AUTH_DELETE_ACCOUNT",
+  // Some historic AUTH_CODE_VERIFIED events don't have a client ID
+  "AUTH_CODE_VERIFIED",
 ]);
 
 const getEventId = (): string => {
@@ -52,8 +77,12 @@ const getTTLDate = (): number => {
 export const validateUser = (event: TxmaEvent): void => {
   const user: UserData = event.user;
   const requiresSessionId = !EVENTS_WITHOUT_SESSION_ID.has(event.event_name);
+  const requireUserId = !EVENTS_WITHOUT_USER_ID.has(event.event_name);
 
-  if (!user.user_id || (requiresSessionId && !user.session_id)) {
+  if (
+    (requireUserId && !user.user_id) ||
+    (requiresSessionId && !user.session_id)
+  ) {
     logger.info("Could not validate User context", {
       typeofUser: typeof user,
       typeofUserUserId: typeof user.user_id,
@@ -61,7 +90,7 @@ export const validateUser = (event: TxmaEvent): void => {
     });
     const missingFields: string[] = [];
 
-    if (!user.user_id) {
+    if (requireUserId && !user.user_id) {
       missingFields.push(`user_id is ${user.user_id}`);
     }
     if (requiresSessionId && !user.session_id) {
@@ -74,11 +103,13 @@ export const validateUser = (event: TxmaEvent): void => {
 };
 
 export const validateTxmaEventBody = (txmaEvent: TxmaEvent): void => {
+  const requiresClientId = !EVENTS_WITHOUT_CLIENT_ID.has(txmaEvent.event_name);
+
   if (
     txmaEvent.timestamp &&
     txmaEvent.event_name &&
     txmaEvent.event_id &&
-    txmaEvent.client_id &&
+    (!requiresClientId || txmaEvent.client_id) &&
     txmaEvent.user
   ) {
     validateUser(txmaEvent);
@@ -90,7 +121,7 @@ export const validateTxmaEventBody = (txmaEvent: TxmaEvent): void => {
       missingFields.push(`txmaEvent.event_name is ${txmaEvent.event_name}`);
     if (!txmaEvent.event_id)
       missingFields.push(`txmaEvent.event_id is ${txmaEvent.event_id}`);
-    if (!txmaEvent.client_id)
+    if (requiresClientId && !txmaEvent.client_id)
       missingFields.push(`txmaEvent.client_id is ${txmaEvent.client_id}`);
     if (!txmaEvent.user)
       missingFields.push(`txmaEvent.user is ${txmaEvent.user}`);
@@ -131,6 +162,10 @@ export const handler = async (
   logger.addContext(context);
   const batchItemFailures: { itemIdentifier: string }[] = [];
 
+  logger.info(
+    `Raw events handler invoked with incoming batch size: ${event.Records.length}`
+  );
+
   await Promise.all(
     event.Records.map(async (record) => {
       try {
@@ -153,6 +188,10 @@ export const handler = async (
         batchItemFailures.push({ itemIdentifier: record.messageId });
       }
     })
+  );
+
+  logger.info(
+    `Raw events handler completed with failed batch size: ${batchItemFailures.length}`
   );
 
   return { batchItemFailures };

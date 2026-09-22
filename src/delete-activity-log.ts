@@ -56,6 +56,7 @@ export const getAllActivityLogEntriesForUser = async (
     }
 
     lastEvaluatedKey = response.LastEvaluatedKey ?? undefined;
+    command.ExclusiveStartKey = lastEvaluatedKey;
   } while (lastEvaluatedKey);
 
   logger.info(
@@ -98,7 +99,9 @@ export const batchDeleteActivityLog = async (
   activityLogEntries: ActivityLogEntry[]
 ) => {
   const batchArray = buildBatchDeletionRequestArray(activityLogEntries);
-  logger.info(`deleting ${activityLogEntries.length} entries in ${batchArray.length} batches`);
+  logger.info(
+    `deleting ${activityLogEntries.length} entries in ${batchArray.length} batches`
+  );
   await Promise.all(
     batchArray.map(async (arrayOf25orFewerItems) => {
       try {
@@ -144,7 +147,8 @@ export const handler = async (
         throw new Error(
           `Unable to delete activity log for message with ID: ${record.Sns.MessageId}, ${
             (error as Error).message
-          }`, { cause: error }
+          }`,
+          { cause: error }
         );
       }
     })

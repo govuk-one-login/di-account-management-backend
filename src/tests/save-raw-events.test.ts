@@ -110,7 +110,11 @@ describe("validateUser", () => {
 
     expect(() => {
       validateUser(txmaEvent);
-    }).toThrow(new Error(`Could not validate User for event_name AUTH_AUTH_CODE_ISSUED with event_id ab12345a-a12b-3ced-ef12-12a3b4cd5678: user_id is undefined, session_id is undefined`));
+    }).toThrow(
+      new Error(
+        `Could not validate User for event_name AUTH_AUTH_CODE_ISSUED with event_id ab12345a-a12b-3ced-ef12-12a3b4cd5678: user_id is undefined, session_id is undefined`
+      )
+    );
   });
 
   test("throws error when user_id key is missing", () => {
@@ -128,7 +132,11 @@ describe("validateUser", () => {
 
     expect(() => {
       validateUser(txmaEvent);
-    }).toThrow(new Error(`Could not validate User for event_name AUTH_AUTH_CODE_ISSUED with event_id ab12345a-a12b-3ced-ef12-12a3b4cd5678: user_id is undefined`));
+    }).toThrow(
+      new Error(
+        `Could not validate User for event_name AUTH_AUTH_CODE_ISSUED with event_id ab12345a-a12b-3ced-ef12-12a3b4cd5678: user_id is undefined`
+      )
+    );
   });
 
   test("throws error when session_id key is missing", () => {
@@ -146,7 +154,11 @@ describe("validateUser", () => {
 
     expect(() => {
       validateUser(txmaEvent);
-    }).toThrow(new Error(`Could not validate User for event_name AUTH_AUTH_CODE_ISSUED with event_id ab12345a-a12b-3ced-ef12-12a3b4cd5678: session_id is undefined`));
+    }).toThrow(
+      new Error(
+        `Could not validate User for event_name AUTH_AUTH_CODE_ISSUED with event_id ab12345a-a12b-3ced-ef12-12a3b4cd5678: session_id is undefined`
+      )
+    );
   });
 
   test("throws error when session_id value is null", () => {
@@ -164,7 +176,54 @@ describe("validateUser", () => {
 
     expect(() => {
       validateUser(txmaEvent);
-    }).toThrow(new Error(`Could not validate User for event_name AUTH_AUTH_CODE_ISSUED with event_id ab12345a-a12b-3ced-ef12-12a3b4cd5678: session_id is null`));
+    }).toThrow(
+      new Error(
+        `Could not validate User for event_name AUTH_AUTH_CODE_ISSUED with event_id ab12345a-a12b-3ced-ef12-12a3b4cd5678: session_id is null`
+      )
+    );
+  });
+
+  test("does not throw when user_id is missing for AUTH_CODE_VERIFIED", () => {
+    const codeVerifiedEvent = {
+      ...makeTxmaEvent(),
+      event_name: "AUTH_CODE_VERIFIED",
+      user: { session_id: user.session_id },
+    };
+    const txmaEvent = JSON.parse(JSON.stringify(codeVerifiedEvent));
+
+    expect(() => {
+      validateUser(txmaEvent);
+    }).not.toThrow();
+  });
+
+  test("still throws when session_id is missing for AUTH_CODE_VERIFIED", () => {
+    const codeVerifiedEvent = {
+      ...makeTxmaEvent(),
+      event_name: "AUTH_CODE_VERIFIED",
+      user: {},
+    };
+    const txmaEvent = JSON.parse(JSON.stringify(codeVerifiedEvent));
+
+    expect(() => {
+      validateUser(txmaEvent);
+    }).toThrow(
+      new Error(
+        `Could not validate User for event_name AUTH_CODE_VERIFIED with event_id ab12345a-a12b-3ced-ef12-12a3b4cd5678: session_id is undefined`
+      )
+    );
+  });
+
+  test("does not throw when session_id is missing for AUTH_UPDATE_EMAIL", () => {
+    const updateEmailEvent = {
+      ...makeTxmaEvent(),
+      event_name: "AUTH_UPDATE_EMAIL",
+      user: { user_id: user.user_id },
+    };
+    const txmaEvent = JSON.parse(JSON.stringify(updateEmailEvent));
+
+    expect(() => {
+      validateUser(txmaEvent);
+    }).not.toThrow();
   });
 
   test("does not throw when session_id is missing for AUTH_TOKEN_SENT_TO_ORCHESTRATION", () => {
@@ -190,7 +249,11 @@ describe("validateUser", () => {
 
     expect(() => {
       validateUser(txmaEvent);
-    }).toThrow(new Error(`Could not validate User for event_name AUTH_TOKEN_SENT_TO_ORCHESTRATION with event_id ab12345a-a12b-3ced-ef12-12a3b4cd5678: user_id is undefined`));
+    }).toThrow(
+      new Error(
+        `Could not validate User for event_name AUTH_TOKEN_SENT_TO_ORCHESTRATION with event_id ab12345a-a12b-3ced-ef12-12a3b4cd5678: user_id is undefined`
+      )
+    );
   });
 });
 
@@ -207,7 +270,11 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrow(new Error(`Could not validate TxmaEvent with id ${txmaEvent.event_id} and name ${txmaEvent.event_name}: txmaEvent.client_id is undefined`));
+    }).toThrow(
+      new Error(
+        `Could not validate TxmaEvent with id ${txmaEvent.event_id} and name ${txmaEvent.event_name}: txmaEvent.client_id is undefined`
+      )
+    );
   });
 
   test("throws error when client_id value is null", () => {
@@ -218,7 +285,83 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrow(new Error(`Could not validate TxmaEvent with id ${txmaEvent.event_id} and name ${txmaEvent.event_name}: txmaEvent.client_id is null`));
+    }).toThrow(
+      new Error(
+        `Could not validate TxmaEvent with id ${txmaEvent.event_id} and name ${txmaEvent.event_name}: txmaEvent.client_id is null`
+      )
+    );
+  });
+
+  test("does not throw when client_id key is missing for AUTH_UPDATE_EMAIL", () => {
+    const updateEmailEvent = {
+      ...makeTxmaEvent(),
+      event_name: "AUTH_UPDATE_EMAIL",
+      client_id: undefined,
+    };
+    const txmaEvent = JSON.parse(JSON.stringify(updateEmailEvent));
+
+    expect(() => {
+      validateTxmaEventBody(txmaEvent);
+    }).not.toThrow();
+  });
+
+  test("does not throw when client_id key is missing for AUTH_DELETE_ACCOUNT", () => {
+    const deleteAccountEvent = {
+      ...makeTxmaEvent(),
+      event_name: "AUTH_DELETE_ACCOUNT",
+      client_id: undefined,
+      user: { user_id: user.user_id },
+    };
+    const txmaEvent = JSON.parse(JSON.stringify(deleteAccountEvent));
+
+    expect(() => {
+      validateTxmaEventBody(txmaEvent);
+    }).not.toThrow();
+  });
+
+  test("does not throw when client_id key is missing for AUTH_CODE_VERIFIED", () => {
+    const codeVerifiedEvent = {
+      ...makeTxmaEvent(),
+      event_name: "AUTH_CODE_VERIFIED",
+      client_id: undefined,
+      user: { session_id: user.session_id },
+    };
+    const txmaEvent = JSON.parse(JSON.stringify(codeVerifiedEvent));
+
+    expect(() => {
+      validateTxmaEventBody(txmaEvent);
+    }).not.toThrow();
+  });
+
+  test("does not throw when client_id key is missing for STS_REFRESH_TOKEN_ISSUED", () => {
+    const stsEvent = {
+      ...makeTxmaEvent(),
+      event_name: "STS_REFRESH_TOKEN_ISSUED",
+      client_id: undefined,
+    };
+    const txmaEvent = JSON.parse(JSON.stringify(stsEvent));
+
+    expect(() => {
+      validateTxmaEventBody(txmaEvent);
+    }).not.toThrow();
+  });
+
+  test("still throws when timestamp is missing for STS_REFRESH_TOKEN_ISSUED with no client_id", () => {
+    const stsEvent = {
+      ...makeTxmaEvent(),
+      event_name: "STS_REFRESH_TOKEN_ISSUED",
+      client_id: undefined,
+      timestamp: undefined,
+    };
+    const txmaEvent = JSON.parse(JSON.stringify(stsEvent));
+
+    expect(() => {
+      validateTxmaEventBody(txmaEvent);
+    }).toThrow(
+      new Error(
+        `Could not validate TxmaEvent with id ${txmaEvent.event_id} and name ${txmaEvent.event_name}: txmaEvent.timestamp is undefined`
+      )
+    );
   });
 
   test("throws error when timestamp key is missing", () => {
@@ -229,7 +372,11 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrow(new Error(`Could not validate TxmaEvent with id ${txmaEvent.event_id} and name ${txmaEvent.event_name}: txmaEvent.timestamp is undefined`));
+    }).toThrow(
+      new Error(
+        `Could not validate TxmaEvent with id ${txmaEvent.event_id} and name ${txmaEvent.event_name}: txmaEvent.timestamp is undefined`
+      )
+    );
   });
 
   test("throws error when timestamp value is null", () => {
@@ -240,7 +387,11 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrow(new Error(`Could not validate TxmaEvent with id ${txmaEvent.event_id} and name ${txmaEvent.event_name}: txmaEvent.timestamp is null`));
+    }).toThrow(
+      new Error(
+        `Could not validate TxmaEvent with id ${txmaEvent.event_id} and name ${txmaEvent.event_name}: txmaEvent.timestamp is null`
+      )
+    );
   });
 
   test("throws error when event_name key is missing", () => {
@@ -251,7 +402,11 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrow(new Error(`Could not validate TxmaEvent with id ${txmaEvent.event_id} and name ${txmaEvent.event_name}: txmaEvent.event_name is undefined`));
+    }).toThrow(
+      new Error(
+        `Could not validate TxmaEvent with id ${txmaEvent.event_id} and name ${txmaEvent.event_name}: txmaEvent.event_name is undefined`
+      )
+    );
   });
 
   test("throws error when event name value is null", () => {
@@ -262,7 +417,11 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrow(new Error(`Could not validate TxmaEvent with id ${txmaEvent.event_id} and name ${txmaEvent.event_name}: txmaEvent.event_name is null`));
+    }).toThrow(
+      new Error(
+        `Could not validate TxmaEvent with id ${txmaEvent.event_id} and name ${txmaEvent.event_name}: txmaEvent.event_name is null`
+      )
+    );
   });
 
   test("throws error when event_id key is missing", () => {
@@ -273,7 +432,11 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrow(new Error(`Could not validate TxmaEvent with id ${txmaEvent.event_id} and name ${txmaEvent.event_name}: txmaEvent.event_id is undefined`));
+    }).toThrow(
+      new Error(
+        `Could not validate TxmaEvent with id ${txmaEvent.event_id} and name ${txmaEvent.event_name}: txmaEvent.event_id is undefined`
+      )
+    );
   });
 
   test("throws error when event_id value is null", () => {
@@ -284,7 +447,11 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrow(new Error(`Could not validate TxmaEvent with id ${txmaEvent.event_id} and name ${txmaEvent.event_name}: txmaEvent.event_id is null`));
+    }).toThrow(
+      new Error(
+        `Could not validate TxmaEvent with id ${txmaEvent.event_id} and name ${txmaEvent.event_name}: txmaEvent.event_id is null`
+      )
+    );
   });
 
   test("throws error when user key is missing", () => {
@@ -295,7 +462,11 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrow(new Error(`Could not validate TxmaEvent with id ${txmaEvent.event_id} and name ${txmaEvent.event_name}: txmaEvent.user is undefined`));
+    }).toThrow(
+      new Error(
+        `Could not validate TxmaEvent with id ${txmaEvent.event_id} and name ${txmaEvent.event_name}: txmaEvent.user is undefined`
+      )
+    );
   });
 
   test("throws error when user_id key is missing", () => {
@@ -306,7 +477,11 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrow(new Error(`Could not validate User for event_name AUTH_AUTH_CODE_ISSUED with event_id ab12345a-a12b-3ced-ef12-12a3b4cd5678: user_id is undefined, session_id is undefined`));
+    }).toThrow(
+      new Error(
+        `Could not validate User for event_name AUTH_AUTH_CODE_ISSUED with event_id ab12345a-a12b-3ced-ef12-12a3b4cd5678: user_id is undefined, session_id is undefined`
+      )
+    );
   });
 
   test("throws error when user_id value is null", () => {
@@ -317,7 +492,11 @@ describe("validateTxmaEventBody", () => {
     const txmaEvent = JSON.parse(JSON.stringify(invalidTxmaEvent));
     expect(() => {
       validateTxmaEventBody(txmaEvent);
-    }).toThrow(new Error(`Could not validate User for event_name AUTH_AUTH_CODE_ISSUED with event_id ab12345a-a12b-3ced-ef12-12a3b4cd5678: user_id is null`));
+    }).toThrow(
+      new Error(
+        `Could not validate User for event_name AUTH_AUTH_CODE_ISSUED with event_id ab12345a-a12b-3ced-ef12-12a3b4cd5678: user_id is null`
+      )
+    );
   });
 });
 
@@ -373,6 +552,7 @@ describe("handler only saves allowlisted events", () => {
     "AUTH_CODE_VERIFIED",
     "AUTH_PASSKEY_VERIFICATION_SUCCESSFUL",
     "STS_REFRESH_TOKEN_ISSUED",
+    "AUTH_DELETE_ACCOUNT",
   ])("writes to DynamoDB when event_name is %s", async (allowedEventName) => {
     vi.spyOn(Date, "now").mockImplementation(() => TIMESTAMP);
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -391,6 +571,28 @@ describe("handler only saves allowlisted events", () => {
       ],
     };
     await handler(allowedEvent, {} as Context);
+    expect(dynamoMock.commandCalls(PutCommand).length).toEqual(1);
+  });
+
+  test("writes to DynamoDB when event_name is AUTH_CODE_VERIFIED and user has no user_id", async () => {
+    vi.spyOn(Date, "now").mockImplementation(() => TIMESTAMP);
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-expect-error
+    vi.spyOn(crypto, "randomUUID").mockImplementation(() => UUID);
+
+    const codeVerifiedEvent: SQSEvent = {
+      Records: [
+        {
+          ...TEST_SQS_RECORD,
+          body: JSON.stringify({
+            ...makeTxmaEvent(),
+            event_name: "AUTH_CODE_VERIFIED",
+            user: { session_id: user.session_id },
+          }),
+        },
+      ],
+    };
+    await handler(codeVerifiedEvent, {} as Context);
     expect(dynamoMock.commandCalls(PutCommand).length).toEqual(1);
   });
 
@@ -413,6 +615,28 @@ describe("handler only saves allowlisted events", () => {
       ],
     };
     await handler(tokenSentEvent, {} as Context);
+    expect(dynamoMock.commandCalls(PutCommand).length).toEqual(1);
+  });
+
+  test("writes to DynamoDB when event_name is STS_REFRESH_TOKEN_ISSUED and client_id is missing", async () => {
+    vi.spyOn(Date, "now").mockImplementation(() => TIMESTAMP);
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-expect-error
+    vi.spyOn(crypto, "randomUUID").mockImplementation(() => UUID);
+
+    const stsEvent: SQSEvent = {
+      Records: [
+        {
+          ...TEST_SQS_RECORD,
+          body: JSON.stringify({
+            ...makeTxmaEvent(),
+            event_name: "STS_REFRESH_TOKEN_ISSUED",
+            client_id: undefined,
+          }),
+        },
+      ],
+    };
+    await handler(stsEvent, {} as Context);
     expect(dynamoMock.commandCalls(PutCommand).length).toEqual(1);
   });
 
@@ -477,7 +701,7 @@ describe("handler only saves allowlisted events", () => {
     };
     await handler(mixedEvent, {} as Context);
     expect(dynamoMock.commandCalls(PutCommand).length).toEqual(1);
-    expect(mockLogger.info).toHaveBeenCalledTimes(1);
+    expect(mockLogger.info).toHaveBeenCalledTimes(3);
   });
 });
 

@@ -19,6 +19,10 @@ updates:
       # Exclude major version updates - next major version has incompatible license
       - dependency-name: "ua-parser-js"
         update-types: ["version-update:semver-major"]
+      # Typescript v7 and above is incompatible with the version of typescript-eslint currently used on this repo (v8.63.0)
+      # TS v7 did not ship with an API. That is expected to arrive with v7.1 and to be implemented subsequently: https://github.com/typescript-eslint/typescript-eslint/issues/10940#issuecomment-4922812181
+      - dependency-name: "typescript"
+        versions: [">= 7.0.0"]
     commit-message:
       prefix: BAU
     groups:

@@ -1,19 +1,23 @@
 import { Context } from "aws-lambda";
-import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, QueryCommand } from "@aws-sdk/lib-dynamodb";
-import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
+import { SQSClient, SendMessageBatchCommand } from "@aws-sdk/client-sqs";
 import { Logger } from "@aws-lambda-powertools/logger";
 import { getEnvironmentVariable } from "./common/utils.js";
-import type { InactiveAccountTrackerRecord } from "./common/model.js";
 import { processConfig } from "./common/process-config.js";
+import { queryAccountsByDate } from "./common/query-inactive-accounts.js";
+import { retryFunction } from "./common/retry-function.js";
+import type { InactiveAccountTrackerRecord } from "./common/model.js";
+import iadQueryLogicHash from "./common/iad-query-logic-hash.json" with { type: "json" };
+import { getIadCircuitBreakerStatus } from "./common/iad-circuit-breaker.js";
 
 const logger = new Logger();
-const dynamoClient = new DynamoDBClient({});
-const dynamoDocClient = DynamoDBDocumentClient.from(dynamoClient);
-const sqsClient = new SQSClient({});
+
+const SQS_BATCH_SIZE = 10;
+const MAX_CONCURRENT_BATCHES = 20;
+const sqsClient = new SQSClient({ maxAttempts: 5 });
 
 export interface QueryAndDispatchEvent {
   processName: string;
+  manualTest?: boolean;
 }
 
 export const calculateTargetDate = (daysToDeletion: number): string => {
@@ -28,30 +32,89 @@ export const validateEvent = (event: QueryAndDispatchEvent): void => {
   }
 };
 
-export const queryAccountsByDate = async (
-  tableName: string,
-  dateForDeletion: string
-): Promise<InactiveAccountTrackerRecord[]> => {
-  const results: InactiveAccountTrackerRecord[] = [];
-  let lastEvaluatedKey: Record<string, unknown> | undefined;
+const logCircuitBreakerAbort = (
+  processName: string,
+  targetDate: string,
+  dispatchedBeforeAbort: number
+): void => {
+  logger.info("GuardrailAbortedQueryAndDispatchInactiveAccounts", {
+    guardrailType: "CircuitBreakerAlreadyTripped",
+    contributeToAlarm: "1",
+    continueProcessingRecords: "0",
+    processName,
+    targetDate,
+    dispatchedBeforeAbort,
+  });
+};
 
-  do {
-    const response = await dynamoDocClient.send(
-      new QueryCommand({
-        TableName: tableName,
-        KeyConditionExpression: "dateForDeletion = :date",
-        ExpressionAttributeValues: { ":date": dateForDeletion },
-        ExclusiveStartKey: lastEvaluatedKey,
-      })
+const filterEligible = (
+  page: InactiveAccountTrackerRecord[],
+  allowedStatuses: string[],
+  manualTest: boolean
+): InactiveAccountTrackerRecord[] =>
+  page.filter(
+    (record) =>
+      allowedStatuses.includes(record.status) &&
+      ((!manualTest && record.userLastActiveSource !== "MANUAL_TEST") ||
+        (manualTest && record.userLastActiveSource === "MANUAL_TEST"))
+  );
+
+const chunkRecords = (
+  records: InactiveAccountTrackerRecord[]
+): InactiveAccountTrackerRecord[][] => {
+  const chunks: InactiveAccountTrackerRecord[][] = [];
+  for (let i = 0; i < records.length; i += SQS_BATCH_SIZE) {
+    chunks.push(records.slice(i, i + SQS_BATCH_SIZE));
+  }
+  return chunks;
+};
+
+const sendChunk = async (
+  chunk: InactiveAccountTrackerRecord[],
+  queueUrl: string,
+  processName: string
+): Promise<number> => {
+  try {
+    const result = await retryFunction(
+      () =>
+        sqsClient.send(
+          new SendMessageBatchCommand({
+            QueueUrl: queueUrl,
+            Entries: chunk.map((record, i) => ({
+              Id: String(i),
+              MessageBody: JSON.stringify({ ...record, processName }),
+            })),
+          })
+        ),
+      { functionName: "SendMessageBatch" }
     );
-
-    if (response.Items) {
-      results.push(...(response.Items as InactiveAccountTrackerRecord[]));
+    for (const failure of result.Failed ?? []) {
+      logger.error(`Failed to dispatch account in batch`, { failure });
     }
-    lastEvaluatedKey = response.LastEvaluatedKey ?? undefined;
-  } while (lastEvaluatedKey);
+    return chunk.length - (result.Failed?.length ?? 0);
+  } catch (err) {
+    logger.error(`Failed to send batch`, { err });
+    return 0;
+  }
+};
 
-  return results;
+const dispatchEligibleRecords = async (
+  eligible: InactiveAccountTrackerRecord[],
+  queueUrl: string,
+  processName: string
+): Promise<number> => {
+  const chunks = chunkRecords(eligible);
+  let dispatched = 0;
+
+  for (let i = 0; i < chunks.length; i += MAX_CONCURRENT_BATCHES) {
+    const wave = chunks.slice(i, i + MAX_CONCURRENT_BATCHES);
+    const results = await Promise.all(
+      wave.map((chunk) => sendChunk(chunk, queueUrl, processName))
+    );
+    dispatched += results.reduce((sum, n) => sum + n, 0);
+  }
+
+  return dispatched;
 };
 
 export const handler = async (
@@ -59,37 +122,54 @@ export const handler = async (
   context: Context
 ): Promise<void> => {
   logger.addContext(context);
+  logger.info("IAD query logic hash", {
+    iadQueryLogicHash: iadQueryLogicHash.hash,
+  });
 
   validateEvent(event);
 
   const tableName = getEnvironmentVariable("TABLE_NAME");
 
-  const { queueUrlEnvVar, daysToDeletion, allowedStatuses } = processConfig[event.processName];
+  const { queueUrlEnvVar, daysToDeletion, allowedStatuses, isDryRun } =
+    processConfig[event.processName];
   const queueUrl = getEnvironmentVariable(queueUrlEnvVar);
 
-  const records: InactiveAccountTrackerRecord[] = [];
+  let dispatched = 0;
+
   for (const days of daysToDeletion) {
     const targetDate = calculateTargetDate(days);
     logger.info(`Querying accounts for deletion date: ${targetDate}`);
-    const result = await queryAccountsByDate(tableName, targetDate);
-    records.push(...result);
+
+    let eligibleForDate = 0;
+
+    for await (const page of queryAccountsByDate(tableName, targetDate)) {
+      if (await getIadCircuitBreakerStatus()) {
+        logCircuitBreakerAbort(event.processName, targetDate, dispatched);
+        return;
+      }
+
+      const eligible = filterEligible(
+        page,
+        allowedStatuses,
+        Boolean(event.manualTest)
+      );
+      eligibleForDate += eligible.length;
+
+      if (!isDryRun) {
+        dispatched += await dispatchEligibleRecords(
+          eligible,
+          queueUrl,
+          event.processName
+        );
+      }
+    }
+
+    if (isDryRun) {
+      logger.info(
+        `Dry Run ${event.processName}: found ${eligibleForDate} accounts for date ${targetDate}`
+      );
+    }
   }
 
-  const eligibleRecords = records.filter((record) => allowedStatuses.includes(record.status));
-
-  if (eligibleRecords.length === 0) {
-    logger.info("No eligible accounts found for target dates");
-    return;
-  }
-
-  for (const record of eligibleRecords) {
-    await sqsClient.send(
-      new SendMessageCommand({
-        QueueUrl: queueUrl,
-        MessageBody: JSON.stringify({ ...record, processName: event.processName }),
-      })
-    );
-  }
-
-  logger.info(`Dispatched ${eligibleRecords.length} accounts to ${event.processName}`);
+  logger.info(`Dispatched ${dispatched} accounts to ${event.processName}`);
 };

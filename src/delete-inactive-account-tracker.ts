@@ -12,6 +12,7 @@ import { Logger } from "@aws-lambda-powertools/logger";
 import { sendSqsMessage } from "./common/sqs.js";
 import { isUserIdBlocked } from "./common/account-interventions-service-client.js";
 import checkIfDateIs27October from "./common/check-if-date-is-27-october.js";
+import { notificationConfiguration } from "./common/notification-configuration.js";
 
 const logger = new Logger();
 
@@ -117,6 +118,12 @@ export const maybeEnqueueDeletionEmail = async (
       },
       extensions: {
         accountTrackerNotificationSkipReason: "UnusableAccount",
+        ...(notificationConfiguration.INACTIVE_ACCOUNT_DELETED_CONFIRMATION
+          .auditEventNotificationType && {
+          accountTrackerNotificationType:
+            notificationConfiguration.INACTIVE_ACCOUNT_DELETED_CONFIRMATION
+              .auditEventNotificationType,
+        }),
       },
     });
     return;

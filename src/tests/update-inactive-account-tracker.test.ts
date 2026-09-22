@@ -997,6 +997,7 @@ describe("UpdateInactiveAccountTracker handler", () => {
     expect(auditEvent.user).toMatchObject({ user_id: "qwerty" });
     expect(auditEvent.extensions).toMatchObject({
       accountTrackerNotificationSkipReason: "UnusableAccount",
+      accountTrackerNotificationType: "RecoveryViaApp",
     });
   });
 

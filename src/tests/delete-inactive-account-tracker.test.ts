@@ -245,6 +245,7 @@ describe("maybeEnqueueDeletionEmail", () => {
     expect(auditEvent.user).toMatchObject({ user_id: "user-id" });
     expect(auditEvent.extensions).toMatchObject({
       accountTrackerNotificationSkipReason: "UnusableAccount",
+      accountTrackerNotificationType: "Deletion",
     });
   });
 });

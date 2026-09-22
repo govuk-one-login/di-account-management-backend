@@ -9,7 +9,7 @@ import { Logger } from "@aws-lambda-powertools/logger";
 import type { InactiveAccountTrackerRecord } from "./common/model.ts";
 import assert from 'node:assert/strict';
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
-import { notificationConfiguration } from "./notification-service-utils.js"
+import { notificationConfiguration } from "./common/notification-configuration.js"
 import { sendAuditEvent } from "./common/send-audit-event.js";
 import { MetricUnit } from "@aws-lambda-powertools/metrics";
 import { initMetrics } from "./common/metrics.js";
@@ -263,6 +263,10 @@ const processRecord = async (
         },
         extensions: {
           accountTrackerNotificationSkipReason: "UnusableAccount",
+          ...(notificationConfiguration[notificationType]?.auditEventNotificationType && {
+            accountTrackerNotificationType:
+              notificationConfiguration[notificationType].auditEventNotificationType,
+          }),
         },
       });
     } else {

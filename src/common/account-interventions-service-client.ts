@@ -40,11 +40,9 @@ export const getAisStatus = async (
 
   if (!parsed.success) {
     logger.error("Invalid response from Account Interventions Service", {
-      userId
+      userId,
     });
-    throw new Error(
-      "Invalid response from Account Interventions Service API"
-    );
+    throw new Error("Invalid response from Account Interventions Service API");
   }
 
   logger.info("Successfully fetched AIS status", { userId });

@@ -41,7 +41,15 @@ vi.mock("../common/account-interventions-service-client.js", () => ({
 const aisNotSuspended = false;
 const aisSuspended = true;
 
-const trackerItem = { dateForDeletion: "2030-01-01", commonSubjectId: "user-id", publicSubjectId: "public-user-id", status: "deleting", emailAddress: "user@example.com", hasUndeliverableEmailAddress: false, hasSetupMfa: true };
+const trackerItem = {
+  dateForDeletion: "2030-01-01",
+  commonSubjectId: "user-id",
+  publicSubjectId: "public-user-id",
+  status: "deleting",
+  emailAddress: "user@example.com",
+  hasUndeliverableEmailAddress: false,
+  hasSetupMfa: true,
+};
 
 // The handler sends to two SQS queues: the TxMA audit queue (per deleted
 // record) and the notification queue (deletion-confirmation email). These
@@ -91,7 +99,9 @@ describe("deleteUserData", () => {
           "https://sqs.eu-west-2.amazonaws.com/123456789012/TxmaQueue"
       );
     expect(txmaCall).toBeDefined();
-    const auditEvent = JSON.parse(txmaCall!.args[0].input.MessageBody as string);
+    const auditEvent = JSON.parse(
+      txmaCall!.args[0].input.MessageBody as string
+    );
     expect(auditEvent.event_name).toBe("HOME_ACCOUNT_TRACKER_RECORD_DELETED");
     expect(auditEvent.user).toMatchObject({
       user_id: TEST_USER_DATA.user_id,
@@ -102,7 +112,9 @@ describe("deleteUserData", () => {
       accountTrackerRecordStatus: "deleting",
       accountTrackerRecordDeletionReason: "INACTIVE_ACCOUNT",
     });
-    expect(auditEvent.extensions.accountTrackerAccountDeletionDate).toBeUndefined();
+    expect(
+      auditEvent.extensions.accountTrackerAccountDeletionDate
+    ).toBeUndefined();
   });
 
   test("does not emit an audit event when no records are found", async () => {
@@ -189,7 +201,13 @@ describe("maybeEnqueueDeletionEmail", () => {
   test("enqueues email when user is not blocked and email is deliverable", async () => {
     sqsMock.on(SendMessageCommand).resolves({});
 
-    await maybeEnqueueDeletionEmail("user-id", "user@example.com", false, true, "2026-10-20");
+    await maybeEnqueueDeletionEmail(
+      "user-id",
+      "user@example.com",
+      false,
+      true,
+      "2026-10-20"
+    );
 
     expect(sqsMock).toHaveReceivedCommandWith(SendMessageCommand, {
       QueueUrl: "https://sqs.example.com/notification",
@@ -201,7 +219,13 @@ describe("maybeEnqueueDeletionEmail", () => {
   });
 
   test("does not enqueue email when hasUndeliverableEmailAddress is true", async () => {
-    await maybeEnqueueDeletionEmail("user-id", "user@example.com", true, true, "2026-10-20");
+    await maybeEnqueueDeletionEmail(
+      "user-id",
+      "user@example.com",
+      true,
+      true,
+      "2026-10-20"
+    );
 
     expect(notificationSendCount()).toEqual(0);
     expect(mockIsUserIdBlocked).not.toHaveBeenCalled();
@@ -210,14 +234,25 @@ describe("maybeEnqueueDeletionEmail", () => {
   test("does not enqueue email when user is blocked", async () => {
     mockIsUserIdBlocked.mockResolvedValue(aisSuspended);
 
-    await maybeEnqueueDeletionEmail("user-id", "user@example.com", false, true, "2026-10-20");
+    await maybeEnqueueDeletionEmail(
+      "user-id",
+      "user@example.com",
+      false,
+      true,
+      "2026-10-20"
+    );
 
     expect(notificationSendCount()).toEqual(0);
   });
 
-
   test("does not enqueue email when date for deletion is 27th October 2026", async () => {
-    await maybeEnqueueDeletionEmail("user-id", "user@example.com", false, true, "2026-10-27");
+    await maybeEnqueueDeletionEmail(
+      "user-id",
+      "user@example.com",
+      false,
+      true,
+      "2026-10-27"
+    );
 
     expect(notificationSendCount()).toEqual(0);
   });
@@ -225,7 +260,13 @@ describe("maybeEnqueueDeletionEmail", () => {
   test("does not enqueue email when user is blocked", async () => {
     mockIsUserIdBlocked.mockResolvedValue(aisSuspended);
 
-    await maybeEnqueueDeletionEmail("user-id", "user@example.com", false, true, "2026-10-20");
+    await maybeEnqueueDeletionEmail(
+      "user-id",
+      "user@example.com",
+      false,
+      true,
+      "2026-10-20"
+    );
 
     expect(notificationSendCount()).toEqual(0);
   });
@@ -233,7 +274,13 @@ describe("maybeEnqueueDeletionEmail", () => {
   test("does not enqueue email and emits UnusableAccount skipped audit event when user has not set up MFA", async () => {
     sqsMock.on(SendMessageCommand).resolves({ MessageId: "test-message-id" });
 
-    await maybeEnqueueDeletionEmail("user-id", "user@example.com", false, false, "2026-10-20");
+    await maybeEnqueueDeletionEmail(
+      "user-id",
+      "user@example.com",
+      false,
+      false,
+      "2026-10-20"
+    );
 
     expect(notificationSendCount()).toEqual(0);
     expect(mockIsUserIdBlocked).not.toHaveBeenCalled();
@@ -246,8 +293,12 @@ describe("maybeEnqueueDeletionEmail", () => {
           "https://sqs.eu-west-2.amazonaws.com/123456789012/TxmaQueue"
       );
     expect(txmaCall).toBeDefined();
-    const auditEvent = JSON.parse(txmaCall!.args[0].input.MessageBody as string);
-    expect(auditEvent.event_name).toBe("HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED");
+    const auditEvent = JSON.parse(
+      txmaCall!.args[0].input.MessageBody as string
+    );
+    expect(auditEvent.event_name).toBe(
+      "HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED"
+    );
     expect(auditEvent.user).toMatchObject({ user_id: "user-id" });
     expect(auditEvent.extensions).toMatchObject({
       accountTrackerNotificationSkipReason: "UnusableAccount",
@@ -310,15 +361,19 @@ describe("handler", () => {
 
     expect(notificationSendCount()).toEqual(0);
   });
-    
+
   test("deletes record but does not enqueue email when date for deletion is 27th October 2026", async () => {
-    dynamoMock.on(QueryCommand).resolves({ Items: [{ 
-      dateForDeletion: "2026-10-27", 
-      commonSubjectId: "user-id", 
-      emailAddress: "user@example.com",
-      hasUndeliverableEmailAddress: false, 
-      hasSetupMfa: true 
-    }]});
+    dynamoMock.on(QueryCommand).resolves({
+      Items: [
+        {
+          dateForDeletion: "2026-10-27",
+          commonSubjectId: "user-id",
+          emailAddress: "user@example.com",
+          hasUndeliverableEmailAddress: false,
+          hasSetupMfa: true,
+        },
+      ],
+    });
     await handler(createSnsEvent({ user_id: "user-id" }), {} as Context);
 
     expect(dynamoMock.commandCalls(DeleteCommand).length).toEqual(1);

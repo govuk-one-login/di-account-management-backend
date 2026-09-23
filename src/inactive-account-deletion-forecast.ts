@@ -1,7 +1,4 @@
-import {
-  DynamoDBDocumentClient,
-  PutCommand,
-} from "@aws-sdk/lib-dynamodb";
+import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
 import { Context } from "aws-lambda";
 import { Logger } from "@aws-lambda-powertools/logger";
 import { getEnvironmentVariable } from "./common/utils.js";
@@ -9,6 +6,7 @@ import { DynamoDBClient, DescribeTableCommand } from "@aws-sdk/client-dynamodb";
 import { MetricUnit } from "@aws-lambda-powertools/metrics";
 import { initMetrics } from "./common/metrics.js";
 import { countAccountsForDate } from "./common/query-inactive-accounts.js";
+import checkIfDateIs27October from "./common/check-if-date-is-27-october.js";
 import iadQueryLogicHash from "./common/iad-query-logic-hash.json" with { type: "json" };
 const metrics = initMetrics("inactive-account-deletion-forecast");
 
@@ -17,7 +15,7 @@ const dynamoClient = new DynamoDBClient({});
 const dynamoDocClient = DynamoDBDocumentClient.from(dynamoClient);
 
 const FORECAST_DAYS = 5 * 365;
-const MFA_BREAKDOWN_DAYS = 60;
+const SKIP_EMAIL_REASON_BREAKDOWN_DAYS = 90;
 const TTL_SECONDS = 365 * 24 * 60 * 60;
 const BATCH_SIZE = 20;
 const REMAINING_TIME_THRESHOLD_MS = 10_000;
@@ -29,7 +27,7 @@ export const buildDates = (fromDate: Date, days: number): string[] =>
     return d.toISOString().split("T")[0];
   });
 
-const chunk = <T,>(items: T[], size: number): T[][] =>
+const chunk = <T>(items: T[], size: number): T[][] =>
   Array.from({ length: Math.ceil(items.length / size) }, (_, i) =>
     items.slice(i * size, i * size + size)
   );
@@ -40,10 +38,17 @@ const publishRecordCountMetric = async (tableName: string): Promise<void> => {
     const tableInfo = await dynamoClient.send(describeCommand);
     const itemCount = tableInfo.Table?.ItemCount ?? 0;
 
-    metrics.addMetric("InactiveAccountTrackerRecordCount", MetricUnit.Count, itemCount);
+    metrics.addMetric(
+      "InactiveAccountTrackerRecordCount",
+      MetricUnit.Count,
+      itemCount
+    );
     metrics.publishStoredMetrics();
   } catch (metricError) {
-    logger.error("Failed to retrieve and/or publish InactiveAccountTrackerRecordCount metric", { error: metricError });
+    logger.error(
+      "Failed to retrieve and/or publish InactiveAccountTrackerRecordCount metric",
+      { error: metricError }
+    );
   }
 };
 
@@ -52,7 +57,9 @@ export const handler = async (
   context: Context
 ): Promise<void> => {
   logger.addContext(context);
-  logger.info("IAD query logic hash", { iadQueryLogicHash: iadQueryLogicHash.hash });
+  logger.info("IAD query logic hash", {
+    iadQueryLogicHash: iadQueryLogicHash.hash,
+  });
 
   const tableName = getEnvironmentVariable("TABLE_NAME");
   const forecastTableName = getEnvironmentVariable("FORECAST_TABLE_NAME");
@@ -60,7 +67,9 @@ export const handler = async (
   const forecastedAt = new Date().toISOString();
   const ttl = Math.floor(Date.now() / 1000) + TTL_SECONDS;
   const breakdownCutoffDate = new Date();
-  breakdownCutoffDate.setDate(breakdownCutoffDate.getDate() + MFA_BREAKDOWN_DAYS);
+  breakdownCutoffDate.setDate(
+    breakdownCutoffDate.getDate() + SKIP_EMAIL_REASON_BREAKDOWN_DAYS
+  );
 
   await publishRecordCountMetric(tableName);
 
@@ -71,23 +80,23 @@ export const handler = async (
       batch.map((date) => {
         const parsedDate = new Date(date);
         return countAccountsForDate(tableName, date, {
-          includeMfaBreakdown: parsedDate <= breakdownCutoffDate,
+          includeSkipEmailReasonBreakdown: parsedDate <= breakdownCutoffDate,
         });
       })
     );
 
     await Promise.all(
       batch.map((date, i) => {
-        const { total, withMfa, withoutMfa } = results[i];
+        const { total, emailForecast } = results[i];
+        const is27October = checkIfDateIs27October(date);
 
-        const logData = {
+        const logData: Record<string, unknown> = {
           dateForDeletion: date,
           accountsToDelete: total,
-          ...(withMfa !== undefined && {
-            accountsWithMfa: withMfa,
-            accountsWithoutMfa: withoutMfa,
-          }),
+          ...(is27October && { skippedVerifyMigrated: total }),
+          ...(!is27October && emailForecast && { ...emailForecast }),
         };
+
         logger.info("Deletion forecast", logData);
         return dynamoDocClient.send(
           new PutCommand({

@@ -113,7 +113,9 @@ export const handler = async (
   context: Context
 ): Promise<ReportSuspiciousActivityEvent> => {
   logger.addContext(context);
-  const NOTIFY_API_KEY_SECRET_ARN = getEnvironmentVariable("NOTIFY_API_KEY_SECRET_ARN");
+  const NOTIFY_API_KEY_SECRET_ARN = getEnvironmentVariable(
+    "NOTIFY_API_KEY_SECRET_ARN"
+  );
   const TEMPLATE_ID = getEnvironmentVariable("TEMPLATE_ID");
   try {
     const notifyApiKey = await getSecret(NOTIFY_API_KEY_SECRET_ARN, {

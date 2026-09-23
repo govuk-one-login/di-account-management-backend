@@ -45,13 +45,18 @@ export function extractImportSpecifiers(filePath: string): string[] {
  * resolveLocalImport("./model.js", "/repo/src/common/query-inactive-accounts.ts")
  * // => "/repo/src/common/model.ts"
  */
-export function resolveLocalImport(specifier: string, fromFile: string): string {
+export function resolveLocalImport(
+  specifier: string,
+  fromFile: string
+): string {
   if (specifier.endsWith(".json")) {
     const jsonPath = resolve(dirname(fromFile), specifier);
     if (existsSync(jsonPath)) {
       return jsonPath;
     }
-    console.error(`Could not resolve "${specifier}" from ${fromFile}. Tried: ${jsonPath}`);
+    console.error(
+      `Could not resolve "${specifier}" from ${fromFile}. Tried: ${jsonPath}`
+    );
     throw new Error(
       `Could not resolve local import "${specifier}" from ${fromFile}`
     );

@@ -1,5 +1,9 @@
 import assert from "node:assert/strict";
-import { DynamoDBDocumentClient, QueryCommand, TransactWriteCommand } from "@aws-sdk/lib-dynamodb";
+import {
+  DynamoDBDocumentClient,
+  QueryCommand,
+  TransactWriteCommand,
+} from "@aws-sdk/lib-dynamodb";
 import type { InactiveAccountTrackerRecord } from "./model.js";
 
 const toTime = (value: string | undefined): number => {
@@ -12,13 +16,16 @@ const latestBy = (
   records: InactiveAccountTrackerRecord[],
   timestampField: keyof InactiveAccountTrackerRecord
 ): InactiveAccountTrackerRecord =>
-  records.slice(1).reduce(
-    (latest, candidate) =>
-      toTime(candidate[timestampField] as string | undefined) > toTime(latest[timestampField] as string | undefined)
-        ? candidate
-        : latest,
-    records[0]
-  );
+  records
+    .slice(1)
+    .reduce(
+      (latest, candidate) =>
+        toTime(candidate[timestampField] as string | undefined) >
+        toTime(latest[timestampField] as string | undefined)
+          ? candidate
+          : latest,
+      records[0]
+    );
 
 export const computeMergedTrackerRecord = (
   records: InactiveAccountTrackerRecord[]
@@ -103,8 +110,15 @@ export const mergeTrackerRecords = async (
     return merged;
   }
 
-  const transactItems: ConstructorParameters<typeof TransactWriteCommand>[0]["TransactItems"] = [
-    { Put: { TableName: tableName, Item: merged as unknown as Record<string, unknown> } },
+  const transactItems: ConstructorParameters<
+    typeof TransactWriteCommand
+  >[0]["TransactItems"] = [
+    {
+      Put: {
+        TableName: tableName,
+        Item: merged as unknown as Record<string, unknown>,
+      },
+    },
     ...staleDeletionDates.map((dateForDeletion) => ({
       Delete: {
         TableName: tableName,
@@ -113,7 +127,9 @@ export const mergeTrackerRecords = async (
     })),
   ];
 
-  await dynamoDocClient.send(new TransactWriteCommand({ TransactItems: transactItems }));
+  await dynamoDocClient.send(
+    new TransactWriteCommand({ TransactItems: transactItems })
+  );
 
   return merged;
 };

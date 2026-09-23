@@ -1,15 +1,22 @@
-import { Context, DynamoDBStreamEvent, DynamoDBBatchResponse } from "aws-lambda";
+import {
+  Context,
+  DynamoDBStreamEvent,
+  DynamoDBBatchResponse,
+} from "aws-lambda";
 import { AttributeValue, DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
-import { DynamoDBDocumentClient, TransactWriteCommand } from "@aws-sdk/lib-dynamodb";
+import {
+  DynamoDBDocumentClient,
+  TransactWriteCommand,
+} from "@aws-sdk/lib-dynamodb";
 import { TxmaEvent } from "./common/model.js";
 import { getEnvironmentVariable } from "./common/utils.js";
 import { mergeTrackerRecords } from "./common/merge-tracker-records.js";
 import { Logger } from "@aws-lambda-powertools/logger";
 import type { InactiveAccountTrackerRecord } from "./common/model.ts";
-import assert from 'node:assert/strict';
+import assert from "node:assert/strict";
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
-import { notificationConfiguration } from "./common/notification-configuration.js"
+import { notificationConfiguration } from "./common/notification-configuration.js";
 import { sendAuditEvent } from "./common/send-audit-event.js";
 import { MetricUnit } from "@aws-lambda-powertools/metrics";
 import { initMetrics } from "./common/metrics.js";
@@ -22,7 +29,9 @@ const dynamoClient = new DynamoDBClient({});
 const dynamoDocClient = DynamoDBDocumentClient.from(dynamoClient);
 const sqsClient = new SQSClient();
 
-type TransactionItems = ConstructorParameters<typeof TransactWriteCommand>[0]['TransactItems']
+type TransactionItems = ConstructorParameters<
+  typeof TransactWriteCommand
+>[0]["TransactItems"];
 
 const getEventDate = (txmaEvent: TxmaEvent): Date => {
   // Use explicit millisecond timestamp if available
@@ -33,7 +42,7 @@ const getEventDate = (txmaEvent: TxmaEvent): Date => {
   let timestamp = txmaEvent.timestamp;
 
   // some txma events timestamps are in milliseconds when they should be in seconds.
-  // if the timestamp is over 13 digits it is essentially guaranteed to be in milliseconds. 
+  // if the timestamp is over 13 digits it is essentially guaranteed to be in milliseconds.
   // 13 digit millisecond timestamps started 9 September 2001.
   if (timestamp.toString().length >= 13) {
     timestamp = Math.floor(timestamp / 1000);
@@ -42,8 +51,13 @@ const getEventDate = (txmaEvent: TxmaEvent): Date => {
   return new Date(timestamp * 1000);
 };
 
-const getLatestDate = (eventDate: Date, trackerRecord: InactiveAccountTrackerRecord | null): Date => {
-  const trackerDate = trackerRecord ? new Date(trackerRecord.userLastActive) : new Date(0);
+const getLatestDate = (
+  eventDate: Date,
+  trackerRecord: InactiveAccountTrackerRecord | null
+): Date => {
+  const trackerDate = trackerRecord
+    ? new Date(trackerRecord.userLastActive)
+    : new Date(0);
   return eventDate > trackerDate ? eventDate : trackerDate;
 };
 
@@ -66,7 +80,9 @@ const isCurrentDeletionIn30DaysOrLess = (deletionDate: string): boolean => {
   return date >= today && date <= thirtyDaysFromToday;
 };
 
-export function getDaysUntilAccountWouldHaveBeenDeleted(deletionDate: string): number {
+export function getDaysUntilAccountWouldHaveBeenDeleted(
+  deletionDate: string
+): number {
   const dateForDeletion = new Date(deletionDate);
   const currentDate: Date = new Date();
   dateForDeletion.setHours(0, 0, 0, 0);
@@ -76,7 +92,6 @@ export function getDaysUntilAccountWouldHaveBeenDeleted(deletionDate: string): n
   // divide difference in milliseconds by the number of milliseconds in one day
   return Math.round(differenceInMs / (24 * 60 * 60 * 1000));
 }
-
 
 const buildTransactionItems = (
   tableName: string,
@@ -88,14 +103,28 @@ const buildTransactionItems = (
   effectiveClientId: string | undefined
 ): TransactionItems => {
   const items: TransactionItems = [
-    { Put: { TableName: tableName, Item: newItem as unknown as Record<string, unknown> } },
+    {
+      Put: {
+        TableName: tableName,
+        Item: newItem as unknown as Record<string, unknown>,
+      },
+    },
   ];
 
-  if (previousTrackerRecord && previousTrackerRecord.dateForDeletion !== newItem.dateForDeletion) {
+  if (
+    previousTrackerRecord &&
+    previousTrackerRecord.dateForDeletion !== newItem.dateForDeletion
+  ) {
     // if the dates are the same, then we don't need to delete the old record as
     // it would have been updated in place by the Put command
     items.push({
-      Delete: { TableName: tableName, Key: { dateForDeletion: previousTrackerRecord.dateForDeletion, commonSubjectId: userId } }
+      Delete: {
+        TableName: tableName,
+        Key: {
+          dateForDeletion: previousTrackerRecord.dateForDeletion,
+          commonSubjectId: userId,
+        },
+      },
     });
   }
 
@@ -119,16 +148,26 @@ const getNewItemDetails = (
   eventDate: Date,
   eventDateTime: string
 ) => {
-  const isNewLatestDate = eventDate > (previousTrackerRecord ? new Date(previousTrackerRecord.userLastActive) : new Date(0));
+  const isNewLatestDate =
+    eventDate >
+    (previousTrackerRecord
+      ? new Date(previousTrackerRecord.userLastActive)
+      : new Date(0));
 
-  const recordedEmailLastUpdatedDate = previousTrackerRecord?.emailAddressLastUpdated
-    ? new Date(previousTrackerRecord.emailAddressLastUpdated)
-    : new Date(0);
+  const recordedEmailLastUpdatedDate =
+    previousTrackerRecord?.emailAddressLastUpdated
+      ? new Date(previousTrackerRecord.emailAddressLastUpdated)
+      : new Date(0);
 
-  const eventHasNewerEmailLastUpdated = eventDate > recordedEmailLastUpdatedDate;
+  const eventHasNewerEmailLastUpdated =
+    eventDate > recordedEmailLastUpdatedDate;
 
   const newEmailAddress = (() => {
-    if (txmaEvent.user?.email && eventHasNewerEmailLastUpdated && txmaEvent.user.email !== previousTrackerRecord?.emailAddress) {
+    if (
+      txmaEvent.user?.email &&
+      eventHasNewerEmailLastUpdated &&
+      txmaEvent.user.email !== previousTrackerRecord?.emailAddress
+    ) {
       return txmaEvent.user.email;
     }
   })();
@@ -137,15 +176,29 @@ const getNewItemDetails = (
 
   return {
     ...(emailAddress && { emailAddress }),
-    emailAddressSource: newEmailAddress ? txmaEvent.event_name : previousTrackerRecord?.emailAddressSource,
-    emailAddressSourceId: newEmailAddress ? txmaEvent.event_id : previousTrackerRecord?.emailAddressSourceId,
-    emailAddressLastUpdated: newEmailAddress ? eventDateTime : previousTrackerRecord?.emailAddressLastUpdated,
-    userLastActiveUpdated: isNewLatestDate ? eventDateTime : (previousTrackerRecord?.userLastActiveUpdated ?? eventDateTime),
-    publicSubjectId: txmaEvent.user?.public_subject_id ?? previousTrackerRecord?.publicSubjectId ?? "",
+    emailAddressSource: newEmailAddress
+      ? txmaEvent.event_name
+      : previousTrackerRecord?.emailAddressSource,
+    emailAddressSourceId: newEmailAddress
+      ? txmaEvent.event_id
+      : previousTrackerRecord?.emailAddressSourceId,
+    emailAddressLastUpdated: newEmailAddress
+      ? eventDateTime
+      : previousTrackerRecord?.emailAddressLastUpdated,
+    userLastActiveUpdated: isNewLatestDate
+      ? eventDateTime
+      : (previousTrackerRecord?.userLastActiveUpdated ?? eventDateTime),
+    publicSubjectId:
+      txmaEvent.user?.public_subject_id ??
+      previousTrackerRecord?.publicSubjectId ??
+      "",
   };
 };
 
-const isBeforeBackfillThreshold = (eventDate: Date, backfillCompleteDatetime: string): boolean => {
+const isBeforeBackfillThreshold = (
+  eventDate: Date,
+  backfillCompleteDatetime: string
+): boolean => {
   if (!backfillCompleteDatetime) return false;
   return eventDate < new Date(backfillCompleteDatetime);
 };
@@ -153,8 +206,14 @@ const isBeforeBackfillThreshold = (eventDate: Date, backfillCompleteDatetime: st
 // STS_REFRESH_TOKEN_ISSUED events don't always have a client_id, but the
 // GOVUK App client registry ID is used for all STS events, so we treat a
 // missing client_id on this event as being from the GOVUK App.
-const getEffectiveClientId = (txmaEvent: TxmaEvent, govukAppClientId: string): string | undefined => {
-  if (!txmaEvent.client_id && txmaEvent.event_name === "STS_REFRESH_TOKEN_ISSUED") {
+const getEffectiveClientId = (
+  txmaEvent: TxmaEvent,
+  govukAppClientId: string
+): string | undefined => {
+  if (
+    !txmaEvent.client_id &&
+    txmaEvent.event_name === "STS_REFRESH_TOKEN_ISSUED"
+  ) {
     return govukAppClientId;
   }
   return txmaEvent.client_id;
@@ -185,22 +244,33 @@ const processRecord = async (
     txmaEvent.event_name === "AUTH_CODE_VERIFIED" &&
     txmaEvent.extensions?.["journey-type"] === "PASSWORD_RESET"
   ) {
-    logger.info(`Ignoring AUTH_CODE_VERIFIED event with extensions["journey-type"] of PASSWORD_RESET`);
+    logger.info(
+      `Ignoring AUTH_CODE_VERIFIED event with extensions["journey-type"] of PASSWORD_RESET`
+    );
     return;
   }
 
-  const previousTrackerRecord = await mergeTrackerRecords(userId, dynamoDocClient, tableName);
+  const previousTrackerRecord = await mergeTrackerRecords(
+    userId,
+    dynamoDocClient,
+    tableName
+  );
 
-  logger.info(`User has existing tracker record for event_id ${txmaEvent.event_id}: ${Boolean(previousTrackerRecord)}`);
+  logger.info(
+    `User has existing tracker record for event_id ${txmaEvent.event_id}: ${Boolean(previousTrackerRecord)}`
+  );
 
-  if (previousTrackerRecord?.status === 'deleting') {
+  if (previousTrackerRecord?.status === "deleting") {
     logger.warn("AUTH_EVENT_ON_DELETING_ACCOUNT");
     return;
   }
 
   const eventDate = getEventDate(txmaEvent);
 
-  if (isBeforeBackfillThreshold(eventDate, backfillCompleteDatetime) && !previousTrackerRecord) {
+  if (
+    isBeforeBackfillThreshold(eventDate, backfillCompleteDatetime) &&
+    !previousTrackerRecord
+  ) {
     logger.info("BACKFILL_EVENT_SKIPPED_NO_EXISTING_RECORD");
     return;
   }
@@ -208,7 +278,12 @@ const processRecord = async (
   const eventDateTime = eventDate.toISOString();
 
   const latestDate = getLatestDate(eventDate, previousTrackerRecord);
-  const properties = getNewItemDetails(txmaEvent, previousTrackerRecord, eventDate, eventDateTime);
+  const properties = getNewItemDetails(
+    txmaEvent,
+    previousTrackerRecord,
+    eventDate,
+    eventDateTime
+  );
 
   const newItem: InactiveAccountTrackerRecord = {
     commonSubjectId: userId,
@@ -217,35 +292,53 @@ const processRecord = async (
     ...(txmaEvent.event_id && { userLastActiveSourceId: txmaEvent.event_id }),
     dateForDeletion: getNewDateForDeletion(latestDate),
     ...properties,
-    status: 'pending',
+    status: "pending",
     statusLastUpdated: eventDateTime,
     hasSetupMfa: previousTrackerRecord?.hasSetupMfa ?? false,
   };
 
-  logger.info(`Building transaction for update based on event id: ${txmaEvent.event_id}`);
+  logger.info(
+    `Building transaction for update based on event id: ${txmaEvent.event_id}`
+  );
 
   const notificationQueueUrl = getEnvironmentVariable("NOTIFICATION_QUEUE_URL");
   const govukAppClientId = getEnvironmentVariable("GOV_UK_APP_CLIENT_ID");
   const effectiveClientId = getEffectiveClientId(txmaEvent, govukAppClientId);
-  const transactionItems = buildTransactionItems(tableName, userNotificationsTableName, olhClientId, userId, newItem, previousTrackerRecord, effectiveClientId);
-  const isDeletionIn30DaysOrLess = previousTrackerRecord?.dateForDeletion && isCurrentDeletionIn30DaysOrLess(previousTrackerRecord.dateForDeletion);
+  const transactionItems = buildTransactionItems(
+    tableName,
+    userNotificationsTableName,
+    olhClientId,
+    userId,
+    newItem,
+    previousTrackerRecord,
+    effectiveClientId
+  );
+  const isDeletionIn30DaysOrLess =
+    previousTrackerRecord?.dateForDeletion &&
+    isCurrentDeletionIn30DaysOrLess(previousTrackerRecord.dateForDeletion);
   let notificationType;
 
   switch (effectiveClientId) {
     //  GOVUK App client registry ID
     case govukAppClientId:
-      notificationType = notificationConfiguration.INACTIVE_ACCOUNT_SAVED_APP.name;
+      notificationType =
+        notificationConfiguration.INACTIVE_ACCOUNT_SAVED_APP.name;
       break;
     //  OLH registry ID
     case olhClientId:
-      notificationType = notificationConfiguration.INACTIVE_ACCOUNT_SAVED_HOME.name;
+      notificationType =
+        notificationConfiguration.INACTIVE_ACCOUNT_SAVED_HOME.name;
       break;
     default:
-      notificationType = notificationConfiguration.INACTIVE_ACCOUNT_SAVED_RP.name;
+      notificationType =
+        notificationConfiguration.INACTIVE_ACCOUNT_SAVED_RP.name;
   }
 
-  const inactiveAccountEmailFlagEnabled = getEnvironmentVariable("SEND_INACTIVE_ACCOUNT_DELETION_EMAILS") === "1";
-  const dateForDeletionIs27October = checkIfDateIs27October(previousTrackerRecord?.dateForDeletion ?? "");
+  const inactiveAccountEmailFlagEnabled =
+    getEnvironmentVariable("SEND_INACTIVE_ACCOUNT_DELETION_EMAILS") === "1";
+  const dateForDeletionIs27October = checkIfDateIs27October(
+    previousTrackerRecord?.dateForDeletion ?? ""
+  );
 
   if (!inactiveAccountEmailFlagEnabled) {
     logger.info("SEND_INACTIVE_ACCOUNT_DELETION_EMAILS feature flag is off");
@@ -263,12 +356,15 @@ const processRecord = async (
         },
         extensions: {
           accountTrackerNotificationSkipReason: "UnusableAccount",
-          ...(notificationConfiguration[notificationType]?.auditEventNotificationType && {
+          ...(notificationConfiguration[notificationType]
+            ?.auditEventNotificationType && {
             accountTrackerNotificationType:
-              notificationConfiguration[notificationType].auditEventNotificationType,
+              notificationConfiguration[notificationType]
+                .auditEventNotificationType,
           }),
           ...(previousTrackerRecord?.dateForDeletion && {
-            accountTrackerAccountDeletionDate: previousTrackerRecord.dateForDeletion,
+            accountTrackerAccountDeletionDate:
+              previousTrackerRecord.dateForDeletion,
           }),
         },
       });
@@ -288,19 +384,22 @@ const processRecord = async (
 
       logger.info("Account saved message successfully sent to target queue", {
         publicSubjectId: newItem.publicSubjectId,
-        notificationType: notificationType
+        notificationType: notificationType,
       });
 
-      const currentEventConfiguration = notificationConfiguration[notificationType];
+      const currentEventConfiguration =
+        notificationConfiguration[notificationType];
       await sendAuditEvent(currentEventConfiguration.auditEvent ?? "", {
         user: {
           user_id: newItem.commonSubjectId,
           ...(newItem.emailAddress && { email: newItem.emailAddress }),
         },
         extensions: {
-          accountTrackerNotificationType: currentEventConfiguration.auditEventNotificationType,
+          accountTrackerNotificationType:
+            currentEventConfiguration.auditEventNotificationType,
           ...(previousTrackerRecord?.dateForDeletion && {
-            accountTrackerAccountDeletionDate: previousTrackerRecord.dateForDeletion,
+            accountTrackerAccountDeletionDate:
+              previousTrackerRecord.dateForDeletion,
           }),
         },
       });
@@ -309,7 +408,9 @@ const processRecord = async (
 
   try {
     logger.info(`Writing to DynamoDB for event id: ${txmaEvent.event_id}`);
-    await dynamoDocClient.send(new TransactWriteCommand({ TransactItems: transactionItems }));
+    await dynamoDocClient.send(
+      new TransactWriteCommand({ TransactItems: transactionItems })
+    );
     logger.info(`DynamoDB updated for event id: ${txmaEvent.event_id}`);
 
     if (isDeletionIn30DaysOrLess) {
@@ -320,20 +421,36 @@ const processRecord = async (
         },
         extensions: {
           accountTrackerRecordPreviousStatus: previousTrackerRecord.status,
-          accountTrackerAccountDeletionDate: previousTrackerRecord.dateForDeletion,
+          accountTrackerAccountDeletionDate:
+            previousTrackerRecord.dateForDeletion,
         },
       });
     }
   } catch (error) {
-    throw new Error(`Failed to update inactive account tracker for event id ${txmaEvent.event_id}: ${error}`, {
-      cause: error
-    });
+    throw new Error(
+      `Failed to update inactive account tracker for event id ${txmaEvent.event_id}: ${error}`,
+      {
+        cause: error,
+      }
+    );
   }
 
   if (previousTrackerRecord) {
-    metrics.addDimension("previousInactiveAccountRecordStatus", previousTrackerRecord.status);
-    metrics.addDimension("clientIdOfAuditEventThatResetDeletionDate", effectiveClientId ?? "");
-    metrics.addMetric("DaysUntilAccountWouldHaveBeenDeleted", MetricUnit.Count, getDaysUntilAccountWouldHaveBeenDeleted(previousTrackerRecord?.dateForDeletion));
+    metrics.addDimension(
+      "previousInactiveAccountRecordStatus",
+      previousTrackerRecord.status
+    );
+    metrics.addDimension(
+      "clientIdOfAuditEventThatResetDeletionDate",
+      effectiveClientId ?? ""
+    );
+    metrics.addMetric(
+      "DaysUntilAccountWouldHaveBeenDeleted",
+      MetricUnit.Count,
+      getDaysUntilAccountWouldHaveBeenDeleted(
+        previousTrackerRecord?.dateForDeletion
+      )
+    );
     metrics.publishStoredMetrics();
   }
 
@@ -346,7 +463,8 @@ const processRecord = async (
       extensions: {
         accountTrackerNotificationType: "LikelyVerifyMigratedUser",
         ...(previousTrackerRecord?.dateForDeletion && {
-          accountTrackerAccountDeletionDate: previousTrackerRecord.dateForDeletion,
+          accountTrackerAccountDeletionDate:
+            previousTrackerRecord.dateForDeletion,
         }),
       },
     });
@@ -359,10 +477,15 @@ export const handler = async (
 ): Promise<DynamoDBBatchResponse> => {
   logger.addContext(context);
 
-  const tableName = getEnvironmentVariable("INACTIVE_ACCOUNT_TRACKER_TABLE_NAME");
-  const userNotificationsTableName = getEnvironmentVariable("USER_NOTIFICATIONS_TABLE_NAME");
+  const tableName = getEnvironmentVariable(
+    "INACTIVE_ACCOUNT_TRACKER_TABLE_NAME"
+  );
+  const userNotificationsTableName = getEnvironmentVariable(
+    "USER_NOTIFICATIONS_TABLE_NAME"
+  );
   const olhClientId = getEnvironmentVariable("OLH_CLIENT_ID");
-  const backfillCompleteDatetime = process.env["AUTH_BACKFILL_COMPLETE_DATETIME"] ?? "";
+  const backfillCompleteDatetime =
+    process.env["AUTH_BACKFILL_COMPLETE_DATETIME"] ?? "";
 
   const batchItemFailures: DynamoDBBatchResponse["batchItemFailures"] = [];
   logger.info(`Invoked with ${event.Records.length} to process`);
@@ -373,10 +496,21 @@ export const handler = async (
     ) as TxmaEvent;
 
     try {
-      await processRecord(txmaEvent, tableName, userNotificationsTableName, olhClientId, backfillCompleteDatetime);
+      await processRecord(
+        txmaEvent,
+        tableName,
+        userNotificationsTableName,
+        olhClientId,
+        backfillCompleteDatetime
+      );
     } catch (error) {
-      logger.error(`Failed to process record ${record.dynamodb?.SequenceNumber}`, { error });
-      batchItemFailures.push({ itemIdentifier: record.dynamodb?.SequenceNumber ?? "" });
+      logger.error(
+        `Failed to process record ${record.dynamodb?.SequenceNumber}`,
+        { error }
+      );
+      batchItemFailures.push({
+        itemIdentifier: record.dynamodb?.SequenceNumber ?? "",
+      });
     }
   }
 

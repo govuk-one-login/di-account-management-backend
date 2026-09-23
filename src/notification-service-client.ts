@@ -21,7 +21,9 @@ export const setUpNotifyClient = async (
   batchItemFailures: SQSBatchItemFailure[]
 ) => {
   if (!notifyClient) {
-    const notifyApiSecretArn = getEnvironmentVariable("NOTIFY_API_KEY_SECRET_ARN");
+    const notifyApiSecretArn = getEnvironmentVariable(
+      "NOTIFY_API_KEY_SECRET_ARN"
+    );
     const notifyApiKey = await getSecret(notifyApiSecretArn, {
       maxAge: 900,
     });

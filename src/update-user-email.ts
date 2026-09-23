@@ -1,7 +1,11 @@
 import { Context, DynamoDBStreamEvent, DynamoDBRecord } from "aws-lambda";
 import { AttributeValue, DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
-import { DynamoDBDocumentClient, QueryCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
+import {
+  DynamoDBDocumentClient,
+  QueryCommand,
+  UpdateCommand,
+} from "@aws-sdk/lib-dynamodb";
 import { TxmaEvent } from "./common/model.js";
 import { getEnvironmentVariable } from "./common/utils.js";
 import { Logger } from "@aws-lambda-powertools/logger";
@@ -10,7 +14,10 @@ const logger = new Logger();
 const dynamoClient = new DynamoDBClient({});
 const dynamoDocClient = DynamoDBDocumentClient.from(dynamoClient);
 
-const handleRecord = async (record: DynamoDBRecord, tableName: string): Promise<void> => {
+const handleRecord = async (
+  record: DynamoDBRecord,
+  tableName: string
+): Promise<void> => {
   const txmaEvent = unmarshall(
     record.dynamodb?.NewImage?.event.M as Record<string, AttributeValue>
   ) as TxmaEvent;
@@ -40,13 +47,17 @@ const handleRecord = async (record: DynamoDBRecord, tableName: string): Promise<
   );
 
   if (!queryResponse.Items || queryResponse.Items.length === 0) {
-    logger.warn("No inactive account tracker record found for user", { userId });
+    logger.warn("No inactive account tracker record found for user", {
+      userId,
+    });
     return;
   }
 
   const trackerRecord = queryResponse.Items[0];
 
-  const eventDateTime = new Date(txmaEvent.event_timestamp_ms ?? (txmaEvent.timestamp * 1000)).toISOString();
+  const eventDateTime = new Date(
+    txmaEvent.event_timestamp_ms ?? txmaEvent.timestamp * 1000
+  ).toISOString();
 
   try {
     await dynamoDocClient.send(
@@ -69,19 +80,25 @@ const handleRecord = async (record: DynamoDBRecord, tableName: string): Promise<
         },
       })
     );
-    logger.info("Successfully updated email address in inactive account tracker", { userId });
+    logger.info(
+      "Successfully updated email address in inactive account tracker",
+      { userId }
+    );
   } catch (error) {
     const err = error as Error;
     if (err.name === "ConditionalCheckFailedException") {
-      logger.warn("An email update event with a newer timestamp has already been processed.", {
-        userId,
-        incomingTimestamp: eventDateTime,
-      });
+      logger.warn(
+        "An email update event with a newer timestamp has already been processed.",
+        {
+          userId,
+          incomingTimestamp: eventDateTime,
+        }
+      );
     } else {
       throw err;
     }
   }
-}
+};
 
 export const handler = async (
   event: DynamoDBStreamEvent,
@@ -89,7 +106,9 @@ export const handler = async (
 ): Promise<void> => {
   logger.addContext(context);
 
-  const tableName = getEnvironmentVariable("INACTIVE_ACCOUNT_TRACKER_TABLE_NAME");
+  const tableName = getEnvironmentVariable(
+    "INACTIVE_ACCOUNT_TRACKER_TABLE_NAME"
+  );
 
   for (const record of event.Records) {
     await handleRecord(record, tableName);

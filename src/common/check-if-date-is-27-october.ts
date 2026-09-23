@@ -1,6 +1,4 @@
-const checkIfDateIs27October = (
-  date: string
-): boolean => {
+const checkIfDateIs27October = (date: string): boolean => {
   return date.startsWith("2026-10-27");
 };
 

@@ -18,7 +18,7 @@ describe("isSendIadAuditEventsEnabled", () => {
     }
   });
 
-  test("returns true when set to \"true\"", () => {
+  test('returns true when set to "true"', () => {
     process.env[ENV_VAR] = "true";
     expect(isSendIadAuditEventsEnabled()).toBe(true);
   });
@@ -30,12 +30,12 @@ describe("isSendIadAuditEventsEnabled", () => {
     expect(isSendIadAuditEventsEnabled()).toBe(true);
   });
 
-  test("returns false when set to \"false\"", () => {
+  test('returns false when set to "false"', () => {
     process.env[ENV_VAR] = "false";
     expect(isSendIadAuditEventsEnabled()).toBe(false);
   });
 
-  test("returns false for any non-\"true\" value", () => {
+  test('returns false for any non-"true" value', () => {
     process.env[ENV_VAR] = "1";
     expect(isSendIadAuditEventsEnabled()).toBe(false);
     process.env[ENV_VAR] = "yes";

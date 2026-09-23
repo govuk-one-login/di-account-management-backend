@@ -143,7 +143,8 @@ async function enqueueNotification(
   metrics.addMetric("notificationEnqueued", MetricUnit.Count, 1);
 
   const accountTrackerNotificationType =
-    notificationConfiguration[process.notificationType]?.auditEventNotificationType;
+    notificationConfiguration[process.notificationType]
+      ?.auditEventNotificationType;
 
   await sendAuditEvent("HOME_ACCOUNT_TRACKER_NOTIFICATION_REQUESTED", {
     user: {
@@ -275,7 +276,8 @@ async function processRecord(
   );
 
   const skippedNotificationType = process.notificationType
-    ? notificationConfiguration[process.notificationType]?.auditEventNotificationType
+    ? notificationConfiguration[process.notificationType]
+        ?.auditEventNotificationType
     : undefined;
 
   const runGuardsOutcome = await runGuards(

@@ -18,7 +18,7 @@ describe("isDeleteEmailSubscriptionsEnabled", () => {
     }
   });
 
-  test("returns true when set to \"true\"", () => {
+  test('returns true when set to "true"', () => {
     process.env[ENV_VAR] = "true";
     expect(isDeleteEmailSubscriptionsEnabled()).toBe(true);
   });
@@ -30,12 +30,12 @@ describe("isDeleteEmailSubscriptionsEnabled", () => {
     expect(isDeleteEmailSubscriptionsEnabled()).toBe(true);
   });
 
-  test("returns false when set to \"false\"", () => {
+  test('returns false when set to "false"', () => {
     process.env[ENV_VAR] = "false";
     expect(isDeleteEmailSubscriptionsEnabled()).toBe(false);
   });
 
-  test("returns false for any non-\"true\" value", () => {
+  test('returns false for any non-"true" value', () => {
     process.env[ENV_VAR] = "1";
     expect(isDeleteEmailSubscriptionsEnabled()).toBe(false);
     process.env[ENV_VAR] = "yes";

@@ -66,7 +66,8 @@ export const handler = async (event: SQSEvent): Promise<void> => {
         throw new Error(
           `Unable to write user services for message with ID: ${record.messageId}, ${
             (error as Error).message
-          }`, { cause: error }
+          }`,
+          { cause: error }
         );
       }
     })

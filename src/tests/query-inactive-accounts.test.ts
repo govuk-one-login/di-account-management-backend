@@ -4,6 +4,7 @@ import { mockClient } from "aws-sdk-client-mock";
 import {
   queryAccountsByDate,
   countAccountsForDate,
+  countForecastedAccountsForDate,
 } from "../common/query-inactive-accounts.js";
 import type { InactiveAccountTrackerRecord } from "../common/model.js";
 
@@ -74,8 +75,7 @@ describe("countAccountsForDate", () => {
 
     const result = await countAccountsForDate("my-table", "2026-06-01");
     expect(result.total).toBe(42);
-    expect(result.withMfa).toBeUndefined();
-    expect(result.withoutMfa).toBeUndefined();
+    expect(result.emailForecast).toBeUndefined();
   });
 
   test("accumulates counts across paginated responses", async () => {
@@ -92,8 +92,7 @@ describe("countAccountsForDate", () => {
 
     const result = await countAccountsForDate("my-table", "2026-06-01");
     expect(result.total).toBe(150);
-    expect(result.withMfa).toBeUndefined();
-    expect(result.withoutMfa).toBeUndefined();
+    expect(result.emailForecast).toBeUndefined();
     expect(dynamoMock.commandCalls(QueryCommand)).toHaveLength(2);
   });
 
@@ -102,8 +101,7 @@ describe("countAccountsForDate", () => {
 
     const result = await countAccountsForDate("my-table", "2026-06-01");
     expect(result.total).toBe(0);
-    expect(result.withMfa).toBeUndefined();
-    expect(result.withoutMfa).toBeUndefined();
+    expect(result.emailForecast).toBeUndefined();
   });
 
   test("throws on DynamoDB error", async () => {
@@ -114,34 +112,112 @@ describe("countAccountsForDate", () => {
     ).rejects.toThrow("DynamoDB failure");
   });
 
-  test("returns MFA breakdown when requested", async () => {
-    dynamoMock.on(QueryCommand).resolves({ Count: 7, ScannedCount: 10 });
+  test("returns an email forecast, accumulating counts across paginated responses", async () => {
+    dynamoMock
+      .on(QueryCommand, { FilterExpression: "hasSetupMfa = :val" })
+      .resolvesOnce({
+        Count: 3,
+        ScannedCount: 5,
+        LastEvaluatedKey: {
+          dateForDeletion: "2026-06-01",
+          commonSubjectId: "x",
+        },
+      })
+      .resolvesOnce({ Count: 1, ScannedCount: 5 });
+    dynamoMock
+      .on(QueryCommand, {
+        FilterExpression: "hasUndeliverableEmailAddress = :val",
+      })
+      .resolves({ Count: 2, ScannedCount: 10 });
 
     const result = await countAccountsForDate("my-table", "2026-06-01", {
-      includeMfaBreakdown: true,
+      includeSkipEmailReasonBreakdown: true,
     });
+
     expect(result.total).toBe(10);
-    expect(result.withMfa).toBe(7);
-    expect(result.withoutMfa).toBe(3);
-    expect(dynamoMock.commandCalls(QueryCommand)).toHaveLength(1);
+    expect(result.emailForecast).toEqual({
+      willSendWarningEmails: 4,
+      skippedNoMfa: 4,
+      skippedUndeliverable: 2,
+    });
   });
 
-  test("applies FilterExpression when includeMfaBreakdown is true", async () => {
-    dynamoMock.on(QueryCommand).resolves({ Count: 7, ScannedCount: 10 });
+  test.each([
+    { filterExpression: "hasSetupMfa = :val", expectedValue: false },
+    {
+      filterExpression: "hasUndeliverableEmailAddress = :val",
+      expectedValue: true,
+    },
+  ])(
+    "applies FilterExpression $filterExpression when includeSkipEmailReasonBreakdown is true",
+    async ({ filterExpression, expectedValue }) => {
+      dynamoMock.on(QueryCommand).resolves({ Count: 1, ScannedCount: 10 });
 
-    await countAccountsForDate("my-table", "2026-06-01", {
-      includeMfaBreakdown: true,
-    });
+      await countAccountsForDate("my-table", "2026-06-01", {
+        includeSkipEmailReasonBreakdown: true,
+      });
 
-    const calls = dynamoMock.commandCalls(QueryCommand);
-    expect(calls).toHaveLength(1);
+      const call = dynamoMock
+        .commandCalls(QueryCommand)
+        .find((c) => c.args[0].input.FilterExpression === filterExpression);
 
-    const [call] = calls;
-    expect(call.args[0].input.FilterExpression).toBe("hasSetupMfa = :mfaVal");
-    expect(call.args[0].input.ExpressionAttributeValues).toHaveProperty(
-      ":mfaVal",
-      true
+      expect(call).toBeDefined();
+      expect(call?.args[0].input.ExpressionAttributeValues).toHaveProperty(
+        ":val",
+        expectedValue
+      );
+    }
+  );
+});
+
+describe("countForecastedAccountsForDate", () => {
+  beforeEach(() => {
+    dynamoMock.reset();
+  });
+
+  test("returns the count from a single page", async () => {
+    dynamoMock.on(QueryCommand).resolves({ Count: 30 });
+
+    const result = await countForecastedAccountsForDate(
+      "forecast-table",
+      "2026-06-01"
     );
+    expect(result).toBe(30);
+  });
+
+  test("accumulates counts across paginated responses", async () => {
+    dynamoMock
+      .on(QueryCommand)
+      .resolvesOnce({
+        Count: 100,
+        LastEvaluatedKey: { dateForDeletion: "2026-06-01", forecastedAt: "x" },
+      })
+      .resolvesOnce({ Count: 25 });
+
+    const result = await countForecastedAccountsForDate(
+      "forecast-table",
+      "2026-06-01"
+    );
+    expect(result).toBe(125);
+    expect(dynamoMock.commandCalls(QueryCommand)).toHaveLength(2);
+  });
+
+  test("returns 0 when Count is undefined", async () => {
+    dynamoMock.on(QueryCommand).resolves({});
+
+    const result = await countForecastedAccountsForDate(
+      "forecast-table",
+      "2026-06-01"
+    );
+    expect(result).toBe(0);
+  });
+
+  test("throws on DynamoDB error", async () => {
+    dynamoMock.on(QueryCommand).rejects(new Error("DynamoDB failure"));
+
+    await expect(
+      countForecastedAccountsForDate("forecast-table", "2026-06-01")
+    ).rejects.toThrow("DynamoDB failure");
   });
 });
 

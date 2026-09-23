@@ -140,7 +140,9 @@ const messageSchema = v.variant("notificationType", [
   ),
   v.pipe(
     v.object({
-      notificationType: v.literal(notificationConfiguration.INACTIVE_ACCOUNT_SAVED_APP.name),
+      notificationType: v.literal(
+        notificationConfiguration.INACTIVE_ACCOUNT_SAVED_APP.name
+      ),
       emailAddress: v.pipe(v.string(), v.email()),
     }),
     v.transform((input) => {
@@ -156,7 +158,9 @@ const messageSchema = v.variant("notificationType", [
   ),
   v.pipe(
     v.object({
-      notificationType: v.literal(notificationConfiguration.INACTIVE_ACCOUNT_SAVED_HOME.name),
+      notificationType: v.literal(
+        notificationConfiguration.INACTIVE_ACCOUNT_SAVED_HOME.name
+      ),
       emailAddress: v.pipe(v.string(), v.email()),
     }),
     v.transform((input) => {
@@ -172,7 +176,9 @@ const messageSchema = v.variant("notificationType", [
   ),
   v.pipe(
     v.object({
-      notificationType: v.literal(notificationConfiguration.INACTIVE_ACCOUNT_SAVED_RP.name),
+      notificationType: v.literal(
+        notificationConfiguration.INACTIVE_ACCOUNT_SAVED_RP.name
+      ),
       emailAddress: v.pipe(v.string(), v.email()),
     }),
     v.transform((input) => {
@@ -214,7 +220,11 @@ const notifySuccessSchema = v.object({
 });
 
 const templateIDsSchema = v.record(
-  v.picklist(Object.keys(notificationConfiguration) as (keyof typeof notificationConfiguration)[]), 
+  v.picklist(
+    Object.keys(
+      notificationConfiguration
+    ) as (keyof typeof notificationConfiguration)[]
+  ),
   v.string()
 );
 

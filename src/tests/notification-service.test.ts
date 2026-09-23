@@ -470,11 +470,14 @@ describe("processNotification", () => {
 
     await processNotification(mockRecord, batchItemFailures);
 
-    expect(mockLogger.info).toHaveBeenCalledWith("test_email_address_detected", {
-      reference: "test-uuid",
-      templateId: "template-id",
-      notificationType: "GLOBAL_LOGOUT",
-    });
+    expect(mockLogger.info).toHaveBeenCalledWith(
+      "test_email_address_detected",
+      {
+        reference: "test-uuid",
+        templateId: "template-id",
+        notificationType: "GLOBAL_LOGOUT",
+      }
+    );
     expect(mockSendEmail).not.toHaveBeenCalled();
     expect(mockLogger.error).not.toHaveBeenCalled();
     expect(batchItemFailures).toEqual([]);
@@ -486,13 +489,19 @@ describe("processNotification", () => {
 
     await processNotification(mockRecord, batchItemFailures);
 
-    expect(mockLogger.info).not.toHaveBeenCalledWith("test_email_address_detected", expect.any(Object));
+    expect(mockLogger.info).not.toHaveBeenCalledWith(
+      "test_email_address_detected",
+      expect.any(Object)
+    );
     expect(mockSendEmail).toHaveBeenCalledWith(
       "template-id",
       "test@example.com",
       expect.any(Object)
     );
-    expect(mockLogger.info).toHaveBeenCalledWith("Successfully sent a notification", expect.any(Object));
+    expect(mockLogger.info).toHaveBeenCalledWith(
+      "Successfully sent a notification",
+      expect.any(Object)
+    );
     expect(batchItemFailures).toEqual([]);
   });
 });

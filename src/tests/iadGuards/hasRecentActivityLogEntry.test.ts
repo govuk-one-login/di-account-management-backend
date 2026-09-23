@@ -19,7 +19,10 @@ describe("hasRecentActivityLogEntry", () => {
 
     const result = await hasRecentActivityLogEntry("user-123");
 
-    expect(result).toEqual({ guardActivated: false, guardName: "HomeUserActivityLog" });
+    expect(result).toEqual({
+      guardActivated: false,
+      guardName: "HomeUserActivityLog",
+    });
   });
 
   test("returns guardActivated: true when recent activity exists", async () => {
@@ -27,7 +30,10 @@ describe("hasRecentActivityLogEntry", () => {
 
     const result = await hasRecentActivityLogEntry("user-123");
 
-    expect(result).toEqual({ guardActivated: true, guardName: "HomeUserActivityLog" });
+    expect(result).toEqual({
+      guardActivated: true,
+      guardName: "HomeUserActivityLog",
+    });
   });
 
   test("returns guardActivated: false when Count is undefined", async () => {
@@ -35,7 +41,10 @@ describe("hasRecentActivityLogEntry", () => {
 
     const result = await hasRecentActivityLogEntry("user-123");
 
-    expect(result).toEqual({ guardActivated: false, guardName: "HomeUserActivityLog" });
+    expect(result).toEqual({
+      guardActivated: false,
+      guardName: "HomeUserActivityLog",
+    });
   });
 
   test("queries the correct table with the correct user_id", async () => {
@@ -68,7 +77,9 @@ describe("hasRecentActivityLogEntry", () => {
 
     const fiveYearsMinus30DaysS = 5 * 365 * 24 * 60 * 60 - 30 * 24 * 60 * 60;
     const call = dynamoMock.commandCalls(QueryCommand)[0];
-    const cutoff = call.args[0].input.ExpressionAttributeValues![":cutoff"] as number;
+    const cutoff = call.args[0].input.ExpressionAttributeValues![
+      ":cutoff"
+    ] as number;
 
     expect(cutoff).toBe(fixedNow / 1000 - fiveYearsMinus30DaysS);
   });
@@ -76,6 +87,8 @@ describe("hasRecentActivityLogEntry", () => {
   test("propagates errors from DynamoDB", async () => {
     dynamoMock.on(QueryCommand).rejects(new Error("DynamoDB error"));
 
-    await expect(hasRecentActivityLogEntry("user-123")).rejects.toThrow("DynamoDB error");
+    await expect(hasRecentActivityLogEntry("user-123")).rejects.toThrow(
+      "DynamoDB error"
+    );
   });
 });

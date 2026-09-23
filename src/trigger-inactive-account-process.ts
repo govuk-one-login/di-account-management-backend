@@ -101,9 +101,7 @@ export const handler = async (
     new InvokeCommand({
       FunctionName: queryAndDispatchFunctionName,
       InvocationType: "RequestResponse",
-      Payload: Buffer.from(
-        JSON.stringify({ processName, manualTest: true })
-      ),
+      Payload: Buffer.from(JSON.stringify({ processName, manualTest: true })),
     })
   );
 

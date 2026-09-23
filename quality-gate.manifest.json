@@ -57,10 +57,7 @@
           "checks": [
             {
               "name": "unit",
-              "purpose": [
-                "new feature",
-                "regression"
-              ]
+              "purpose": ["new feature", "regression"]
             }
           ],
           "file": ".github/workflows/local-tests-unit.yaml",
@@ -72,9 +69,7 @@
           "checks": [
             {
               "name": "integration",
-              "purpose": [
-                "regression"
-              ]
+              "purpose": ["regression"]
             }
           ],
           "file": ".github/workflows/deployed-tests.yaml",
@@ -86,10 +81,7 @@
           "checks": [
             {
               "name": "unit",
-              "purpose": [
-                "new feature",
-                "regression"
-              ]
+              "purpose": ["new feature", "regression"]
             }
           ],
           "file": ".github/workflows/sam-app-post-merge-actions.yaml",
@@ -101,9 +93,7 @@
           "checks": [
             {
               "name": "integration",
-              "purpose": [
-                "regression"
-              ]
+              "purpose": ["regression"]
             }
           ],
           "file": "post-deploy-tests.Dockerfile"

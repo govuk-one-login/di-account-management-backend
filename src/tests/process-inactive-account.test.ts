@@ -211,6 +211,57 @@ describe("process-inactive-account handler", () => {
     infoSpy.mockRestore();
   });
 
+  test("reports current and remaining records as failed when circuit breaker trips mid-batch", async () => {
+    mockGetIadCircuitBreakerStatus
+      .mockResolvedValueOnce(false)
+      .mockResolvedValue(true);
+
+    const event = buildSqsEvent([
+      {
+        commonSubjectId: "user-1",
+        emailAddress: "test1@example.com",
+        dateForDeletion: "2026-08-15",
+        processName: "Warning30Day",
+        status: "pending",
+      },
+      {
+        commonSubjectId: "user-2",
+        emailAddress: "test2@example.com",
+        dateForDeletion: "2026-08-15",
+        processName: "Warning30Day",
+        status: "pending",
+      },
+      {
+        commonSubjectId: "user-3",
+        emailAddress: "test3@example.com",
+        dateForDeletion: "2026-08-15",
+        processName: "Warning30Day",
+        status: "pending",
+      },
+    ]);
+
+    const result = await handler(event, {} as Context);
+
+    // First record is processed successfully before the breaker trips.
+    expect(dynamoMock).toHaveReceivedCommandWith(UpdateCommand, {
+      Key: { dateForDeletion: "2026-08-15", commonSubjectId: "user-1" },
+    });
+    expect(dynamoMock).not.toHaveReceivedCommandWith(UpdateCommand, {
+      Key: { dateForDeletion: "2026-08-15", commonSubjectId: "user-2" },
+    });
+    expect(dynamoMock).not.toHaveReceivedCommandWith(UpdateCommand, {
+      Key: { dateForDeletion: "2026-08-15", commonSubjectId: "user-3" },
+    });
+    // The record being processed when the breaker trips, and every record
+    // after it, are reported as failed so SQS retries them later.
+    expect(result).toEqual({
+      batchItemFailures: [
+        { itemIdentifier: "msg-1" },
+        { itemIdentifier: "msg-2" },
+      ],
+    });
+  });
+
   test("continues processing when circuit breaker is inactive", async () => {
     mockGetIadCircuitBreakerStatus.mockResolvedValue(false);
 
@@ -601,7 +652,7 @@ describe("process-inactive-account handler", () => {
     expect(mockMetrics.publishStoredMetrics).toHaveBeenCalledTimes(1);
   });
 
-  test("throws error when SQS send fails", async () => {
+  test("reports failed record in batchItemFailures when SQS send fails", async () => {
     sqsMock.on(SendMessageCommand).rejects(new Error("SQS send failed"));
 
     const event = buildSqsEvent([
@@ -614,12 +665,14 @@ describe("process-inactive-account handler", () => {
       },
     ]);
 
-    await expect(handler(event, {} as Context)).rejects.toThrow(
-      "SQS send failed"
-    );
+    const result = await handler(event, {} as Context);
+
+    expect(result).toEqual({
+      batchItemFailures: [{ itemIdentifier: "msg-0" }],
+    });
   });
 
-  test("throws when process configuration is not found", async () => {
+  test("reports failed record in batchItemFailures when process configuration is not found", async () => {
     const event = buildSqsEvent([
       {
         commonSubjectId: "user-123",
@@ -630,12 +683,14 @@ describe("process-inactive-account handler", () => {
       },
     ]);
 
-    await expect(handler(event, {} as Context)).rejects.toThrow(
-      "Process configuration not found for UnknownProcess"
-    );
+    const result = await handler(event, {} as Context);
+
+    expect(result).toEqual({
+      batchItemFailures: [{ itemIdentifier: "msg-0" }],
+    });
   });
 
-  test("throws when DynamoDB update fails", async () => {
+  test("reports failed record in batchItemFailures when DynamoDB update fails", async () => {
     dynamoMock.on(UpdateCommand).rejects(new Error("DynamoDB update failed"));
 
     const event = buildSqsEvent([
@@ -648,9 +703,45 @@ describe("process-inactive-account handler", () => {
       },
     ]);
 
-    await expect(handler(event, {} as Context)).rejects.toThrow(
-      "DynamoDB update failed"
-    );
+    const result = await handler(event, {} as Context);
+
+    expect(result).toEqual({
+      batchItemFailures: [{ itemIdentifier: "msg-0" }],
+    });
+  });
+
+  test("processes remaining records in the batch when one record fails", async () => {
+    dynamoMock
+      .on(UpdateCommand, {
+        Key: { dateForDeletion: "2026-08-15", commonSubjectId: "user-fail" },
+      })
+      .rejects(new Error("DynamoDB update failed"));
+
+    const event = buildSqsEvent([
+      {
+        commonSubjectId: "user-fail",
+        emailAddress: "test@example.com",
+        dateForDeletion: "2026-08-15",
+        processName: "Warning30Day",
+        status: "pending",
+      },
+      {
+        commonSubjectId: "user-ok",
+        emailAddress: "test2@example.com",
+        dateForDeletion: "2026-08-15",
+        processName: "Warning30Day",
+        status: "pending",
+      },
+    ]);
+
+    const result = await handler(event, {} as Context);
+
+    expect(result).toEqual({
+      batchItemFailures: [{ itemIdentifier: "msg-0" }],
+    });
+    expect(dynamoMock).toHaveReceivedCommandWith(UpdateCommand, {
+      Key: { dateForDeletion: "2026-08-15", commonSubjectId: "user-ok" },
+    });
   });
 
   test("skips notification but still updates status and sends to target queue when notificationType is not configured", async () => {

@@ -7431,18 +7431,24 @@ Resources:
             Queue: !GetAtt 30DayNotificationQueue.Arn
             ScalingConfig:
               MaximumConcurrency: 50
+            FunctionResponseTypes:
+              - ReportBatchItemFailures
         7DayNotificationEvent:
           Type: SQS
           Properties:
             Queue: !GetAtt 7DayNotificationQueue.Arn
             ScalingConfig:
               MaximumConcurrency: 50
+            FunctionResponseTypes:
+              - ReportBatchItemFailures
         DeleteAccountEvent:
           Type: SQS
           Properties:
             Queue: !GetAtt AccountDeletionProcessQueue.Arn
             ScalingConfig:
               MaximumConcurrency: 50
+            FunctionResponseTypes:
+              - ReportBatchItemFailures
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt ProcessInactiveAccountDeadLetterQueue.Arn

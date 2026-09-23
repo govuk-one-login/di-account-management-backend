@@ -1,4 +1,4 @@
-import { Context, SQSEvent } from "aws-lambda";
+import { Context, SQSEvent, SQSBatchResponse } from "aws-lambda";
 import { Logger } from "@aws-lambda-powertools/logger";
 import { MetricUnit } from "@aws-lambda-powertools/metrics";
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
@@ -315,7 +315,7 @@ async function processRecord(
 export const handler = async (
   event: SQSEvent,
   context: Context
-): Promise<void> => {
+): Promise<SQSBatchResponse> => {
   logger.addContext(context);
 
   const notificationQueueUrl = getEnvironmentVariable("NOTIFICATION_QUEUE_URL");
@@ -330,6 +330,8 @@ export const handler = async (
     typeof pepper === "string",
     "IAD_TESTING_PEPPER_SECRET_ARN secret value must be a string" // pragma: allowlist secret
   );
+
+  const batchItemFailures: SQSBatchResponse["batchItemFailures"] = [];
 
   for (const record of event.Records) {
     const body = JSON.parse(record.body) as ProcessInactiveAccountMessage;
@@ -368,16 +370,35 @@ export const handler = async (
           continueProcessingRecords: "0",
           isDryRun: body.isDryRun ? "1" : "0",
         });
-        return;
+        // Report this and every remaining record in the batch as failed so
+        // SQS retries them later, rather than silently dropping them.
+        const remainingRecords = event.Records.slice(
+          event.Records.indexOf(record)
+        );
+        for (const remainingRecord of remainingRecords) {
+          batchItemFailures.push({
+            itemIdentifier: remainingRecord.messageId,
+          });
+        }
+        break;
       }
 
-      await processRecord(
-        body,
-        notificationQueueUrl,
-        inactiveAccountTrackerTableName
-      );
+      try {
+        await processRecord(
+          body,
+          notificationQueueUrl,
+          inactiveAccountTrackerTableName
+        );
+      } catch (error) {
+        logger.error(`Failed to process record ${record.messageId}`, {
+          error,
+        });
+        batchItemFailures.push({ itemIdentifier: record.messageId });
+      }
     }
   }
 
   metrics.publishStoredMetrics();
+
+  return { batchItemFailures };
 };

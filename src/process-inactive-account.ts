@@ -320,6 +320,8 @@ export const handler = async (
             dateForDeletion: body.dateForDeletion,
             commonSubjectId: body.commonSubjectId,
           },
+          ConditionExpression: "userLastActiveSource = :source",
+          ExpressionAttributeValues: { ":source": "MANUAL_TEST" },
         })
       );
       logger.info("Deleted manual test record from tracker table", {

@@ -7,6 +7,7 @@ import {
   UpdateCommand,
   QueryCommand,
   TransactWriteCommand,
+  DeleteCommand,
 } from "@aws-sdk/lib-dynamodb";
 import { mockClient } from "aws-sdk-client-mock";
 import "aws-sdk-client-mock-vitest";
@@ -1235,6 +1236,47 @@ describe("process-inactive-account handler", () => {
       await handler(event, {} as Context);
 
       expect(dynamoMock).not.toHaveReceivedCommand(TransactWriteCommand);
+    });
+  });
+
+  describe("manual test cleanup", () => {
+    const manualTestBody = {
+      commonSubjectId: "test-user",
+      emailAddress: "test@example.com",
+      dateForDeletion: "2026-08-15",
+      processName: "Warning30Day",
+      status: "pending",
+      userLastActiveSource: "MANUAL_TEST",
+    };
+
+    beforeEach(() => {
+      dynamoMock.on(DeleteCommand).resolves({});
+    });
+
+    test("deletes the tracker record with condition when manualTest is true", async () => {
+      await handler(
+        buildSqsEvent([{ ...manualTestBody, manualTest: true }]),
+        {} as Context
+      );
+
+      expect(dynamoMock).toHaveReceivedCommandWith(DeleteCommand, {
+        TableName: "test-inactive-tracker-table",
+        Key: {
+          dateForDeletion: "2026-08-15",
+          commonSubjectId: "test-user",
+        },
+        ConditionExpression: "userLastActiveSource = :source",
+        ExpressionAttributeValues: { ":source": "MANUAL_TEST" },
+      });
+    });
+
+    test("does not delete the tracker record when manualTest is false", async () => {
+      await handler(
+        buildSqsEvent([{ ...manualTestBody, manualTest: false }]),
+        {} as Context
+      );
+
+      expect(dynamoMock).not.toHaveReceivedCommand(DeleteCommand);
     });
   });
 });

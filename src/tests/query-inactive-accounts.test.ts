@@ -4,7 +4,6 @@ import { mockClient } from "aws-sdk-client-mock";
 import {
   queryAccountsByDate,
   countAccountsForDate,
-  countForecastedAccountsForDate,
 } from "../common/query-inactive-accounts.js";
 import type { InactiveAccountTrackerRecord } from "../common/model.js";
 
@@ -143,57 +142,6 @@ describe("countAccountsForDate", () => {
       ":mfaVal",
       true
     );
-  });
-});
-
-describe("countForecastedAccountsForDate", () => {
-  beforeEach(() => {
-    dynamoMock.reset();
-  });
-
-  test("returns the count from a single page", async () => {
-    dynamoMock.on(QueryCommand).resolves({ Count: 30 });
-
-    const result = await countForecastedAccountsForDate(
-      "forecast-table",
-      "2026-06-01"
-    );
-    expect(result).toBe(30);
-  });
-
-  test("accumulates counts across paginated responses", async () => {
-    dynamoMock
-      .on(QueryCommand)
-      .resolvesOnce({
-        Count: 100,
-        LastEvaluatedKey: { dateForDeletion: "2026-06-01", forecastedAt: "x" },
-      })
-      .resolvesOnce({ Count: 25 });
-
-    const result = await countForecastedAccountsForDate(
-      "forecast-table",
-      "2026-06-01"
-    );
-    expect(result).toBe(125);
-    expect(dynamoMock.commandCalls(QueryCommand)).toHaveLength(2);
-  });
-
-  test("returns 0 when Count is undefined", async () => {
-    dynamoMock.on(QueryCommand).resolves({});
-
-    const result = await countForecastedAccountsForDate(
-      "forecast-table",
-      "2026-06-01"
-    );
-    expect(result).toBe(0);
-  });
-
-  test("throws on DynamoDB error", async () => {
-    dynamoMock.on(QueryCommand).rejects(new Error("DynamoDB failure"));
-
-    await expect(
-      countForecastedAccountsForDate("forecast-table", "2026-06-01")
-    ).rejects.toThrow("DynamoDB failure");
   });
 });
 

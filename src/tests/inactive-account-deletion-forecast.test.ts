@@ -28,6 +28,14 @@ vi.mock("../common/metrics.js", () => ({
   initMetrics: mockInitMetrics,
 }));
 
+vi.mock("../common/iad-query-logic-hash.json", () => ({
+  default: {
+    hash: "test-hash",
+    algorithm: "sha256",
+    generatedAt: "1970-01-01T00:00:00.000Z",
+  },
+}));
+
 describe("buildDates", () => {
   test("returns the correct number of dates starting from tomorrow", () => {
     vi.useFakeTimers();
@@ -86,6 +94,41 @@ describe("handler", () => {
 
     expect(dynamoDocumentMock.commandCalls(QueryCommand)).toHaveLength(1825);
     expect(dynamoDocumentMock.commandCalls(PutCommand)).toHaveLength(1825);
+
+    const putItems = dynamoDocumentMock
+      .commandCalls(PutCommand)
+      .map((c) => c.args[0].input.Item);
+    expect(
+      putItems.every((item) =>
+        expect(item?.iadQueryLogicHash).toEqual({
+          hash: "test-hash",
+          algorithm: "sha256",
+          generatedAt: "1970-01-01T00:00:00.000Z",
+        })
+      )
+    ).toBe(true);
+
+    vi.useRealTimers();
+  });
+
+  test("saves the full iadQueryLogicHash object on each forecast record", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-01-01T00:00:00.000Z"));
+
+    dynamoMock.on(DescribeTableCommand).resolves({ Table: { ItemCount: 0 } });
+    dynamoDocumentMock.on(QueryCommand).resolves({ Count: 5, ScannedCount: 5 });
+    dynamoDocumentMock.on(PutCommand).resolves({});
+
+    await handler({}, mockContext());
+
+    const [firstPut] = dynamoDocumentMock.commandCalls(PutCommand);
+    expect(firstPut.args[0].input.Item).toMatchObject({
+      iadQueryLogicHash: {
+        hash: "test-hash",
+        algorithm: "sha256",
+        generatedAt: "1970-01-01T00:00:00.000Z",
+      },
+    });
 
     vi.useRealTimers();
   });

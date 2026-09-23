@@ -15,10 +15,23 @@ vi.mock("../common/iad-circuit-breaker.js", () => ({
   disableIad: vi.fn().mockResolvedValue(undefined),
 }));
 
+vi.mock("../common/iad-query-logic-hash.json", () => ({
+  default: {
+    hash: "test-hash",
+    algorithm: "sha256",
+    generatedAt: "1970-01-01T00:00:00.000Z",
+  },
+}));
+
+vi.mock("../common/iadGetLatestForecastItemForDate.js", () => ({
+  getLatestForecastItemForDate: vi.fn(),
+}));
+
 import {
   getIadCircuitBreakerStatus,
   disableIad,
 } from "../common/iad-circuit-breaker.js";
+import { getLatestForecastItemForDate } from "../common/iadGetLatestForecastItemForDate.js";
 
 const dynamoMock = mockClient(DynamoDBDocumentClient);
 const sqsMock = mockClient(SQSClient);
@@ -85,6 +98,7 @@ describe("handler", () => {
     vi.clearAllMocks();
     vi.mocked(getIadCircuitBreakerStatus).mockResolvedValue(false);
     vi.mocked(disableIad).mockResolvedValue(undefined);
+    vi.mocked(getLatestForecastItemForDate).mockReset();
   });
 
   test("aborts early and logs when circuit breaker is active", async () => {
@@ -264,11 +278,31 @@ describe("handler", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-06-17T12:00:00.000Z"));
 
-    // first QueryCommand call: forecast table returns 3
-    // second QueryCommand call: tracker table returns 5 (actual exceeds forecast)
+    vi.mocked(getLatestForecastItemForDate)
+      .mockResolvedValueOnce({
+        iadQueryLogicHash: {
+          hash: "test-hash",
+          algorithm: "sha256",
+          generatedAt: "",
+        },
+        accountsToDelete: 3,
+        dateForDeletion: "2026-06-17",
+        forecastedAt: "",
+        ttl: 0,
+      })
+      .mockResolvedValueOnce({
+        iadQueryLogicHash: {
+          hash: "test-hash",
+          algorithm: "sha256",
+          generatedAt: "",
+        },
+        accountsToDelete: 3,
+        dateForDeletion: "2026-06-17",
+        forecastedAt: "",
+        ttl: 0,
+      });
     dynamoMock
       .on(QueryCommand)
-      .resolvesOnce({ Count: 3 })
       .resolves({ Count: 5, ScannedCount: 5, Items: [] });
 
     const infoSpy = vi.spyOn(Logger.prototype, "info");
@@ -306,10 +340,19 @@ describe("handler", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-06-17T12:00:00.000Z"));
 
-    // forecast: 1, actual: 1 — should not abort
+    vi.mocked(getLatestForecastItemForDate).mockResolvedValue({
+      iadQueryLogicHash: {
+        hash: "test-hash",
+        algorithm: "sha256",
+        generatedAt: "",
+      },
+      accountsToDelete: 1,
+      dateForDeletion: "2026-06-17",
+      forecastedAt: "",
+      ttl: 0,
+    });
     dynamoMock
       .on(QueryCommand)
-      .resolvesOnce({ Count: 1 })
       .resolves({ Count: 1, ScannedCount: 1, Items: [mockRecord] });
     sqsMock
       .on(SendMessageBatchCommand)
@@ -329,10 +372,19 @@ describe("handler", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-06-17T12:00:00.000Z"));
 
-    // forecast: 5, actual: 3 — should not abort
+    vi.mocked(getLatestForecastItemForDate).mockResolvedValue({
+      iadQueryLogicHash: {
+        hash: "test-hash",
+        algorithm: "sha256",
+        generatedAt: "",
+      },
+      accountsToDelete: 5,
+      dateForDeletion: "2026-06-17",
+      forecastedAt: "",
+      ttl: 0,
+    });
     dynamoMock
       .on(QueryCommand)
-      .resolvesOnce({ Count: 5 })
       .resolves({ Count: 3, ScannedCount: 3, Items: [mockRecord] });
     sqsMock
       .on(SendMessageBatchCommand)
@@ -346,6 +398,78 @@ describe("handler", () => {
     ).toBeGreaterThan(0);
 
     vi.useRealTimers();
+  });
+
+  test.each([
+    {
+      label: "hash differs",
+      forecastItem: {
+        iadQueryLogicHash: {
+          hash: "old-hash",
+          algorithm: "sha256",
+          generatedAt: "",
+        },
+        accountsToDelete: 1,
+        dateForDeletion: "2026-06-17",
+        forecastedAt: "",
+        ttl: 0,
+      },
+    },
+    {
+      label: "algorithm differs",
+      forecastItem: {
+        iadQueryLogicHash: {
+          hash: "test-hash",
+          algorithm: "md5",
+          generatedAt: "",
+        },
+        accountsToDelete: 1,
+        dateForDeletion: "2026-06-17",
+        forecastedAt: "",
+        ttl: 0,
+      },
+    },
+    {
+      label: "no forecast item stored",
+      forecastItem: undefined,
+    },
+  ])(
+    "DeleteAccount: aborts and logs when query logic hash mismatches ($label)",
+    async ({ forecastItem }) => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date("2026-06-17T12:00:00.000Z"));
+
+      vi.mocked(getLatestForecastItemForDate).mockResolvedValue(forecastItem);
+
+      const infoSpy = vi.spyOn(Logger.prototype, "info");
+
+      await handler({ processName: "DeleteAccount" }, {} as Context);
+
+      expect(infoSpy).toHaveBeenCalledWith(
+        "GuardrailAbortedQueryAndDispatchInactiveAccounts",
+        expect.objectContaining({
+          guardrailType: "ForecastQueryLogicHashMismatch",
+          processName: "DeleteAccount",
+          targetDate: "2026-06-17",
+          dispatchedBeforeAbort: 0,
+        })
+      );
+      expect(sqsMock.commandCalls(SendMessageBatchCommand)).toHaveLength(0);
+
+      infoSpy.mockRestore();
+      vi.useRealTimers();
+    }
+  );
+
+  test("DeleteAccount: does not call getLatestForecastItemForDate for non-DeleteAccount processes", async () => {
+    dynamoMock.on(QueryCommand).resolves({ Items: [mockRecord] });
+    sqsMock
+      .on(SendMessageBatchCommand)
+      .resolves({ Successful: [], Failed: [] });
+
+    await handler({ processName: "Warning30Day" }, {} as Context);
+
+    expect(getLatestForecastItemForDate).not.toHaveBeenCalled();
   });
 
   test("dry run reports zero eligible accounts when none match the allowed statuses", async () => {

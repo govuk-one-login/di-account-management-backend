@@ -105,6 +105,7 @@ export const handler = async (
               forecastedAt,
               accountsToDelete: total,
               ttl,
+              iadQueryLogicHash,
             },
           })
         );

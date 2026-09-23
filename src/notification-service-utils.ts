@@ -49,14 +49,14 @@ const messageSchema = v.variant("notificationType", [
 
           countryName_en: input.countryCode
             ? (new Intl.DisplayNames("en-gb", {
-              type: "region",
-            }).of(input.countryCode) ?? missingContentPlaceholder)
+                type: "region",
+              }).of(input.countryCode) ?? missingContentPlaceholder)
             : missingContentPlaceholder,
 
           countryName_cy: input.countryCode
             ? (new Intl.DisplayNames("cy-gb", {
-              type: "region",
-            }).of(input.countryCode) ?? missingContentPlaceholder)
+                type: "region",
+              }).of(input.countryCode) ?? missingContentPlaceholder)
             : missingContentPlaceholder,
 
           loggedOutAt_en: new Intl.DateTimeFormat("en-gb", {

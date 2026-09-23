@@ -85,7 +85,8 @@ const sendChunk = async (
   chunk: InactiveAccountTrackerRecord[],
   queueUrl: string,
   processName: string,
-  isDryRun: boolean
+  isDryRun: boolean,
+  manualTest: boolean
 ): Promise<number> => {
   try {
     const result = await retryFunction(
@@ -95,7 +96,12 @@ const sendChunk = async (
             QueueUrl: queueUrl,
             Entries: chunk.map((record, i) => ({
               Id: String(i),
-              MessageBody: JSON.stringify({ ...record, processName, isDryRun }),
+              MessageBody: JSON.stringify({
+                ...record,
+                processName,
+                isDryRun,
+                manualTest,
+              }),
             })),
           })
         ),
@@ -115,7 +121,8 @@ const dispatchEligibleRecords = async (
   eligible: InactiveAccountTrackerRecord[],
   queueUrl: string,
   processName: string,
-  isDryRun: boolean
+  isDryRun: boolean,
+  manualTest: boolean
 ): Promise<number> => {
   const chunks = chunkRecords(eligible);
   let dispatched = 0;
@@ -123,7 +130,9 @@ const dispatchEligibleRecords = async (
   for (let i = 0; i < chunks.length; i += MAX_CONCURRENT_BATCHES) {
     const wave = chunks.slice(i, i + MAX_CONCURRENT_BATCHES);
     const results = await Promise.all(
-      wave.map((chunk) => sendChunk(chunk, queueUrl, processName, isDryRun))
+      wave.map((chunk) =>
+        sendChunk(chunk, queueUrl, processName, isDryRun, manualTest)
+      )
     );
     dispatched += results.reduce((sum, n) => sum + n, 0);
   }
@@ -274,11 +283,9 @@ export const handler = async (
         return;
       }
 
-      const eligible = filterEligible(
-        page,
-        allowedStatuses,
-        Boolean(event.manualTest)
-      );
+      const manualTest = Boolean(event.manualTest);
+
+      const eligible = filterEligible(page, allowedStatuses, manualTest);
       eligibleForDate += eligible.length;
 
       if (!isDryRun) {
@@ -286,7 +293,8 @@ export const handler = async (
           eligible,
           queueUrl,
           event.processName,
-          isDryRun
+          isDryRun,
+          manualTest
         );
       }
     }

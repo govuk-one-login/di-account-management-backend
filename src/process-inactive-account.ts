@@ -3,7 +3,11 @@ import { Logger } from "@aws-lambda-powertools/logger";
 import { MetricUnit } from "@aws-lambda-powertools/metrics";
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, UpdateCommand } from "@aws-sdk/lib-dynamodb";
+import {
+  DynamoDBDocumentClient,
+  UpdateCommand,
+  DeleteCommand,
+} from "@aws-sdk/lib-dynamodb";
 import assert from "node:assert/strict";
 import { initMetrics } from "./common/metrics.js";
 import { processConfig, ProcessConfig } from "./common/process-config.js";
@@ -307,6 +311,22 @@ export const handler = async (
       notificationQueueUrl,
       inactiveAccountTrackerTableName
     );
+
+    if (body.manualTest) {
+      await dynamoDocClient.send(
+        new DeleteCommand({
+          TableName: inactiveAccountTrackerTableName,
+          Key: {
+            dateForDeletion: body.dateForDeletion,
+            commonSubjectId: body.commonSubjectId,
+          },
+        })
+      );
+      logger.info("Deleted manual test record from tracker table", {
+        commonSubjectId: body.commonSubjectId,
+        processName: body.processName,
+      });
+    }
   }
 
   metrics.publishStoredMetrics();

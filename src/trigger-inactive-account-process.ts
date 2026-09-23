@@ -16,10 +16,11 @@ const dynamoDocClient = DynamoDBDocumentClient.from(dynamoClient);
 const lambdaClient = new LambdaClient({});
 
 export interface TriggerInactiveAccountProcessEvent {
-  emailAddress: string;
+  emailAddress?: string;
   processName: string;
   status?: InactiveAccountStatus;
   hasUndeliverableEmailAddress?: boolean;
+  hasSetupMfa?: boolean;
   dateForDeletion?: string;
 }
 
@@ -38,11 +39,12 @@ export const handler = async (
     processName,
     status,
     hasUndeliverableEmailAddress,
+    hasSetupMfa,
     dateForDeletion: dateForDeletionOverride,
   } = event;
 
-  if (!emailAddress || !processName) {
-    throw new Error("emailAddress and processName are required");
+  if (!processName) {
+    throw new Error("processName is required");
   }
 
   const config = processConfig[processName];
@@ -65,7 +67,9 @@ export const handler = async (
     "QUERY_AND_DISPATCH_FUNCTION_NAME"
   );
 
-  const commonSubjectId = `test-${createHash("sha256").update(emailAddress).digest("hex")}`;
+  const commonSubjectId = `test-${createHash("sha256")
+    .update(`${JSON.stringify(event)}_${Date.now()}`)
+    .digest("hex")}`;
   const dateForDeletion =
     dateForDeletionOverride ?? calculateDateForDeletion(processName);
   const now = new Date().toISOString();
@@ -82,7 +86,7 @@ export const handler = async (
     userLastActiveUpdated: now,
     status: status ?? config.allowedStatuses[0],
     statusLastUpdated: now,
-    hasSetupMfa: false,
+    hasSetupMfa: hasSetupMfa ?? true,
     ...(hasUndeliverableEmailAddress && { hasUndeliverableEmailAddress }),
   };
 

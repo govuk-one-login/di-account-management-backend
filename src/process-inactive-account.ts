@@ -56,6 +56,7 @@ async function runSubsetOfGuards(
         guardrailType: guardResult.guardName,
         contributeToAlarm: guard.contributeToAlarm ? "1" : "0",
         continueProcessingRecords: "1",
+        isDryRun: body.isDryRun ? "1" : "0",
       });
 
       if (guard.skippedNotificationAuditEventName) {
@@ -296,6 +297,7 @@ export const handler = async (
         guardrailType: "CircuitBreakerAlreadyTripped",
         contributeToAlarm: "1",
         continueProcessingRecords: "0",
+        isDryRun: body.isDryRun ? "1" : "0",
       });
       return;
     }

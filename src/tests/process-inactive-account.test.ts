@@ -79,11 +79,11 @@ const notBlocked = { guardActivated: false, guardName: "AIS" };
 const blocked = { guardActivated: true, guardName: "AIS" };
 const noRecentActivity = {
   guardActivated: false,
-  guardName: "HomeUserActivityLog",
+  guardName: "HomeActivityLogContradiction",
 };
 const recentActivity = {
   guardActivated: true,
-  guardName: "HomeUserActivityLog",
+  guardName: "HomeActivityLogContradiction",
 };
 const inactiveAccountEmailsFeatureFlagDisabled = {
   guardActivated: true,
@@ -178,6 +178,7 @@ describe("process-inactive-account handler", () => {
         guardrailType: "CircuitBreakerAlreadyTripped",
         contributeToAlarm: "1",
         continueProcessingRecords: "0",
+        isDryRun: "0",
       }
     );
 

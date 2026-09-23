@@ -3618,6 +3618,7 @@ Resources:
     Type: AWS::SQS::Queue
     Properties:
       KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
+      VisibilityTimeout: 720
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
 
@@ -3625,6 +3626,7 @@ Resources:
     Type: AWS::SQS::Queue
     Properties:
       KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
+      VisibilityTimeout: 720
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
 
@@ -3632,6 +3634,7 @@ Resources:
     Type: AWS::SQS::Queue
     Properties:
       KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
+      VisibilityTimeout: 720
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
 
@@ -7417,6 +7420,7 @@ Resources:
       CodeUri: src
       Handler: process-inactive-account.handler
       PackageType: Zip
+      Timeout: 120
       # Override the global ReservedConcurrentExecutions (10) so the per-source
       # SQS ScalingConfig.MaximumConcurrency (50 each) can actually scale up.
       ReservedConcurrentExecutions: 150

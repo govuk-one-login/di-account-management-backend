@@ -2,7 +2,6 @@ import { describe, test, expect, beforeEach, afterEach } from "vitest";
 import { mockClient } from "aws-sdk-client-mock";
 import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
 import { LambdaClient, InvokeCommand } from "@aws-sdk/client-lambda";
-import { createHash } from "node:crypto";
 import { handler } from "../trigger-inactive-account-process.js";
 
 const dynamoMock = mockClient(DynamoDBDocumentClient);
@@ -10,7 +9,6 @@ const lambdaMock = mockClient(LambdaClient);
 
 const emailAddress = "test@example.com";
 const processName = "Warning30Day";
-const expectedCommonSubjectId = `test-${createHash("sha256").update(emailAddress).digest("hex")}`;
 
 describe("TriggerInactiveAccountProcess handler", () => {
   beforeEach(() => {
@@ -27,15 +25,9 @@ describe("TriggerInactiveAccountProcess handler", () => {
     delete process.env.QUERY_AND_DISPATCH_FUNCTION_NAME;
   });
 
-  test("throws when emailAddress is missing", async () => {
-    await expect(handler({ emailAddress: "", processName })).rejects.toThrow(
-      "emailAddress and processName are required"
-    );
-  });
-
   test("throws when processName is missing", async () => {
-    await expect(handler({ emailAddress, processName: "" })).rejects.toThrow(
-      "emailAddress and processName are required"
+    await expect(handler({ processName: "" })).rejects.toThrow(
+      "processName is required"
     );
   });
 
@@ -56,18 +48,19 @@ describe("TriggerInactiveAccountProcess handler", () => {
   test("inserts record into DynamoDB with correct shape", async () => {
     await handler({ emailAddress, processName });
 
-    expect(dynamoMock).toHaveReceivedCommandWith(PutCommand, {
-      TableName: "test-table",
-      Item: expect.objectContaining({
-        commonSubjectId: expectedCommonSubjectId,
-        publicSubjectId: `public-${expectedCommonSubjectId}`,
-        emailAddress,
-        emailAddressSource: "MANUAL_TEST",
-        userLastActiveSource: "MANUAL_TEST",
-        status: "pending",
-        hasSetupMfa: false,
-      }),
+    const putCall = dynamoMock.commandCalls(PutCommand)[0].args[0].input;
+    expect(putCall.TableName).toBe("test-table");
+    expect(putCall.Item).toMatchObject({
+      emailAddress,
+      emailAddressSource: "MANUAL_TEST",
+      userLastActiveSource: "MANUAL_TEST",
+      status: "pending",
+      hasSetupMfa: true,
     });
+    expect(putCall.Item?.commonSubjectId).toMatch(/^test-[a-f0-9]{64}$/);
+    expect(putCall.Item?.publicSubjectId).toBe(
+      `public-${putCall.Item?.commonSubjectId}`
+    );
   });
 
   test("invokes query-and-dispatch lambda with processName and manualTest flag", async () => {
@@ -139,5 +132,21 @@ describe("TriggerInactiveAccountProcess handler", () => {
         hasUndeliverableEmailAddress: expect.anything(),
       }),
     });
+  });
+
+  test("sets hasSetupMfa to false when explicitly provided", async () => {
+    await handler({ emailAddress, processName, hasSetupMfa: false });
+
+    expect(dynamoMock).toHaveReceivedCommandWith(PutCommand, {
+      TableName: "test-table",
+      Item: expect.objectContaining({ hasSetupMfa: false }),
+    });
+  });
+
+  test("succeeds without emailAddress and omits it from the record", async () => {
+    await handler({ processName });
+
+    const putCall = dynamoMock.commandCalls(PutCommand)[0].args[0].input;
+    expect(putCall.Item?.emailAddress).toBeUndefined();
   });
 });

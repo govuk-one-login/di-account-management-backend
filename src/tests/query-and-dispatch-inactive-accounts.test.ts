@@ -105,6 +105,7 @@ describe("handler", () => {
         guardrailType: "CircuitBreakerAlreadyTripped",
         contributeToAlarm: "1",
         continueProcessingRecords: "0",
+        isDryRun: "0",
         processName: "Warning30Day",
         targetDate: "2026-07-17",
         dispatchedBeforeAbort: 0,
@@ -187,6 +188,7 @@ describe("handler", () => {
           MessageBody: JSON.stringify({
             ...manualRecord,
             processName: "Warning30Day",
+            isDryRun: false,
           }),
         }),
       ],
@@ -221,6 +223,7 @@ describe("handler", () => {
           MessageBody: JSON.stringify({
             ...mockRecord,
             processName: "Warning30Day",
+            isDryRun: false,
           }),
         }),
       ],
@@ -282,6 +285,7 @@ describe("handler", () => {
       dispatchedBeforeAbort: 0,
       forecastedCount: 3,
       actualCount: 5,
+      isDryRun: false,
     });
     expect(infoSpy).toHaveBeenCalledWith(
       "GuardrailAbortedQueryAndDispatchInactiveAccounts",
@@ -289,6 +293,7 @@ describe("handler", () => {
         guardrailType: "HomeToDeleteMoreThanForecast",
         contributeToAlarm: "1",
         continueProcessingRecords: "0",
+        isDryRun: "0",
         processName: "DeleteAccount",
         targetDate: "2026-06-17",
         dispatchedBeforeAbort: 0,

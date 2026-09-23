@@ -44,12 +44,14 @@ const logAbort = (
   processName: string,
   targetDate: string,
   dispatchedBeforeAbort: number,
+  isDryRun: boolean,
   otherProps?: object
 ): void => {
   logger.info("GuardrailAbortedQueryAndDispatchInactiveAccounts", {
     guardrailType,
     contributeToAlarm: "1",
     continueProcessingRecords: "0",
+    isDryRun: isDryRun ? "1" : "0",
     processName,
     targetDate,
     dispatchedBeforeAbort,
@@ -82,7 +84,8 @@ const chunkRecords = (
 const sendChunk = async (
   chunk: InactiveAccountTrackerRecord[],
   queueUrl: string,
-  processName: string
+  processName: string,
+  isDryRun: boolean
 ): Promise<number> => {
   try {
     const result = await retryFunction(
@@ -92,7 +95,7 @@ const sendChunk = async (
             QueueUrl: queueUrl,
             Entries: chunk.map((record, i) => ({
               Id: String(i),
-              MessageBody: JSON.stringify({ ...record, processName }),
+              MessageBody: JSON.stringify({ ...record, processName, isDryRun }),
             })),
           })
         ),
@@ -111,7 +114,8 @@ const sendChunk = async (
 const dispatchEligibleRecords = async (
   eligible: InactiveAccountTrackerRecord[],
   queueUrl: string,
-  processName: string
+  processName: string,
+  isDryRun: boolean
 ): Promise<number> => {
   const chunks = chunkRecords(eligible);
   let dispatched = 0;
@@ -119,7 +123,7 @@ const dispatchEligibleRecords = async (
   for (let i = 0; i < chunks.length; i += MAX_CONCURRENT_BATCHES) {
     const wave = chunks.slice(i, i + MAX_CONCURRENT_BATCHES);
     const results = await Promise.all(
-      wave.map((chunk) => sendChunk(chunk, queueUrl, processName))
+      wave.map((chunk) => sendChunk(chunk, queueUrl, processName, isDryRun))
     );
     dispatched += results.reduce((sum, n) => sum + n, 0);
   }
@@ -131,7 +135,8 @@ const forecastNumberOfDeletionsAlignsWithReality = async (
   processName: string,
   targetDate: string,
   tableName: string,
-  dispatched: number
+  dispatched: number,
+  isDryRun: boolean
 ): Promise<boolean> => {
   if (processName !== "DeleteAccount") return true;
   const forecastedCount = await countForecastedAccountsForDate(
@@ -150,12 +155,14 @@ const forecastNumberOfDeletionsAlignsWithReality = async (
     dispatchedBeforeAbort: dispatched,
     forecastedCount,
     actualCount,
+    isDryRun,
   });
   logAbort(
     "HomeToDeleteMoreThanForecast",
     processName,
     targetDate,
     dispatched,
+    isDryRun,
     {
       forecastedCount,
       actualCount,
@@ -177,8 +184,12 @@ export const handler = async (
 
   const tableName = getEnvironmentVariable("TABLE_NAME");
 
-  const { queueUrlEnvVar, daysToDeletion, allowedStatuses, isDryRun } =
-    processConfig[event.processName];
+  const {
+    queueUrlEnvVar,
+    daysToDeletion,
+    allowedStatuses,
+    isDryRun = false,
+  } = processConfig[event.processName];
   const queueUrl = getEnvironmentVariable(queueUrlEnvVar);
 
   let dispatched = 0;
@@ -191,7 +202,8 @@ export const handler = async (
         event.processName,
         targetDate,
         tableName,
-        dispatched
+        dispatched,
+        isDryRun
       ))
     ) {
       return;
@@ -207,7 +219,8 @@ export const handler = async (
           "CircuitBreakerAlreadyTripped",
           event.processName,
           targetDate,
-          dispatched
+          dispatched,
+          isDryRun
         );
         return;
       }
@@ -223,7 +236,8 @@ export const handler = async (
         dispatched += await dispatchEligibleRecords(
           eligible,
           queueUrl,
-          event.processName
+          event.processName,
+          isDryRun
         );
       }
     }

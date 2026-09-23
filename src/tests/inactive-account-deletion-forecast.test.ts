@@ -6,11 +6,18 @@ import {
 } from "@aws-sdk/lib-dynamodb";
 import { DynamoDBClient, DescribeTableCommand } from "@aws-sdk/client-dynamodb";
 import { mockClient } from "aws-sdk-client-mock";
+import { Logger } from "@aws-lambda-powertools/logger";
 import { Context } from "aws-lambda";
 import { buildDates, handler } from "../inactive-account-deletion-forecast.js";
 
 const dynamoDocumentMock = mockClient(DynamoDBDocumentClient);
 const dynamoMock = mockClient(DynamoDBClient);
+
+const SKIP_EMAIL_REASON_BREAKDOWN_DAYS = 90;
+const FORECAST_DAYS = 1825;
+const EXPECTED_QUERY_COUNT =
+  SKIP_EMAIL_REASON_BREAKDOWN_DAYS * 2 +
+  (FORECAST_DAYS - SKIP_EMAIL_REASON_BREAKDOWN_DAYS);
 
 const mockContext = (remainingMs = 900_000): Context =>
   ({
@@ -62,11 +69,12 @@ describe("handler", () => {
 
   afterEach(() => {
     vi.clearAllMocks();
+    vi.restoreAllMocks();
     delete process.env.TABLE_NAME;
     delete process.env.FORECAST_TABLE_NAME;
   });
 
-  test("queries 1825 dates, writes forecast records, logs per date, and emits InactiveAccountTrackerRecordCount metric", async () => {
+  test("queries all dates, writes forecast records, logs per date, and emits InactiveAccountTrackerRecordCount metric", async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-01-01T00:00:00.000Z"));
 
@@ -92,8 +100,108 @@ describe("handler", () => {
     );
     expect(mockMetrics.publishStoredMetrics).toHaveBeenCalledTimes(1);
 
-    expect(dynamoDocumentMock.commandCalls(QueryCommand)).toHaveLength(1825);
-    expect(dynamoDocumentMock.commandCalls(PutCommand)).toHaveLength(1825);
+    expect(dynamoDocumentMock.commandCalls(QueryCommand)).toHaveLength(
+      EXPECTED_QUERY_COUNT
+    );
+    expect(dynamoDocumentMock.commandCalls(PutCommand)).toHaveLength(
+      FORECAST_DAYS
+    );
+
+    vi.useRealTimers();
+  });
+
+  test("logs willSendWarningEmails, skippedNoMfa and skippedUndeliverable for a date within the 90-day window", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-01-01T00:00:00.000Z"));
+
+    const infoSpy = vi.spyOn(Logger.prototype, "info");
+
+    dynamoMock.on(DescribeTableCommand).resolves({ Table: { ItemCount: 0 } });
+    dynamoDocumentMock
+      .on(QueryCommand, { FilterExpression: "hasSetupMfa = :val" })
+      .resolves({ Count: 3, ScannedCount: 10 });
+    dynamoDocumentMock
+      .on(QueryCommand, {
+        FilterExpression: "hasUndeliverableEmailAddress = :val",
+      })
+      .resolves({ Count: 2, ScannedCount: 10 });
+    dynamoDocumentMock.on(PutCommand).resolves({});
+
+    const context = {
+      getRemainingTimeInMillis: () => 900_000,
+    } as unknown as Context;
+
+    // Only need the first batch to have processed; time runs out immediately after.
+    let remainingCalls = 0;
+    context.getRemainingTimeInMillis = () =>
+      remainingCalls++ === 0 ? 900_000 : 5_000;
+
+    await handler({}, context);
+
+    expect(infoSpy).toHaveBeenCalledWith(
+      "Deletion forecast",
+      expect.objectContaining({
+        dateForDeletion: "2026-01-02",
+        accountsToDelete: 10,
+        willSendWarningEmails: 5,
+        skippedNoMfa: 3,
+        skippedUndeliverable: 2,
+      })
+    );
+
+    vi.useRealTimers();
+  });
+
+  test("logs only accountsToDelete for a date beyond the 90-day window", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-01-01T00:00:00.000Z"));
+
+    const infoSpy = vi.spyOn(Logger.prototype, "info");
+
+    dynamoMock.on(DescribeTableCommand).resolves({ Table: { ItemCount: 0 } });
+    dynamoDocumentMock.on(QueryCommand).resolves({ Count: 8 });
+    dynamoDocumentMock.on(PutCommand).resolves({});
+
+    await handler({}, mockContext());
+
+    const dateBeyondWindow = buildDates(
+      new Date("2026-01-01T00:00:00.000Z"),
+      100
+    )[99];
+
+    expect(infoSpy).toHaveBeenCalledWith("Deletion forecast", {
+      dateForDeletion: dateBeyondWindow,
+      accountsToDelete: 8,
+    });
+
+    vi.useRealTimers();
+  });
+
+  test("logs skippedVerifyMigrated for the 27 October date instead of a per-record breakdown", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-10-01T00:00:00.000Z"));
+
+    const infoSpy = vi.spyOn(Logger.prototype, "info");
+
+    dynamoMock.on(DescribeTableCommand).resolves({ Table: { ItemCount: 0 } });
+    dynamoDocumentMock.on(QueryCommand).resolves({ Count: 0 });
+    dynamoDocumentMock
+      .on(QueryCommand, { FilterExpression: "hasSetupMfa = :val" })
+      .resolves({ Count: 0, ScannedCount: 20 });
+    dynamoDocumentMock
+      .on(QueryCommand, {
+        FilterExpression: "hasUndeliverableEmailAddress = :val",
+      })
+      .resolves({ Count: 0, ScannedCount: 20 });
+    dynamoDocumentMock.on(PutCommand).resolves({});
+
+    await handler({}, mockContext());
+
+    expect(infoSpy).toHaveBeenCalledWith("Deletion forecast", {
+      dateForDeletion: "2026-10-27",
+      accountsToDelete: 20,
+      skippedVerifyMigrated: 20,
+    });
 
     const putItems = dynamoDocumentMock
       .commandCalls(PutCommand)
@@ -163,9 +271,6 @@ describe("handler", () => {
 
       await handler({}, context);
 
-      expect(dynamoDocumentMock.commandCalls(QueryCommand)).toHaveLength(
-        expectedProcessed
-      );
       expect(dynamoDocumentMock.commandCalls(PutCommand)).toHaveLength(
         expectedProcessed
       );

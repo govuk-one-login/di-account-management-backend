@@ -72,6 +72,9 @@ async function runSubsetOfGuards(
             ...(skippedNotificationType && {
               accountTrackerNotificationType: skippedNotificationType,
             }),
+            ...(body.dateForDeletion && {
+              accountTrackerAccountDeletionDate: body.dateForDeletion,
+            }),
           },
         });
       }
@@ -150,6 +153,9 @@ async function enqueueNotification(
     extensions: {
       ...(accountTrackerNotificationType && {
         accountTrackerNotificationType,
+      }),
+      ...(body.dateForDeletion && {
+        accountTrackerAccountDeletionDate: body.dateForDeletion,
       }),
     },
   });

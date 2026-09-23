@@ -883,6 +883,7 @@ describe("UpdateInactiveAccountTracker handler", () => {
       event_timestamp_ms_formatted: expect.any(String),
       extensions: {
         accountTrackerNotificationType: "RecoveryViaApp",
+        accountTrackerAccountDeletionDate: dateStr,
       },
     });
   });
@@ -953,6 +954,7 @@ describe("UpdateInactiveAccountTracker handler", () => {
       event_timestamp_ms_formatted: expect.any(String),
       extensions: {
         accountTrackerNotificationType: "RecoveryViaHome",
+        accountTrackerAccountDeletionDate: dateStr,
       },
     });
   });
@@ -998,6 +1000,7 @@ describe("UpdateInactiveAccountTracker handler", () => {
     expect(auditEvent.extensions).toMatchObject({
       accountTrackerNotificationSkipReason: "UnusableAccount",
       accountTrackerNotificationType: "RecoveryViaApp",
+      accountTrackerAccountDeletionDate: dateStr,
     });
   });
 
@@ -1066,6 +1069,7 @@ describe("UpdateInactiveAccountTracker handler", () => {
       event_timestamp_ms_formatted: expect.any(String),
       extensions: {
         accountTrackerNotificationType: "Recovery",
+        accountTrackerAccountDeletionDate: dateStr,
       },
     });
   });
@@ -1347,6 +1351,7 @@ describe("UpdateInactiveAccountTracker handler", () => {
         event_name: "HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED",
         extensions: {
           accountTrackerNotificationType: "LikelyVerifyMigratedUser",
+          accountTrackerAccountDeletionDate: "2026-10-27",
         },
       })
     );

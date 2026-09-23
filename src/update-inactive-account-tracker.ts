@@ -267,6 +267,9 @@ const processRecord = async (
             accountTrackerNotificationType:
               notificationConfiguration[notificationType].auditEventNotificationType,
           }),
+          ...(previousTrackerRecord?.dateForDeletion && {
+            accountTrackerAccountDeletionDate: previousTrackerRecord.dateForDeletion,
+          }),
         },
       });
     } else {
@@ -296,6 +299,9 @@ const processRecord = async (
         },
         extensions: {
           accountTrackerNotificationType: currentEventConfiguration.auditEventNotificationType,
+          ...(previousTrackerRecord?.dateForDeletion && {
+            accountTrackerAccountDeletionDate: previousTrackerRecord.dateForDeletion,
+          }),
         },
       });
     }
@@ -339,6 +345,9 @@ const processRecord = async (
       },
       extensions: {
         accountTrackerNotificationType: "LikelyVerifyMigratedUser",
+        ...(previousTrackerRecord?.dateForDeletion && {
+          accountTrackerAccountDeletionDate: previousTrackerRecord.dateForDeletion,
+        }),
       },
     });
   }

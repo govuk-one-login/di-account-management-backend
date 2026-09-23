@@ -335,6 +335,7 @@ describe("process-inactive-account handler", () => {
     expect(skippedEvent.extensions).toEqual({
       accountTrackerNotificationSkipReason: "IndefiniteSuspension",
       accountTrackerNotificationType: "30DayWarning",
+      accountTrackerAccountDeletionDate: "2026-08-15",
     });
 
     expect(dynamoMock).toHaveReceivedCommand(UpdateCommand);
@@ -427,6 +428,7 @@ describe("process-inactive-account handler", () => {
     expect(skippedEvent.extensions).toEqual({
       accountTrackerNotificationSkipReason: "IndefiniteSuspension",
       accountTrackerNotificationType: "30DayWarning",
+      accountTrackerAccountDeletionDate: "2026-08-15",
     });
 
     // 2nd call: main audit event for blocked user (status still updated)
@@ -450,6 +452,7 @@ describe("process-inactive-account handler", () => {
     expect(activeRequestedEvent.user).toEqual({ user_id: "active-user", email: "active@example.com" });
     expect(activeRequestedEvent.extensions).toEqual({
       accountTrackerNotificationType: "30DayWarning",
+      accountTrackerAccountDeletionDate: "2026-08-20",
     });
 
     // 5th call: main audit event for active user
@@ -744,6 +747,7 @@ describe("process-inactive-account handler", () => {
       extensions: {
         accountTrackerNotificationSkipReason: "PreviouslyUndeliverable",
         accountTrackerNotificationType: "30DayWarning",
+        accountTrackerAccountDeletionDate: "2026-08-30",
       },
     });
     expect(mockMetrics.addMetric).not.toHaveBeenCalledWith(
@@ -991,6 +995,7 @@ describe("process-inactive-account handler", () => {
       extensions: {
         accountTrackerNotificationSkipReason: "LikelyVerifyMigratedUser",
         accountTrackerNotificationType: "30DayWarning",
+        accountTrackerAccountDeletionDate: "2026-10-27",
       },
     });
 

@@ -252,6 +252,7 @@ describe("maybeEnqueueDeletionEmail", () => {
     expect(auditEvent.extensions).toMatchObject({
       accountTrackerNotificationSkipReason: "UnusableAccount",
       accountTrackerNotificationType: "Deletion",
+      accountTrackerAccountDeletionDate: "2026-10-20",
     });
   });
 });

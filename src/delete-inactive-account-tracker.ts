@@ -130,6 +130,9 @@ export const maybeEnqueueDeletionEmail = async (
             notificationConfiguration.INACTIVE_ACCOUNT_DELETED_CONFIRMATION
               .auditEventNotificationType,
         }),
+        ...(dateForDeletion && {
+          accountTrackerAccountDeletionDate: dateForDeletion,
+        }),
       },
     });
     return;

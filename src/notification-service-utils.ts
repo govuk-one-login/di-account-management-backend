@@ -8,13 +8,7 @@ import { isAxiosError } from "axios";
 import { MetricUnit } from "@aws-lambda-powertools/metrics";
 import { initMetrics } from "./common/metrics.js";
 import { setUpNotifyClient } from "./notification-service-client.js";
-import {
-  notificationConfiguration,
-  NotificationConfig,
-} from "./common/notification-configuration.js";
-
-export { notificationConfiguration };
-export type { NotificationConfig };
+import { notificationConfiguration } from "./common/notification-configuration.js";
 
 const logger = new Logger();
 const metrics = initMetrics("notification-service");
@@ -55,14 +49,14 @@ const messageSchema = v.variant("notificationType", [
 
           countryName_en: input.countryCode
             ? (new Intl.DisplayNames("en-gb", {
-                type: "region",
-              }).of(input.countryCode) ?? missingContentPlaceholder)
+              type: "region",
+            }).of(input.countryCode) ?? missingContentPlaceholder)
             : missingContentPlaceholder,
 
           countryName_cy: input.countryCode
             ? (new Intl.DisplayNames("cy-gb", {
-                type: "region",
-              }).of(input.countryCode) ?? missingContentPlaceholder)
+              type: "region",
+            }).of(input.countryCode) ?? missingContentPlaceholder)
             : missingContentPlaceholder,
 
           loggedOutAt_en: new Intl.DateTimeFormat("en-gb", {

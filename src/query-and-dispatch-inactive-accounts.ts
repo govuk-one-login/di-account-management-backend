@@ -143,7 +143,7 @@ const forecastQueryLogicHashMatches = async (
     return true;
   }
   await disableIad({
-    guardrailType: "HomeToDeleteMoreThanForecast",
+    guardrailType: "ForecastQueryLogicHashMismatch",
     processName,
     targetDate,
     dispatchedBeforeAbort: dispatched,

@@ -445,6 +445,14 @@ describe("handler", () => {
 
       await handler({ processName: "DeleteAccount" }, {} as Context);
 
+      expect(disableIad).toHaveBeenCalledWith(
+        expect.objectContaining({
+          guardrailType: "ForecastQueryLogicHashMismatch",
+          processName: "DeleteAccount",
+          targetDate: "2026-06-17",
+          dispatchedBeforeAbort: 0,
+        })
+      );
       expect(infoSpy).toHaveBeenCalledWith(
         "GuardrailAbortedQueryAndDispatchInactiveAccounts",
         expect.objectContaining({

@@ -3572,6 +3572,13 @@ Resources:
               !Ref Environment,
               sendInactiveAccountDeletionEmails,
             ]
+          TXMA_QUEUE_URL: !Ref AuditOutputQueue
+          FEATURE_SEND_IAD_AUDIT_EVENTS:
+            !FindInMap [
+              EnvironmentVariables,
+              !Ref Environment,
+              FEATURESENDIADAUDITEVENTS,
+            ]
       DeploymentPreference:
         Alarms:
           Fn::If:
@@ -3687,6 +3694,7 @@ Resources:
               - !GetAtt UpdateInactiveAccountTrackerDeadLetterQueue.Arn
               - !GetAtt AccountSavedNotificationQueue.Arn
               - !GetAtt NotificationQueue.Arn
+              - !GetAtt AuditOutputQueue.Arn
           - Effect: Allow
             Action:
               - dynamodb:DescribeStream
@@ -3722,6 +3730,7 @@ Resources:
               - kms:GenerateDataKey*
             Resource:
               - !GetAtt QueueKmsKey.Arn
+              - !GetAtt AuditEncryptionKey.Arn
 
   UpdateInactiveAccountTrackerFunctionLogGroup:
     Type: AWS::Logs::LogGroup

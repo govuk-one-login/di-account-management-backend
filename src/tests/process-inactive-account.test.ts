@@ -330,7 +330,9 @@ describe("process-inactive-account handler", () => {
     expect(mockHasAisBlockIntervention).toHaveBeenCalledWith(
       "blocked-user-123",
       "blocked@example.com",
-      "2026-08-15"
+      "2026-08-15",
+      undefined,
+      true
     );
     // two sqs calls: skipped audit event + main audit event (no notification)
     expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(2);
@@ -816,7 +818,9 @@ describe("process-inactive-account handler", () => {
     expect(mockDoesNotHaveEmailAddress).toHaveBeenCalledWith(
       "user-no-email",
       "",
-      "2026-08-15"
+      "2026-08-15",
+      undefined,
+      undefined
     );
     expect(sqsMock).not.toHaveReceivedCommand(SendMessageCommand);
     expect(dynamoMock).not.toHaveReceivedCommand(UpdateCommand);

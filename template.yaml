@@ -7461,8 +7461,7 @@ Resources:
               !Ref Environment,
               FEATURESENDIADAUDITEVENTS,
             ]
-          ENVIRONMENT: !Ref Environment
-          IAD_TESTING_PEPPER_SECRET_ARN: !Ref IADTestingPepper
+          IAD_TESTING_ACCOUNT_COMMON_SUBJECT_ID_SECRET_ARN: !Ref IADTestingAccountCommonSubkectId
       DeploymentPreference:
         Alarms:
           Fn::If:
@@ -7567,7 +7566,7 @@ Resources:
           - Effect: Allow
             Action:
               - secretsmanager:GetSecretValue # pragma: allowlist secret
-            Resource: !Ref IADTestingPepper
+            Resource: !Ref IADTestingAccountCommonSubkectId
           - Effect: Allow
             Action:
               - kms:Decrypt
@@ -7917,7 +7916,7 @@ Resources:
       KmsKeyId: !Ref SecretsKmsKey
       SecretString: set-me # pragma: allowlist secret
 
-  IADTestingPepper:
+  IADTestingAccountCommonSubkectId:
     Type: AWS::SecretsManager::Secret
     DeletionPolicy: Retain
     UpdateReplacePolicy: Retain

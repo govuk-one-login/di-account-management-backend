@@ -7461,6 +7461,7 @@ Resources:
               !Ref Environment,
               FEATURESENDIADAUDITEVENTS,
             ]
+          ENVIRONMENT: !Ref Environment
           IAD_TESTING_ACCOUNT_COMMON_SUBJECT_ID_SECRET_ARN: !Ref IADTestingAccountCommonSubkectId
       DeploymentPreference:
         Alarms:

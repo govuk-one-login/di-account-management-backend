@@ -134,11 +134,11 @@ describe("process-inactive-account handler", () => {
     process.env.INACTIVE_ACCOUNT_TRACKER_TABLE_NAME =
       "test-inactive-tracker-table";
     process.env.SEND_INACTIVE_ACCOUNT_DELETION_EMAILS = "1";
-    process.env.FEATURE_SEND_IAD_AUDIT_EVENTS = "false";
+    process.env.FEATURE_SEND_IAD_AUDIT_EVENTS = "true";
     process.env.TXMA_QUEUE_URL =
       "https://sqs.eu-west-2.amazonaws.com/123456789012/TxmaQueue";
     process.env.AWS_REGION = "eu-west-2";
-    process.env.FEATURE_SEND_IAD_AUDIT_EVENTS = "true";
+    process.env.ENVIRONMENT = "build";
     process.env.IAD_TESTING_ACCOUNT_COMMON_SUBJECT_ID_SECRET_ARN =
       "arn:aws:secretsmanager:eu-west-2:123456789012:secret:IADTestingAccountCommonSubjectId"; // pragma: allowlist secret
   });
@@ -213,7 +213,8 @@ describe("process-inactive-account handler", () => {
     expect(dynamoMock).toHaveReceivedCommand(UpdateCommand);
   });
 
-  test("skips record when commonSubjectId does not match the secret value", async () => {
+  test("skips record when in production and commonSubjectId does not match the secret value", async () => {
+    process.env.ENVIRONMENT = "production";
     mockGetSecret.mockResolvedValue("other-user");
 
     await handler(
@@ -231,6 +232,26 @@ describe("process-inactive-account handler", () => {
 
     expect(sqsMock).not.toHaveReceivedCommand(SendMessageCommand);
     expect(dynamoMock).not.toHaveReceivedCommand(UpdateCommand);
+  });
+
+  test("processes record in non-production environment regardless of commonSubjectId", async () => {
+    process.env.ENVIRONMENT = "build";
+    mockGetSecret.mockResolvedValue("other-user");
+
+    await handler(
+      buildSqsEvent([
+        {
+          commonSubjectId: "user-123",
+          emailAddress: "test@example.com",
+          dateForDeletion: "2026-08-15",
+          processName: "Warning30Day",
+          status: "pending",
+        },
+      ]),
+      {} as Context
+    );
+
+    expect(dynamoMock).toHaveReceivedCommand(UpdateCommand);
   });
 
   test("enqueues a 30-day warning notification to the NotificationQueue", async () => {
@@ -277,7 +298,6 @@ describe("process-inactive-account handler", () => {
   });
 
   test("enqueues a 7-day warning notification to the NotificationQueue", async () => {
-    mockGetSecret.mockResolvedValue("user-456");
     const event = buildSqsEvent([
       {
         commonSubjectId: "user-456",
@@ -320,7 +340,6 @@ describe("process-inactive-account handler", () => {
   });
 
   test("skips record when status is not allowed for process", async () => {
-    mockGetSecret.mockResolvedValue("user-789");
     const event = buildSqsEvent([
       {
         commonSubjectId: "user-789",
@@ -339,7 +358,6 @@ describe("process-inactive-account handler", () => {
 
   test("skips processing when AIS guard blocks the user", async () => {
     mockHasAisBlockIntervention.mockResolvedValue(blocked);
-    mockGetSecret.mockResolvedValue("blocked-user-123");
 
     const event = buildSqsEvent([
       {
@@ -388,7 +406,6 @@ describe("process-inactive-account handler", () => {
   });
 
   test("skips warning notification and emits UnusableAccount skipped audit event when user has not set up MFA", async () => {
-    mockGetSecret.mockResolvedValue("no-mfa-user");
     dynamoMock.on(QueryCommand).resolves({
       Items: [{ commonSubjectId: "no-mfa-user", hasSetupMfa: false }],
     });
@@ -439,7 +456,6 @@ describe("process-inactive-account handler", () => {
     mockHasAisBlockIntervention
       .mockResolvedValueOnce(blocked)
       .mockResolvedValueOnce(notBlocked);
-    mockGetSecret.mockResolvedValue("user-123");
 
     const event = buildSqsEvent([
       {
@@ -541,17 +557,16 @@ describe("process-inactive-account handler", () => {
   });
 
   test("processes multiple records from a batch", async () => {
-    mockGetSecret.mockResolvedValue("user-123");
     const event = buildSqsEvent([
       {
-        commonSubjectId: "user-123",
+        commonSubjectId: "user-1",
         emailAddress: "user1@example.com",
         dateForDeletion: "2026-08-15",
         processName: "Warning30Day",
         status: "pending",
       },
       {
-        commonSubjectId: "user-123",
+        commonSubjectId: "user-2",
         emailAddress: "user2@example.com",
         dateForDeletion: "2026-07-27",
         processName: "Warning7Day",
@@ -762,7 +777,6 @@ describe("process-inactive-account handler", () => {
   });
 
   test("skips when record has hasUndeliverableEmailAddress", async () => {
-    mockGetSecret.mockResolvedValue("undeliverablee");
     dynamoMock
       .on(QueryCommand, {
         TableName: "test-inactive-tracker-table",
@@ -837,7 +851,6 @@ describe("process-inactive-account handler", () => {
   });
 
   test("continue as expected where there is no hasUndeliverableEmailAddress flag", async () => {
-    mockGetSecret.mockResolvedValue("deliverable");
     dynamoMock
       .on(QueryCommand, {
         TableName: "test-inactive-tracker-table",
@@ -876,7 +889,6 @@ describe("process-inactive-account handler", () => {
 
   test("skips processing when doesNotHaveEmailAddress guard returns Abort", async () => {
     mockDoesNotHaveEmailAddress.mockResolvedValue(doesNotHaveEmailAddressAbort);
-    mockGetSecret.mockResolvedValue("user-no-email");
 
     const event = buildSqsEvent([
       {
@@ -905,7 +917,6 @@ describe("process-inactive-account handler", () => {
     mockSendInactiveAccountEmailsIsDisabled.mockResolvedValue(
       inactiveAccountEmailsFeatureFlagDisabled
     );
-    mockGetSecret.mockResolvedValue("user-456");
 
     const event = buildSqsEvent([
       {
@@ -1025,7 +1036,6 @@ describe("process-inactive-account handler", () => {
   });
 
   test("does not send emails when dateForDeletion is 27th October", async () => {
-    mockGetSecret.mockResolvedValue("migratedverifyuser");
     dynamoMock
       .on(QueryCommand, {
         TableName: "test-inactive-tracker-table",
@@ -1115,7 +1125,6 @@ describe("process-inactive-account handler", () => {
       mockDoesNotHaveEmailAddress.mockResolvedValue(
         doesNotHaveEmailAddressAbort
       );
-      mockGetSecret.mockResolvedValue("user-no-email");
 
       await handler(
         buildSqsEvent([
@@ -1162,7 +1171,6 @@ describe("process-inactive-account handler", () => {
       // owns dateForDeletion; the stale row (2031-01-01) must be deleted. The newer row
       // also carries the 30DayWarningSent status so the Warning7Day process (which allows it)
       // should proceed and update the surviving row keyed on the merged dateForDeletion.
-      mockGetSecret.mockResolvedValue("dup-user");
       dynamoMock
         .on(QueryCommand, {
           TableName: "test-inactive-tracker-table",
@@ -1268,7 +1276,6 @@ describe("process-inactive-account handler", () => {
     });
 
     test("does not run a merge transaction when the user has a single tracker row", async () => {
-      mockGetSecret.mockResolvedValue("single-user");
       dynamoMock
         .on(QueryCommand, {
           TableName: "test-inactive-tracker-table",
@@ -1313,7 +1320,6 @@ describe("process-inactive-account handler", () => {
     });
 
     test("does not run a merge transaction when the user has no tracker rows", async () => {
-      mockGetSecret.mockResolvedValue("no-rows-user");
       // Default QueryCommand mock resolves { Items: [] }.
       const event = buildSqsEvent([
         {

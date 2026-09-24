@@ -325,12 +325,13 @@ export const handler = async (
   const testCommonSubjectId = await getSecret(
     getEnvironmentVariable("IAD_TESTING_ACCOUNT_COMMON_SUBJECT_ID_SECRET_ARN") // pragma: allowlist secret
   );
+  const env = getEnvironmentVariable("ENVIRONMENT");
 
   for (const record of event.Records) {
     const body = JSON.parse(record.body) as ProcessInactiveAccountMessage;
 
     if (
-      typeof testCommonSubjectId === "string" &&
+      !["production", "integration"].includes(env) ||
       body.commonSubjectId === testCommonSubjectId
     ) {
       const iadCircuitBreakerActive = await getIadCircuitBreakerStatus();

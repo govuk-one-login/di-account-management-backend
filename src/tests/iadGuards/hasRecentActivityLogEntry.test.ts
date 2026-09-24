@@ -21,7 +21,7 @@ describe("hasRecentActivityLogEntry", () => {
 
     expect(result).toEqual({
       guardActivated: false,
-      guardName: "HomeUserActivityLog",
+      guardName: "HomeActivityLogContradiction",
     });
   });
 
@@ -32,7 +32,7 @@ describe("hasRecentActivityLogEntry", () => {
 
     expect(result).toEqual({
       guardActivated: true,
-      guardName: "HomeUserActivityLog",
+      guardName: "HomeActivityLogContradiction",
     });
   });
 
@@ -43,7 +43,7 @@ describe("hasRecentActivityLogEntry", () => {
 
     expect(result).toEqual({
       guardActivated: false,
-      guardName: "HomeUserActivityLog",
+      guardName: "HomeActivityLogContradiction",
     });
   });
 

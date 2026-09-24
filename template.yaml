@@ -7646,6 +7646,8 @@ Resources:
               Value: $.guardrailType
             - Key: ContributeToAlarm
               Value: $.contributeToAlarm
+            - Key: DryRun
+              Value: $.isDryRun
 
   ProcessInactiveAccountsIADGuardrailTriggeredFilter:
     Type: AWS::Logs::MetricFilter
@@ -7662,6 +7664,8 @@ Resources:
               Value: $.guardrailType
             - Key: ContributeToAlarm
               Value: $.contributeToAlarm
+            - Key: DryRun
+              Value: $.isDryRun
 
   IADGuardrailTriggeredAlarm:
     Type: AWS::CloudWatch::Alarm

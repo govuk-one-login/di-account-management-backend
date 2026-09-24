@@ -1,4 +1,5 @@
 import { vi, describe, test, expect, beforeEach } from "vitest";
+import type { InactiveAccountTrackerRecord } from "../../common/model.js";
 
 const mockIsUserIdBlocked = vi.hoisted(() => vi.fn());
 
@@ -18,7 +19,7 @@ describe("hasAisBlockIntervention", () => {
 
     const result = await hasAisBlockIntervention({
       commonSubjectId: "user-123",
-    } as any);
+    } as InactiveAccountTrackerRecord);
 
     expect(result).toEqual({ guardActivated: false, guardName: "AIS" });
     expect(mockIsUserIdBlocked).toHaveBeenCalledWith("user-123");
@@ -29,7 +30,7 @@ describe("hasAisBlockIntervention", () => {
 
     const result = await hasAisBlockIntervention({
       commonSubjectId: "blocked-user",
-    } as any);
+    } as InactiveAccountTrackerRecord);
 
     expect(result).toEqual({ guardActivated: true, guardName: "AIS" });
     expect(mockIsUserIdBlocked).toHaveBeenCalledWith("blocked-user");
@@ -39,7 +40,9 @@ describe("hasAisBlockIntervention", () => {
     mockIsUserIdBlocked.mockRejectedValue(new Error("AIS unavailable"));
 
     await expect(
-      hasAisBlockIntervention({ commonSubjectId: "user-123" } as any)
+      hasAisBlockIntervention({
+        commonSubjectId: "user-123",
+      } as InactiveAccountTrackerRecord)
     ).rejects.toThrow("AIS unavailable");
   });
 });

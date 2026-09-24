@@ -63,7 +63,7 @@ describe("getIadCircuitBreakerStatus", () => {
     expect(dynamoMock).toHaveReceivedCommandWith(QueryCommand, {
       TableName: TABLE_NAME,
       KeyConditionExpression: "pk = :pk",
-      ExpressionAttributeValues: { ":pk": { S: "IAD" } },
+      ExpressionAttributeValues: { ":pk": "IAD" },
       ScanIndexForward: false,
       Limit: 1,
       ConsistentRead: true,

@@ -10,13 +10,7 @@ import { dateForDeletionIs27October } from "./iadGuards/dateForDeletionIs27Octob
 import { doesNotHaveEmailAddress } from "./iadGuards/doesNotHaveEmailAddress.js";
 import { hasNotSetupMfa } from "./iadGuards/hasNotSetupMfa.js";
 
-export type Guard = (
-  commonSubjectId?: InactiveAccountTrackerRecord["commonSubjectId"],
-  emailAddress?: InactiveAccountTrackerRecord["emailAddress"],
-  dateForDeletion?: InactiveAccountTrackerRecord["dateForDeletion"],
-  hasUndeliverableEmailAddress?: InactiveAccountTrackerRecord["hasUndeliverableEmailAddress"],
-  hasSetupMfa?: InactiveAccountTrackerRecord["hasSetupMfa"]
-) => Promise<{
+export type Guard = (trackerRecord: InactiveAccountTrackerRecord) => Promise<{
   guardActivated: boolean;
   guardName: string;
 }>;

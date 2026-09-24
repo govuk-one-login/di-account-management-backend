@@ -3,7 +3,9 @@ import { doesNotHaveEmailAddress } from "../../common/iadGuards/doesNotHaveEmail
 
 describe("doesNotHaveEmailAddress", () => {
   test("returns guardActivated: false when emailAddress is a non-empty string", async () => {
-    const result = await doesNotHaveEmailAddress(undefined, "user@example.com");
+    const result = await doesNotHaveEmailAddress({
+      emailAddress: "user@example.com",
+    } as any);
     expect(result).toEqual({
       guardActivated: false,
       guardName: "DoesNotHaveEmailAddress",
@@ -11,7 +13,7 @@ describe("doesNotHaveEmailAddress", () => {
   });
 
   test("returns guardActivated: true when emailAddress is an empty string", async () => {
-    const result = await doesNotHaveEmailAddress(undefined, "");
+    const result = await doesNotHaveEmailAddress({ emailAddress: "" } as any);
     expect(result).toEqual({
       guardActivated: true,
       guardName: "DoesNotHaveEmailAddress",
@@ -19,7 +21,9 @@ describe("doesNotHaveEmailAddress", () => {
   });
 
   test("returns guardActivated: true when emailAddress is undefined", async () => {
-    const result = await doesNotHaveEmailAddress(undefined, undefined);
+    const result = await doesNotHaveEmailAddress({
+      emailAddress: undefined,
+    } as any);
     expect(result).toEqual({
       guardActivated: true,
       guardName: "DoesNotHaveEmailAddress",

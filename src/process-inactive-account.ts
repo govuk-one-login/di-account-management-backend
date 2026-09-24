@@ -43,13 +43,7 @@ async function runSubsetOfGuards(
   body: ProcessInactiveAccountMessage
 ): Promise<{ guardActivated: boolean }> {
   for (const guard of guards ?? []) {
-    const guardResult = await guard.guard(
-      body.commonSubjectId,
-      body.emailAddress,
-      body.dateForDeletion,
-      body.hasUndeliverableEmailAddress,
-      body.hasSetupMfa
-    );
+    const guardResult = await guard.guard(body);
 
     if (guardResult.guardActivated) {
       logger.info(logMessage, {

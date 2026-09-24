@@ -17,7 +17,9 @@ describe("hasRecentActivityLogEntry", () => {
   test("returns guardActivated: false when no recent activity exists", async () => {
     dynamoMock.on(QueryCommand).resolves({ Count: 0 });
 
-    const result = await hasRecentActivityLogEntry("user-123");
+    const result = await hasRecentActivityLogEntry({
+      commonSubjectId: "user-123",
+    } as any);
 
     expect(result).toEqual({
       guardActivated: false,
@@ -28,7 +30,9 @@ describe("hasRecentActivityLogEntry", () => {
   test("returns guardActivated: true when recent activity exists", async () => {
     dynamoMock.on(QueryCommand).resolves({ Count: 3 });
 
-    const result = await hasRecentActivityLogEntry("user-123");
+    const result = await hasRecentActivityLogEntry({
+      commonSubjectId: "user-123",
+    } as any);
 
     expect(result).toEqual({
       guardActivated: true,
@@ -39,7 +43,9 @@ describe("hasRecentActivityLogEntry", () => {
   test("returns guardActivated: false when Count is undefined", async () => {
     dynamoMock.on(QueryCommand).resolves({});
 
-    const result = await hasRecentActivityLogEntry("user-123");
+    const result = await hasRecentActivityLogEntry({
+      commonSubjectId: "user-123",
+    } as any);
 
     expect(result).toEqual({
       guardActivated: false,
@@ -50,7 +56,7 @@ describe("hasRecentActivityLogEntry", () => {
   test("queries the correct table with the correct user_id", async () => {
     dynamoMock.on(QueryCommand).resolves({ Count: 0 });
 
-    await hasRecentActivityLogEntry("user-456");
+    await hasRecentActivityLogEntry({ commonSubjectId: "user-456" } as any);
 
     expect(dynamoMock).toHaveReceivedCommandWith(QueryCommand, {
       TableName: "test-activity-log-table",
@@ -71,7 +77,7 @@ describe("hasRecentActivityLogEntry", () => {
     vi.setSystemTime(fixedNow);
 
     dynamoMock.on(QueryCommand).resolves({ Count: 0 });
-    await hasRecentActivityLogEntry("user-123");
+    await hasRecentActivityLogEntry({ commonSubjectId: "user-123" } as any);
 
     vi.useRealTimers();
 
@@ -87,8 +93,8 @@ describe("hasRecentActivityLogEntry", () => {
   test("propagates errors from DynamoDB", async () => {
     dynamoMock.on(QueryCommand).rejects(new Error("DynamoDB error"));
 
-    await expect(hasRecentActivityLogEntry("user-123")).rejects.toThrow(
-      "DynamoDB error"
-    );
+    await expect(
+      hasRecentActivityLogEntry({ commonSubjectId: "user-123" } as any)
+    ).rejects.toThrow("DynamoDB error");
   });
 });

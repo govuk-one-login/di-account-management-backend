@@ -7461,6 +7461,8 @@ Resources:
               !Ref Environment,
               FEATURESENDIADAUDITEVENTS,
             ]
+          ENVIRONMENT: !Ref Environment
+          IAD_TESTING_PEPPER_SECRET_ARN: !Ref IADTestingPepper
       DeploymentPreference:
         Alarms:
           Fn::If:
@@ -7562,6 +7564,14 @@ Resources:
               - dynamodb:PutItem
             Resource:
               - !GetAtt InactiveAccountCircuitBreakerStore.Arn
+          - Effect: Allow
+            Action:
+              - secretsmanager:GetSecretValue # pragma: allowlist secret
+            Resource: !Ref IADTestingPepper
+          - Effect: Allow
+            Action:
+              - kms:Decrypt
+            Resource: !GetAtt SecretsKmsKey.Arn
 
   ProcessInactiveAccountDeadLetterQueue:
     Type: AWS::SQS::Queue
@@ -7900,6 +7910,14 @@ Resources:
   #########################################
 
   NotifyDeliveryReceiptsSecret:
+    Type: AWS::SecretsManager::Secret
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      KmsKeyId: !Ref SecretsKmsKey
+      SecretString: set-me # pragma: allowlist secret
+
+  IADTestingPepper:
     Type: AWS::SecretsManager::Secret
     DeletionPolicy: Retain
     UpdateReplacePolicy: Retain

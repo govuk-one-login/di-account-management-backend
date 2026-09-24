@@ -47,6 +47,29 @@ const mockGetIadCircuitBreakerStatus = vi.hoisted(() =>
   vi.fn().mockResolvedValue(false)
 );
 
+const mockGetSecret = vi.hoisted(() =>
+  vi.fn().mockResolvedValue("test-pepper")
+);
+
+vi.mock("@aws-lambda-powertools/parameters/secrets", () => ({
+  getSecret: mockGetSecret,
+}));
+
+let mockHashDigestValue =
+  "3215997e9322eaf349514aa18fbcff229b4536f58069109afa6a25f5f59637ec"; // pragma: allowlist secret
+
+vi.mock("node:crypto", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("node:crypto")>();
+  return {
+    ...actual,
+    createHash: () => ({
+      update: () => ({
+        digest: () => mockHashDigestValue,
+      }),
+    }),
+  };
+});
+
 vi.mock("../common/iad-circuit-breaker.js", () => ({
   getIadCircuitBreakerStatus: mockGetIadCircuitBreakerStatus,
 }));
@@ -132,6 +155,9 @@ describe("process-inactive-account handler", () => {
       "https://sqs.eu-west-2.amazonaws.com/123456789012/TxmaQueue";
     process.env.AWS_REGION = "eu-west-2";
     process.env.FEATURE_SEND_IAD_AUDIT_EVENTS = "true";
+    process.env.ENVIRONMENT = "production";
+    process.env.IAD_TESTING_PEPPER_SECRET_ARN =
+      "arn:aws:secretsmanager:eu-west-2:123456789012:secret:IADTestingPepper";
   });
 
   test("aborts early and logs when circuit breaker is active", async () => {
@@ -202,6 +228,50 @@ describe("process-inactive-account handler", () => {
     );
 
     expect(dynamoMock).toHaveReceivedCommand(UpdateCommand);
+  });
+
+  test("processes record when environment is integration and hash matches integration hash", async () => {
+    process.env.ENVIRONMENT = "integration";
+    mockHashDigestValue =
+      "3c1ed6e9e2e1c29dd68f40123c295262aa076e73c35fbcea69fbcc25398910f3"; // pragma: allowlist secret
+
+    await handler(
+      buildSqsEvent([
+        {
+          commonSubjectId: "user-123",
+          emailAddress: "test@example.com",
+          dateForDeletion: "2026-08-15",
+          processName: "Warning30Day",
+          status: "pending",
+        },
+      ]),
+      {} as Context
+    );
+
+    expect(dynamoMock).toHaveReceivedCommand(UpdateCommand);
+
+    mockHashDigestValue =
+      "3215997e9322eaf349514aa18fbcff229b4536f58069109afa6a25f5f59637ec"; // pragma: allowlist secret
+  });
+
+  test("skips record when environment does not match any allowed hash", async () => {
+    process.env.ENVIRONMENT = "build";
+
+    await handler(
+      buildSqsEvent([
+        {
+          commonSubjectId: "user-123",
+          emailAddress: "test@example.com",
+          dateForDeletion: "2026-08-15",
+          processName: "Warning30Day",
+          status: "pending",
+        },
+      ]),
+      {} as Context
+    );
+
+    expect(sqsMock).not.toHaveReceivedCommand(SendMessageCommand);
+    expect(dynamoMock).not.toHaveReceivedCommand(UpdateCommand);
   });
 
   test("enqueues a 30-day warning notification to the NotificationQueue", async () => {

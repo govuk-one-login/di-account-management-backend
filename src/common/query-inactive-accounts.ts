@@ -126,14 +126,6 @@ export const countAccountsForDate = async (
   };
 };
 
-export const countForecastedAccountsForDate = async (
-  tableName: string,
-  dateForDeletion: string
-): Promise<number> => {
-  const { filteredCount } = await countWithFilter(tableName, dateForDeletion);
-  return filteredCount;
-};
-
 export interface AccountCountResult {
   total: number;
   emailForecast?: {

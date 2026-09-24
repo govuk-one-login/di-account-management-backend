@@ -7,7 +7,17 @@ import { DynamoDBDocumentClient, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import assert from "node:assert/strict";
 import { initMetrics } from "./common/metrics.js";
 import { processConfig, ProcessConfig } from "./common/process-config.js";
-import type { InactiveAccountStatus } from "./common/model.js";
+import type {
+  InactiveAccountStatus,
+  InactiveAccountTrackerRecord,
+} from "./common/model.js";
+
+type ProcessInactiveAccountMessage = InactiveAccountTrackerRecord & {
+  processName: string;
+  isDryRun: boolean;
+  manualTest?: boolean;
+};
+
 import { getEnvironmentVariable } from "./common/utils.js";
 import { sendAuditEvent } from "./common/send-audit-event.js";
 import { mergeTrackerRecords } from "./common/merge-tracker-records.js";
@@ -31,15 +41,11 @@ async function runSubsetOfGuards(
     ProcessConfig[number]["guards"]
   >],
   logMessage: string,
-  body: Record<string, string>,
+  body: ProcessInactiveAccountMessage,
   skippedNotificationType?: string
 ): Promise<{ guardActivated: boolean }> {
   for (const guard of guards ?? []) {
-    const guardResult = await guard.guard(
-      body.commonSubjectId,
-      body.emailAddress,
-      body.dateForDeletion
-    );
+    const guardResult = await guard.guard(body);
 
     if (guardResult.guardActivated) {
       logger.info(logMessage, {
@@ -58,6 +64,7 @@ async function runSubsetOfGuards(
         guardrailType: guardResult.guardName,
         contributeToAlarm: guard.contributeToAlarm ? "1" : "0",
         continueProcessingRecords: "1",
+        isDryRun: body.isDryRun ? "1" : "0",
       });
 
       if (guard.skippedNotificationAuditEventName) {
@@ -88,7 +95,7 @@ async function runSubsetOfGuards(
 
 async function runGuards(
   guards: ProcessConfig[number]["guards"],
-  body: Record<string, string>,
+  body: ProcessInactiveAccountMessage,
   skippedNotificationType?: string
 ): Promise<GuardsOutcome> {
   const abortGuardsResult = await runSubsetOfGuards(
@@ -117,7 +124,7 @@ type ProcessDefinition = ProcessConfig[string];
 
 async function enqueueNotification(
   process: ProcessDefinition,
-  body: Record<string, string>,
+  body: ProcessInactiveAccountMessage,
   notificationQueueUrl: string
 ): Promise<void> {
   if (!process.notificationType) return;
@@ -164,7 +171,7 @@ async function enqueueNotification(
 
 async function enqueueTargetMessage(
   process: ProcessDefinition,
-  body: Record<string, string>
+  body: ProcessInactiveAccountMessage
 ): Promise<void> {
   if (!process.targetQueueUrlEnvVar) return;
 
@@ -190,7 +197,7 @@ async function enqueueTargetMessage(
 
 async function updateTrackerStatus(
   process: ProcessDefinition,
-  body: Record<string, string>,
+  body: ProcessInactiveAccountMessage,
   inactiveAccountTrackerTableName: string
 ): Promise<void> {
   await dynamoDocClient.send(
@@ -212,7 +219,7 @@ async function updateTrackerStatus(
 
 async function emitAuditEvent(
   process: ProcessDefinition,
-  body: Record<string, string>
+  body: ProcessInactiveAccountMessage
 ): Promise<void> {
   if (!process.auditEventName) return;
 
@@ -237,7 +244,7 @@ async function emitAuditEvent(
 }
 
 async function processRecord(
-  body: Record<string, string>,
+  body: ProcessInactiveAccountMessage,
   notificationQueueUrl: string,
   inactiveAccountTrackerTableName: string
 ): Promise<void> {
@@ -257,10 +264,10 @@ async function processRecord(
   );
 
   if (merged) {
-    for (const [key, value] of Object.entries(merged)) {
-      if (value === undefined) continue;
-      body[key] = typeof value === "string" ? value : String(value);
-    }
+    const defined = Object.fromEntries(
+      Object.entries(merged).filter(([, v]) => v !== undefined)
+    );
+    Object.assign(body, defined);
   }
 
   if (!process.allowedStatuses.includes(body.status as InactiveAccountStatus)) {
@@ -315,7 +322,7 @@ export const handler = async (
   );
 
   for (const record of event.Records) {
-    const body = JSON.parse(record.body);
+    const body = JSON.parse(record.body) as ProcessInactiveAccountMessage;
 
     const iadCircuitBreakerActive = await getIadCircuitBreakerStatus();
 
@@ -336,6 +343,7 @@ export const handler = async (
         guardrailType: "CircuitBreakerAlreadyTripped",
         contributeToAlarm: "1",
         continueProcessingRecords: "0",
+        isDryRun: body.isDryRun ? "1" : "0",
       });
       return;
     }

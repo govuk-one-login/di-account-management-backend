@@ -5,7 +5,6 @@ import { getEnvironmentVariable } from "./common/utils.js";
 import { processConfig } from "./common/process-config.js";
 import {
   countAccountsForDate,
-  countForecastedAccountsForDate,
   queryAccountsByDate,
 } from "./common/query-inactive-accounts.js";
 import { retryFunction } from "./common/retry-function.js";
@@ -15,6 +14,7 @@ import {
   disableIad,
   getIadCircuitBreakerStatus,
 } from "./common/iad-circuit-breaker.js";
+import { getLatestForecastItemForDate } from "./common/iadGetLatestForecastItemForDate.js";
 
 const logger = new Logger();
 
@@ -44,12 +44,14 @@ const logAbort = (
   processName: string,
   targetDate: string,
   dispatchedBeforeAbort: number,
+  isDryRun: boolean,
   otherProps?: object
 ): void => {
   logger.info("GuardrailAbortedQueryAndDispatchInactiveAccounts", {
     guardrailType,
     contributeToAlarm: "1",
     continueProcessingRecords: "0",
+    isDryRun: isDryRun ? "1" : "0",
     processName,
     targetDate,
     dispatchedBeforeAbort,
@@ -82,7 +84,8 @@ const chunkRecords = (
 const sendChunk = async (
   chunk: InactiveAccountTrackerRecord[],
   queueUrl: string,
-  processName: string
+  processName: string,
+  isDryRun: boolean
 ): Promise<number> => {
   try {
     const result = await retryFunction(
@@ -92,7 +95,7 @@ const sendChunk = async (
             QueueUrl: queueUrl,
             Entries: chunk.map((record, i) => ({
               Id: String(i),
-              MessageBody: JSON.stringify({ ...record, processName }),
+              MessageBody: JSON.stringify({ ...record, processName, isDryRun }),
             })),
           })
         ),
@@ -111,7 +114,8 @@ const sendChunk = async (
 const dispatchEligibleRecords = async (
   eligible: InactiveAccountTrackerRecord[],
   queueUrl: string,
-  processName: string
+  processName: string,
+  isDryRun: boolean
 ): Promise<number> => {
   const chunks = chunkRecords(eligible);
   let dispatched = 0;
@@ -119,7 +123,7 @@ const dispatchEligibleRecords = async (
   for (let i = 0; i < chunks.length; i += MAX_CONCURRENT_BATCHES) {
     const wave = chunks.slice(i, i + MAX_CONCURRENT_BATCHES);
     const results = await Promise.all(
-      wave.map((chunk) => sendChunk(chunk, queueUrl, processName))
+      wave.map((chunk) => sendChunk(chunk, queueUrl, processName, isDryRun))
     );
     dispatched += results.reduce((sum, n) => sum + n, 0);
   }
@@ -127,22 +131,61 @@ const dispatchEligibleRecords = async (
   return dispatched;
 };
 
+const forecastQueryLogicHashMatches = async (
+  processName: string,
+  targetDate: string,
+  dispatched: number,
+  isDryRun: boolean
+): Promise<boolean> => {
+  if (processName !== "DeleteAccount") return true;
+  const forecastItem = await getLatestForecastItemForDate(targetDate);
+  const storedHash = forecastItem?.iadQueryLogicHash as
+    { hash: string; algorithm: string } | undefined;
+  if (
+    storedHash?.hash === iadQueryLogicHash.hash &&
+    storedHash?.algorithm === iadQueryLogicHash.algorithm
+  ) {
+    return true;
+  }
+  await disableIad({
+    guardrailType: "ForecastQueryLogicHashMismatch",
+    processName,
+    targetDate,
+    dispatchedBeforeAbort: dispatched,
+    forecastHash: storedHash,
+    actualHash: iadQueryLogicHash,
+    isDryRun,
+  });
+  logAbort(
+    "ForecastQueryLogicHashMismatch",
+    processName,
+    targetDate,
+    dispatched,
+    isDryRun,
+    {
+      forecastHash: storedHash,
+      actualHash: iadQueryLogicHash,
+    }
+  );
+  return false;
+};
+
 const forecastNumberOfDeletionsAlignsWithReality = async (
   processName: string,
   targetDate: string,
   tableName: string,
-  dispatched: number
+  dispatched: number,
+  isDryRun: boolean
 ): Promise<boolean> => {
   if (processName !== "DeleteAccount") return true;
-  const forecastedCount = await countForecastedAccountsForDate(
-    getEnvironmentVariable("FORECAST_TABLE_NAME"),
-    targetDate
-  );
+  const forecastedCount = (await getLatestForecastItemForDate(targetDate))
+    ?.accountsToDelete;
   const { total: actualCount } = await countAccountsForDate(
     tableName,
     targetDate
   );
-  if (forecastedCount >= actualCount) return true;
+  if (forecastedCount !== undefined && forecastedCount >= actualCount)
+    return true;
   await disableIad({
     guardrailType: "HomeToDeleteMoreThanForecast",
     processName,
@@ -150,12 +193,14 @@ const forecastNumberOfDeletionsAlignsWithReality = async (
     dispatchedBeforeAbort: dispatched,
     forecastedCount,
     actualCount,
+    isDryRun,
   });
   logAbort(
     "HomeToDeleteMoreThanForecast",
     processName,
     targetDate,
     dispatched,
+    isDryRun,
     {
       forecastedCount,
       actualCount,
@@ -177,8 +222,12 @@ export const handler = async (
 
   const tableName = getEnvironmentVariable("TABLE_NAME");
 
-  const { queueUrlEnvVar, daysToDeletion, allowedStatuses, isDryRun } =
-    processConfig[event.processName];
+  const {
+    queueUrlEnvVar,
+    daysToDeletion,
+    allowedStatuses,
+    isDryRun = false,
+  } = processConfig[event.processName];
   const queueUrl = getEnvironmentVariable(queueUrlEnvVar);
 
   let dispatched = 0;
@@ -187,11 +236,23 @@ export const handler = async (
     const targetDate = calculateTargetDate(days);
 
     if (
+      !(await forecastQueryLogicHashMatches(
+        event.processName,
+        targetDate,
+        dispatched,
+        isDryRun
+      ))
+    ) {
+      return;
+    }
+
+    if (
       !(await forecastNumberOfDeletionsAlignsWithReality(
         event.processName,
         targetDate,
         tableName,
-        dispatched
+        dispatched,
+        isDryRun
       ))
     ) {
       return;
@@ -207,7 +268,8 @@ export const handler = async (
           "CircuitBreakerAlreadyTripped",
           event.processName,
           targetDate,
-          dispatched
+          dispatched,
+          isDryRun
         );
         return;
       }
@@ -223,7 +285,8 @@ export const handler = async (
         dispatched += await dispatchEligibleRecords(
           eligible,
           queueUrl,
-          event.processName
+          event.processName,
+          isDryRun
         );
       }
     }

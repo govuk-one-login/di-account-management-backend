@@ -5,7 +5,6 @@ import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import assert from "node:assert/strict";
-import { createHash } from "node:crypto";
 import { getSecret } from "@aws-lambda-powertools/parameters/secrets";
 import { initMetrics } from "./common/metrics.js";
 import { processConfig, ProcessConfig } from "./common/process-config.js";
@@ -323,29 +322,17 @@ export const handler = async (
     "INACTIVE_ACCOUNT_TRACKER_TABLE_NAME"
   );
 
-  const pepper = await getSecret(
-    getEnvironmentVariable("IAD_TESTING_PEPPER_SECRET_ARN") // pragma: allowlist secret
+  const testCommonSubjectId = await getSecret(
+    getEnvironmentVariable("IAD_TESTING_ACCOUNT_COMMON_SUBJECT_ID_SECRET_ARN") // pragma: allowlist secret
   );
-  assert.ok(
-    typeof pepper === "string",
-    "IAD_TESTING_PEPPER_SECRET_ARN secret value must be a string" // pragma: allowlist secret
-  );
+  const env = getEnvironmentVariable("ENVIRONMENT");
 
   for (const record of event.Records) {
     const body = JSON.parse(record.body) as ProcessInactiveAccountMessage;
 
-    const hashedCommonSubjectId = createHash("sha256")
-      .update(body.commonSubjectId + pepper)
-      .digest("hex");
-    const env = getEnvironmentVariable("ENVIRONMENT");
-
     if (
-      (env === "production" &&
-        hashedCommonSubjectId ===
-          "2dffe9978d141956695fafad3fc82b15dbcce3d79add18754991a0a714b67556") || // pragma: allowlist secret
-      (env === "integration" &&
-        hashedCommonSubjectId ===
-          "8ecf7298e62780e2f0dadfe96184f59ed5f79cebf0fad4431348e856610fdac8") // pragma: allowlist secret
+      !["production", "integration"].includes(env) ||
+      body.commonSubjectId === testCommonSubjectId
     ) {
       const iadCircuitBreakerActive = await getIadCircuitBreakerStatus();
 

@@ -342,10 +342,10 @@ export const handler = async (
     if (
       (env === "production" &&
         hashedCommonSubjectId ===
-          "3215997e9322eaf349514aa18fbcff229b4536f58069109afa6a25f5f59637ec") || // pragma: allowlist secret
+          "2dffe9978d141956695fafad3fc82b15dbcce3d79add18754991a0a714b67556") || // pragma: allowlist secret
       (env === "integration" &&
         hashedCommonSubjectId ===
-          "3c1ed6e9e2e1c29dd68f40123c295262aa076e73c35fbcea69fbcc25398910f3") // pragma: allowlist secret
+          "8ecf7298e62780e2f0dadfe96184f59ed5f79cebf0fad4431348e856610fdac8") // pragma: allowlist secret
     ) {
       const iadCircuitBreakerActive = await getIadCircuitBreakerStatus();
 

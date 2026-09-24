@@ -56,7 +56,7 @@ vi.mock("@aws-lambda-powertools/parameters/secrets", () => ({
 }));
 
 let mockHashDigestValue =
-  "3215997e9322eaf349514aa18fbcff229b4536f58069109afa6a25f5f59637ec"; // pragma: allowlist secret
+  "2dffe9978d141956695fafad3fc82b15dbcce3d79add18754991a0a714b67556"; // pragma: allowlist secret
 
 vi.mock("node:crypto", async (importOriginal) => {
   const actual = await importOriginal<typeof import("node:crypto")>();
@@ -233,7 +233,7 @@ describe("process-inactive-account handler", () => {
   test("processes record when environment is integration and hash matches integration hash", async () => {
     process.env.ENVIRONMENT = "integration";
     mockHashDigestValue =
-      "3c1ed6e9e2e1c29dd68f40123c295262aa076e73c35fbcea69fbcc25398910f3"; // pragma: allowlist secret
+      "8ecf7298e62780e2f0dadfe96184f59ed5f79cebf0fad4431348e856610fdac8"; // pragma: allowlist secret
 
     await handler(
       buildSqsEvent([
@@ -251,7 +251,7 @@ describe("process-inactive-account handler", () => {
     expect(dynamoMock).toHaveReceivedCommand(UpdateCommand);
 
     mockHashDigestValue =
-      "3215997e9322eaf349514aa18fbcff229b4536f58069109afa6a25f5f59637ec"; // pragma: allowlist secret
+      "2dffe9978d141956695fafad3fc82b15dbcce3d79add18754991a0a714b67556"; // pragma: allowlist secret
   });
 
   test("skips record when environment does not match any allowed hash", async () => {

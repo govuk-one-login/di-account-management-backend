@@ -7461,6 +7461,7 @@ Resources:
               !Ref Environment,
               FEATURESENDIADAUDITEVENTS,
             ]
+          ENVIRONMENT: !Ref Environment
       DeploymentPreference:
         Alarms:
           Fn::If:

@@ -8176,6 +8176,9 @@ Resources:
               Action:
                 - kms:Decrypt
                 - kms:GenerateDataKey*
+                - kms:Encrypt
+                - kms:DescribeKey
+                - kms:ReEncrypt*
               Resource:
                 - "*"
               Condition:

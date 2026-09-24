@@ -7,7 +7,7 @@ const dynamoDocClient = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 
 const FIVE_YEARS_MINUS_30_DAYS = 5 * 365 * 24 * 60 * 60 - 30 * 24 * 60 * 60;
 
-export const hasRecentActivityLogEntry: Guard = async (commonSubjectId) => {
+export const hasRecentActivityLogEntry: Guard = async ({ commonSubjectId }) => {
   const tableName = getEnvironmentVariable("ACTIVITY_LOG_TABLE_NAME");
   const cutoffTimestamp =
     Math.ceil(Date.now() / 1000) - FIVE_YEARS_MINUS_30_DAYS;

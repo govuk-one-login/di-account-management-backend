@@ -1,4 +1,7 @@
-import type { InactiveAccountStatus } from "./model.js";
+import type {
+  InactiveAccountStatus,
+  InactiveAccountTrackerRecord,
+} from "./model.js";
 import { hasRecentActivityLogEntry } from "./iadGuards/hasRecentActivityLogEntry.js";
 import { hasAisBlockIntervention } from "./iadGuards/hasAisBlockIntervention.js";
 import { hasUndeliverableEmailAddress } from "./iadGuards/hasUndeliverableEmailAddress.js";
@@ -7,11 +10,7 @@ import { dateForDeletionIs27October } from "./iadGuards/dateForDeletionIs27Octob
 import { doesNotHaveEmailAddress } from "./iadGuards/doesNotHaveEmailAddress.js";
 import { hasNotSetupMfa } from "./iadGuards/hasNotSetupMfa.js";
 
-export type Guard = (
-  commonSubjectId?: string,
-  emailAddress?: string,
-  dateForDeletion?: string
-) => Promise<{
+export type Guard = (trackerRecord: InactiveAccountTrackerRecord) => Promise<{
   guardActivated: boolean;
   guardName: string;
 }>;

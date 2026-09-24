@@ -330,9 +330,7 @@ describe("process-inactive-account handler", () => {
     await handler(event, {} as Context);
 
     expect(mockHasAisBlockIntervention).toHaveBeenCalledWith(
-      "blocked-user-123",
-      "blocked@example.com",
-      "2026-08-15"
+      expect.objectContaining({ commonSubjectId: "blocked-user-123" })
     );
     // two sqs calls: skipped audit event + main audit event (no notification)
     expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(2);
@@ -816,9 +814,11 @@ describe("process-inactive-account handler", () => {
     await handler(event, {} as Context);
 
     expect(mockDoesNotHaveEmailAddress).toHaveBeenCalledWith(
-      "user-no-email",
-      "",
-      "2026-08-15"
+      expect.objectContaining({
+        commonSubjectId: "user-no-email",
+        emailAddress: "",
+        dateForDeletion: "2026-08-15",
+      })
     );
     expect(sqsMock).not.toHaveReceivedCommand(SendMessageCommand);
     expect(dynamoMock).not.toHaveReceivedCommand(UpdateCommand);

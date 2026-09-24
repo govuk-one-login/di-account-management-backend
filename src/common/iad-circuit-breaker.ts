@@ -32,7 +32,7 @@ export const getIadCircuitBreakerStatus = async () => {
     new QueryCommand({
       TableName: tableName,
       KeyConditionExpression: "pk = :pk",
-      ExpressionAttributeValues: { ":pk": { S: pk } },
+      ExpressionAttributeValues: { ":pk": pk },
       ScanIndexForward: false,
       Limit: 1,
       ConsistentRead: true,

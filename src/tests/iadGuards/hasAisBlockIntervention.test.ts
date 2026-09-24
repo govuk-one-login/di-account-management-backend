@@ -1,4 +1,5 @@
 import { vi, describe, test, expect, beforeEach } from "vitest";
+import type { InactiveAccountTrackerRecord } from "../../common/model.js";
 
 const mockIsUserIdBlocked = vi.hoisted(() => vi.fn());
 
@@ -16,7 +17,9 @@ describe("hasAisBlockIntervention", () => {
   test("returns guardActivated: false when user is not blocked", async () => {
     mockIsUserIdBlocked.mockResolvedValue(false);
 
-    const result = await hasAisBlockIntervention("user-123");
+    const result = await hasAisBlockIntervention({
+      commonSubjectId: "user-123",
+    } as InactiveAccountTrackerRecord);
 
     expect(result).toEqual({ guardActivated: false, guardName: "AIS" });
     expect(mockIsUserIdBlocked).toHaveBeenCalledWith("user-123");
@@ -25,7 +28,9 @@ describe("hasAisBlockIntervention", () => {
   test("returns guardActivated: true when user is blocked", async () => {
     mockIsUserIdBlocked.mockResolvedValue(true);
 
-    const result = await hasAisBlockIntervention("blocked-user");
+    const result = await hasAisBlockIntervention({
+      commonSubjectId: "blocked-user",
+    } as InactiveAccountTrackerRecord);
 
     expect(result).toEqual({ guardActivated: true, guardName: "AIS" });
     expect(mockIsUserIdBlocked).toHaveBeenCalledWith("blocked-user");
@@ -34,8 +39,10 @@ describe("hasAisBlockIntervention", () => {
   test("propagates errors from isUserIdBlocked", async () => {
     mockIsUserIdBlocked.mockRejectedValue(new Error("AIS unavailable"));
 
-    await expect(hasAisBlockIntervention("user-123")).rejects.toThrow(
-      "AIS unavailable"
-    );
+    await expect(
+      hasAisBlockIntervention({
+        commonSubjectId: "user-123",
+      } as InactiveAccountTrackerRecord)
+    ).rejects.toThrow("AIS unavailable");
   });
 });

@@ -2,6 +2,7 @@ import { vi, describe, test, expect, beforeEach } from "vitest";
 import { DynamoDBDocumentClient, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { mockClient } from "aws-sdk-client-mock";
 import "aws-sdk-client-mock-vitest";
+import type { InactiveAccountTrackerRecord } from "../../common/model.js";
 
 const dynamoMock = mockClient(DynamoDBDocumentClient);
 
@@ -17,7 +18,9 @@ describe("hasRecentActivityLogEntry", () => {
   test("returns guardActivated: false when no recent activity exists", async () => {
     dynamoMock.on(QueryCommand).resolves({ Count: 0 });
 
-    const result = await hasRecentActivityLogEntry("user-123");
+    const result = await hasRecentActivityLogEntry({
+      commonSubjectId: "user-123",
+    } as InactiveAccountTrackerRecord);
 
     expect(result).toEqual({
       guardActivated: false,
@@ -28,7 +31,9 @@ describe("hasRecentActivityLogEntry", () => {
   test("returns guardActivated: true when recent activity exists", async () => {
     dynamoMock.on(QueryCommand).resolves({ Count: 3 });
 
-    const result = await hasRecentActivityLogEntry("user-123");
+    const result = await hasRecentActivityLogEntry({
+      commonSubjectId: "user-123",
+    } as InactiveAccountTrackerRecord);
 
     expect(result).toEqual({
       guardActivated: true,
@@ -39,7 +44,9 @@ describe("hasRecentActivityLogEntry", () => {
   test("returns guardActivated: false when Count is undefined", async () => {
     dynamoMock.on(QueryCommand).resolves({});
 
-    const result = await hasRecentActivityLogEntry("user-123");
+    const result = await hasRecentActivityLogEntry({
+      commonSubjectId: "user-123",
+    } as InactiveAccountTrackerRecord);
 
     expect(result).toEqual({
       guardActivated: false,
@@ -50,7 +57,9 @@ describe("hasRecentActivityLogEntry", () => {
   test("queries the correct table with the correct user_id", async () => {
     dynamoMock.on(QueryCommand).resolves({ Count: 0 });
 
-    await hasRecentActivityLogEntry("user-456");
+    await hasRecentActivityLogEntry({
+      commonSubjectId: "user-456",
+    } as InactiveAccountTrackerRecord);
 
     expect(dynamoMock).toHaveReceivedCommandWith(QueryCommand, {
       TableName: "test-activity-log-table",
@@ -71,7 +80,9 @@ describe("hasRecentActivityLogEntry", () => {
     vi.setSystemTime(fixedNow);
 
     dynamoMock.on(QueryCommand).resolves({ Count: 0 });
-    await hasRecentActivityLogEntry("user-123");
+    await hasRecentActivityLogEntry({
+      commonSubjectId: "user-123",
+    } as InactiveAccountTrackerRecord);
 
     vi.useRealTimers();
 
@@ -87,8 +98,10 @@ describe("hasRecentActivityLogEntry", () => {
   test("propagates errors from DynamoDB", async () => {
     dynamoMock.on(QueryCommand).rejects(new Error("DynamoDB error"));
 
-    await expect(hasRecentActivityLogEntry("user-123")).rejects.toThrow(
-      "DynamoDB error"
-    );
+    await expect(
+      hasRecentActivityLogEntry({
+        commonSubjectId: "user-123",
+      } as InactiveAccountTrackerRecord)
+    ).rejects.toThrow("DynamoDB error");
   });
 });

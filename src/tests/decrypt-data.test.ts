@@ -177,12 +177,12 @@ describe("decryptActivities", () => {
     );
   });
 
-  it("should throw an error if something goes wrong when decrypting", () => {
+  it("should throw an error if something goes wrong when decrypting", async () => {
     vi.mocked(buildDecrypt().decrypt).mockRejectedValue(
       new Error("A KMS error")
     );
-    expect(async () => {
-      await decryptData(encryptedActivities, userId, generatorKey, wrappingKey);
-    }).rejects.toThrow("A KMS error");
+    await expect(
+      decryptData(encryptedActivities, userId, generatorKey, wrappingKey)
+    ).rejects.toThrow("A KMS error");
   });
 });

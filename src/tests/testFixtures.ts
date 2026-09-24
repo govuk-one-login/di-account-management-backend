@@ -187,7 +187,8 @@ export const MUTABLE_ACTIVITY_LOG_ENTRY: ActivityLogEntry = {
 export const generateDynamoStreamRecord = (
   customClientId?: string,
   txmaEventName = "AUTH_AUTH_CODE_ISSUED",
-  omitClientId = false
+  omitClientId = false,
+  overrideTimestampSeconds?: number
 ): DynamoDBRecord => ({
   eventID: "1234567",
   eventName: "INSERT",
@@ -215,7 +216,7 @@ export const generateDynamoStreamRecord = (
             ? {}
             : { client_id: { S: customClientId ?? clientId } }),
           txma: { M: { configVersion: { S: "2.2.1" } } },
-          timestamp: { N: `${timestamp}` },
+          timestamp: { N: `${overrideTimestampSeconds ?? timestamp}` },
         },
       },
     },

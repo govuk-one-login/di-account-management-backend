@@ -5,7 +5,6 @@ import { getEnvironmentVariable } from "./common/utils.js";
 import { processConfig } from "./common/process-config.js";
 import {
   countAccountsForDate,
-  countForecastedAccountsForDate,
   queryAccountsByDate,
 } from "./common/query-inactive-accounts.js";
 import { retryFunction } from "./common/retry-function.js";
@@ -15,6 +14,7 @@ import {
   disableIad,
   getIadCircuitBreakerStatus,
 } from "./common/iad-circuit-breaker.js";
+import { getLatestForecastItemForDate } from "./common/iadGetLatestForecastItemForDate.js";
 
 const logger = new Logger();
 
@@ -127,6 +127,42 @@ const dispatchEligibleRecords = async (
   return dispatched;
 };
 
+const forecastQueryLogicHashMatches = async (
+  processName: string,
+  targetDate: string,
+  dispatched: number
+): Promise<boolean> => {
+  if (processName !== "DeleteAccount") return true;
+  const forecastItem = await getLatestForecastItemForDate(targetDate);
+  const storedHash = forecastItem?.iadQueryLogicHash as
+    { hash: string; algorithm: string } | undefined;
+  if (
+    storedHash?.hash === iadQueryLogicHash.hash &&
+    storedHash?.algorithm === iadQueryLogicHash.algorithm
+  ) {
+    return true;
+  }
+  await disableIad({
+    guardrailType: "ForecastQueryLogicHashMismatch",
+    processName,
+    targetDate,
+    dispatchedBeforeAbort: dispatched,
+    forecastHash: storedHash,
+    actualHash: iadQueryLogicHash,
+  });
+  logAbort(
+    "ForecastQueryLogicHashMismatch",
+    processName,
+    targetDate,
+    dispatched,
+    {
+      forecastHash: storedHash,
+      actualHash: iadQueryLogicHash,
+    }
+  );
+  return false;
+};
+
 const forecastNumberOfDeletionsAlignsWithReality = async (
   processName: string,
   targetDate: string,
@@ -134,15 +170,14 @@ const forecastNumberOfDeletionsAlignsWithReality = async (
   dispatched: number
 ): Promise<boolean> => {
   if (processName !== "DeleteAccount") return true;
-  const forecastedCount = await countForecastedAccountsForDate(
-    getEnvironmentVariable("FORECAST_TABLE_NAME"),
-    targetDate
-  );
+  const forecastedCount = (await getLatestForecastItemForDate(targetDate))
+    ?.accountsToDelete;
   const { total: actualCount } = await countAccountsForDate(
     tableName,
     targetDate
   );
-  if (forecastedCount >= actualCount) return true;
+  if (forecastedCount !== undefined && forecastedCount >= actualCount)
+    return true;
   await disableIad({
     guardrailType: "HomeToDeleteMoreThanForecast",
     processName,
@@ -185,6 +220,16 @@ export const handler = async (
 
   for (const days of daysToDeletion) {
     const targetDate = calculateTargetDate(days);
+
+    if (
+      !(await forecastQueryLogicHashMatches(
+        event.processName,
+        targetDate,
+        dispatched
+      ))
+    ) {
+      return;
+    }
 
     if (
       !(await forecastNumberOfDeletionsAlignsWithReality(

@@ -21,6 +21,7 @@ import { sendAuditEvent } from "./common/send-audit-event.js";
 import { MetricUnit } from "@aws-lambda-powertools/metrics";
 import { initMetrics } from "./common/metrics.js";
 import checkIfDateIs27October from "./common/check-if-date-is-27-october.js";
+import { getNewDateForInactiveAccountDeletion } from "./common/get-new-date-for-inactive-account-deletion.js";
 
 const metrics = initMetrics("update-inactive-account-tracker");
 
@@ -58,13 +59,7 @@ const getLatestDate = (
   const trackerDate = trackerRecord
     ? new Date(trackerRecord.userLastActive)
     : new Date(0);
-  return eventDate > trackerDate ? eventDate : trackerDate;
-};
-
-const getNewDateForDeletion = (latestDate: Date): string => {
-  const deletionDate = new Date(latestDate);
-  deletionDate.setFullYear(deletionDate.getFullYear() + 5);
-  return deletionDate.toISOString().split("T")[0];
+  return eventDate >= trackerDate ? eventDate : trackerDate;
 };
 
 const isCurrentDeletionIn30DaysOrLess = (deletionDate: string): boolean => {
@@ -142,14 +137,17 @@ const buildTransactionItems = (
   return items;
 };
 
-const getNewItemDetails = (
+const buildTrackerRecord = (
   txmaEvent: TxmaEvent,
   previousTrackerRecord: InactiveAccountTrackerRecord | null,
   eventDate: Date,
-  eventDateTime: string
-) => {
+  userId: string
+): InactiveAccountTrackerRecord => {
+  const eventDateTime = eventDate.toISOString();
+  const latestDate = getLatestDate(eventDate, previousTrackerRecord);
+
   const isNewLatestDate =
-    eventDate >
+    eventDate >=
     (previousTrackerRecord
       ? new Date(previousTrackerRecord.userLastActive)
       : new Date(0));
@@ -160,7 +158,7 @@ const getNewItemDetails = (
       : new Date(0);
 
   const eventHasNewerEmailLastUpdated =
-    eventDate > recordedEmailLastUpdatedDate;
+    eventDate >= recordedEmailLastUpdatedDate;
 
   const newEmailAddress = (() => {
     if (
@@ -172,26 +170,53 @@ const getNewItemDetails = (
     }
   })();
 
-  const emailAddress = newEmailAddress ?? previousTrackerRecord?.emailAddress;
+  const emailFields = newEmailAddress
+    ? {
+        emailAddress: newEmailAddress,
+        emailAddressSource: txmaEvent.event_name,
+        emailAddressSourceId: txmaEvent.event_id,
+        emailAddressLastUpdated: eventDateTime,
+      }
+    : {
+        ...(previousTrackerRecord?.emailAddress && {
+          emailAddress: previousTrackerRecord.emailAddress,
+        }),
+        emailAddressSource: previousTrackerRecord?.emailAddressSource,
+        emailAddressSourceId: previousTrackerRecord?.emailAddressSourceId,
+        emailAddressLastUpdated: previousTrackerRecord?.emailAddressLastUpdated,
+      };
+
+  const activityAndStatusFields = isNewLatestDate
+    ? {
+        userLastActiveSource: txmaEvent.event_name,
+        ...(txmaEvent.event_id && {
+          userLastActiveSourceId: txmaEvent.event_id,
+        }),
+        userLastActiveUpdated: eventDateTime,
+        status: "pending" as const,
+        statusLastUpdated: eventDateTime,
+      }
+    : {
+        userLastActiveSource: previousTrackerRecord!.userLastActiveSource,
+        ...(previousTrackerRecord!.userLastActiveSourceId && {
+          userLastActiveSourceId: previousTrackerRecord!.userLastActiveSourceId,
+        }),
+        userLastActiveUpdated: previousTrackerRecord!.userLastActiveUpdated,
+        status: previousTrackerRecord!.status,
+        statusLastUpdated: previousTrackerRecord!.statusLastUpdated,
+      };
 
   return {
-    ...(emailAddress && { emailAddress }),
-    emailAddressSource: newEmailAddress
-      ? txmaEvent.event_name
-      : previousTrackerRecord?.emailAddressSource,
-    emailAddressSourceId: newEmailAddress
-      ? txmaEvent.event_id
-      : previousTrackerRecord?.emailAddressSourceId,
-    emailAddressLastUpdated: newEmailAddress
-      ? eventDateTime
-      : previousTrackerRecord?.emailAddressLastUpdated,
-    userLastActiveUpdated: isNewLatestDate
-      ? eventDateTime
-      : (previousTrackerRecord?.userLastActiveUpdated ?? eventDateTime),
+    commonSubjectId: userId,
+    userLastActive: latestDate.toISOString(),
+    dateForDeletion: getNewDateForInactiveAccountDeletion(latestDate),
+    ...emailFields,
+    ...activityAndStatusFields,
     publicSubjectId:
       txmaEvent.user?.public_subject_id ??
       previousTrackerRecord?.publicSubjectId ??
       "",
+    hasSetupMfa: previousTrackerRecord?.hasSetupMfa ?? true,
   };
 };
 
@@ -275,27 +300,12 @@ const processRecord = async (
     return;
   }
 
-  const eventDateTime = eventDate.toISOString();
-
-  const latestDate = getLatestDate(eventDate, previousTrackerRecord);
-  const properties = getNewItemDetails(
+  const newItem = buildTrackerRecord(
     txmaEvent,
     previousTrackerRecord,
     eventDate,
-    eventDateTime
+    userId
   );
-
-  const newItem: InactiveAccountTrackerRecord = {
-    commonSubjectId: userId,
-    userLastActive: latestDate.toISOString(),
-    userLastActiveSource: txmaEvent.event_name,
-    ...(txmaEvent.event_id && { userLastActiveSourceId: txmaEvent.event_id }),
-    dateForDeletion: getNewDateForDeletion(latestDate),
-    ...properties,
-    status: "pending",
-    statusLastUpdated: eventDateTime,
-    hasSetupMfa: previousTrackerRecord?.hasSetupMfa ?? false,
-  };
 
   logger.info(
     `Building transaction for update based on event id: ${txmaEvent.event_id}`

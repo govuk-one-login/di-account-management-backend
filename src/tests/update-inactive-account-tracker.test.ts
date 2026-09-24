@@ -42,6 +42,8 @@ vi.hoisted(() => {
   process.env.NOTIFY_TEMPLATE_IDS = '{"GLOBAL_LOGOUT":"template-id"}';
 });
 
+import { getNewDateForInactiveAccountDeletion } from "../common/get-new-date-for-inactive-account-deletion.js";
+
 describe("UpdateInactiveAccountTracker handler", () => {
   const loggerInfoMock = vi
     .spyOn(Logger.prototype, "info")
@@ -355,7 +357,7 @@ describe("UpdateInactiveAccountTracker handler", () => {
     expect(dynamoMock).not.toHaveReceivedCommand(TransactWriteCommand);
   });
 
-  test("sets hasSetupMfa to false when no existing record", async () => {
+  test("defaults hasSetupMfa to true when no existing record", async () => {
     dynamoMock.on(QueryCommand).resolves({ Items: [] });
     dynamoMock.on(TransactWriteCommand).resolves({});
     const event: DynamoDBStreamEvent = {
@@ -366,14 +368,14 @@ describe("UpdateInactiveAccountTracker handler", () => {
       TransactItems: expect.arrayContaining([
         expect.objectContaining({
           Put: expect.objectContaining({
-            Item: expect.objectContaining({ hasSetupMfa: false }),
+            Item: expect.objectContaining({ hasSetupMfa: true }),
           }),
         }),
       ]),
     });
   });
 
-  test("preserves hasSetupMfa from existing record", async () => {
+  test("preserves hasSetupMfa false from existing record", async () => {
     dynamoMock.on(QueryCommand).resolves({
       Items: [
         {
@@ -383,7 +385,7 @@ describe("UpdateInactiveAccountTracker handler", () => {
           status: "pending",
           emailAddress: "x",
           statusLastUpdated: "",
-          hasSetupMfa: true,
+          hasSetupMfa: false,
         },
       ],
     });
@@ -396,7 +398,7 @@ describe("UpdateInactiveAccountTracker handler", () => {
       TransactItems: expect.arrayContaining([
         expect.objectContaining({
           Put: expect.objectContaining({
-            Item: expect.objectContaining({ hasSetupMfa: true }),
+            Item: expect.objectContaining({ hasSetupMfa: false }),
           }),
         }),
       ]),
@@ -878,7 +880,9 @@ describe("UpdateInactiveAccountTracker handler", () => {
       Items: [
         {
           commonSubjectId: "qwerty",
-          dateForDeletion: "2099-01-01",
+          dateForDeletion: getNewDateForInactiveAccountDeletion(
+            new Date(futureDate)
+          ),
           userLastActive: futureDate,
           userLastActiveUpdated: existingLastActiveUpdated,
           status: "pending",
@@ -904,6 +908,168 @@ describe("UpdateInactiveAccountTracker handler", () => {
       ]),
     });
   });
+
+  const oldLastActiveDatetime = "1970-01-01T00:00:00.000Z";
+  const currentLastActiveDatetime = "2026-06-15T12:00:00.000Z";
+  const futureLastActiveDatetime = "2099-01-01T00:00:00.000Z";
+
+  test.each([
+    {
+      scenario: "preserves existing record fields when event is older",
+      eventTimestampSeconds: Math.floor(
+        new Date(oldLastActiveDatetime).getTime() / 1000
+      ),
+      existingRecord: {
+        commonSubjectId: "qwerty",
+        dateForDeletion: getNewDateForInactiveAccountDeletion(
+          new Date(futureLastActiveDatetime)
+        ),
+        userLastActive: futureLastActiveDatetime,
+        userLastActiveSource: "EXISTING_SOURCE",
+        userLastActiveSourceId: "existing-source-id",
+        userLastActiveUpdated: futureLastActiveDatetime,
+        status: "30DayWarningSent",
+        statusLastUpdated: futureLastActiveDatetime,
+        emailAddress: "existing@example.com",
+        emailAddressSource: "EXISTING_EMAIL_SOURCE",
+        emailAddressSourceId: "existing-email-source-id",
+        emailAddressLastUpdated: futureLastActiveDatetime,
+        hasSetupMfa: false,
+      },
+      expectedItem: {
+        commonSubjectId: "qwerty",
+        userLastActive: futureLastActiveDatetime,
+        dateForDeletion: getNewDateForInactiveAccountDeletion(
+          new Date(futureLastActiveDatetime)
+        ),
+        userLastActiveSource: "EXISTING_SOURCE",
+        userLastActiveSourceId: "existing-source-id",
+        userLastActiveUpdated: futureLastActiveDatetime,
+        status: "30DayWarningSent",
+        statusLastUpdated: futureLastActiveDatetime,
+        emailAddress: "existing@example.com",
+        emailAddressSource: "EXISTING_EMAIL_SOURCE",
+        emailAddressSourceId: "existing-email-source-id",
+        emailAddressLastUpdated: futureLastActiveDatetime,
+        publicSubjectId: "public-subject-id-123",
+        hasSetupMfa: false,
+      },
+    },
+    {
+      scenario:
+        "updates to event fields when event timestamp equals existing record",
+      eventTimestampSeconds: Math.floor(
+        new Date(currentLastActiveDatetime).getTime() / 1000
+      ),
+      existingRecord: {
+        commonSubjectId: "qwerty",
+        dateForDeletion: getNewDateForInactiveAccountDeletion(
+          new Date(currentLastActiveDatetime)
+        ),
+        userLastActive: currentLastActiveDatetime,
+        userLastActiveSource: "EXISTING_SOURCE",
+        userLastActiveSourceId: "existing-source-id",
+        userLastActiveUpdated: currentLastActiveDatetime,
+        status: "30DayWarningSent",
+        statusLastUpdated: currentLastActiveDatetime,
+        emailAddress: "existing@example.com",
+        emailAddressSource: "EXISTING_EMAIL_SOURCE",
+        emailAddressSourceId: "existing-email-source-id",
+        emailAddressLastUpdated: currentLastActiveDatetime,
+        hasSetupMfa: false,
+      },
+      expectedItem: {
+        commonSubjectId: "qwerty",
+        userLastActive: currentLastActiveDatetime,
+        dateForDeletion: getNewDateForInactiveAccountDeletion(
+          new Date(currentLastActiveDatetime)
+        ),
+        userLastActiveSource: "AUTH_AUTH_CODE_ISSUED",
+        userLastActiveSourceId: "event_id",
+        userLastActiveUpdated: currentLastActiveDatetime,
+        status: "pending",
+        statusLastUpdated: currentLastActiveDatetime,
+        emailAddress: "foo@bar.com",
+        emailAddressSource: "AUTH_AUTH_CODE_ISSUED",
+        emailAddressSourceId: "event_id",
+        emailAddressLastUpdated: currentLastActiveDatetime,
+        publicSubjectId: "public-subject-id-123",
+        hasSetupMfa: false,
+      },
+    },
+    {
+      scenario: "updates to event fields when event is newer",
+      eventTimestampSeconds: Math.floor(
+        new Date(futureLastActiveDatetime).getTime() / 1000
+      ),
+      existingRecord: {
+        commonSubjectId: "qwerty",
+        dateForDeletion: getNewDateForInactiveAccountDeletion(
+          new Date(oldLastActiveDatetime)
+        ),
+        userLastActive: oldLastActiveDatetime,
+        userLastActiveSource: "EXISTING_SOURCE",
+        userLastActiveSourceId: "existing-source-id",
+        userLastActiveUpdated: oldLastActiveDatetime,
+        status: "30DayWarningSent",
+        statusLastUpdated: oldLastActiveDatetime,
+        emailAddress: "existing@example.com",
+        emailAddressSource: "EXISTING_EMAIL_SOURCE",
+        emailAddressSourceId: "existing-email-source-id",
+        emailAddressLastUpdated: oldLastActiveDatetime,
+        hasSetupMfa: false,
+      },
+      expectedItem: {
+        commonSubjectId: "qwerty",
+        userLastActive: futureLastActiveDatetime,
+        dateForDeletion: getNewDateForInactiveAccountDeletion(
+          new Date(futureLastActiveDatetime)
+        ),
+        userLastActiveSource: "AUTH_AUTH_CODE_ISSUED",
+        userLastActiveSourceId: "event_id",
+        userLastActiveUpdated: futureLastActiveDatetime,
+        status: "pending",
+        statusLastUpdated: futureLastActiveDatetime,
+        emailAddress: "foo@bar.com",
+        emailAddressSource: "AUTH_AUTH_CODE_ISSUED",
+        emailAddressSourceId: "event_id",
+        emailAddressLastUpdated: futureLastActiveDatetime,
+        publicSubjectId: "public-subject-id-123",
+        hasSetupMfa: false,
+      },
+    },
+  ])(
+    "$scenario",
+    async ({ eventTimestampSeconds, existingRecord, expectedItem }) => {
+      const streamRecord = generateDynamoStreamRecord(
+        "test-client",
+        "AUTH_AUTH_CODE_ISSUED",
+        false,
+        eventTimestampSeconds
+      );
+
+      dynamoMock.on(QueryCommand).resolves({
+        Items: [existingRecord],
+      });
+      dynamoMock.on(TransactWriteCommand).resolves({});
+
+      await handler(
+        { Records: [streamRecord] } as DynamoDBStreamEvent,
+        {} as Context
+      );
+
+      expect(dynamoMock).toHaveReceivedCommandWith(TransactWriteCommand, {
+        TransactItems: expect.arrayContaining([
+          expect.objectContaining({
+            Put: {
+              TableName: "test-table",
+              Item: expectedItem,
+            },
+          }),
+        ]),
+      });
+    }
+  );
 
   test("converts historic millisecond timestamps to seconds", async () => {
     const msTimestamp = 1711929600000;

@@ -66,6 +66,8 @@ export interface Extensions {
   accountTrackerNotificationType?: string;
   accountTrackerNotificationSkipReason?: string;
   accountTrackerRecordPreviousStatus?: string;
+  accountTrackerRecordStatus?: string;
+  accountTrackerRecordDeletionReason?: string;
   accountTrackerNotificationCompletedAt?: string | null;
   accountTrackerNotificationCallbackSentAt?: string | null;
   accountTrackerNotificationCreatedAt?: string;

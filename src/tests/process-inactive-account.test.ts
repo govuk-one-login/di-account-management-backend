@@ -343,6 +343,8 @@ describe("process-inactive-account handler", () => {
     );
     expect(skippedEvent.extensions).toEqual({
       accountTrackerNotificationSkipReason: "IndefiniteSuspension",
+      accountTrackerNotificationType: "30DayWarning",
+      accountTrackerAccountDeletionDate: "2026-08-15",
     });
 
     expect(dynamoMock).toHaveReceivedCommand(UpdateCommand);
@@ -425,8 +427,9 @@ describe("process-inactive-account handler", () => {
     await handler(event, {} as Context);
 
     expect(mockHasAisBlockIntervention).toHaveBeenCalledTimes(2);
-    // blocked user: skipped audit event + main audit event (2); active user: notification + main audit event (2) = 4
-    expect(sqsMock).toHaveReceivedCommandTimes(SendMessageCommand, 4);
+    // blocked user: skipped audit event + main audit event (2);
+    // active user: notification + notification-requested audit event + main audit event (3) = 5
+    expect(sqsMock).toHaveReceivedCommandTimes(SendMessageCommand, 5);
     expect(dynamoMock).toHaveReceivedCommandTimes(UpdateCommand, 2);
 
     const sqsCalls = sqsMock.commandCalls(SendMessageCommand);
@@ -438,9 +441,14 @@ describe("process-inactive-account handler", () => {
     expect(skippedEvent.event_name).toBe(
       "HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED"
     );
-    expect(skippedEvent.user).toEqual({ user_id: "blocked-user" });
+    expect(skippedEvent.user).toEqual({
+      user_id: "blocked-user",
+      email: "blocked@example.com",
+    });
     expect(skippedEvent.extensions).toEqual({
       accountTrackerNotificationSkipReason: "IndefiniteSuspension",
+      accountTrackerNotificationType: "30DayWarning",
+      accountTrackerAccountDeletionDate: "2026-08-15",
     });
 
     // 2nd call: main audit event for blocked user (status still updated)
@@ -450,7 +458,10 @@ describe("process-inactive-account handler", () => {
     expect(blockedMainEvent.event_name).toBe(
       "HOME_ACCOUNT_TRACKER_ACCOUNT_FIRST_PERIOD_ENTERED"
     );
-    expect(blockedMainEvent.user).toEqual({ user_id: "blocked-user" });
+    expect(blockedMainEvent.user).toEqual({
+      user_id: "blocked-user",
+      email: "blocked@example.com",
+    });
 
     // 3rd call: notification for active user
     expect(sqsMock).toHaveReceivedNthCommandWith(SendMessageCommand, 3, {
@@ -463,14 +474,33 @@ describe("process-inactive-account handler", () => {
       }),
     });
 
-    // 4th call: main audit event for active user
-    const activeMainEvent = JSON.parse(
+    // 4th call: NOTIFICATION_REQUESTED audit event for active user
+    const activeRequestedEvent = JSON.parse(
       sqsCalls[3].args[0].input.MessageBody ?? ""
+    );
+    expect(activeRequestedEvent.event_name).toBe(
+      "HOME_ACCOUNT_TRACKER_NOTIFICATION_REQUESTED"
+    );
+    expect(activeRequestedEvent.user).toEqual({
+      user_id: "active-user",
+      email: "active@example.com",
+    });
+    expect(activeRequestedEvent.extensions).toEqual({
+      accountTrackerNotificationType: "30DayWarning",
+      accountTrackerAccountDeletionDate: "2026-08-20",
+    });
+
+    // 5th call: main audit event for active user
+    const activeMainEvent = JSON.parse(
+      sqsCalls[4].args[0].input.MessageBody ?? ""
     );
     expect(activeMainEvent.event_name).toBe(
       "HOME_ACCOUNT_TRACKER_ACCOUNT_FIRST_PERIOD_ENTERED"
     );
-    expect(activeMainEvent.user).toEqual({ user_id: "active-user" });
+    expect(activeMainEvent.user).toEqual({
+      user_id: "active-user",
+      email: "active@example.com",
+    });
     expect(activeMainEvent.extensions).toEqual({
       accountTrackerAccountDeletionDate: "2026-08-20",
     });
@@ -495,8 +525,8 @@ describe("process-inactive-account handler", () => {
     ]);
 
     await handler(event, {} as Context);
-    // 2 notifications and 2 audit events
-    expect(sqsMock).toHaveReceivedCommandTimes(SendMessageCommand, 4);
+    // per record: notification + notification-requested audit event + main audit event (3) x 2 = 6
+    expect(sqsMock).toHaveReceivedCommandTimes(SendMessageCommand, 6);
     expect(dynamoMock).toHaveReceivedCommandTimes(UpdateCommand, 2);
     expect(mockMetrics.publishStoredMetrics).toHaveBeenCalledTimes(1);
   });
@@ -631,7 +661,7 @@ describe("process-inactive-account handler", () => {
 
     await handler(event, {} as Context);
 
-    expect(sqsMock).toHaveReceivedCommandTimes(SendMessageCommand, 2);
+    expect(sqsMock).toHaveReceivedCommandTimes(SendMessageCommand, 3);
     expect(sqsMock).toHaveReceivedNthCommandWith(SendMessageCommand, 1, {
       QueueUrl:
         "https://sqs.eu-west-2.amazonaws.com/123456789012/NotificationQueue",
@@ -643,6 +673,13 @@ describe("process-inactive-account handler", () => {
     });
 
     expect(sqsMock).toHaveReceivedNthCommandWith(SendMessageCommand, 2, {
+      QueueUrl: "https://sqs.eu-west-2.amazonaws.com/123456789012/TxmaQueue",
+      MessageBody: expect.stringContaining(
+        '"event_name":"HOME_ACCOUNT_TRACKER_NOTIFICATION_REQUESTED"'
+      ),
+    });
+
+    expect(sqsMock).toHaveReceivedNthCommandWith(SendMessageCommand, 3, {
       QueueUrl: "https://sqs.eu-west-2.amazonaws.com/123456789012/TxmaQueue",
       MessageBody: expect.stringContaining(
         '"event_name":"HOME_ACCOUNT_TRACKER_ACCOUNT_FIRST_PERIOD_ENTERED"'
@@ -747,9 +784,12 @@ describe("process-inactive-account handler", () => {
       event_timestamp_ms_formatted: expect.any(String),
       user: {
         user_id: "undeliverablee",
+        email: "i-am-not-deliverable@undlvrbl.com",
       },
       extensions: {
         accountTrackerNotificationSkipReason: "PreviouslyUndeliverable",
+        accountTrackerNotificationType: "30DayWarning",
+        accountTrackerAccountDeletionDate: "2026-08-30",
       },
     });
     expect(mockMetrics.addMetric).not.toHaveBeenCalledWith(
@@ -926,14 +966,20 @@ describe("process-inactive-account handler", () => {
       .find(
         (call) =>
           call.args[0].input.QueueUrl ===
-          "https://sqs.eu-west-2.amazonaws.com/123456789012/TxmaQueue"
+            "https://sqs.eu-west-2.amazonaws.com/123456789012/TxmaQueue" &&
+          (call.args[0].input.MessageBody ?? "").includes(
+            "HOME_ACCOUNT_TRACKER_ACCOUNT_FIRST_PERIOD_ENTERED"
+          )
       );
     expect(txmaCall).toBeDefined();
 
     const auditEvent = JSON.parse(
       txmaCall!.args[0].input.MessageBody as string
     );
-    expect(auditEvent.user).toEqual({ user_id: "user-123" });
+    expect(auditEvent.user).toEqual({
+      user_id: "user-123",
+      email: "test@example.com",
+    });
     expect(auditEvent.extensions).toEqual({
       accountTrackerAccountDeletionDate: "2026-08-15",
     });
@@ -996,9 +1042,12 @@ describe("process-inactive-account handler", () => {
       event_timestamp_ms_formatted: expect.any(String),
       user: {
         user_id: "migratedverifyuser",
+        email: "i-might-be-a-migrated-verify@user.com",
       },
       extensions: {
         accountTrackerNotificationSkipReason: "LikelyVerifyMigratedUser",
+        accountTrackerNotificationType: "30DayWarning",
+        accountTrackerAccountDeletionDate: "2026-10-27",
       },
     });
 

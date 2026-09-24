@@ -16,7 +16,7 @@ import { Logger } from "@aws-lambda-powertools/logger";
 import type { InactiveAccountTrackerRecord } from "./common/model.ts";
 import assert from "node:assert/strict";
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
-import { notificationConfiguration } from "./notification-service-utils.js";
+import { notificationConfiguration } from "./common/notification-configuration.js";
 import { sendAuditEvent } from "./common/send-audit-event.js";
 import { MetricUnit } from "@aws-lambda-powertools/metrics";
 import { initMetrics } from "./common/metrics.js";
@@ -362,9 +362,20 @@ const processRecord = async (
       await sendAuditEvent("HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED", {
         user: {
           user_id: newItem.commonSubjectId,
+          ...(newItem.emailAddress && { email: newItem.emailAddress }),
         },
         extensions: {
           accountTrackerNotificationSkipReason: "UnusableAccount",
+          ...(notificationConfiguration[notificationType]
+            ?.auditEventNotificationType && {
+            accountTrackerNotificationType:
+              notificationConfiguration[notificationType]
+                .auditEventNotificationType,
+          }),
+          ...(previousTrackerRecord?.dateForDeletion && {
+            accountTrackerAccountDeletionDate:
+              previousTrackerRecord.dateForDeletion,
+          }),
         },
       });
     } else {
@@ -391,10 +402,15 @@ const processRecord = async (
       await sendAuditEvent(currentEventConfiguration.auditEvent ?? "", {
         user: {
           user_id: newItem.commonSubjectId,
+          ...(newItem.emailAddress && { email: newItem.emailAddress }),
         },
         extensions: {
           accountTrackerNotificationType:
             currentEventConfiguration.auditEventNotificationType,
+          ...(previousTrackerRecord?.dateForDeletion && {
+            accountTrackerAccountDeletionDate:
+              previousTrackerRecord.dateForDeletion,
+          }),
         },
       });
     }
@@ -411,6 +427,7 @@ const processRecord = async (
       await sendAuditEvent("HOME_ACCOUNT_TRACKER_ACCOUNT_REACTIVATED", {
         user: {
           user_id: newItem.commonSubjectId,
+          ...(newItem.emailAddress && { email: newItem.emailAddress }),
         },
         extensions: {
           accountTrackerRecordPreviousStatus: previousTrackerRecord.status,
@@ -451,9 +468,14 @@ const processRecord = async (
     await sendAuditEvent("HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED", {
       user: {
         user_id: newItem.commonSubjectId,
+        ...(newItem.emailAddress && { email: newItem.emailAddress }),
       },
       extensions: {
         accountTrackerNotificationType: "LikelyVerifyMigratedUser",
+        ...(previousTrackerRecord?.dateForDeletion && {
+          accountTrackerAccountDeletionDate:
+            previousTrackerRecord.dateForDeletion,
+        }),
       },
     });
   }

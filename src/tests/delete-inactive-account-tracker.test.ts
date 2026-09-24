@@ -44,6 +44,8 @@ const aisSuspended = true;
 const trackerItem = {
   dateForDeletion: "2030-01-01",
   commonSubjectId: "user-id",
+  publicSubjectId: "public-user-id",
+  status: "deleting",
   emailAddress: "user@example.com",
   hasUndeliverableEmailAddress: false,
   hasSetupMfa: true,
@@ -75,7 +77,7 @@ describe("deleteUserData", () => {
   test("queries the GSI and deletes matching records", async () => {
     dynamoMock.on(QueryCommand).resolves({ Items: [trackerItem] });
 
-    await deleteUserData(TEST_USER_DATA);
+    await deleteUserData(TEST_USER_DATA, "INACTIVE_ACCOUNT");
 
     expect(dynamoMock).toHaveReceivedCommandWith(QueryCommand, {
       TableName: "TABLE_NAME",
@@ -101,10 +103,18 @@ describe("deleteUserData", () => {
       txmaCall!.args[0].input.MessageBody as string
     );
     expect(auditEvent.event_name).toBe("HOME_ACCOUNT_TRACKER_RECORD_DELETED");
-    expect(auditEvent.user).toMatchObject({ user_id: TEST_USER_DATA.user_id });
-    expect(auditEvent.extensions).toMatchObject({
-      accountTrackerAccountDeletionDate: "2030-01-01",
+    expect(auditEvent.user).toMatchObject({
+      user_id: TEST_USER_DATA.user_id,
+      email: "user@example.com",
+      public_subject_id: "public-user-id",
     });
+    expect(auditEvent.extensions).toMatchObject({
+      accountTrackerRecordStatus: "deleting",
+      accountTrackerRecordDeletionReason: "INACTIVE_ACCOUNT",
+    });
+    expect(
+      auditEvent.extensions.accountTrackerAccountDeletionDate
+    ).toBeUndefined();
   });
 
   test("does not emit an audit event when no records are found", async () => {
@@ -292,6 +302,8 @@ describe("maybeEnqueueDeletionEmail", () => {
     expect(auditEvent.user).toMatchObject({ user_id: "user-id" });
     expect(auditEvent.extensions).toMatchObject({
       accountTrackerNotificationSkipReason: "UnusableAccount",
+      accountTrackerNotificationType: "Deletion",
+      accountTrackerAccountDeletionDate: "2026-10-20",
     });
   });
 });

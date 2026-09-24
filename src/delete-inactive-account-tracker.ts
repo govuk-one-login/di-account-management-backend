@@ -12,6 +12,7 @@ import { Logger } from "@aws-lambda-powertools/logger";
 import { sendSqsMessage } from "./common/sqs.js";
 import { isUserIdBlocked } from "./common/account-interventions-service-client.js";
 import checkIfDateIs27October from "./common/check-if-date-is-27-october.js";
+import { notificationConfiguration } from "./common/notification-configuration.js";
 
 const logger = new Logger();
 
@@ -36,7 +37,8 @@ export const validateUserData = (userData: UserData): UserData => {
 };
 
 export const deleteUserData = async (
-  userData: UserData
+  userData: UserData,
+  accountDeletionReason?: string
 ): Promise<{
   deleted: boolean;
   emailAddress?: string;
@@ -75,13 +77,19 @@ export const deleteUserData = async (
       );
 
       // Emit one audit event per deleted tracker record so TxMA has a record of
-      // the deletion. The extension carries the deleted record's deletion date.
+      // the deletion. The extensions carry the deleted record's status and the
+      // reason the account was deleted.
       await sendAuditEvent("HOME_ACCOUNT_TRACKER_RECORD_DELETED", {
         user: {
           user_id: i.commonSubjectId,
+          ...(i.emailAddress && { email: i.emailAddress }),
+          ...(i.publicSubjectId && { public_subject_id: i.publicSubjectId }),
         },
         extensions: {
-          accountTrackerAccountDeletionDate: i.dateForDeletion,
+          accountTrackerRecordStatus: i.status,
+          ...(accountDeletionReason && {
+            accountTrackerRecordDeletionReason: accountDeletionReason,
+          }),
         },
       });
     })
@@ -120,9 +128,19 @@ export const maybeEnqueueDeletionEmail = async (
     await sendAuditEvent("HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED", {
       user: {
         user_id: userId,
+        email: emailAddress,
       },
       extensions: {
         accountTrackerNotificationSkipReason: "UnusableAccount",
+        ...(notificationConfiguration.INACTIVE_ACCOUNT_DELETED_CONFIRMATION
+          .auditEventNotificationType && {
+          accountTrackerNotificationType:
+            notificationConfiguration.INACTIVE_ACCOUNT_DELETED_CONFIRMATION
+              .auditEventNotificationType,
+        }),
+        ...(dateForDeletion && {
+          accountTrackerAccountDeletionDate: dateForDeletion,
+        }),
       },
     });
     return;
@@ -165,10 +183,11 @@ export const handler = async (
         );
         const userData: UserData = JSON.parse(record.Sns.Message);
         validateUserData(userData);
-        const result = await deleteUserData(userData);
 
         const accountDeletionReason =
           record.Sns.MessageAttributes?.account_deletion_reason?.Value;
+
+        const result = await deleteUserData(userData, accountDeletionReason);
 
         if (result.deleted && accountDeletionReason === "INACTIVE_ACCOUNT") {
           await maybeEnqueueDeletionEmail(

@@ -22,6 +22,7 @@ import { getEnvironmentVariable } from "./common/utils.js";
 import { sendAuditEvent } from "./common/send-audit-event.js";
 import { mergeTrackerRecords } from "./common/merge-tracker-records.js";
 import { getIadCircuitBreakerStatus } from "./common/iad-circuit-breaker.js";
+import { notificationConfiguration } from "./common/notification-configuration.js";
 
 const logger = new Logger();
 const metrics = initMetrics("process-inactive-account");
@@ -40,7 +41,8 @@ async function runSubsetOfGuards(
     ProcessConfig[number]["guards"]
   >],
   logMessage: string,
-  body: ProcessInactiveAccountMessage
+  body: ProcessInactiveAccountMessage,
+  skippedNotificationType?: string
 ): Promise<{ guardActivated: boolean }> {
   for (const guard of guards ?? []) {
     const guardResult = await guard.guard(body);
@@ -69,10 +71,17 @@ async function runSubsetOfGuards(
         await sendAuditEvent(guard.skippedNotificationAuditEventName, {
           user: {
             user_id: body.commonSubjectId,
+            ...(body.emailAddress && { email: body.emailAddress }),
           },
           extensions: {
             accountTrackerNotificationSkipReason:
               guard.skippedNotificationAuditEventReason ?? "",
+            ...(skippedNotificationType && {
+              accountTrackerNotificationType: skippedNotificationType,
+            }),
+            ...(body.dateForDeletion && {
+              accountTrackerAccountDeletionDate: body.dateForDeletion,
+            }),
           },
         });
       }
@@ -86,12 +95,14 @@ async function runSubsetOfGuards(
 
 async function runGuards(
   guards: ProcessConfig[number]["guards"],
-  body: ProcessInactiveAccountMessage
+  body: ProcessInactiveAccountMessage,
+  skippedNotificationType?: string
 ): Promise<GuardsOutcome> {
   const abortGuardsResult = await runSubsetOfGuards(
     guards?.abort,
     "GuardrailAbortedInactiveAccountDeletionProcess",
-    body
+    body,
+    skippedNotificationType
   );
 
   if (abortGuardsResult.guardActivated) return GuardsOutcome.abort;
@@ -99,7 +110,8 @@ async function runGuards(
   const continueWithoutActionsGuardsResult = await runSubsetOfGuards(
     guards?.continueWithoutActions,
     "GuardrailInactiveAccountDeletionProcessContinuedWithoutActions",
-    body
+    body,
+    skippedNotificationType
   );
 
   if (continueWithoutActionsGuardsResult.guardActivated)
@@ -136,6 +148,25 @@ async function enqueueNotification(
     notificationType: process.notificationType,
   });
   metrics.addMetric("notificationEnqueued", MetricUnit.Count, 1);
+
+  const accountTrackerNotificationType =
+    notificationConfiguration[process.notificationType]
+      ?.auditEventNotificationType;
+
+  await sendAuditEvent("HOME_ACCOUNT_TRACKER_NOTIFICATION_REQUESTED", {
+    user: {
+      user_id: body.commonSubjectId,
+      ...(body.emailAddress && { email: body.emailAddress }),
+    },
+    extensions: {
+      ...(accountTrackerNotificationType && {
+        accountTrackerNotificationType,
+      }),
+      ...(body.dateForDeletion && {
+        accountTrackerAccountDeletionDate: body.dateForDeletion,
+      }),
+    },
+  });
 }
 
 async function enqueueTargetMessage(
@@ -195,8 +226,8 @@ async function emitAuditEvent(
   await sendAuditEvent(process.auditEventName, {
     user: {
       user_id: body.commonSubjectId,
+      ...(body.emailAddress && { email: body.emailAddress }),
       ...(process.sendAdditionalAuditEventDetails && {
-        email: body.emailAddress,
         public_subject_id: body.publicSubjectId,
       }),
     },
@@ -251,7 +282,16 @@ async function processRecord(
     `No target status configured for process ${body.processName}`
   );
 
-  const runGuardsOutcome = await runGuards(process.guards, body);
+  const skippedNotificationType = process.notificationType
+    ? notificationConfiguration[process.notificationType]
+        ?.auditEventNotificationType
+    : undefined;
+
+  const runGuardsOutcome = await runGuards(
+    process.guards,
+    body,
+    skippedNotificationType
+  );
 
   if (runGuardsOutcome === GuardsOutcome.abort) return;
 

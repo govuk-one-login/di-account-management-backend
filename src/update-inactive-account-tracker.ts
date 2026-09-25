@@ -95,7 +95,8 @@ const buildTransactionItems = (
   userId: string,
   newItem: InactiveAccountTrackerRecord,
   previousTrackerRecord: InactiveAccountTrackerRecord | null,
-  effectiveClientId: string | undefined
+  effectiveClientId: string | undefined,
+  txmaEvent: TxmaEvent
 ): TransactionItems => {
   const items: TransactionItems = [
     {
@@ -123,7 +124,20 @@ const buildTransactionItems = (
     });
   }
 
-  if (effectiveClientId !== olhClientId) {
+  if (
+    effectiveClientId !== olhClientId &&
+    /*
+      Temporary fix:
+      The client ID for this event is is always orchestrationAuth. Therefore this event will always
+      cause this deletion code to run even when the event is triggered by a sign in to Home.
+      Therefore we ignore this event when deciding whether to perform the deletion. For low confidence RPs
+      this is the only event we will receive on sign in so the user will see the notification banner
+      on their next sign into Home, if they've only signed into low confidence RPs before doing so.
+      This risk has been  accepted and will be mitigated in future when the
+      AUTH_TOKEN_SENT_TO_ORCHESTRATION event is fixed to include the correct client ID.
+    */
+    txmaEvent.event_name !== "AUTH_TOKEN_SENT_TO_ORCHESTRATION"
+  ) {
     // if the user logs in to a different RP, then we won't show them the account kept notificaton
     // when they log in to Home
     items.push({
@@ -321,7 +335,8 @@ const processRecord = async (
     userId,
     newItem,
     previousTrackerRecord,
-    effectiveClientId
+    effectiveClientId,
+    txmaEvent
   );
   const isDeletionIn30DaysOrLess =
     previousTrackerRecord?.dateForDeletion &&

@@ -495,7 +495,7 @@ Mappings:
       publishingApiKeyVersionId: "279a0631-b5c2-4224-94bf-b8d94bda588b"
       accountInterventionsServiceApiUrl: https://65zhj32bjb.execute-api.eu-west-2.amazonaws.com/v1
       notifyDontSendEmailsTo: "^(perftest.+?@digital.cabinet-office.gov.uk)|(testuser@test.null.local)$"
-      sendInactiveAccountDeletionEmails: "0"
+      sendInactiveAccountDeletionEmails: "1"
     production:
       dynatraceSecretArn: arn:aws:secretsmanager:eu-west-2:216552277552:secret:DynatraceProductionVariables
       zendeskGroupIdSecretArn: arn:aws:secretsmanager:eu-west-2:026991849909:secret:/account-mgmt-backend/zendesk-group-id-token-mE55Wr
@@ -509,7 +509,7 @@ Mappings:
       publishingApiKeyVersionId: "a95cff2e-397a-4103-a032-864e0727e618"
       accountInterventionsServiceApiUrl: https://ruz07ekh4b.execute-api.eu-west-2.amazonaws.com/v1
       notifyDontSendEmailsTo: "^(perftest.+?@digital.cabinet-office.gov.uk)|(testuser@test.null.local)$"
-      sendInactiveAccountDeletionEmails: "0"
+      sendInactiveAccountDeletionEmails: "1"
 
 Resources:
   ######################################
@@ -7172,21 +7172,21 @@ Resources:
     DependsOn:
       - QueryAndDispatchInactiveAccountsFunctionLogGroup
     Properties:
-      FunctionName: !Sub ${Environment}-${AWS::StackName}-inactive-accounts-processor
+      FunctionName: !Sub ${Environment}-${AWS::StackName}-dispatch-inactive-accounts
       CodeUri: src
       PackageType: Zip
       Timeout: 900
       Events:
-        Warning30DayScheduleEvent:
-          Type: Schedule
-          Properties:
-            Schedule: "cron(0 9 * * ? *)"
-            Input: '{"processName": "Warning30Day"}'
-        Warning7DayScheduleEvent:
-          Type: Schedule
-          Properties:
-            Schedule: "cron(0 9 * * ? *)"
-            Input: '{"processName": "Warning7Day"}'
+        # Warning30DayScheduleEvent:
+        #   Type: Schedule
+        #   Properties:
+        #     Schedule: "cron(0 9 * * ? *)"
+        #     Input: '{"processName": "Warning30Day"}'
+        # Warning7DayScheduleEvent:
+        #   Type: Schedule
+        #   Properties:
+        #     Schedule: "cron(0 9 * * ? *)"
+        #     Input: '{"processName": "Warning7Day"}'
         DeletionDryRunScheduleEvent:
           Type: Schedule
           Properties:
@@ -7294,7 +7294,7 @@ Resources:
   QueryAndDispatchInactiveAccountsFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-inactive-accounts-processor"
+      LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-dispatch-inactive-accounts"
       RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 

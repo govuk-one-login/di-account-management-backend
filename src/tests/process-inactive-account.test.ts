@@ -48,28 +48,11 @@ const mockGetIadCircuitBreakerStatus = vi.hoisted(() =>
   vi.fn().mockResolvedValue(false)
 );
 
-const mockGetSecret = vi.hoisted(() =>
-  vi.fn().mockResolvedValue("test-pepper")
-);
+const mockGetSecret = vi.hoisted(() => vi.fn().mockResolvedValue("user-123"));
 
 vi.mock("@aws-lambda-powertools/parameters/secrets", () => ({
   getSecret: mockGetSecret,
 }));
-
-let mockHashDigestValue =
-  "2dffe9978d141956695fafad3fc82b15dbcce3d79add18754991a0a714b67556"; // pragma: allowlist secret
-
-vi.mock("node:crypto", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("node:crypto")>();
-  return {
-    ...actual,
-    createHash: () => ({
-      update: () => ({
-        digest: () => mockHashDigestValue,
-      }),
-    }),
-  };
-});
 
 vi.mock("../common/iad-circuit-breaker.js", () => ({
   getIadCircuitBreakerStatus: mockGetIadCircuitBreakerStatus,
@@ -146,21 +129,22 @@ describe("process-inactive-account handler", () => {
       doesNotHaveEmailAddressContinue
     );
     mockGetIadCircuitBreakerStatus.mockResolvedValue(false);
+    mockGetSecret.mockResolvedValue("user-123");
 
     process.env.NOTIFICATION_QUEUE_URL =
       "https://sqs.eu-west-2.amazonaws.com/123456789012/NotificationQueue";
     process.env.INACTIVE_ACCOUNT_TRACKER_TABLE_NAME =
       "test-inactive-tracker-table";
     process.env.SEND_INACTIVE_ACCOUNT_DELETION_EMAILS = "1";
-    process.env.FEATURE_SEND_IAD_AUDIT_EVENTS = "false";
+    process.env.FEATURE_SEND_IAD_AUDIT_EVENTS = "true";
     process.env.TXMA_QUEUE_URL =
       "https://sqs.eu-west-2.amazonaws.com/123456789012/TxmaQueue";
     process.env.AWS_REGION = "eu-west-2";
     process.env.FEATURE_SEND_IAD_AUDIT_EVENTS = "true";
-    process.env.ENVIRONMENT = "production";
-    process.env.IAD_TESTING_PEPPER_SECRET_ARN =
-      "arn:aws:secretsmanager:eu-west-2:123456789012:secret:IADTestingPepper";
     process.env.USER_NOTIFICATIONS_TABLE_NAME = "test-user-notifications-table";
+    process.env.ENVIRONMENT = "build";
+    process.env.IAD_TESTING_ACCOUNT_COMMON_SUBJECT_ID_SECRET_ARN =
+      "arn:aws:secretsmanager:eu-west-2:123456789012:secret:IADTestingAccountCommonSubjectId"; // pragma: allowlist secret
   });
 
   test("aborts early and logs when circuit breaker is active", async () => {
@@ -214,6 +198,57 @@ describe("process-inactive-account handler", () => {
     infoSpy.mockRestore();
   });
 
+  test("reports current and remaining records as failed when circuit breaker trips mid-batch", async () => {
+    mockGetIadCircuitBreakerStatus
+      .mockResolvedValueOnce(false)
+      .mockResolvedValue(true);
+
+    const event = buildSqsEvent([
+      {
+        commonSubjectId: "user-1",
+        emailAddress: "test1@example.com",
+        dateForDeletion: "2026-08-15",
+        processName: "Warning30Day",
+        status: "pending",
+      },
+      {
+        commonSubjectId: "user-2",
+        emailAddress: "test2@example.com",
+        dateForDeletion: "2026-08-15",
+        processName: "Warning30Day",
+        status: "pending",
+      },
+      {
+        commonSubjectId: "user-3",
+        emailAddress: "test3@example.com",
+        dateForDeletion: "2026-08-15",
+        processName: "Warning30Day",
+        status: "pending",
+      },
+    ]);
+
+    const result = await handler(event, {} as Context);
+
+    // First record is processed successfully before the breaker trips.
+    expect(dynamoMock).toHaveReceivedCommandWith(UpdateCommand, {
+      Key: { dateForDeletion: "2026-08-15", commonSubjectId: "user-1" },
+    });
+    expect(dynamoMock).not.toHaveReceivedCommandWith(UpdateCommand, {
+      Key: { dateForDeletion: "2026-08-15", commonSubjectId: "user-2" },
+    });
+    expect(dynamoMock).not.toHaveReceivedCommandWith(UpdateCommand, {
+      Key: { dateForDeletion: "2026-08-15", commonSubjectId: "user-3" },
+    });
+    // The record being processed when the breaker trips, and every record
+    // after it, are reported as failed so SQS retries them later.
+    expect(result).toEqual({
+      batchItemFailures: [
+        { itemIdentifier: "msg-1" },
+        { itemIdentifier: "msg-2" },
+      ],
+    });
+  });
+
   test("continues processing when circuit breaker is inactive", async () => {
     mockGetIadCircuitBreakerStatus.mockResolvedValue(false);
 
@@ -233,32 +268,9 @@ describe("process-inactive-account handler", () => {
     expect(dynamoMock).toHaveReceivedCommand(UpdateCommand);
   });
 
-  test("processes record when environment is integration and hash matches integration hash", async () => {
-    process.env.ENVIRONMENT = "integration";
-    mockHashDigestValue =
-      "8ecf7298e62780e2f0dadfe96184f59ed5f79cebf0fad4431348e856610fdac8"; // pragma: allowlist secret
-
-    await handler(
-      buildSqsEvent([
-        {
-          commonSubjectId: "user-123",
-          emailAddress: "test@example.com",
-          dateForDeletion: "2026-08-15",
-          processName: "Warning30Day",
-          status: "pending",
-        },
-      ]),
-      {} as Context
-    );
-
-    expect(dynamoMock).toHaveReceivedCommand(UpdateCommand);
-
-    mockHashDigestValue =
-      "2dffe9978d141956695fafad3fc82b15dbcce3d79add18754991a0a714b67556"; // pragma: allowlist secret
-  });
-
-  test("skips record when environment does not match any allowed hash", async () => {
-    process.env.ENVIRONMENT = "build";
+  test("skips record when in production and commonSubjectId does not match the secret value", async () => {
+    process.env.ENVIRONMENT = "production";
+    mockGetSecret.mockResolvedValue("other-user");
 
     await handler(
       buildSqsEvent([
@@ -275,6 +287,26 @@ describe("process-inactive-account handler", () => {
 
     expect(sqsMock).not.toHaveReceivedCommand(SendMessageCommand);
     expect(dynamoMock).not.toHaveReceivedCommand(UpdateCommand);
+  });
+
+  test("processes record in non-production environment regardless of commonSubjectId", async () => {
+    process.env.ENVIRONMENT = "build";
+    mockGetSecret.mockResolvedValue("other-user");
+
+    await handler(
+      buildSqsEvent([
+        {
+          commonSubjectId: "user-123",
+          emailAddress: "test@example.com",
+          dateForDeletion: "2026-08-15",
+          processName: "Warning30Day",
+          status: "pending",
+        },
+      ]),
+      {} as Context
+    );
+
+    expect(dynamoMock).toHaveReceivedCommand(UpdateCommand);
   });
 
   test("enqueues a 30-day warning notification to the NotificationQueue", async () => {
@@ -482,14 +514,14 @@ describe("process-inactive-account handler", () => {
 
     const event = buildSqsEvent([
       {
-        commonSubjectId: "blocked-user",
+        commonSubjectId: "user-123",
         emailAddress: "blocked@example.com",
         dateForDeletion: "2026-08-15",
         processName: "Warning30Day",
         status: "pending",
       },
       {
-        commonSubjectId: "active-user",
+        commonSubjectId: "user-123",
         emailAddress: "active@example.com",
         dateForDeletion: "2026-08-20",
         processName: "Warning30Day",
@@ -500,14 +532,14 @@ describe("process-inactive-account handler", () => {
     await handler(event, {} as Context);
 
     expect(mockHasAisBlockIntervention).toHaveBeenCalledTimes(2);
-    // blocked user: skipped audit event + main audit event (2);
-    // active user: notification + notification-requested audit event + main audit event (3) = 5
+    // blocked record: skipped audit event + main audit event (2);
+    // active record: notification + notification-requested audit event + main audit event (3) = 5
     expect(sqsMock).toHaveReceivedCommandTimes(SendMessageCommand, 5);
     expect(dynamoMock).toHaveReceivedCommandTimes(UpdateCommand, 2);
 
     const sqsCalls = sqsMock.commandCalls(SendMessageCommand);
 
-    // 1st call: NOTIFICATION_SKIPPED for blocked user
+    // 1st call: NOTIFICATION_SKIPPED for blocked record
     const skippedEvent = JSON.parse(
       sqsCalls[0].args[0].input.MessageBody ?? ""
     );
@@ -515,7 +547,7 @@ describe("process-inactive-account handler", () => {
       "HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED"
     );
     expect(skippedEvent.user).toEqual({
-      user_id: "blocked-user",
+      user_id: "user-123",
       email: "blocked@example.com",
     });
     expect(skippedEvent.extensions).toEqual({
@@ -524,7 +556,7 @@ describe("process-inactive-account handler", () => {
       accountTrackerAccountDeletionDate: "2026-08-15",
     });
 
-    // 2nd call: main audit event for blocked user (status still updated)
+    // 2nd call: main audit event for blocked record (status still updated)
     const blockedMainEvent = JSON.parse(
       sqsCalls[1].args[0].input.MessageBody ?? ""
     );
@@ -532,11 +564,11 @@ describe("process-inactive-account handler", () => {
       "HOME_ACCOUNT_TRACKER_ACCOUNT_FIRST_PERIOD_ENTERED"
     );
     expect(blockedMainEvent.user).toEqual({
-      user_id: "blocked-user",
+      user_id: "user-123",
       email: "blocked@example.com",
     });
 
-    // 3rd call: notification for active user
+    // 3rd call: notification for active record
     expect(sqsMock).toHaveReceivedNthCommandWith(SendMessageCommand, 3, {
       QueueUrl:
         "https://sqs.eu-west-2.amazonaws.com/123456789012/NotificationQueue",
@@ -547,7 +579,7 @@ describe("process-inactive-account handler", () => {
       }),
     });
 
-    // 4th call: NOTIFICATION_REQUESTED audit event for active user
+    // 4th call: NOTIFICATION_REQUESTED audit event for active record
     const activeRequestedEvent = JSON.parse(
       sqsCalls[3].args[0].input.MessageBody ?? ""
     );
@@ -555,7 +587,7 @@ describe("process-inactive-account handler", () => {
       "HOME_ACCOUNT_TRACKER_NOTIFICATION_REQUESTED"
     );
     expect(activeRequestedEvent.user).toEqual({
-      user_id: "active-user",
+      user_id: "user-123",
       email: "active@example.com",
     });
     expect(activeRequestedEvent.extensions).toEqual({
@@ -563,7 +595,7 @@ describe("process-inactive-account handler", () => {
       accountTrackerAccountDeletionDate: "2026-08-20",
     });
 
-    // 5th call: main audit event for active user
+    // 5th call: main audit event for active record
     const activeMainEvent = JSON.parse(
       sqsCalls[4].args[0].input.MessageBody ?? ""
     );
@@ -571,7 +603,7 @@ describe("process-inactive-account handler", () => {
       "HOME_ACCOUNT_TRACKER_ACCOUNT_FIRST_PERIOD_ENTERED"
     );
     expect(activeMainEvent.user).toEqual({
-      user_id: "active-user",
+      user_id: "user-123",
       email: "active@example.com",
     });
     expect(activeMainEvent.extensions).toEqual({
@@ -604,7 +636,7 @@ describe("process-inactive-account handler", () => {
     expect(mockMetrics.publishStoredMetrics).toHaveBeenCalledTimes(1);
   });
 
-  test("throws error when SQS send fails", async () => {
+  test("reports failed record in batchItemFailures when SQS send fails", async () => {
     sqsMock.on(SendMessageCommand).rejects(new Error("SQS send failed"));
 
     const event = buildSqsEvent([
@@ -617,12 +649,14 @@ describe("process-inactive-account handler", () => {
       },
     ]);
 
-    await expect(handler(event, {} as Context)).rejects.toThrow(
-      "SQS send failed"
-    );
+    const result = await handler(event, {} as Context);
+
+    expect(result).toEqual({
+      batchItemFailures: [{ itemIdentifier: "msg-0" }],
+    });
   });
 
-  test("throws when process configuration is not found", async () => {
+  test("reports failed record in batchItemFailures when process configuration is not found", async () => {
     const event = buildSqsEvent([
       {
         commonSubjectId: "user-123",
@@ -633,12 +667,14 @@ describe("process-inactive-account handler", () => {
       },
     ]);
 
-    await expect(handler(event, {} as Context)).rejects.toThrow(
-      "Process configuration not found for UnknownProcess"
-    );
+    const result = await handler(event, {} as Context);
+
+    expect(result).toEqual({
+      batchItemFailures: [{ itemIdentifier: "msg-0" }],
+    });
   });
 
-  test("throws when DynamoDB update fails", async () => {
+  test("reports failed record in batchItemFailures when DynamoDB update fails", async () => {
     dynamoMock.on(UpdateCommand).rejects(new Error("DynamoDB update failed"));
 
     const event = buildSqsEvent([
@@ -651,9 +687,45 @@ describe("process-inactive-account handler", () => {
       },
     ]);
 
-    await expect(handler(event, {} as Context)).rejects.toThrow(
-      "DynamoDB update failed"
-    );
+    const result = await handler(event, {} as Context);
+
+    expect(result).toEqual({
+      batchItemFailures: [{ itemIdentifier: "msg-0" }],
+    });
+  });
+
+  test("processes remaining records in the batch when one record fails", async () => {
+    dynamoMock
+      .on(UpdateCommand, {
+        Key: { dateForDeletion: "2026-08-15", commonSubjectId: "user-fail" },
+      })
+      .rejects(new Error("DynamoDB update failed"));
+
+    const event = buildSqsEvent([
+      {
+        commonSubjectId: "user-fail",
+        emailAddress: "test@example.com",
+        dateForDeletion: "2026-08-15",
+        processName: "Warning30Day",
+        status: "pending",
+      },
+      {
+        commonSubjectId: "user-ok",
+        emailAddress: "test2@example.com",
+        dateForDeletion: "2026-08-15",
+        processName: "Warning30Day",
+        status: "pending",
+      },
+    ]);
+
+    const result = await handler(event, {} as Context);
+
+    expect(result).toEqual({
+      batchItemFailures: [{ itemIdentifier: "msg-0" }],
+    });
+    expect(dynamoMock).toHaveReceivedCommandWith(UpdateCommand, {
+      Key: { dateForDeletion: "2026-08-15", commonSubjectId: "user-ok" },
+    });
   });
 
   test("skips notification but still updates status and sends to target queue when notificationType is not configured", async () => {

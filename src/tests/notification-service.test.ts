@@ -46,7 +46,15 @@ vi.mock("../common/metrics.js", () => ({
 }));
 
 vi.hoisted(() => {
-  process.env.NOTIFY_TEMPLATE_IDS = '{"GLOBAL_LOGOUT":"template-id"}';
+  process.env.NOTIFY_TEMPLATE_IDS = JSON.stringify({
+    GLOBAL_LOGOUT: "template-id",
+    INACTIVE_ACCOUNT_WARNING_30_DAY: "warning-30-day-template-id",
+    INACTIVE_ACCOUNT_WARNING_7_DAY: "warning-7-day-template-id",
+    INACTIVE_ACCOUNT_SAVED_APP: "saved-app-template-id",
+    INACTIVE_ACCOUNT_SAVED_HOME: "saved-home-template-id",
+    INACTIVE_ACCOUNT_SAVED_RP: "saved-rp-template-id",
+    INACTIVE_ACCOUNT_DELETED_CONFIRMATION: "deleted-confirmation-template-id",
+  });
   process.env.NOTIFY_API_KEY_SECRET_ARN = "NOTIFY_API_KEY_SECRET_ARN"; // pragma: allowlist secret
 });
 
@@ -187,7 +195,16 @@ describe("processNotification", () => {
   beforeEach(async () => {
     process.env = {
       ...OLD_PROCESS_ENV,
-      NOTIFY_TEMPLATE_IDS: '{"GLOBAL_LOGOUT":"template-id"}',
+      NOTIFY_TEMPLATE_IDS: JSON.stringify({
+        GLOBAL_LOGOUT: "template-id",
+        INACTIVE_ACCOUNT_WARNING_30_DAY: "warning-30-day-template-id",
+        INACTIVE_ACCOUNT_WARNING_7_DAY: "warning-7-day-template-id",
+        INACTIVE_ACCOUNT_SAVED_APP: "saved-app-template-id",
+        INACTIVE_ACCOUNT_SAVED_HOME: "saved-home-template-id",
+        INACTIVE_ACCOUNT_SAVED_RP: "saved-rp-template-id",
+        INACTIVE_ACCOUNT_DELETED_CONFIRMATION:
+          "deleted-confirmation-template-id",
+      }),
     };
 
     const actual = await vi.importActual<
@@ -506,6 +523,103 @@ describe("processNotification", () => {
     );
     expect(batchItemFailures).toEqual([]);
   });
+
+  it.each([
+    {
+      notificationType: "INACTIVE_ACCOUNT_WARNING_30_DAY",
+      templateId: "warning-30-day-template-id",
+      extraFields: { dateForDeletion: "2026-12-25" },
+      expectedPersonalisation: {
+        emailAddress: "test@example.com",
+        deletionDate_en: "25 December 2026",
+        deletionDate_cy: "25 Rhagfyr 2026",
+      },
+    },
+    {
+      notificationType: "INACTIVE_ACCOUNT_WARNING_7_DAY",
+      templateId: "warning-7-day-template-id",
+      extraFields: { dateForDeletion: "2026-12-25" },
+      expectedPersonalisation: {
+        emailAddress: "test@example.com",
+        deletionDate_en: "25 December 2026",
+        deletionDate_cy: "25 Rhagfyr 2026",
+      },
+    },
+    {
+      notificationType: "INACTIVE_ACCOUNT_SAVED_APP",
+      templateId: "saved-app-template-id",
+      extraFields: {},
+      expectedPersonalisation: {
+        emailAddress: "test@example.com",
+      },
+    },
+    {
+      notificationType: "INACTIVE_ACCOUNT_SAVED_HOME",
+      templateId: "saved-home-template-id",
+      extraFields: {},
+      expectedPersonalisation: {
+        emailAddress: "test@example.com",
+      },
+    },
+    {
+      notificationType: "INACTIVE_ACCOUNT_SAVED_RP",
+      templateId: "saved-rp-template-id",
+      extraFields: {},
+      expectedPersonalisation: {
+        emailAddress: "test@example.com",
+      },
+    },
+    {
+      notificationType: "INACTIVE_ACCOUNT_DELETED_CONFIRMATION",
+      templateId: "deleted-confirmation-template-id",
+      extraFields: {},
+      expectedPersonalisation: {
+        emailAddress: "test@example.com",
+      },
+    },
+  ])(
+    "should successfully process an $notificationType notification",
+    async ({
+      notificationType,
+      templateId,
+      extraFields,
+      expectedPersonalisation,
+    }) => {
+      mockRecord.body = JSON.stringify({
+        notificationType,
+        emailAddress: "test@example.com",
+        ...extraFields,
+      });
+      mockSetUpNotifyClient.mockResolvedValue({ sendEmail: mockSendEmail });
+
+      await processNotification(mockRecord, batchItemFailures);
+
+      expect(mockLogger.error).not.toHaveBeenCalled();
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        "Successfully sent a notification",
+        {
+          messageId: "test-message-id",
+          id: "notification-id",
+          reference: "test-reference",
+          notificationType,
+        }
+      );
+      expect(mockMetrics.addMetric).toHaveBeenCalledWith(
+        "notificationSent",
+        "Count",
+        1
+      );
+      expect(batchItemFailures).toEqual([]);
+      expect(mockSendEmail).toHaveBeenCalledWith(
+        templateId,
+        "test@example.com",
+        expect.objectContaining({
+          personalisation: expectedPersonalisation,
+          reference: "test-uuid",
+        })
+      );
+    }
+  );
 });
 
 describe("handler", () => {

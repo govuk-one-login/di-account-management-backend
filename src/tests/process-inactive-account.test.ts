@@ -48,12 +48,6 @@ const mockGetIadCircuitBreakerStatus = vi.hoisted(() =>
   vi.fn().mockResolvedValue(false)
 );
 
-const mockGetSecret = vi.hoisted(() => vi.fn().mockResolvedValue("user-123"));
-
-vi.mock("@aws-lambda-powertools/parameters/secrets", () => ({
-  getSecret: mockGetSecret,
-}));
-
 vi.mock("../common/iad-circuit-breaker.js", () => ({
   getIadCircuitBreakerStatus: mockGetIadCircuitBreakerStatus,
 }));
@@ -129,7 +123,6 @@ describe("process-inactive-account handler", () => {
       doesNotHaveEmailAddressContinue
     );
     mockGetIadCircuitBreakerStatus.mockResolvedValue(false);
-    mockGetSecret.mockResolvedValue("user-123");
 
     process.env.NOTIFICATION_QUEUE_URL =
       "https://sqs.eu-west-2.amazonaws.com/123456789012/NotificationQueue";
@@ -142,9 +135,6 @@ describe("process-inactive-account handler", () => {
     process.env.AWS_REGION = "eu-west-2";
     process.env.FEATURE_SEND_IAD_AUDIT_EVENTS = "true";
     process.env.USER_NOTIFICATIONS_TABLE_NAME = "test-user-notifications-table";
-    process.env.ENVIRONMENT = "build";
-    process.env.IAD_TESTING_ACCOUNT_COMMON_SUBJECT_ID_SECRET_ARN =
-      "arn:aws:secretsmanager:eu-west-2:123456789012:secret:IADTestingAccountCommonSubjectId"; // pragma: allowlist secret
   });
 
   test("aborts early and logs when circuit breaker is active", async () => {
@@ -251,47 +241,6 @@ describe("process-inactive-account handler", () => {
 
   test("continues processing when circuit breaker is inactive", async () => {
     mockGetIadCircuitBreakerStatus.mockResolvedValue(false);
-
-    await handler(
-      buildSqsEvent([
-        {
-          commonSubjectId: "user-123",
-          emailAddress: "test@example.com",
-          dateForDeletion: "2026-08-15",
-          processName: "Warning30Day",
-          status: "pending",
-        },
-      ]),
-      {} as Context
-    );
-
-    expect(dynamoMock).toHaveReceivedCommand(UpdateCommand);
-  });
-
-  test("skips record when in production and commonSubjectId does not match the secret value", async () => {
-    process.env.ENVIRONMENT = "production";
-    mockGetSecret.mockResolvedValue("other-user");
-
-    await handler(
-      buildSqsEvent([
-        {
-          commonSubjectId: "user-123",
-          emailAddress: "test@example.com",
-          dateForDeletion: "2026-08-15",
-          processName: "Warning30Day",
-          status: "pending",
-        },
-      ]),
-      {} as Context
-    );
-
-    expect(sqsMock).not.toHaveReceivedCommand(SendMessageCommand);
-    expect(dynamoMock).not.toHaveReceivedCommand(UpdateCommand);
-  });
-
-  test("processes record in non-production environment regardless of commonSubjectId", async () => {
-    process.env.ENVIRONMENT = "build";
-    mockGetSecret.mockResolvedValue("other-user");
 
     await handler(
       buildSqsEvent([

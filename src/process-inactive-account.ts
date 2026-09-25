@@ -9,7 +9,6 @@ import {
   PutCommand,
 } from "@aws-sdk/lib-dynamodb";
 import assert from "node:assert/strict";
-import { getSecret } from "@aws-lambda-powertools/parameters/secrets";
 import { initMetrics } from "./common/metrics.js";
 import { processConfig, ProcessConfig } from "./common/process-config.js";
 import type {
@@ -20,7 +19,6 @@ import type {
 type ProcessInactiveAccountMessage = InactiveAccountTrackerRecord & {
   processName: string;
   isDryRun: boolean;
-  manualTest?: boolean;
 };
 
 import { getEnvironmentVariable } from "./common/utils.js";
@@ -352,67 +350,57 @@ export const handler = async (
     "USER_NOTIFICATIONS_TABLE_NAME"
   );
 
-  const testCommonSubjectId = await getSecret(
-    getEnvironmentVariable("IAD_TESTING_ACCOUNT_COMMON_SUBJECT_ID_SECRET_ARN") // pragma: allowlist secret
-  );
-  const env = getEnvironmentVariable("ENVIRONMENT");
-
   const batchItemFailures: SQSBatchResponse["batchItemFailures"] = [];
 
   for (const record of event.Records) {
     const body = JSON.parse(record.body) as ProcessInactiveAccountMessage;
 
-    if (
-      !["production", "integration"].includes(env) ||
-      body.commonSubjectId === testCommonSubjectId
-    ) {
-      const iadCircuitBreakerActive = await getIadCircuitBreakerStatus();
+    const iadCircuitBreakerActive = await getIadCircuitBreakerStatus();
 
-      if (iadCircuitBreakerActive) {
-        logger.info("GuardrailAbortedProcessInactiveAccounts", {
-          dateForDeletion: body.dateForDeletion,
-          processName: body.processName,
-          status: body.status,
-          statusLastUpdated: body.statusLastUpdated,
-          userLastActive: body.userLastActive,
-          userLastActiveSource: body.userLastActiveSource,
-          userLastActiveSourceId: body.userLastActiveSourceId,
-          userLastActiveUpdated: body.userLastActiveUpdated,
-          emailAddressLastUpdated: body.emailAddressLastUpdated,
-          emailAddressSource: body.emailAddressSource,
-          emailAddressSourceId: body.emailAddressSourceId,
-          hasSetupMfa: body.hasSetupMfa,
-          guardrailType: "CircuitBreakerAlreadyTripped",
-          contributeToAlarm: "1",
-          continueProcessingRecords: "0",
-          isDryRun: body.isDryRun ? "1" : "0",
+    if (iadCircuitBreakerActive) {
+      logger.info("GuardrailAbortedProcessInactiveAccounts", {
+        dateForDeletion: body.dateForDeletion,
+        processName: body.processName,
+        status: body.status,
+        statusLastUpdated: body.statusLastUpdated,
+        userLastActive: body.userLastActive,
+        userLastActiveSource: body.userLastActiveSource,
+        userLastActiveSourceId: body.userLastActiveSourceId,
+        userLastActiveUpdated: body.userLastActiveUpdated,
+        emailAddressLastUpdated: body.emailAddressLastUpdated,
+        emailAddressSource: body.emailAddressSource,
+        emailAddressSourceId: body.emailAddressSourceId,
+        hasSetupMfa: body.hasSetupMfa,
+        guardrailType: "CircuitBreakerAlreadyTripped",
+        contributeToAlarm: "1",
+        continueProcessingRecords: "0",
+        isDryRun: body.isDryRun ? "1" : "0",
+      });
+      // Report this and every remaining record in the batch as failed so
+      // SQS retries them later, rather than silently dropping them.
+      const remainingRecords = event.Records.slice(
+        event.Records.indexOf(record)
+      );
+      for (const remainingRecord of remainingRecords) {
+        batchItemFailures.push({
+          itemIdentifier: remainingRecord.messageId,
         });
-        // Report this and every remaining record in the batch as failed so
-        // SQS retries them later, rather than silently dropping them.
-        const remainingRecords = event.Records.slice(
-          event.Records.indexOf(record)
-        );
-        for (const remainingRecord of remainingRecords) {
-          batchItemFailures.push({
-            itemIdentifier: remainingRecord.messageId,
-          });
-        }
-        break;
       }
+      break;
+    }
 
-      try {
-        await processRecord(
-          body,
-          notificationQueueUrl,
-          inactiveAccountTrackerTableName,
-          userNotificationsTableName
-        );
-      } catch (error) {
-        logger.error(`Failed to process record ${record.messageId}`, {
-          error,
-        });
-        batchItemFailures.push({ itemIdentifier: record.messageId });
-      }
+    try {
+      await processRecord(
+        body,
+        notificationQueueUrl,
+        inactiveAccountTrackerTableName,
+        userNotificationsTableName
+      );
+    } catch (error) {
+      logger.error(`Failed to process record ${record.messageId}`, {
+        error,
+      });
+      batchItemFailures.push({ itemIdentifier: record.messageId });
     }
   }
 

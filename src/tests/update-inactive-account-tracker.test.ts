@@ -446,6 +446,42 @@ describe("UpdateInactiveAccountTracker handler", () => {
     });
   });
 
+  test("does not send account-saved notification when the DynamoDB write fails", async () => {
+    const within30DaysDate = new Date();
+    within30DaysDate.setDate(within30DaysDate.getDate() + 15);
+    const dateStr = within30DaysDate.toISOString().split("T")[0];
+
+    dynamoMock.on(QueryCommand).resolves({
+      Items: [
+        {
+          commonSubjectId: "qwerty",
+          dateForDeletion: dateStr,
+          userLastActive: new Date(Date.now() - 100000).toISOString(),
+          status: "pending",
+          emailAddress: "user@example.com",
+          hasSetupMfa: true,
+        },
+      ],
+    });
+    dynamoMock
+      .on(TransactWriteCommand)
+      .rejects(new Error("TransactionCanceledException"));
+
+    const record = generateDynamoStreamRecord("test-client");
+    record.dynamodb!.SequenceNumber = "1234567890";
+    const event: DynamoDBStreamEvent = { Records: [record] };
+
+    const result = await handler(event, {} as Context);
+
+    expect(result).toEqual<DynamoDBBatchResponse>({
+      batchItemFailures: [{ itemIdentifier: "1234567890" }],
+    });
+    // No SQS calls of any kind should happen when the write fails - neither
+    // the account-saved notification nor the reactivation audit event, since
+    // both are conditional on the write having already succeeded.
+    expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(0);
+  });
+
   test("returns only failed records in batchItemFailures when one record in a batch fails", async () => {
     dynamoMock.on(QueryCommand).resolves({ Items: [] });
     dynamoMock
@@ -1267,12 +1303,23 @@ describe("UpdateInactiveAccountTracker handler", () => {
 
     await handler(event, {} as Context);
 
+    // 1 call to txma with HOME_ACCOUNT_TRACKER_ACCOUNT_REACTIVATED (write succeeds first)
     // 1 call is to notification queue
     // 1 call to txma queue with HOME_ACCOUNT_TRACKER_NOTIFICATION_REQUESTED
-    // 1 call to txma with HOME_ACCOUNT_TRACKER_ACCOUNT_REACTIVATED if successful
     expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(3);
 
-    expect(sqsMock).toHaveReceivedNthCommandWith(SendMessageCommand, 1, {
+    const sqsCalls = sqsMock.commandCalls(SendMessageCommand);
+
+    const reactivationCallInput = sqsCalls[0].args[0].input;
+    expect(reactivationCallInput.QueueUrl).toEqual("TXMA_QUEUE_URL");
+    const reactivationEventBody = JSON.parse(
+      reactivationCallInput.MessageBody ?? ""
+    );
+    expect(reactivationEventBody.event_name).toEqual(
+      "HOME_ACCOUNT_TRACKER_ACCOUNT_REACTIVATED"
+    );
+
+    expect(sqsMock).toHaveReceivedNthCommandWith(SendMessageCommand, 2, {
       QueueUrl: "https://sqsq-url",
       MessageBody: JSON.stringify({
         notificationType: "INACTIVE_ACCOUNT_SAVED_APP",
@@ -1289,8 +1336,7 @@ describe("UpdateInactiveAccountTracker handler", () => {
     );
 
     // check the correct txma event is being sent out
-    const sqsCalls = sqsMock.commandCalls(SendMessageCommand);
-    const txmaCallInput = sqsCalls[1].args[0].input;
+    const txmaCallInput = sqsCalls[2].args[0].input;
 
     expect(txmaCallInput.QueueUrl).toEqual("TXMA_QUEUE_URL");
 
@@ -1339,12 +1385,23 @@ describe("UpdateInactiveAccountTracker handler", () => {
 
     await handler(event, {} as Context);
 
+    // 1 call to txma with HOME_ACCOUNT_TRACKER_ACCOUNT_REACTIVATED (write succeeds first)
     // 1 call is to notification queue
     // 1 call to txma queue with HOME_ACCOUNT_TRACKER_NOTIFICATION_REQUESTED
-    // 1 call to txma with HOME_ACCOUNT_TRACKER_ACCOUNT_REACTIVATED if successful
     expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(3);
 
-    expect(sqsMock).toHaveReceivedNthCommandWith(SendMessageCommand, 1, {
+    const sqsCalls = sqsMock.commandCalls(SendMessageCommand);
+
+    const reactivationCallInput = sqsCalls[0].args[0].input;
+    expect(reactivationCallInput.QueueUrl).toEqual("TXMA_QUEUE_URL");
+    const reactivationEventBody = JSON.parse(
+      reactivationCallInput.MessageBody ?? ""
+    );
+    expect(reactivationEventBody.event_name).toEqual(
+      "HOME_ACCOUNT_TRACKER_ACCOUNT_REACTIVATED"
+    );
+
+    expect(sqsMock).toHaveReceivedNthCommandWith(SendMessageCommand, 2, {
       QueueUrl: "https://sqsq-url",
       MessageBody: JSON.stringify({
         notificationType: "INACTIVE_ACCOUNT_SAVED_HOME",
@@ -1361,8 +1418,7 @@ describe("UpdateInactiveAccountTracker handler", () => {
     );
 
     // check the correct txma event is being sent out
-    const sqsCalls = sqsMock.commandCalls(SendMessageCommand);
-    const txmaCallInput = sqsCalls[1].args[0].input;
+    const txmaCallInput = sqsCalls[2].args[0].input;
 
     expect(txmaCallInput.QueueUrl).toEqual("TXMA_QUEUE_URL");
 
@@ -1420,7 +1476,12 @@ describe("UpdateInactiveAccountTracker handler", () => {
     // A NOTIFICATION_SKIPPED audit event with reason UnusableAccount is emitted.
     const txmaCall = sqsMock
       .commandCalls(SendMessageCommand)
-      .find((call) => call.args[0].input.QueueUrl === "TXMA_QUEUE_URL");
+      .find(
+        (call) =>
+          call.args[0].input.QueueUrl === "TXMA_QUEUE_URL" &&
+          JSON.parse(call.args[0].input.MessageBody as string).event_name ===
+            "HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED"
+      );
     expect(txmaCall).toBeDefined();
     const auditEvent = JSON.parse(txmaCall!.args[0].input.MessageBody ?? "");
     expect(auditEvent.event_name).toBe(
@@ -1460,12 +1521,23 @@ describe("UpdateInactiveAccountTracker handler", () => {
 
     await handler(event, {} as Context);
 
+    // 1 call to txma with HOME_ACCOUNT_TRACKER_ACCOUNT_REACTIVATED (write succeeds first)
     // 1 call is to notification queue
     // 1 call to txma queue with HOME_ACCOUNT_TRACKER_NOTIFICATION_REQUESTED
-    // 1 call to txma with HOME_ACCOUNT_TRACKER_ACCOUNT_REACTIVATED if successful
     expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(3);
 
-    expect(sqsMock).toHaveReceivedNthCommandWith(SendMessageCommand, 1, {
+    const sqsCalls = sqsMock.commandCalls(SendMessageCommand);
+
+    const reactivationCallInput = sqsCalls[0].args[0].input;
+    expect(reactivationCallInput.QueueUrl).toEqual("TXMA_QUEUE_URL");
+    const reactivationEventBody = JSON.parse(
+      reactivationCallInput.MessageBody ?? ""
+    );
+    expect(reactivationEventBody.event_name).toEqual(
+      "HOME_ACCOUNT_TRACKER_ACCOUNT_REACTIVATED"
+    );
+
+    expect(sqsMock).toHaveReceivedNthCommandWith(SendMessageCommand, 2, {
       QueueUrl: "https://sqsq-url",
       MessageBody: JSON.stringify({
         notificationType: "INACTIVE_ACCOUNT_SAVED_RP",
@@ -1482,8 +1554,7 @@ describe("UpdateInactiveAccountTracker handler", () => {
     );
 
     // check the correct txma event is being sent out
-    const sqsCalls = sqsMock.commandCalls(SendMessageCommand);
-    const txmaCallInput = sqsCalls[1].args[0].input;
+    const txmaCallInput = sqsCalls[2].args[0].input;
 
     expect(txmaCallInput.QueueUrl).toEqual("TXMA_QUEUE_URL");
 
@@ -1567,6 +1638,7 @@ describe("UpdateInactiveAccountTracker handler", () => {
       ],
     });
     dynamoMock.on(TransactWriteCommand).resolves({});
+    sqsMock.on(SendMessageCommand).resolves({});
 
     const recordWithoutEmail = {
       dynamodb: {

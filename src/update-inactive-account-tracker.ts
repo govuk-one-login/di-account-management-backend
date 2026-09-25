@@ -350,6 +350,35 @@ const processRecord = async (
     previousTrackerRecord?.dateForDeletion ?? ""
   );
 
+  try {
+    logger.info(`Writing to DynamoDB for event id: ${txmaEvent.event_id}`);
+    await dynamoDocClient.send(
+      new TransactWriteCommand({ TransactItems: transactionItems })
+    );
+    logger.info(`DynamoDB updated for event id: ${txmaEvent.event_id}`);
+
+    if (isDeletionIn30DaysOrLess) {
+      await sendAuditEvent("HOME_ACCOUNT_TRACKER_ACCOUNT_REACTIVATED", {
+        user: {
+          user_id: newItem.commonSubjectId,
+          ...(newItem.emailAddress && { email: newItem.emailAddress }),
+        },
+        extensions: {
+          accountTrackerRecordPreviousStatus: previousTrackerRecord.status,
+          accountTrackerAccountDeletionDate:
+            previousTrackerRecord.dateForDeletion,
+        },
+      });
+    }
+  } catch (error) {
+    throw new Error(
+      `Failed to update inactive account tracker for event id ${txmaEvent.event_id}: ${error}`,
+      {
+        cause: error,
+      }
+    );
+  }
+
   if (!inactiveAccountEmailFlagEnabled) {
     logger.info("SEND_INACTIVE_ACCOUNT_DELETION_EMAILS feature flag is off");
   } else if (isDeletionIn30DaysOrLess && !dateForDeletionIs27October) {
@@ -414,35 +443,6 @@ const processRecord = async (
         },
       });
     }
-  }
-
-  try {
-    logger.info(`Writing to DynamoDB for event id: ${txmaEvent.event_id}`);
-    await dynamoDocClient.send(
-      new TransactWriteCommand({ TransactItems: transactionItems })
-    );
-    logger.info(`DynamoDB updated for event id: ${txmaEvent.event_id}`);
-
-    if (isDeletionIn30DaysOrLess) {
-      await sendAuditEvent("HOME_ACCOUNT_TRACKER_ACCOUNT_REACTIVATED", {
-        user: {
-          user_id: newItem.commonSubjectId,
-          ...(newItem.emailAddress && { email: newItem.emailAddress }),
-        },
-        extensions: {
-          accountTrackerRecordPreviousStatus: previousTrackerRecord.status,
-          accountTrackerAccountDeletionDate:
-            previousTrackerRecord.dateForDeletion,
-        },
-      });
-    }
-  } catch (error) {
-    throw new Error(
-      `Failed to update inactive account tracker for event id ${txmaEvent.event_id}: ${error}`,
-      {
-        cause: error,
-      }
-    );
   }
 
   if (previousTrackerRecord) {

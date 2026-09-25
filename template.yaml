@@ -3572,6 +3572,13 @@ Resources:
               !Ref Environment,
               sendInactiveAccountDeletionEmails,
             ]
+          TXMA_QUEUE_URL: !Ref AuditOutputQueue
+          FEATURE_SEND_IAD_AUDIT_EVENTS:
+            !FindInMap [
+              EnvironmentVariables,
+              !Ref Environment,
+              FEATURESENDIADAUDITEVENTS,
+            ]
       DeploymentPreference:
         Alarms:
           Fn::If:
@@ -3611,6 +3618,7 @@ Resources:
     Type: AWS::SQS::Queue
     Properties:
       KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
+      VisibilityTimeout: 720
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
 
@@ -3618,6 +3626,7 @@ Resources:
     Type: AWS::SQS::Queue
     Properties:
       KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
+      VisibilityTimeout: 720
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
 
@@ -3625,6 +3634,7 @@ Resources:
     Type: AWS::SQS::Queue
     Properties:
       KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
+      VisibilityTimeout: 720
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
 
@@ -3687,6 +3697,7 @@ Resources:
               - !GetAtt UpdateInactiveAccountTrackerDeadLetterQueue.Arn
               - !GetAtt AccountSavedNotificationQueue.Arn
               - !GetAtt NotificationQueue.Arn
+              - !GetAtt AuditOutputQueue.Arn
           - Effect: Allow
             Action:
               - dynamodb:DescribeStream
@@ -3722,6 +3733,7 @@ Resources:
               - kms:GenerateDataKey*
             Resource:
               - !GetAtt QueueKmsKey.Arn
+              - !GetAtt AuditEncryptionKey.Arn
 
   UpdateInactiveAccountTrackerFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -7408,6 +7420,7 @@ Resources:
       CodeUri: src
       Handler: process-inactive-account.handler
       PackageType: Zip
+      Timeout: 120
       # Override the global ReservedConcurrentExecutions (10) so the per-source
       # SQS ScalingConfig.MaximumConcurrency (50 each) can actually scale up.
       ReservedConcurrentExecutions: 150
@@ -7418,18 +7431,24 @@ Resources:
             Queue: !GetAtt 30DayNotificationQueue.Arn
             ScalingConfig:
               MaximumConcurrency: 50
+            FunctionResponseTypes:
+              - ReportBatchItemFailures
         7DayNotificationEvent:
           Type: SQS
           Properties:
             Queue: !GetAtt 7DayNotificationQueue.Arn
             ScalingConfig:
               MaximumConcurrency: 50
+            FunctionResponseTypes:
+              - ReportBatchItemFailures
         DeleteAccountEvent:
           Type: SQS
           Properties:
             Queue: !GetAtt AccountDeletionProcessQueue.Arn
             ScalingConfig:
               MaximumConcurrency: 50
+            FunctionResponseTypes:
+              - ReportBatchItemFailures
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt ProcessInactiveAccountDeadLetterQueue.Arn

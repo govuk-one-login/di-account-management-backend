@@ -7481,6 +7481,7 @@ Resources:
               FEATURESENDIADAUDITEVENTS,
             ]
           ENVIRONMENT: !Ref Environment
+          USER_NOTIFICATIONS_TABLE_NAME: !Ref UserNotificationsTableName
           IAD_TESTING_ACCOUNT_COMMON_SUBJECT_ID_SECRET_ARN: !Ref IADTestingAccountCommonSubkectId
       DeploymentPreference:
         Alarms:
@@ -7583,6 +7584,11 @@ Resources:
               - dynamodb:PutItem
             Resource:
               - !GetAtt InactiveAccountCircuitBreakerStore.Arn
+          - Effect: Allow
+            Action:
+              - dynamodb:PutItem
+            Resource:
+              - !GetAtt UserNotificationsStore.Arn
           - Effect: Allow
             Action:
               - secretsmanager:GetSecretValue # pragma: allowlist secret

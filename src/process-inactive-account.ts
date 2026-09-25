@@ -3,7 +3,11 @@ import { Logger } from "@aws-lambda-powertools/logger";
 import { MetricUnit } from "@aws-lambda-powertools/metrics";
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, UpdateCommand } from "@aws-sdk/lib-dynamodb";
+import {
+  DynamoDBDocumentClient,
+  UpdateCommand,
+  PutCommand,
+} from "@aws-sdk/lib-dynamodb";
 import assert from "node:assert/strict";
 import { getSecret } from "@aws-lambda-powertools/parameters/secrets";
 import { initMetrics } from "./common/metrics.js";
@@ -123,10 +127,29 @@ async function runGuards(
 
 type ProcessDefinition = ProcessConfig[string];
 
+async function writeUserNotification(
+  commonSubjectId: string,
+  userNotificationsTableName: string
+): Promise<void> {
+  await dynamoDocClient.send(
+    new PutCommand({
+      TableName: userNotificationsTableName,
+      Item: {
+        internalCommonSubjectId: commonSubjectId,
+        notificationType: "AccountKept",
+        createdAt: new Date().toISOString(),
+      },
+    })
+  );
+
+  logger.info("Written AccountKept notification to user_notifications table");
+}
+
 async function enqueueNotification(
   process: ProcessDefinition,
   body: ProcessInactiveAccountMessage,
-  notificationQueueUrl: string
+  notificationQueueUrl: string,
+  userNotificationsTableName: string
 ): Promise<void> {
   if (!process.notificationType) return;
 
@@ -144,11 +167,12 @@ async function enqueueNotification(
   );
 
   logger.info("Successfully enqueued inactive account warning notification", {
-    commonSubjectId: body.commonSubjectId,
     processName: body.processName,
     notificationType: process.notificationType,
   });
   metrics.addMetric("notificationEnqueued", MetricUnit.Count, 1);
+
+  await writeUserNotification(body.commonSubjectId, userNotificationsTableName);
 
   const accountTrackerNotificationType =
     notificationConfiguration[process.notificationType]
@@ -190,7 +214,6 @@ async function enqueueTargetMessage(
   );
 
   logger.info("Successfully enqueued message to target queue", {
-    commonSubjectId: body.commonSubjectId,
     processName: body.processName,
     targetQueueUrlEnvVar: process.targetQueueUrlEnvVar,
   });
@@ -247,12 +270,12 @@ async function emitAuditEvent(
 async function processRecord(
   body: ProcessInactiveAccountMessage,
   notificationQueueUrl: string,
-  inactiveAccountTrackerTableName: string
+  inactiveAccountTrackerTableName: string,
+  userNotificationsTableName: string
 ): Promise<void> {
   const process = processConfig[body.processName];
 
   logger.info("Processing inactive account record", {
-    commonSubjectId: body.commonSubjectId,
     processName: body.processName,
   });
 
@@ -297,7 +320,12 @@ async function processRecord(
   if (runGuardsOutcome === GuardsOutcome.abort) return;
 
   if (runGuardsOutcome === GuardsOutcome.continue) {
-    await enqueueNotification(process, body, notificationQueueUrl);
+    await enqueueNotification(
+      process,
+      body,
+      notificationQueueUrl,
+      userNotificationsTableName
+    );
     await enqueueTargetMessage(process, body);
   }
 
@@ -305,7 +333,6 @@ async function processRecord(
   await emitAuditEvent(process, body);
 
   logger.info("Successfully processed inactive account", {
-    commonSubjectId: body.commonSubjectId,
     processName: body.processName,
     targetStatus: process.targetStatus,
   });
@@ -320,6 +347,9 @@ export const handler = async (
   const notificationQueueUrl = getEnvironmentVariable("NOTIFICATION_QUEUE_URL");
   const inactiveAccountTrackerTableName = getEnvironmentVariable(
     "INACTIVE_ACCOUNT_TRACKER_TABLE_NAME"
+  );
+  const userNotificationsTableName = getEnvironmentVariable(
+    "USER_NOTIFICATIONS_TABLE_NAME"
   );
 
   const testCommonSubjectId = await getSecret(
@@ -374,7 +404,8 @@ export const handler = async (
         await processRecord(
           body,
           notificationQueueUrl,
-          inactiveAccountTrackerTableName
+          inactiveAccountTrackerTableName,
+          userNotificationsTableName
         );
       } catch (error) {
         logger.error(`Failed to process record ${record.messageId}`, {

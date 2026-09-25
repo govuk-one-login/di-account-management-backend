@@ -5,6 +5,7 @@ import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 import {
   DynamoDBDocumentClient,
   UpdateCommand,
+  PutCommand,
   QueryCommand,
   TransactWriteCommand,
 } from "@aws-sdk/lib-dynamodb";
@@ -116,6 +117,7 @@ describe("process-inactive-account handler", () => {
     sqsMock.on(SendMessageCommand).resolves({ MessageId: "test-message-id" });
     dynamoMock.on(QueryCommand).resolves({ Items: [] });
     dynamoMock.on(UpdateCommand).resolves({});
+    dynamoMock.on(PutCommand).resolves({});
     dynamoMock.on(TransactWriteCommand).resolves({});
 
     mockHasAisBlockIntervention.mockResolvedValue(notBlocked);
@@ -138,6 +140,8 @@ describe("process-inactive-account handler", () => {
     process.env.TXMA_QUEUE_URL =
       "https://sqs.eu-west-2.amazonaws.com/123456789012/TxmaQueue";
     process.env.AWS_REGION = "eu-west-2";
+    process.env.FEATURE_SEND_IAD_AUDIT_EVENTS = "true";
+    process.env.USER_NOTIFICATIONS_TABLE_NAME = "test-user-notifications-table";
     process.env.ENVIRONMENT = "build";
     process.env.IAD_TESTING_ACCOUNT_COMMON_SUBJECT_ID_SECRET_ARN =
       "arn:aws:secretsmanager:eu-west-2:123456789012:secret:IADTestingAccountCommonSubjectId"; // pragma: allowlist secret
@@ -1425,6 +1429,94 @@ describe("process-inactive-account handler", () => {
       await handler(event, {} as Context);
 
       expect(dynamoMock).not.toHaveReceivedCommand(TransactWriteCommand);
+    });
+  });
+
+  describe("user notifications table write", () => {
+    test("writes an AccountKept notification to the user_notifications table on 30-day warning", async () => {
+      const event = buildSqsEvent([
+        {
+          commonSubjectId: "user-123",
+          emailAddress: "test@example.com",
+          dateForDeletion: "2026-08-15",
+          processName: "Warning30Day",
+          status: "pending",
+        },
+      ]);
+
+      await handler(event, {} as Context);
+
+      expect(dynamoMock).toHaveReceivedCommandWith(PutCommand, {
+        TableName: "test-user-notifications-table",
+        Item: {
+          internalCommonSubjectId: "user-123",
+          notificationType: "AccountKept",
+          createdAt: expect.any(String),
+        },
+      });
+    });
+
+    test("writes an AccountKept notification to the user_notifications table on 7-day warning", async () => {
+      const event = buildSqsEvent([
+        {
+          commonSubjectId: "user-456",
+          emailAddress: "user@example.com",
+          dateForDeletion: "2026-07-27",
+          processName: "Warning7Day",
+          status: "30DayWarningSent",
+        },
+      ]);
+
+      await handler(event, {} as Context);
+
+      expect(dynamoMock).toHaveReceivedCommandWith(PutCommand, {
+        TableName: "test-user-notifications-table",
+        Item: {
+          internalCommonSubjectId: "user-456",
+          notificationType: "AccountKept",
+          createdAt: expect.any(String),
+        },
+      });
+    });
+
+    test("does not write to user_notifications table for DeleteAccount process", async () => {
+      process.env.ACCOUNT_DELETION_QUEUE_URL =
+        "https://sqs.eu-west-2.amazonaws.com/123456789012/AccountDeletionQueue";
+
+      const event = buildSqsEvent([
+        {
+          commonSubjectId: "user-123",
+          publicSubjectId: "public-123",
+          emailAddress: "test@example.com",
+          dateForDeletion: "2026-08-15",
+          processName: "DeleteAccount",
+          status: "pending",
+        },
+      ]);
+
+      await handler(event, {} as Context);
+
+      expect(dynamoMock).not.toHaveReceivedCommand(PutCommand);
+    });
+
+    test("does not write to user_notifications table when guards skip notification", async () => {
+      mockSendInactiveAccountEmailsIsDisabled.mockResolvedValue(
+        inactiveAccountEmailsFeatureFlagDisabled
+      );
+
+      const event = buildSqsEvent([
+        {
+          commonSubjectId: "user-789",
+          emailAddress: "user@example.com",
+          dateForDeletion: "2026-08-15",
+          processName: "Warning30Day",
+          status: "pending",
+        },
+      ]);
+
+      await handler(event, {} as Context);
+
+      expect(dynamoMock).not.toHaveReceivedCommand(PutCommand);
     });
   });
 });

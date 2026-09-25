@@ -3,7 +3,11 @@ import { Logger } from "@aws-lambda-powertools/logger";
 import { MetricUnit } from "@aws-lambda-powertools/metrics";
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, UpdateCommand } from "@aws-sdk/lib-dynamodb";
+import {
+  DynamoDBDocumentClient,
+  UpdateCommand,
+  PutCommand,
+} from "@aws-sdk/lib-dynamodb";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { getSecret } from "@aws-lambda-powertools/parameters/secrets";
@@ -124,10 +128,31 @@ async function runGuards(
 
 type ProcessDefinition = ProcessConfig[string];
 
+async function writeUserNotification(
+  commonSubjectId: string,
+  userNotificationsTableName: string
+): Promise<void> {
+  await dynamoDocClient.send(
+    new PutCommand({
+      TableName: userNotificationsTableName,
+      Item: {
+        internalCommonSubjectId: commonSubjectId,
+        notificationType: "AccountKept",
+        createdAt: new Date().toISOString(),
+      },
+    })
+  );
+
+  logger.info("Written AccountKept notification to user_notifications table", {
+    commonSubjectId,
+  });
+}
+
 async function enqueueNotification(
   process: ProcessDefinition,
   body: ProcessInactiveAccountMessage,
-  notificationQueueUrl: string
+  notificationQueueUrl: string,
+  userNotificationsTableName: string
 ): Promise<void> {
   if (!process.notificationType) return;
 
@@ -150,6 +175,8 @@ async function enqueueNotification(
     notificationType: process.notificationType,
   });
   metrics.addMetric("notificationEnqueued", MetricUnit.Count, 1);
+
+  await writeUserNotification(body.commonSubjectId, userNotificationsTableName);
 
   const accountTrackerNotificationType =
     notificationConfiguration[process.notificationType]
@@ -248,7 +275,8 @@ async function emitAuditEvent(
 async function processRecord(
   body: ProcessInactiveAccountMessage,
   notificationQueueUrl: string,
-  inactiveAccountTrackerTableName: string
+  inactiveAccountTrackerTableName: string,
+  userNotificationsTableName: string
 ): Promise<void> {
   const process = processConfig[body.processName];
 
@@ -298,7 +326,12 @@ async function processRecord(
   if (runGuardsOutcome === GuardsOutcome.abort) return;
 
   if (runGuardsOutcome === GuardsOutcome.continue) {
-    await enqueueNotification(process, body, notificationQueueUrl);
+    await enqueueNotification(
+      process,
+      body,
+      notificationQueueUrl,
+      userNotificationsTableName
+    );
     await enqueueTargetMessage(process, body);
   }
 
@@ -321,6 +354,9 @@ export const handler = async (
   const notificationQueueUrl = getEnvironmentVariable("NOTIFICATION_QUEUE_URL");
   const inactiveAccountTrackerTableName = getEnvironmentVariable(
     "INACTIVE_ACCOUNT_TRACKER_TABLE_NAME"
+  );
+  const userNotificationsTableName = getEnvironmentVariable(
+    "USER_NOTIFICATIONS_TABLE_NAME"
   );
 
   const pepper = await getSecret(
@@ -374,7 +410,8 @@ export const handler = async (
       await processRecord(
         body,
         notificationQueueUrl,
-        inactiveAccountTrackerTableName
+        inactiveAccountTrackerTableName,
+        userNotificationsTableName
       );
     }
   }

@@ -184,66 +184,6 @@ describe("handler", () => {
     expect(sqsMock.commandCalls(SendMessageBatchCommand)).toHaveLength(1);
   });
 
-  test("when manualTest is true, only dispatches records with userLastActiveSource MANUAL_TEST", async () => {
-    const manualRecord = { ...mockRecord, userLastActiveSource: "MANUAL_TEST" };
-    dynamoMock.on(QueryCommand).resolves({ Items: [mockRecord, manualRecord] });
-    sqsMock
-      .on(SendMessageBatchCommand)
-      .resolves({ Successful: [], Failed: [] });
-
-    await handler(
-      { processName: "Warning30Day", manualTest: true },
-      {} as Context
-    );
-
-    expect(sqsMock).toHaveReceivedCommandWith(SendMessageBatchCommand, {
-      Entries: [
-        expect.objectContaining({
-          MessageBody: JSON.stringify({
-            ...manualRecord,
-            processName: "Warning30Day",
-            isDryRun: false,
-          }),
-        }),
-      ],
-    });
-    expect(
-      sqsMock.commandCalls(SendMessageBatchCommand)[0].args[0].input.Entries
-    ).toHaveLength(1);
-  });
-
-  test("when manualTest is false, excludes records with userLastActiveSource MANUAL_TEST", async () => {
-    const manualRecord = {
-      ...mockRecord,
-      commonSubjectId: "user-2",
-      userLastActiveSource: "MANUAL_TEST",
-    };
-    dynamoMock.on(QueryCommand).resolves({ Items: [mockRecord, manualRecord] });
-    sqsMock
-      .on(SendMessageBatchCommand)
-      .resolves({ Successful: [], Failed: [] });
-
-    await handler(
-      { processName: "Warning30Day", manualTest: false },
-      {} as Context
-    );
-
-    expect(
-      sqsMock.commandCalls(SendMessageBatchCommand)[0].args[0].input.Entries
-    ).toHaveLength(1);
-    expect(sqsMock).toHaveReceivedCommandWith(SendMessageBatchCommand, {
-      Entries: [
-        expect.objectContaining({
-          MessageBody: JSON.stringify({
-            ...mockRecord,
-            processName: "Warning30Day",
-            isDryRun: false,
-          }),
-        }),
-      ],
-    });
-  });
-
   test("dry run does not send any messages to SQS but still queries accounts", async () => {
     dynamoMock.on(QueryCommand).resolves({ Items: [mockRecord] });
     sqsMock

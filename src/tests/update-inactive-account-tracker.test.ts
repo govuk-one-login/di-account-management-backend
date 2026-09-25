@@ -283,6 +283,40 @@ describe("UpdateInactiveAccountTracker handler", () => {
     });
   });
 
+  test("does not delete from user notifications table when event is AUTH_TOKEN_SENT_TO_ORCHESTRATION even if client_id differs from OLH", async () => {
+    dynamoMock.on(QueryCommand).resolves({
+      Items: [
+        {
+          commonSubjectId: "qwerty",
+          dateForDeletion: "2026-01-01",
+          userLastActive: "2020-01-01T00:00:00.000Z",
+          status: "pending",
+          emailAddress: "x",
+          statusLastUpdated: "",
+        },
+      ],
+    });
+    dynamoMock.on(TransactWriteCommand).resolves({});
+    const event: DynamoDBStreamEvent = {
+      Records: [
+        generateDynamoStreamRecord(
+          "some-other-rp",
+          "AUTH_TOKEN_SENT_TO_ORCHESTRATION"
+        ),
+      ],
+    };
+    await handler(event, {} as Context);
+    expect(dynamoMock).toHaveReceivedCommandWith(TransactWriteCommand, {
+      TransactItems: expect.not.arrayContaining([
+        expect.objectContaining({
+          Delete: expect.objectContaining({
+            TableName: "user-notifications-table",
+          }),
+        }),
+      ]),
+    });
+  });
+
   test("deletes from user notifications table when client_id does not match OLH client", async () => {
     dynamoMock.on(QueryCommand).resolves({
       Items: [

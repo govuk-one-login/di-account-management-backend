@@ -4936,6 +4936,7 @@ Resources:
               - !GetAtt DatabaseKmsKey.Arn
               - !GetAtt LoggingKmsKey.Arn
               - !GetAtt LambdaKMSKey.Arn
+              - !GetAtt AuditEncryptionKey.Arn
 
   DeleteInactiveAccountTrackerFunctionLogGroup:
     Type: AWS::Logs::LogGroup

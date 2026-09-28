@@ -7160,16 +7160,16 @@ Resources:
       PackageType: Zip
       Timeout: 900
       Events:
-        # Warning30DayScheduleEvent:
-        #   Type: Schedule
-        #   Properties:
-        #     Schedule: "cron(0 9 * * ? *)"
-        #     Input: '{"processName": "Warning30Day"}'
-        # Warning7DayScheduleEvent:
-        #   Type: Schedule
-        #   Properties:
-        #     Schedule: "cron(0 9 * * ? *)"
-        #     Input: '{"processName": "Warning7Day"}'
+        Warning30DayScheduleEvent:
+          Type: Schedule
+          Properties:
+            Schedule: "cron(0 9 * * ? *)"
+            Input: '{"processName": "Warning30Day"}'
+        Warning7DayScheduleEvent:
+          Type: Schedule
+          Properties:
+            Schedule: "cron(0 9 * * ? *)"
+            Input: '{"processName": "Warning7Day"}'
         DeletionDryRunScheduleEvent:
           Type: Schedule
           Properties:

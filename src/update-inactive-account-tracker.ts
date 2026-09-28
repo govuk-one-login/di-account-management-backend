@@ -487,6 +487,12 @@ const processRecord = async (
       },
       extensions: {
         accountTrackerNotificationSkipReason: "MigratedVerifyAccount",
+        ...(notificationConfiguration[notificationType]
+          ?.auditEventNotificationType && {
+          accountTrackerNotificationType:
+            notificationConfiguration[notificationType]
+              .auditEventNotificationType,
+        }),
         ...(previousTrackerRecord?.dateForDeletion && {
           accountTrackerAccountDeletionDate:
             previousTrackerRecord.dateForDeletion,

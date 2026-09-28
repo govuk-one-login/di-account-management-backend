@@ -1909,6 +1909,7 @@ describe("UpdateInactiveAccountTracker handler", () => {
         event_name: "HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED",
         extensions: {
           accountTrackerNotificationSkipReason: "MigratedVerifyAccount",
+          accountTrackerNotificationType: "Recovery",
           accountTrackerAccountDeletionDate: "2026-10-27",
         },
       })

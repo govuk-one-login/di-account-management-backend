@@ -294,7 +294,6 @@ Mappings:
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.integration.publishing.service.gov.uk"
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "2b3170b5-159e-457f-a282-f30f6006dc32"
       AUTHBACKFILLCOMPLETEDATETIME: ""
-      FEATURESENDIADAUDITEVENTS: "true"
       FEATUREDELETEEMAILSUBSCRIPTIONS: "false"
       NOTIFYTEMPLATEIDS: |
         {
@@ -312,7 +311,6 @@ Mappings:
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.integration.publishing.service.gov.uk"
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "2b3170b5-159e-457f-a282-f30f6006dc32"
       AUTHBACKFILLCOMPLETEDATETIME: ""
-      FEATURESENDIADAUDITEVENTS: "true"
       FEATUREDELETEEMAILSUBSCRIPTIONS: "true"
       NOTIFYTEMPLATEIDS: |
         {
@@ -330,7 +328,6 @@ Mappings:
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.staging.publishing.service.gov.uk"
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "2b3170b5-159e-457f-a282-f30f6006dc32"
       AUTHBACKFILLCOMPLETEDATETIME: ""
-      FEATURESENDIADAUDITEVENTS: "false"
       FEATUREDELETEEMAILSUBSCRIPTIONS: "false"
       NOTIFYTEMPLATEIDS: |
         {
@@ -348,7 +345,6 @@ Mappings:
       GOVUKAPPCLIENTID: "govukApp"
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "2b3170b5-159e-457f-a282-f30f6006dc32"
       AUTHBACKFILLCOMPLETEDATETIME: "2026-08-18T12:18:31.557Z"
-      FEATURESENDIADAUDITEVENTS: "false"
       FEATUREDELETEEMAILSUBSCRIPTIONS: "false"
       NOTIFYTEMPLATEIDS: |
         {
@@ -366,7 +362,6 @@ Mappings:
       GOVUKAPPCLIENTID: "EznkQXGrWxi0cQMSACY15UzvG1Q"
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "0674c6e3-219c-4e3a-b04c-3786bac7f228"
       AUTHBACKFILLCOMPLETEDATETIME: "2026-08-21T09:55:05.000Z"
-      FEATURESENDIADAUDITEVENTS: "false"
       FEATUREDELETEEMAILSUBSCRIPTIONS: "false"
       NOTIFYTEMPLATEIDS: |
         {
@@ -383,7 +378,6 @@ Mappings:
       GOVUKAPPCLIENTID: "EznkQXGrWxi0cQMSACY15UzvG1Q"
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.publishing.service.gov.uk"
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "0674c6e3-219c-4e3a-b04c-3786bac7f228"
-      FEATURESENDIADAUDITEVENTS: "false"
       FEATUREDELETEEMAILSUBSCRIPTIONS: "true"
       AUTHBACKFILLCOMPLETEDATETIME: "2026-08-25T13:23:45.424Z"
       NOTIFYTEMPLATEIDS: |
@@ -3573,12 +3567,6 @@ Resources:
               sendInactiveAccountDeletionEmails,
             ]
           TXMA_QUEUE_URL: !Ref AuditOutputQueue
-          FEATURE_SEND_IAD_AUDIT_EVENTS:
-            !FindInMap [
-              EnvironmentVariables,
-              !Ref Environment,
-              FEATURESENDIADAUDITEVENTS,
-            ]
       DeploymentPreference:
         Alarms:
           Fn::If:
@@ -4854,12 +4842,6 @@ Resources:
           TABLE_NAME: !Ref InactiveAccountTrackerStoreTableName
           NODE_OPTIONS: --enable-source-maps
           TXMA_QUEUE_URL: !Ref AuditOutputQueue
-          FEATURE_SEND_IAD_AUDIT_EVENTS:
-            !FindInMap [
-              EnvironmentVariables,
-              !Ref Environment,
-              FEATURESENDIADAUDITEVENTS,
-            ]
           NOTIFICATION_QUEUE_URL: !Ref NotificationQueue
           ACCOUNT_INTERVENTIONS_SERVICE_API_URL:
             !FindInMap [
@@ -7473,12 +7455,6 @@ Resources:
               EnvironmentConfiguration,
               !Ref Environment,
               sendInactiveAccountDeletionEmails,
-            ]
-          FEATURE_SEND_IAD_AUDIT_EVENTS:
-            !FindInMap [
-              EnvironmentVariables,
-              !Ref Environment,
-              FEATURESENDIADAUDITEVENTS,
             ]
           USER_NOTIFICATIONS_TABLE_NAME: !Ref UserNotificationsTableName
       DeploymentPreference:

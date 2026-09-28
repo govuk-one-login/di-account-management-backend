@@ -28,7 +28,6 @@ const setAuditEnv = () => {
   process.env.TABLE_NAME = "TABLE_NAME";
   process.env.TXMA_QUEUE_URL =
     "https://sqs.eu-west-2.amazonaws.com/123456789012/TxmaQueue";
-  process.env.FEATURE_SEND_IAD_AUDIT_EVENTS = "true";
   process.env.NOTIFICATION_QUEUE_URL = "https://sqs.example.com/notification";
   process.env.AWS_REGION = "eu-west-2";
 };
@@ -189,7 +188,6 @@ describe("maybeEnqueueDeletionEmail", () => {
     process.env.NOTIFICATION_QUEUE_URL = "https://sqs.example.com/notification";
     process.env.TXMA_QUEUE_URL =
       "https://sqs.eu-west-2.amazonaws.com/123456789012/TxmaQueue";
-    process.env.FEATURE_SEND_IAD_AUDIT_EVENTS = "true";
     process.env.AWS_REGION = "eu-west-2";
     mockIsUserIdBlocked.mockResolvedValue(aisNotSuspended);
   });

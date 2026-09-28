@@ -1,10 +1,8 @@
-import { IadEvent } from "./send-audit-event.js";
-
 export type NotificationConfig = Record<
   string,
   {
     name: string;
-    auditEvent?: IadEvent;
+    auditEvent?: string;
     auditEventNotificationType?: string;
   }
 >;

@@ -129,11 +129,9 @@ describe("process-inactive-account handler", () => {
     process.env.INACTIVE_ACCOUNT_TRACKER_TABLE_NAME =
       "test-inactive-tracker-table";
     process.env.SEND_INACTIVE_ACCOUNT_DELETION_EMAILS = "1";
-    process.env.FEATURE_SEND_IAD_AUDIT_EVENTS = "true";
     process.env.TXMA_QUEUE_URL =
       "https://sqs.eu-west-2.amazonaws.com/123456789012/TxmaQueue";
     process.env.AWS_REGION = "eu-west-2";
-    process.env.FEATURE_SEND_IAD_AUDIT_EVENTS = "true";
     process.env.USER_NOTIFICATIONS_TABLE_NAME = "test-user-notifications-table";
   });
 
@@ -988,7 +986,6 @@ describe("process-inactive-account handler", () => {
   });
 
   test("includes additional user and extension details in the audit event when sendAdditionalAuditEventDetails is set", async () => {
-    process.env.FEATURE_SEND_IAD_AUDIT_EVENTS = "true";
     process.env.ACCOUNT_DELETION_QUEUE_URL =
       "https://sqs.eu-west-2.amazonaws.com/123456789012/AccountDeletionQueue";
 
@@ -1037,8 +1034,6 @@ describe("process-inactive-account handler", () => {
   });
 
   test("sends only base audit event details when sendAdditionalAuditEventDetails is not set", async () => {
-    process.env.FEATURE_SEND_IAD_AUDIT_EVENTS = "true";
-
     const event = buildSqsEvent([
       {
         commonSubjectId: "user-123",

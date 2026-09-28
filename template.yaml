@@ -4853,7 +4853,7 @@ Resources:
         Alarms:
           Fn::If:
             - IsNotDevelopmentOrDemo
-            - - !Ref AWS::NoValue # !Ref DeleteInactiveAccountTrackerFunctionSuccessRate
+            - - !Ref DeleteInactiveAccountTrackerFunctionSuccessRate
             - - !Ref AWS::NoValue
     Metadata:
       BuildMethod: esbuild

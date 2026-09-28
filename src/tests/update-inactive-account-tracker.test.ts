@@ -1908,7 +1908,7 @@ describe("UpdateInactiveAccountTracker handler", () => {
       expect.objectContaining({
         event_name: "HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED",
         extensions: {
-          accountTrackerNotificationType: "LikelyVerifyMigratedUser",
+          accountTrackerNotificationSkipReason: "MigratedVerifyAccount",
           accountTrackerAccountDeletionDate: "2026-10-27",
         },
       })

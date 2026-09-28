@@ -486,7 +486,13 @@ const processRecord = async (
         ...(newItem.emailAddress && { email: newItem.emailAddress }),
       },
       extensions: {
-        accountTrackerNotificationType: "LikelyVerifyMigratedUser",
+        accountTrackerNotificationSkipReason: "MigratedVerifyAccount",
+        ...(notificationConfiguration[notificationType]
+          ?.auditEventNotificationType && {
+          accountTrackerNotificationType:
+            notificationConfiguration[notificationType]
+              .auditEventNotificationType,
+        }),
         ...(previousTrackerRecord?.dateForDeletion && {
           accountTrackerAccountDeletionDate:
             previousTrackerRecord.dateForDeletion,

@@ -56,7 +56,7 @@ const warningsContinueWithoutActionsGuardsList: ProcessGuard[] = [
   {
     guard: dateForDeletionIs27October,
     contributeToAlarm: false,
-    skippedNotificationAuditEventReason: "LikelyVerifyMigratedUser",
+    skippedNotificationAuditEventReason: "MigratedVerifyAccount",
     skippedNotificationAuditEventName:
       "HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED",
   },

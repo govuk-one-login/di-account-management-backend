@@ -1139,7 +1139,7 @@ describe("process-inactive-account handler", () => {
         email: "i-might-be-a-migrated-verify@user.com",
       },
       extensions: {
-        accountTrackerNotificationSkipReason: "LikelyVerifyMigratedUser",
+        accountTrackerNotificationSkipReason: "MigratedVerifyAccount",
         accountTrackerNotificationType: "30DayWarning",
         accountTrackerAccountDeletionDate: "2026-10-27",
       },

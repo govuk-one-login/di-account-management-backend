@@ -29,18 +29,6 @@ export function getEnvironmentVariable(name: string): string {
 }
 
 /**
- * Determines whether the IAD Audit Event feature flag is enabled.
- *
- * @returns True if the feature flag is enabled, otherwise false.
- */
-export function isSendIadAuditEventsEnabled(): boolean {
-  return (
-    getEnvironmentVariable("FEATURE_SEND_IAD_AUDIT_EVENTS").toLowerCase() ===
-    "true"
-  );
-}
-
-/**
  * Determines whether the Delete Email Subscriptions feature flag is enabled.
  *
  * @returns True if the feature flag is enabled, otherwise false.

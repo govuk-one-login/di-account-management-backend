@@ -61,7 +61,6 @@ describe("UpdateInactiveAccountTracker handler", () => {
     process.env.GOV_UK_APP_CLIENT_ID = "govuk-app-client-id";
     process.env.SEND_INACTIVE_ACCOUNT_DELETION_EMAILS = "1";
     process.env.TXMA_QUEUE_URL = "TXMA_QUEUE_URL";
-    process.env.FEATURE_SEND_IAD_AUDIT_EVENTS = "true";
     process.env.AWS_REGION = "mock-aws-region";
     dynamoMock.reset();
     sqsMock.reset();
@@ -80,7 +79,6 @@ describe("UpdateInactiveAccountTracker handler", () => {
     delete process.env.GOV_UK_APP_CLIENT_ID;
     delete process.env.SEND_INACTIVE_ACCOUNT_DELETION_EMAILS;
     delete process.env.TXMA_QUEUE_URL;
-    delete process.env.FEATURE_SEND_IAD_AUDIT_EVENTS;
     delete process.env.AWS_REGION;
   });
 

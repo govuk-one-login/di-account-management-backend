@@ -78,7 +78,6 @@ describe("handler", () => {
     sqsMock.on(SendMessageCommand).resolves({ MessageId: "test-message-id" });
     process.env.TXMA_QUEUE_URL =
       "https://sqs.eu-west-2.amazonaws.com/123456789012/TxmaQueue";
-    process.env.FEATURE_SEND_IAD_AUDIT_EVENTS = "true";
     process.env.AWS_REGION = "eu-west-2";
   });
 

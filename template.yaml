@@ -7931,6 +7931,7 @@ Resources:
         Variables:
           NOTIFY_DELIVERY_RECEIPTS_SECRET_ARN: !Ref NotifyDeliveryReceiptsSecret
           INACTIVE_ACCOUNT_TRACKER_TABLE_NAME: !Ref InactiveAccountTrackerStoreTableName
+          TXMA_QUEUE_URL: !Ref AuditOutputQueue
       Policies:
         - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
         - Statement:
@@ -7953,6 +7954,16 @@ Resources:
                 - kms:Decrypt
                 - kms:GenerateDataKey*
               Resource: !GetAtt DatabaseKmsKey.Arn
+            - Effect: Allow
+              Action:
+                - sqs:SendMessage
+              Resource: !GetAtt AuditOutputQueue.Arn
+            - Effect: Allow
+              Action:
+                - kms:Decrypt
+                - kms:GenerateDataKey*
+                - kms:ReEncrypt*
+              Resource: !GetAtt AuditEncryptionKey.Arn
       Events:
         DeliveryReceipts:
           Type: Api

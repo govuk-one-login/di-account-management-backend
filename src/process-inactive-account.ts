@@ -24,7 +24,7 @@ type ProcessInactiveAccountMessage = InactiveAccountTrackerRecord & {
 import { getEnvironmentVariable } from "./common/utils.js";
 import { sendAuditEvent } from "./common/send-audit-event.js";
 import { mergeTrackerRecords } from "./common/merge-tracker-records.js";
-import { getIadCircuitBreakerStatus } from "./common/iad-circuit-breaker.js";
+import { isIadCircuitBreakerTripped } from "./common/iad-circuit-breaker.js";
 import { notificationConfiguration } from "./common/notification-configuration.js";
 
 const logger = new Logger();
@@ -355,9 +355,9 @@ export const handler = async (
   for (const record of event.Records) {
     const body = JSON.parse(record.body) as ProcessInactiveAccountMessage;
 
-    const iadCircuitBreakerActive = await getIadCircuitBreakerStatus();
+    const circuitBreakerTripped = await isIadCircuitBreakerTripped();
 
-    if (iadCircuitBreakerActive) {
+    if (circuitBreakerTripped) {
       logger.info("GuardrailAbortedProcessInactiveAccounts", {
         dateForDeletion: body.dateForDeletion,
         processName: body.processName,

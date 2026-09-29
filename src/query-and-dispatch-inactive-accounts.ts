@@ -11,8 +11,8 @@ import { retryFunction } from "./common/retry-function.js";
 import type { InactiveAccountTrackerRecord } from "./common/model.js";
 import iadQueryLogicHash from "./common/iad-query-logic-hash.json" with { type: "json" };
 import {
-  disableIad,
-  getIadCircuitBreakerStatus,
+  tripIadCircuitBreaker,
+  isIadCircuitBreakerTripped,
 } from "./common/iad-circuit-breaker.js";
 import { getLatestForecastItemForDate } from "./common/iadGetLatestForecastItemForDate.js";
 
@@ -140,7 +140,7 @@ const forecastQueryLogicHashMatches = async (
   ) {
     return true;
   }
-  await disableIad({
+  await tripIadCircuitBreaker({
     guardrailType: "ForecastQueryLogicHashMismatch",
     processName,
     targetDate,
@@ -179,7 +179,7 @@ const forecastNumberOfDeletionsAlignsWithReality = async (
   );
   if (forecastedCount !== undefined && forecastedCount >= actualCount)
     return true;
-  await disableIad({
+  await tripIadCircuitBreaker({
     guardrailType: "HomeToDeleteMoreThanForecast",
     processName,
     targetDate,
@@ -256,7 +256,7 @@ export const handler = async (
     let eligibleForDate = 0;
 
     for await (const page of queryAccountsByDate(tableName, targetDate)) {
-      if (await getIadCircuitBreakerStatus()) {
+      if (await isIadCircuitBreakerTripped()) {
         logAbort(
           "CircuitBreakerAlreadyTripped",
           event.processName,

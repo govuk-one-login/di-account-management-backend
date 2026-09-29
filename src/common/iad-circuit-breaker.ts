@@ -23,7 +23,7 @@ const circuitBreakerSchema = v.optional(
   )
 );
 
-export const getIadCircuitBreakerStatus = async () => {
+export const isIadCircuitBreakerTripped = async () => {
   const tableName = getEnvironmentVariable(
     "INACTIVE_ACCOUNT_CIRCUIT_BREAKER_TABLE_NAME"
   );
@@ -41,10 +41,10 @@ export const getIadCircuitBreakerStatus = async () => {
 
   const latest = v.parse(circuitBreakerSchema, result.Items);
 
-  return latest?.[0]?.enabled ?? false;
+  return latest?.[0]?.enabled === false;
 };
 
-export const disableIad = async (metadata: unknown) => {
+export const tripIadCircuitBreaker = async (metadata: unknown) => {
   const tableName = getEnvironmentVariable(
     "INACTIVE_ACCOUNT_CIRCUIT_BREAKER_TABLE_NAME"
   );

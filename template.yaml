@@ -3523,6 +3523,14 @@ Resources:
             FilterCriteria:
               Filters:
                 - Pattern: '{ "eventName": ["INSERT"], "dynamodb": { "NewImage": { "event": { "M": { "event_name": { "S": ["AUTH_TOKEN_SENT_TO_ORCHESTRATION", "AUTH_CODE_VERIFIED", "AUTH_PASSKEY_VERIFICATION_SUCCESSFUL", "STS_REFRESH_TOKEN_ISSUED"] } } } } } }'
+        BackfillQueue:
+          Type: SQS
+          Condition: IsProduction
+          Properties:
+            Queue: !GetAtt RawEventsBackfillQueue.Arn
+            BatchSize: 50
+            FunctionResponseTypes:
+              - ReportBatchItemFailures
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt UpdateInactiveAccountTrackerDeadLetterQueue.Arn
@@ -3720,6 +3728,15 @@ Resources:
             Resource:
               - !GetAtt QueueKmsKey.Arn
               - !GetAtt AuditEncryptionKey.Arn
+          - !If
+            - IsProduction
+            - Effect: Allow
+              Action:
+                - sqs:ReceiveMessage
+                - sqs:DeleteMessage
+                - sqs:GetQueueAttributes
+              Resource: !GetAtt RawEventsBackfillQueue.Arn
+            - !Ref AWS::NoValue
 
   UpdateInactiveAccountTrackerFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -3808,6 +3825,132 @@ Resources:
       EvaluationPeriods: 1
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+
+  #########################################
+  # Raw Events Backfill Replay
+  #########################################
+
+  RawEventsBackfillQueue:
+    Type: AWS::SQS::Queue
+    Condition: IsProduction
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
+      VisibilityTimeout: 900
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt RawEventsBackfillDeadLetterQueue.Arn
+        maxReceiveCount: 3
+
+  RawEventsBackfillDeadLetterQueue:
+    Type: AWS::SQS::Queue
+    Condition: IsProduction
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      MessageRetentionPeriod: 1209600
+      KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
+
+  ReplayRawEventsBackfillFunction:
+    Type: AWS::Serverless::Function
+    Condition: IsProduction
+    DependsOn:
+      - ReplayRawEventsBackfillFunctionLogGroup
+    Properties:
+      FunctionName: !Sub ${Environment}-${AWS::StackName}-replay-raw-events-backfill
+      CodeUri: src
+      PackageType: Zip
+      MemorySize: 512
+      Timeout: 900
+      ReservedConcurrentExecutions: 1
+      EventInvokeConfig:
+        MaximumRetryAttempts: 0
+      Handler: replay-raw-events-backfill.handler
+      Role: !GetAtt ReplayRawEventsBackfillRole.Arn
+      Environment:
+        Variables:
+          NODE_OPTIONS: --enable-source-maps
+          BACKFILL_TABLE_NAME: raw_events_restored_iad_dpt_backfill
+          BACKFILL_QUEUE_URL: !Ref RawEventsBackfillQueue
+          CHECKPOINT_PARAMETER_NAME: !Sub "/${AWS::StackName}/${Environment}/replay-raw-events-backfill/checkpoint"
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Format: "esm"
+        OutExtension:
+          - .js=.mjs
+        Target: "es2022"
+        Sourcemap: true
+        Banner:
+          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
+        EntryPoints:
+          - replay-raw-events-backfill.ts
+
+  ReplayRawEventsBackfillFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Condition: IsProduction
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-replay-raw-events-backfill"
+      RetentionInDays: 90
+      KmsKeyId: !GetAtt LoggingKmsKey.Arn
+
+  ReplayRawEventsBackfillRole:
+    Type: AWS::IAM::Role
+    Condition: IsProduction
+    Properties:
+      PermissionsBoundary: !If
+        - UsePermissionsBoundary
+        - !Ref PermissionsBoundary
+        - !Ref AWS::NoValue
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+        - !Ref ReplayRawEventsBackfillPolicy
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+
+  ReplayRawEventsBackfillPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Condition: IsProduction
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - dynamodb:Scan
+            Resource: !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/raw_events_restored_iad_dpt_backfill"
+          - Effect: Allow
+            Action:
+              - sqs:SendMessage
+              - sqs:SendMessageBatch
+            Resource: !GetAtt RawEventsBackfillQueue.Arn
+          - Effect: Allow
+            Action:
+              - lambda:InvokeFunction
+            Resource: !GetAtt ReplayRawEventsBackfillFunction.Arn
+          - Effect: Allow
+            Action:
+              - kms:Decrypt
+            Resource: !GetAtt DatabaseKmsKey.Arn
+          - Effect: Allow
+            Action:
+              - kms:GenerateDataKey*
+            Resource: !GetAtt QueueKmsKey.Arn
+          - Effect: Allow
+            Action:
+              - ssm:GetParameter
+              - ssm:PutParameter
+              - ssm:DeleteParameter
+            Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/${Environment}/replay-raw-events-backfill/checkpoint"
 
   #########################################
   # Update User Email

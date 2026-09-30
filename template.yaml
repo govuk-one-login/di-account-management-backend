@@ -3722,6 +3722,7 @@ Resources:
               - kms:Decrypt
             Resource:
               - !GetAtt DatabaseKmsKey.Arn
+              - !GetAtt QueueKmsKey.Arn
           - Effect: Allow
             Action:
               - kms:GenerateDataKey*
@@ -3940,7 +3941,9 @@ Resources:
           - Effect: Allow
             Action:
               - kms:Decrypt
-            Resource: !GetAtt DatabaseKmsKey.Arn
+            Resource:
+              - !GetAtt DatabaseKmsKey.Arn
+              - !GetAtt QueueKmsKey.Arn
           - Effect: Allow
             Action:
               - kms:GenerateDataKey*

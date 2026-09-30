@@ -3534,6 +3534,7 @@ Resources:
           Properties:
             Queue: !If [BackfillReplayEnabled, !GetAtt RawEventsBackfillQueue.Arn, !Ref AWS::NoValue]
             BatchSize: 50
+            MaximumBatchingWindowInSeconds: 30
             FunctionResponseTypes:
               - ReportBatchItemFailures
       DeadLetterQueue:

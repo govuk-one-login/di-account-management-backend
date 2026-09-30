@@ -111,7 +111,9 @@ const dispatchItems = async (
       Id: String(idx),
       MessageBody: JSON.stringify({ Records: [buildStreamRecord(item)] }),
     }));
-    await sendBatch(queueUrl, entries); // NOSONAR: batches must be sent sequentially to avoid overwhelming SQS
+    // batches must be sent sequentially to avoid overwhelming SQS
+    // hence the await inside the loop
+    await sendBatch(queueUrl, entries);
   }
   return items.length;
 };
@@ -209,8 +211,9 @@ export const handler = async (
       }
 
       if (Date.now() - lastCheckpointTime >= CHECKPOINT_INTERVAL_MS) {
+        // must reflect current cursor state, cannot be parallelised
+        // hence the await inside the loop
         await saveCheckpoint(checkpointParameter, {
-          // NOSONAR: must reflect current cursor state, cannot be parallelised
           segmentCursors,
           totalDispatched,
         });
@@ -218,8 +221,9 @@ export const handler = async (
         logger.info("Checkpoint saved", { totalDispatched });
       }
 
+      // each segment depends on the previous cursor state hence the
+      // await inside the loop
       const { nextCursor, dispatched } = await processSegment(
-        // NOSONAR: each segment depends on the previous cursor state
         segment,
         segmentCursors[segment] ?? null,
         tableName,

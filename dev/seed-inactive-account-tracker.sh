@@ -39,7 +39,6 @@ done
 status_pending="pending"
 status_30day_warned="30DayWarningSent"
 status_7day_warned="7DayWarningSent"
-status_permanently_suspended="permanentSuspension"
 status_deleting="deleting"
 
 # Calculate target dates relative to today
@@ -86,8 +85,6 @@ put_item "$in_30_days" "user-30day-7day-warned" "$status_7day_warned" \
   "FILTERED OUT: 7-day warning already sent, not in allowedStatuses"
 put_item "$in_30_days" "user-30day-deleting" "$status_deleting" \
   "FILTERED OUT: already in deleting status"
-put_item "$in_30_days" "user-30day-suspended" "$status_permanently_suspended" \
-  "FILTERED OUT: permanently suspended"
 echo ""
 
 # --- Warning7Day process: daysToDeletion=7, allowedStatuses=["pending", "30DayWarningSent"] ---
@@ -100,8 +97,6 @@ put_item "$in_7_days" "user-7day-already-7warned" "$status_7day_warned" \
   "FILTERED OUT: 7-day warning already sent, not in allowedStatuses"
 put_item "$in_7_days" "user-7day-deleting" "$status_deleting" \
   "FILTERED OUT: already in deleting status"
-put_item "$in_7_days" "user-7day-suspended" "$status_permanently_suspended" \
-  "FILTERED OUT: permanently suspended"
 echo ""
 
 # --- DeleteAccount process: daysToDeletion=0, allowedStatuses=["pending", "30DayWarningSent", "7DayWarningSent"] ---
@@ -114,8 +109,6 @@ put_item "$today" "user-delete-7warned-001" "$status_7day_warned" \
   "ELIGIBLE: 7-day warning sent, should be dispatched to deletion queue"
 put_item "$today" "user-delete-deleting" "$status_deleting" \
   "FILTERED OUT: already in deleting status"
-put_item "$today" "user-delete-suspended" "$status_permanently_suspended" \
-  "FILTERED OUT: permanently suspended"
 echo ""
 
 # --- Edge case: records with a past date should NOT be picked up by any current run ---

@@ -487,16 +487,30 @@ const processRecord = async (
     );
   }
 
-  if (!inactiveAccountEmailFlagEnabled) {
-    logger.info("SEND_INACTIVE_ACCOUNT_DELETION_EMAILS feature flag is off");
-  } else if (isDeletionIn30DaysOrLess && !dateForDeletionIs27October) {
-    await handleNotification(
-      isDeletionIn30DaysOrLess,
-      newItem,
-      notificationType,
-      previousTrackerRecord,
-      notificationQueueUrl
-    );
+  if (isDeletionIn30DaysOrLess) {
+    if (!inactiveAccountEmailFlagEnabled) {
+      logger.info("SEND_INACTIVE_ACCOUNT_DELETION_EMAILS feature flag is off");
+    } else if (!dateForDeletionIs27October) {
+      await handleNotification(
+        isDeletionIn30DaysOrLess,
+        newItem,
+        notificationType,
+        previousTrackerRecord,
+        notificationQueueUrl
+      );
+    } else if (dateForDeletionIs27October) {
+      await sendAuditEvent("HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED", {
+        user: {
+          user_id: newItem.commonSubjectId,
+          ...(newItem.emailAddress && { email: newItem.emailAddress }),
+        },
+        extensions: buildSkippedNotificationExtensions(
+          notificationType,
+          "MigratedVerifyAccount",
+          previousTrackerRecord
+        ),
+      });
+    }
   }
 
   if (previousTrackerRecord) {
@@ -516,20 +530,6 @@ const processRecord = async (
       )
     );
     metrics.publishStoredMetrics();
-  }
-
-  if (dateForDeletionIs27October) {
-    await sendAuditEvent("HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED", {
-      user: {
-        user_id: newItem.commonSubjectId,
-        ...(newItem.emailAddress && { email: newItem.emailAddress }),
-      },
-      extensions: buildSkippedNotificationExtensions(
-        notificationType,
-        "MigratedVerifyAccount",
-        previousTrackerRecord
-      ),
-    });
   }
 };
 

@@ -3532,7 +3532,7 @@ Resources:
           Type: SQS
           Condition: BackfillReplayEnabled
           Properties:
-            Queue: !GetAtt RawEventsBackfillQueue.Arn
+            Queue: !If [BackfillReplayEnabled, !GetAtt RawEventsBackfillQueue.Arn, !Ref AWS::NoValue]
             BatchSize: 50
             FunctionResponseTypes:
               - ReportBatchItemFailures

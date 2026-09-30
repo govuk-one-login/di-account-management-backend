@@ -11,8 +11,8 @@ import {
 import type { Context } from "aws-lambda";
 
 vi.mock("../common/iad-circuit-breaker.js", () => ({
-  getIadCircuitBreakerStatus: vi.fn().mockResolvedValue(false),
-  disableIad: vi.fn().mockResolvedValue(undefined),
+  isIadCircuitBreakerTripped: vi.fn().mockResolvedValue(false),
+  tripIadCircuitBreaker: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock("../common/iad-query-logic-hash.json", () => ({
@@ -28,8 +28,8 @@ vi.mock("../common/iadGetLatestForecastItemForDate.js", () => ({
 }));
 
 import {
-  getIadCircuitBreakerStatus,
-  disableIad,
+  isIadCircuitBreakerTripped,
+  tripIadCircuitBreaker,
 } from "../common/iad-circuit-breaker.js";
 import { getLatestForecastItemForDate } from "../common/iadGetLatestForecastItemForDate.js";
 
@@ -96,8 +96,8 @@ describe("handler", () => {
 
   afterEach(() => {
     vi.clearAllMocks();
-    vi.mocked(getIadCircuitBreakerStatus).mockResolvedValue(false);
-    vi.mocked(disableIad).mockResolvedValue(undefined);
+    vi.mocked(isIadCircuitBreakerTripped).mockResolvedValue(false);
+    vi.mocked(tripIadCircuitBreaker).mockResolvedValue(undefined);
     vi.mocked(getLatestForecastItemForDate).mockReset();
   });
 
@@ -105,7 +105,7 @@ describe("handler", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-06-17T12:00:00.000Z"));
 
-    vi.mocked(getIadCircuitBreakerStatus).mockResolvedValue(true);
+    vi.mocked(isIadCircuitBreakerTripped).mockResolvedValue(true);
     dynamoMock.on(QueryCommand).resolves({ Items: [mockRecord] });
 
     const infoSpy = vi.spyOn(Logger.prototype, "info");
@@ -131,7 +131,7 @@ describe("handler", () => {
   });
 
   test("continues dispatching when circuit breaker is inactive", async () => {
-    vi.mocked(getIadCircuitBreakerStatus).mockResolvedValue(false);
+    vi.mocked(isIadCircuitBreakerTripped).mockResolvedValue(false);
     dynamoMock.on(QueryCommand).resolves({ Items: [mockRecord] });
     sqsMock
       .on(SendMessageBatchCommand)
@@ -252,7 +252,7 @@ describe("handler", () => {
 
     await handler({ processName: "DeleteAccount" }, {} as Context);
 
-    expect(disableIad).toHaveBeenCalledWith({
+    expect(tripIadCircuitBreaker).toHaveBeenCalledWith({
       guardrailType: "HomeToDeleteMoreThanForecast",
       processName: "DeleteAccount",
       targetDate: "2026-06-17",
@@ -305,7 +305,7 @@ describe("handler", () => {
 
     await handler({ processName: "DeleteAccount" }, {} as Context);
 
-    expect(disableIad).not.toHaveBeenCalled();
+    expect(tripIadCircuitBreaker).not.toHaveBeenCalled();
     expect(
       sqsMock.commandCalls(SendMessageBatchCommand).length
     ).toBeGreaterThan(0);
@@ -337,7 +337,7 @@ describe("handler", () => {
 
     await handler({ processName: "DeleteAccount" }, {} as Context);
 
-    expect(disableIad).not.toHaveBeenCalled();
+    expect(tripIadCircuitBreaker).not.toHaveBeenCalled();
     expect(
       sqsMock.commandCalls(SendMessageBatchCommand).length
     ).toBeGreaterThan(0);
@@ -390,7 +390,7 @@ describe("handler", () => {
 
       await handler({ processName: "DeleteAccount" }, {} as Context);
 
-      expect(disableIad).toHaveBeenCalledWith(
+      expect(tripIadCircuitBreaker).toHaveBeenCalledWith(
         expect.objectContaining({
           guardrailType: "ForecastQueryLogicHashMismatch",
           processName: "DeleteAccount",

@@ -44,12 +44,12 @@ vi.mock("../common/iadGuards/doesNotHaveEmailAddress.js", () => ({
   doesNotHaveEmailAddress: mockDoesNotHaveEmailAddress,
 }));
 
-const mockGetIadCircuitBreakerStatus = vi.hoisted(() =>
+const mockIsIadCircuitBreakerTripped = vi.hoisted(() =>
   vi.fn().mockResolvedValue(false)
 );
 
 vi.mock("../common/iad-circuit-breaker.js", () => ({
-  getIadCircuitBreakerStatus: mockGetIadCircuitBreakerStatus,
+  isIadCircuitBreakerTripped: mockIsIadCircuitBreakerTripped,
 }));
 
 import { handler } from "../process-inactive-account.js";
@@ -122,7 +122,7 @@ describe("process-inactive-account handler", () => {
     mockDoesNotHaveEmailAddress.mockResolvedValue(
       doesNotHaveEmailAddressContinue
     );
-    mockGetIadCircuitBreakerStatus.mockResolvedValue(false);
+    mockIsIadCircuitBreakerTripped.mockResolvedValue(false);
 
     process.env.NOTIFICATION_QUEUE_URL =
       "https://sqs.eu-west-2.amazonaws.com/123456789012/NotificationQueue";
@@ -136,7 +136,7 @@ describe("process-inactive-account handler", () => {
   });
 
   test("aborts early and logs when circuit breaker is active", async () => {
-    mockGetIadCircuitBreakerStatus.mockResolvedValue(true);
+    mockIsIadCircuitBreakerTripped.mockResolvedValue(true);
 
     const infoSpy = vi.spyOn(Logger.prototype, "info");
 
@@ -187,7 +187,7 @@ describe("process-inactive-account handler", () => {
   });
 
   test("reports current and remaining records as failed when circuit breaker trips mid-batch", async () => {
-    mockGetIadCircuitBreakerStatus
+    mockIsIadCircuitBreakerTripped
       .mockResolvedValueOnce(false)
       .mockResolvedValue(true);
 
@@ -238,7 +238,7 @@ describe("process-inactive-account handler", () => {
   });
 
   test("continues processing when circuit breaker is inactive", async () => {
-    mockGetIadCircuitBreakerStatus.mockResolvedValue(false);
+    mockIsIadCircuitBreakerTripped.mockResolvedValue(false);
 
     await handler(
       buildSqsEvent([

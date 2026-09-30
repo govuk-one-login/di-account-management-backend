@@ -6,8 +6,8 @@ import {
   QueryCommand,
 } from "@aws-sdk/lib-dynamodb";
 import {
-  disableIad,
-  getIadCircuitBreakerStatus,
+  tripIadCircuitBreaker,
+  isIadCircuitBreakerTripped,
 } from "../common/iad-circuit-breaker.js";
 
 const dynamoMock = mockClient(DynamoDBDocumentClient);
@@ -21,7 +21,7 @@ const makeItem = (enabled: boolean, metadata?: unknown) => ({
   ...(metadata !== undefined ? { metadataJson: JSON.stringify(metadata) } : {}),
 });
 
-describe("getIadCircuitBreakerStatus", () => {
+describe("isIadCircuitBreakerTripped", () => {
   beforeEach(() => {
     process.env.INACTIVE_ACCOUNT_CIRCUIT_BREAKER_TABLE_NAME = TABLE_NAME;
     dynamoMock.reset();
@@ -31,34 +31,34 @@ describe("getIadCircuitBreakerStatus", () => {
     delete process.env.INACTIVE_ACCOUNT_CIRCUIT_BREAKER_TABLE_NAME;
   });
 
-  test("returns true when latest item has enabled: true", async () => {
+  test("returns false when latest item has enabled: true (IAD is enabled)", async () => {
     dynamoMock.on(QueryCommand).resolves({ Items: [makeItem(true)] });
 
-    expect(await getIadCircuitBreakerStatus()).toBe(true);
+    expect(await isIadCircuitBreakerTripped()).toBe(false);
   });
 
-  test("returns false when latest item has enabled: false", async () => {
+  test("returns true when latest item has enabled: false (IAD is disabled)", async () => {
     dynamoMock.on(QueryCommand).resolves({ Items: [makeItem(false)] });
 
-    expect(await getIadCircuitBreakerStatus()).toBe(false);
+    expect(await isIadCircuitBreakerTripped()).toBe(true);
   });
 
   test("returns false when no items are returned", async () => {
     dynamoMock.on(QueryCommand).resolves({ Items: [] });
 
-    expect(await getIadCircuitBreakerStatus()).toBe(false);
+    expect(await isIadCircuitBreakerTripped()).toBe(false);
   });
 
   test("returns false when Items is undefined", async () => {
     dynamoMock.on(QueryCommand).resolves({ Items: undefined });
 
-    expect(await getIadCircuitBreakerStatus()).toBe(false);
+    expect(await isIadCircuitBreakerTripped()).toBe(false);
   });
 
   test("queries with correct parameters", async () => {
     dynamoMock.on(QueryCommand).resolves({ Items: [makeItem(true)] });
 
-    await getIadCircuitBreakerStatus();
+    await isIadCircuitBreakerTripped();
 
     expect(dynamoMock).toHaveReceivedCommandWith(QueryCommand, {
       TableName: TABLE_NAME,
@@ -73,13 +73,13 @@ describe("getIadCircuitBreakerStatus", () => {
   test("throws when env var is not set", async () => {
     delete process.env.INACTIVE_ACCOUNT_CIRCUIT_BREAKER_TABLE_NAME;
 
-    await expect(getIadCircuitBreakerStatus()).rejects.toThrow(
+    await expect(isIadCircuitBreakerTripped()).rejects.toThrow(
       `Environment variable "INACTIVE_ACCOUNT_CIRCUIT_BREAKER_TABLE_NAME" is not set.`
     );
   });
 });
 
-describe("disableIad", () => {
+describe("tripIadCircuitBreaker", () => {
   beforeEach(() => {
     process.env.INACTIVE_ACCOUNT_CIRCUIT_BREAKER_TABLE_NAME = TABLE_NAME;
     dynamoMock.reset();
@@ -91,7 +91,7 @@ describe("disableIad", () => {
   });
 
   test("puts an item with enabled: false", async () => {
-    await disableIad({});
+    await tripIadCircuitBreaker({});
 
     expect(dynamoMock).toHaveReceivedCommandWith(PutCommand, {
       TableName: TABLE_NAME,
@@ -102,7 +102,7 @@ describe("disableIad", () => {
   test("puts an item with a valid unix timestamp in milliseconds", async () => {
     const fixedDate = new Date("2024-01-15T10:30:00.000Z");
     vi.setSystemTime(fixedDate);
-    await disableIad({});
+    await tripIadCircuitBreaker({});
     vi.useRealTimers();
 
     expect(dynamoMock).toHaveReceivedCommandWith(PutCommand, {
@@ -113,7 +113,7 @@ describe("disableIad", () => {
 
   test("serialises metadata as JSON", async () => {
     const metadata = { reason: "manual-disable", operator: "test-user" };
-    await disableIad(metadata);
+    await tripIadCircuitBreaker(metadata);
 
     expect(dynamoMock).toHaveReceivedCommandWith(PutCommand, {
       TableName: TABLE_NAME,
@@ -126,7 +126,7 @@ describe("disableIad", () => {
   test("throws when env var is not set", async () => {
     delete process.env.INACTIVE_ACCOUNT_CIRCUIT_BREAKER_TABLE_NAME;
 
-    await expect(disableIad({})).rejects.toThrow(
+    await expect(tripIadCircuitBreaker({})).rejects.toThrow(
       `Environment variable "INACTIVE_ACCOUNT_CIRCUIT_BREAKER_TABLE_NAME" is not set.`
     );
   });

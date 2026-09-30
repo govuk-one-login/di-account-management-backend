@@ -8,14 +8,20 @@ import { DynamoDBClient, DescribeTableCommand } from "@aws-sdk/client-dynamodb";
 import { mockClient } from "aws-sdk-client-mock";
 import { Logger } from "@aws-lambda-powertools/logger";
 import { Context } from "aws-lambda";
-import { buildDates, handler } from "../inactive-account-deletion-forecast.js";
+import {
+  buildDates,
+  buildPastDates,
+  handler,
+} from "../inactive-account-deletion-forecast.js";
 
 const dynamoDocumentMock = mockClient(DynamoDBDocumentClient);
 const dynamoMock = mockClient(DynamoDBClient);
 
 const SKIP_EMAIL_REASON_BREAKDOWN_DAYS = 90;
 const FORECAST_DAYS = 1825;
+const PRECEDING_FORECAST_DAYS = 90;
 const EXPECTED_QUERY_COUNT =
+  PRECEDING_FORECAST_DAYS +
   SKIP_EMAIL_REASON_BREAKDOWN_DAYS * 2 +
   (FORECAST_DAYS - SKIP_EMAIL_REASON_BREAKDOWN_DAYS);
 
@@ -60,6 +66,23 @@ describe("buildDates", () => {
   });
 });
 
+describe("buildPastDates", () => {
+  test("returns the correct number of dates ending yesterday", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-01-05T00:00:00.000Z"));
+
+    const dates = buildPastDates(new Date(), 3);
+    expect(dates).toEqual(["2026-01-04", "2026-01-03", "2026-01-02"]);
+
+    vi.useRealTimers();
+  });
+
+  test("returns 90 dates for the preceding-forecast window", () => {
+    const dates = buildPastDates(new Date(), 90);
+    expect(dates).toHaveLength(90);
+  });
+});
+
 describe("handler", () => {
   beforeEach(() => {
     dynamoDocumentMock.reset();
@@ -98,7 +121,7 @@ describe("handler", () => {
       "Count",
       4500
     );
-    expect(mockMetrics.publishStoredMetrics).toHaveBeenCalledTimes(1);
+    expect(mockMetrics.publishStoredMetrics).toHaveBeenCalledTimes(2);
 
     expect(dynamoDocumentMock.commandCalls(QueryCommand)).toHaveLength(
       EXPECTED_QUERY_COUNT
@@ -117,6 +140,7 @@ describe("handler", () => {
     const infoSpy = vi.spyOn(Logger.prototype, "info");
 
     dynamoMock.on(DescribeTableCommand).resolves({ Table: { ItemCount: 0 } });
+    dynamoDocumentMock.on(QueryCommand).resolves({ Count: 0, ScannedCount: 0 });
     dynamoDocumentMock
       .on(QueryCommand, { FilterExpression: "hasSetupMfa = :val" })
       .resolves({ Count: 3, ScannedCount: 10 });
@@ -306,5 +330,71 @@ describe("handler", () => {
     dynamoDocumentMock.on(QueryCommand).rejects(new Error("DynamoDB down"));
 
     await expect(handler({}, mockContext())).rejects.toThrow("DynamoDB down");
+  });
+
+  test("publishes OverdueDeletionAccounts metric summing counts for preceding dates 5+ days ago", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-06-15T00:00:00.000Z"));
+
+    dynamoMock.on(DescribeTableCommand).resolves({ Table: { ItemCount: 0 } });
+    dynamoDocumentMock.on(QueryCommand).resolves({ Count: 2, ScannedCount: 2 });
+    dynamoDocumentMock.on(PutCommand).resolves({});
+
+    await handler({}, mockContext());
+
+    const overdueCalls = mockMetrics.addMetric.mock.calls.filter(
+      ([name]) => name === "OverdueDeletionAccounts"
+    );
+    expect(overdueCalls).toHaveLength(1);
+    // 90 preceding days, of which days 1-4 ago are not overdue (< 5 days):
+    // 86 overdue dates * 2 accounts each = 172.
+    expect(overdueCalls[0]).toEqual(["OverdueDeletionAccounts", "Count", 172]);
+
+    vi.useRealTimers();
+  });
+
+  test("publishes OverdueDeletionAccounts as 0 when no preceding dates have records", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-06-15T00:00:00.000Z"));
+
+    dynamoMock.on(DescribeTableCommand).resolves({ Table: { ItemCount: 0 } });
+    dynamoDocumentMock.on(QueryCommand).resolves({ Count: 0, ScannedCount: 0 });
+    dynamoDocumentMock.on(PutCommand).resolves({});
+
+    await handler({}, mockContext());
+
+    const overdueCalls = mockMetrics.addMetric.mock.calls.filter(
+      ([name]) => name === "OverdueDeletionAccounts"
+    );
+    expect(overdueCalls).toHaveLength(1);
+    expect(overdueCalls[0]).toEqual(["OverdueDeletionAccounts", "Count", 0]);
+
+    vi.useRealTimers();
+  });
+
+  test("logs preceding deletion forecast per date marking overdue dates with records", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-06-15T00:00:00.000Z"));
+
+    const infoSpy = vi.spyOn(Logger.prototype, "info");
+
+    dynamoMock.on(DescribeTableCommand).resolves({ Table: { ItemCount: 0 } });
+    dynamoDocumentMock.on(QueryCommand).resolves({ Count: 3, ScannedCount: 3 });
+    dynamoDocumentMock.on(PutCommand).resolves({});
+
+    await handler({}, mockContext());
+
+    expect(infoSpy).toHaveBeenCalledWith("Preceding deletion forecast", {
+      dateForDeletion: "2026-06-10",
+      accountsToDelete: 3,
+      overdue: true,
+    });
+    expect(infoSpy).toHaveBeenCalledWith("Preceding deletion forecast", {
+      dateForDeletion: "2026-06-14",
+      accountsToDelete: 3,
+      overdue: false,
+    });
+
+    vi.useRealTimers();
   });
 });

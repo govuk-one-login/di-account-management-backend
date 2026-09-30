@@ -101,6 +101,56 @@ const buildStreamRecord = (
   },
 });
 
+const dispatchItems = async (
+  queueUrl: string,
+  items: ReturnType<typeof unmarshall>[]
+): Promise<number> => {
+  for (let i = 0; i < items.length; i += 10) {
+    const batch = items.slice(i, i + 10);
+    const entries: SendMessageBatchRequestEntry[] = batch.map((item, idx) => ({
+      Id: String(idx),
+      MessageBody: JSON.stringify({ Records: [buildStreamRecord(item)] }),
+    }));
+    await sendBatch(queueUrl, entries); // NOSONAR: batches must be sent sequentially to avoid overwhelming SQS
+  }
+  return items.length;
+};
+
+const processSegment = async (
+  segment: number,
+  cursor: Record<string, AttributeValue> | null,
+  tableName: string,
+  queueUrl: string
+): Promise<{
+  nextCursor: Record<string, AttributeValue> | undefined;
+  dispatched: number;
+}> => {
+  const scanResult = await dynamoClient.send(
+    new ScanCommand({
+      TableName: tableName,
+      Segment: segment,
+      TotalSegments: TOTAL_SEGMENTS,
+      ExclusiveStartKey: cursor ?? undefined,
+      FilterExpression: "event.event_name IN (:e1, :e2, :e3, :e4)",
+      ExpressionAttributeValues: {
+        ":e1": { S: "AUTH_TOKEN_SENT_TO_ORCHESTRATION" },
+        ":e2": { S: "AUTH_CODE_VERIFIED" },
+        ":e3": { S: "AUTH_PASSKEY_VERIFICATION_SUCCESSFUL" },
+        ":e4": { S: "STS_REFRESH_TOKEN_ISSUED" },
+      },
+      ProjectionExpression: "id, #evt",
+      ExpressionAttributeNames: { "#evt": "event" },
+    })
+  );
+
+  const dispatched = await dispatchItems(
+    queueUrl,
+    (scanResult.Items ?? []).map((item) => unmarshall(item))
+  );
+
+  return { nextCursor: scanResult.LastEvaluatedKey, dispatched };
+};
+
 export const handler = async (
   event: ReplayInput,
   context: Context
@@ -137,7 +187,6 @@ export const handler = async (
     madeProgress = false;
 
     for (let segment = 0; segment < TOTAL_SEGMENTS; segment++) {
-      // undefined means this segment is exhausted
       if (segmentCursors[segment] === undefined) continue;
 
       if (context.getRemainingTimeInMillis() < REINVOKE_THRESHOLD_MS) {
@@ -145,12 +194,10 @@ export const handler = async (
           totalDispatched,
           remainingMs: context.getRemainingTimeInMillis(),
         });
-
         await saveCheckpoint(checkpointParameter, {
           segmentCursors,
           totalDispatched,
         });
-
         await lambdaClient.send(
           new InvokeCommand({
             FunctionName: functionName,
@@ -163,6 +210,7 @@ export const handler = async (
 
       if (Date.now() - lastCheckpointTime >= CHECKPOINT_INTERVAL_MS) {
         await saveCheckpoint(checkpointParameter, {
+          // NOSONAR: must reflect current cursor state, cannot be parallelised
           segmentCursors,
           totalDispatched,
         });
@@ -170,50 +218,21 @@ export const handler = async (
         logger.info("Checkpoint saved", { totalDispatched });
       }
 
-      const scanResult = await dynamoClient.send(
-        new ScanCommand({
-          TableName: tableName,
-          Segment: segment,
-          TotalSegments: TOTAL_SEGMENTS,
-          ExclusiveStartKey: segmentCursors[segment] ?? undefined,
-          FilterExpression: "event.event_name IN (:e1, :e2, :e3, :e4)",
-          ExpressionAttributeValues: {
-            ":e1": { S: "AUTH_TOKEN_SENT_TO_ORCHESTRATION" },
-            ":e2": { S: "AUTH_CODE_VERIFIED" },
-            ":e3": { S: "AUTH_PASSKEY_VERIFICATION_SUCCESSFUL" },
-            ":e4": { S: "STS_REFRESH_TOKEN_ISSUED" },
-          },
-          ProjectionExpression: "id, #evt",
-          ExpressionAttributeNames: { "#evt": "event" },
-        })
+      const { nextCursor, dispatched } = await processSegment(
+        // NOSONAR: each segment depends on the previous cursor state
+        segment,
+        segmentCursors[segment] ?? null,
+        tableName,
+        queueUrl
       );
 
-      const items = scanResult.Items ?? [];
+      totalDispatched += dispatched;
+      madeProgress = true;
 
-      // Send in batches of 10 (SQS max)
-      for (let i = 0; i < items.length; i += 10) {
-        const batch = items.slice(i, i + 10);
-        const entries: SendMessageBatchRequestEntry[] = batch.map(
-          (item, idx) => {
-            const unmarshalled = unmarshall(item);
-            const streamRecord = buildStreamRecord(unmarshalled);
-            return {
-              Id: String(idx),
-              MessageBody: JSON.stringify({ Records: [streamRecord] }),
-            };
-          }
-        );
-        await sendBatch(queueUrl, entries);
-        totalDispatched += batch.length;
-      }
-
-      if (scanResult.LastEvaluatedKey) {
-        segmentCursors[segment] = scanResult.LastEvaluatedKey;
-        madeProgress = true;
+      if (nextCursor) {
+        segmentCursors[segment] = nextCursor;
       } else {
-        // Segment exhausted
         segmentCursors[segment] = undefined;
-        madeProgress = true;
         logger.info(`Segment ${segment} complete`, { totalDispatched });
       }
     }

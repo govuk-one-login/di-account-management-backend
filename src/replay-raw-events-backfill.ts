@@ -24,12 +24,15 @@ const lambdaClient = new LambdaClient({});
 const ssmClient = new SSMClient({});
 
 const TOTAL_SEGMENTS = 10;
+
+type SegmentCursor =
+  "NOT_STARTED" | "FINISHED" | Record<string, AttributeValue>;
 // Reinvoke with ~60s remaining to allow time for the invocation and any in-flight batch
 const REINVOKE_THRESHOLD_MS = 60_000;
 const CHECKPOINT_INTERVAL_MS = 60_000;
 
 interface CheckpointState {
-  segmentCursors: (Record<string, AttributeValue> | null | undefined)[];
+  segmentCursors: SegmentCursor[];
   totalDispatched: number;
 }
 
@@ -111,8 +114,6 @@ const dispatchItems = async (
       Id: String(idx),
       MessageBody: JSON.stringify({ Records: [buildStreamRecord(item)] }),
     }));
-    // batches must be sent sequentially to avoid overwhelming SQS
-    // hence the await inside the loop
     await sendBatch(queueUrl, entries);
   }
   return items.length;
@@ -168,78 +169,73 @@ export const handler = async (
     ? null
     : await loadCheckpoint(checkpointParameter);
 
-  const segmentCursors: (Record<string, AttributeValue> | null | undefined)[] =
+  const segmentCursors: SegmentCursor[] =
     existingCheckpoint?.segmentCursors ??
-    new Array<null>(TOTAL_SEGMENTS).fill(null);
+    new Array<"NOT_STARTED">(TOTAL_SEGMENTS).fill("NOT_STARTED");
 
   let totalDispatched = existingCheckpoint?.totalDispatched ?? 0;
 
   logger.info("Replay backfill started", {
     totalDispatched,
     resumedFromCheckpoint: existingCheckpoint !== null,
-    segmentsRemaining: segmentCursors.filter((c) => c !== undefined).length,
+    segmentsRemaining: segmentCursors.filter((c) => c !== "FINISHED").length,
   });
 
   let lastCheckpointTime = Date.now();
 
-  // Round-robin across segments so we make progress on all of them evenly
-  // before a potential reinvocation
-  let madeProgress = true;
-  while (madeProgress) {
-    madeProgress = false;
-
-    for (let segment = 0; segment < TOTAL_SEGMENTS; segment++) {
-      if (segmentCursors[segment] === undefined) continue;
-
-      if (context.getRemainingTimeInMillis() < REINVOKE_THRESHOLD_MS) {
-        logger.info("Approaching timeout, reinvoking", {
-          totalDispatched,
-          remainingMs: context.getRemainingTimeInMillis(),
-        });
-        await saveCheckpoint(checkpointParameter, {
-          segmentCursors,
-          totalDispatched,
-        });
-        await lambdaClient.send(
-          new InvokeCommand({
-            FunctionName: functionName,
-            InvocationType: "Event",
-            Payload: Buffer.from(JSON.stringify({})),
-          })
-        );
-        return;
-      }
-
-      if (Date.now() - lastCheckpointTime >= CHECKPOINT_INTERVAL_MS) {
-        // must reflect current cursor state, cannot be parallelised
-        // hence the await inside the loop
-        await saveCheckpoint(checkpointParameter, {
-          segmentCursors,
-          totalDispatched,
-        });
-        lastCheckpointTime = Date.now();
-        logger.info("Checkpoint saved", { totalDispatched });
-      }
-
-      // each segment depends on the previous cursor state hence the
-      // await inside the loop
-      const { nextCursor, dispatched } = await processSegment(
-        segment,
-        segmentCursors[segment] ?? null,
-        tableName,
-        queueUrl
+  while (segmentCursors.some((c) => c !== "FINISHED")) {
+    if (context.getRemainingTimeInMillis() < REINVOKE_THRESHOLD_MS) {
+      logger.info("Approaching timeout, reinvoking", {
+        totalDispatched,
+        remainingMs: context.getRemainingTimeInMillis(),
+      });
+      await saveCheckpoint(checkpointParameter, {
+        segmentCursors,
+        totalDispatched,
+      });
+      await lambdaClient.send(
+        new InvokeCommand({
+          FunctionName: functionName,
+          InvocationType: "Event",
+          Payload: Buffer.from(JSON.stringify({})),
+        })
       );
+      return;
+    }
 
-      totalDispatched += dispatched;
-      madeProgress = true;
+    if (Date.now() - lastCheckpointTime >= CHECKPOINT_INTERVAL_MS) {
+      await saveCheckpoint(checkpointParameter, {
+        segmentCursors,
+        totalDispatched,
+      });
+      lastCheckpointTime = Date.now();
+      logger.info("Checkpoint saved", { totalDispatched });
+    }
 
-      if (nextCursor) {
-        segmentCursors[segment] = nextCursor;
+    const results = await Promise.all(
+      segmentCursors.map((cursor, segment) => {
+        if (cursor === "FINISHED") return Promise.resolve(null);
+        return processSegment(
+          segment,
+          cursor === "NOT_STARTED"
+            ? null
+            : (cursor as Record<string, AttributeValue>),
+          tableName,
+          queueUrl
+        );
+      })
+    );
+
+    results.forEach((result, segment) => {
+      if (result === null) return;
+      totalDispatched += result.dispatched;
+      if (result.nextCursor) {
+        segmentCursors[segment] = result.nextCursor;
       } else {
-        segmentCursors[segment] = undefined;
+        segmentCursors[segment] = "FINISHED";
         logger.info(`Segment ${segment} complete`, { totalDispatched });
       }
-    }
+    });
   }
 
   await clearCheckpoint(checkpointParameter);

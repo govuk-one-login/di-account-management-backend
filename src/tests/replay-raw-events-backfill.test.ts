@@ -115,7 +115,7 @@ describe("checkpoint loading", () => {
   test("resumes from checkpoint when one exists", async () => {
     const cursor = { id: { S: "last-seen-id" }, timestamp: { N: "123" } };
     const checkpoint = {
-      segmentCursors: [cursor, ...new Array(9).fill(null)],
+      segmentCursors: [cursor, ...new Array(9).fill("NOT_STARTED")],
       totalDispatched: 500,
     };
     ssmMock.on(GetParameterCommand).resolves({
@@ -296,16 +296,8 @@ describe("scanning and dispatching", () => {
 
 describe("timeout and reinvocation", () => {
   test("reinvokes itself when approaching timeout", async () => {
-    // Segment 0 has items but we'll be near timeout after the first scan
-    dynamoMock.on(ScanCommand, { Segment: 0 }).resolvesOnce({
-      Items: [makeItem("AUTH_CODE_VERIFIED")],
-      LastEvaluatedKey: undefined,
-    });
-    for (let seg = 1; seg < 10; seg++) {
-      dynamoMock.on(ScanCommand, { Segment: seg }).resolvesOnce(EMPTY_SCAN);
-    }
-
-    // Context reports < 60s remaining from the start
+    // Context reports < 60s remaining from the start — timeout is checked before
+    // each round so no scans will occur
     await handler({}, makeContext(59_000));
 
     expect(lambdaMock).toHaveReceivedCommandWith(InvokeCommand, {

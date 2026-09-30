@@ -108,14 +108,18 @@ const dispatchItems = async (
   queueUrl: string,
   items: ReturnType<typeof unmarshall>[]
 ): Promise<number> => {
-  for (let i = 0; i < items.length; i += 10) {
-    const batch = items.slice(i, i + 10);
-    const entries: SendMessageBatchRequestEntry[] = batch.map((item, idx) => ({
-      Id: String(idx),
-      MessageBody: JSON.stringify({ Records: [buildStreamRecord(item)] }),
-    }));
-    await sendBatch(queueUrl, entries);
-  }
+  await Promise.all(
+    Array.from({ length: Math.ceil(items.length / 10) }, (_, i) => {
+      const batch = items.slice(i * 10, (i + 1) * 10);
+      const entries: SendMessageBatchRequestEntry[] = batch.map(
+        (item, idx) => ({
+          Id: String(idx),
+          MessageBody: JSON.stringify({ Records: [buildStreamRecord(item)] }),
+        })
+      );
+      return sendBatch(queueUrl, entries);
+    })
+  );
   return items.length;
 };
 

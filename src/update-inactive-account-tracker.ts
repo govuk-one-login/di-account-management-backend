@@ -88,16 +88,27 @@ export function getDaysUntilAccountWouldHaveBeenDeleted(
   return Math.round(differenceInMs / (24 * 60 * 60 * 1000));
 }
 
-const buildTransactionItems = (
-  tableName: string,
-  userNotificationsTableName: string,
-  olhClientId: string,
-  userId: string,
-  newItem: InactiveAccountTrackerRecord,
-  previousTrackerRecord: InactiveAccountTrackerRecord | null,
-  effectiveClientId: string | undefined,
-  txmaEvent: TxmaEvent
-): TransactionItems => {
+interface BuildTransactionItemsParams {
+  tableName: string;
+  userNotificationsTableName: string;
+  olhClientId: string;
+  userId: string;
+  newItem: InactiveAccountTrackerRecord;
+  previousTrackerRecord: InactiveAccountTrackerRecord | null;
+  effectiveClientId: string | undefined;
+  txmaEvent: TxmaEvent;
+}
+
+const buildTransactionItems = ({
+  tableName,
+  userNotificationsTableName,
+  olhClientId,
+  userId,
+  newItem,
+  previousTrackerRecord,
+  effectiveClientId,
+  txmaEvent,
+}: BuildTransactionItemsParams): TransactionItems => {
   const items: TransactionItems = [
     {
       Put: {
@@ -234,6 +245,99 @@ const buildTrackerRecord = (
   };
 };
 
+const getNotificationType = (
+  effectiveClientId: string | undefined,
+  govukAppClientId: string,
+  olhClientId: string
+): string => {
+  if (effectiveClientId === govukAppClientId) {
+    return notificationConfiguration.INACTIVE_ACCOUNT_SAVED_APP.name;
+  }
+  if (effectiveClientId === olhClientId) {
+    return notificationConfiguration.INACTIVE_ACCOUNT_SAVED_HOME.name;
+  }
+  return notificationConfiguration.INACTIVE_ACCOUNT_SAVED_RP.name;
+};
+
+const buildSkippedNotificationExtensions = (
+  notificationType: string,
+  skipReason: string,
+  previousTrackerRecord: InactiveAccountTrackerRecord | null
+) => ({
+  accountTrackerNotificationSkipReason: skipReason,
+  ...(notificationConfiguration[notificationType]
+    ?.auditEventNotificationType && {
+    accountTrackerNotificationType:
+      notificationConfiguration[notificationType].auditEventNotificationType,
+  }),
+  ...(previousTrackerRecord?.dateForDeletion && {
+    accountTrackerAccountDeletionDate: previousTrackerRecord.dateForDeletion,
+  }),
+});
+
+const handleNotification = async (
+  isDeletionIn30DaysOrLess: string | boolean | undefined,
+  newItem: InactiveAccountTrackerRecord,
+  notificationType: string,
+  previousTrackerRecord: InactiveAccountTrackerRecord | null,
+  notificationQueueUrl: string
+): Promise<void> => {
+  if (!isDeletionIn30DaysOrLess) return;
+
+  if (!newItem.emailAddress) {
+    logger.warn("INACTIVE_ACCOUNT_SAVED_BUT_NO_EMAIL_ADDRESS_TO_NOTIFY");
+    return;
+  }
+
+  if (!newItem.hasSetupMfa) {
+    // Accounts that have never set up MFA have not been used to interact with
+    // a government service, so are treated as unusable and receive no IAD emails.
+    logger.info("Skipping IAD account saved email: user has not set up MFA");
+    await sendAuditEvent("HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED", {
+      user: {
+        user_id: newItem.commonSubjectId,
+        ...(newItem.emailAddress && { email: newItem.emailAddress }),
+      },
+      extensions: buildSkippedNotificationExtensions(
+        notificationType,
+        "UnusableAccount",
+        previousTrackerRecord
+      ),
+    });
+    return;
+  }
+
+  // if previousTrackerRecord.dateForDeletion is within the next 30 days, send ACCOUNT SAVED email
+  const message = { notificationType, emailAddress: newItem.emailAddress };
+  await sqsClient.send(
+    new SendMessageCommand({
+      QueueUrl: notificationQueueUrl,
+      MessageBody: JSON.stringify(message),
+    })
+  );
+
+  logger.info("Account saved message successfully sent to target queue", {
+    publicSubjectId: newItem.publicSubjectId,
+    notificationType: notificationType,
+  });
+
+  const currentEventConfiguration = notificationConfiguration[notificationType];
+  await sendAuditEvent(currentEventConfiguration.auditEvent ?? "", {
+    user: {
+      user_id: newItem.commonSubjectId,
+      ...(newItem.emailAddress && { email: newItem.emailAddress }),
+    },
+    extensions: {
+      accountTrackerNotificationType:
+        currentEventConfiguration.auditEventNotificationType,
+      ...(previousTrackerRecord?.dateForDeletion && {
+        accountTrackerAccountDeletionDate:
+          previousTrackerRecord.dateForDeletion,
+      }),
+    },
+  });
+};
+
 const isBeforeBackfillThreshold = (
   eventDate: Date,
   backfillCompleteDatetime: string
@@ -328,7 +432,7 @@ const processRecord = async (
   const notificationQueueUrl = getEnvironmentVariable("NOTIFICATION_QUEUE_URL");
   const govukAppClientId = getEnvironmentVariable("GOV_UK_APP_CLIENT_ID");
   const effectiveClientId = getEffectiveClientId(txmaEvent, govukAppClientId);
-  const transactionItems = buildTransactionItems(
+  const transactionItems = buildTransactionItems({
     tableName,
     userNotificationsTableName,
     olhClientId,
@@ -336,28 +440,17 @@ const processRecord = async (
     newItem,
     previousTrackerRecord,
     effectiveClientId,
-    txmaEvent
-  );
+    txmaEvent,
+  });
   const isDeletionIn30DaysOrLess =
     previousTrackerRecord?.dateForDeletion &&
     isCurrentDeletionIn30DaysOrLess(previousTrackerRecord.dateForDeletion);
-  let notificationType;
 
-  switch (effectiveClientId) {
-    //  GOVUK App client registry ID
-    case govukAppClientId:
-      notificationType =
-        notificationConfiguration.INACTIVE_ACCOUNT_SAVED_APP.name;
-      break;
-    //  OLH registry ID
-    case olhClientId:
-      notificationType =
-        notificationConfiguration.INACTIVE_ACCOUNT_SAVED_HOME.name;
-      break;
-    default:
-      notificationType =
-        notificationConfiguration.INACTIVE_ACCOUNT_SAVED_RP.name;
-  }
+  const notificationType = getNotificationType(
+    effectiveClientId,
+    govukAppClientId,
+    olhClientId
+  );
 
   const inactiveAccountEmailFlagEnabled =
     getEnvironmentVariable("SEND_INACTIVE_ACCOUNT_DELETION_EMAILS") === "1";
@@ -397,67 +490,13 @@ const processRecord = async (
   if (!inactiveAccountEmailFlagEnabled) {
     logger.info("SEND_INACTIVE_ACCOUNT_DELETION_EMAILS feature flag is off");
   } else if (isDeletionIn30DaysOrLess && !dateForDeletionIs27October) {
-    if (!newItem.emailAddress) {
-      logger.warn("INACTIVE_ACCOUNT_SAVED_BUT_NO_EMAIL_ADDRESS_TO_NOTIFY");
-    } else if (!newItem.hasSetupMfa) {
-      // Accounts that have never set up MFA have not been used to interact with
-      // a government service, so are treated as unusable and receive no IAD emails.
-      logger.info("Skipping IAD account saved email: user has not set up MFA");
-      await sendAuditEvent("HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED", {
-        user: {
-          user_id: newItem.commonSubjectId,
-          ...(newItem.emailAddress && { email: newItem.emailAddress }),
-        },
-        extensions: {
-          accountTrackerNotificationSkipReason: "UnusableAccount",
-          ...(notificationConfiguration[notificationType]
-            ?.auditEventNotificationType && {
-            accountTrackerNotificationType:
-              notificationConfiguration[notificationType]
-                .auditEventNotificationType,
-          }),
-          ...(previousTrackerRecord?.dateForDeletion && {
-            accountTrackerAccountDeletionDate:
-              previousTrackerRecord.dateForDeletion,
-          }),
-        },
-      });
-    } else {
-      // if previousTrackerRecord.dateForDeletion is within the next 30 days, send ACCOUNT SAVED email
-      const message = {
-        notificationType,
-        emailAddress: newItem.emailAddress,
-      };
-
-      await sqsClient.send(
-        new SendMessageCommand({
-          QueueUrl: notificationQueueUrl,
-          MessageBody: JSON.stringify(message),
-        })
-      );
-
-      logger.info("Account saved message successfully sent to target queue", {
-        publicSubjectId: newItem.publicSubjectId,
-        notificationType: notificationType,
-      });
-
-      const currentEventConfiguration =
-        notificationConfiguration[notificationType];
-      await sendAuditEvent(currentEventConfiguration.auditEvent ?? "", {
-        user: {
-          user_id: newItem.commonSubjectId,
-          ...(newItem.emailAddress && { email: newItem.emailAddress }),
-        },
-        extensions: {
-          accountTrackerNotificationType:
-            currentEventConfiguration.auditEventNotificationType,
-          ...(previousTrackerRecord?.dateForDeletion && {
-            accountTrackerAccountDeletionDate:
-              previousTrackerRecord.dateForDeletion,
-          }),
-        },
-      });
-    }
+    await handleNotification(
+      isDeletionIn30DaysOrLess,
+      newItem,
+      notificationType,
+      previousTrackerRecord,
+      notificationQueueUrl
+    );
   }
 
   if (previousTrackerRecord) {
@@ -485,19 +524,11 @@ const processRecord = async (
         user_id: newItem.commonSubjectId,
         ...(newItem.emailAddress && { email: newItem.emailAddress }),
       },
-      extensions: {
-        accountTrackerNotificationSkipReason: "MigratedVerifyAccount",
-        ...(notificationConfiguration[notificationType]
-          ?.auditEventNotificationType && {
-          accountTrackerNotificationType:
-            notificationConfiguration[notificationType]
-              .auditEventNotificationType,
-        }),
-        ...(previousTrackerRecord?.dateForDeletion && {
-          accountTrackerAccountDeletionDate:
-            previousTrackerRecord.dateForDeletion,
-        }),
-      },
+      extensions: buildSkippedNotificationExtensions(
+        notificationType,
+        "MigratedVerifyAccount",
+        previousTrackerRecord
+      ),
     });
   }
 };

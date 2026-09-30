@@ -1861,6 +1861,134 @@ describe("UpdateInactiveAccountTracker handler", () => {
     });
   });
 
+  test("sends MigratedVerifyAccount audit event when date is 27 October even if feature flag is off", async () => {
+    const now = new Date("2026-10-01T12:30:00.000Z");
+    vi.useFakeTimers();
+    vi.setSystemTime(now);
+    process.env.SEND_INACTIVE_ACCOUNT_DELETION_EMAILS = "0";
+
+    dynamoMock.on(QueryCommand).resolves({
+      Items: [
+        {
+          commonSubjectId: "qwerty",
+          dateForDeletion: "2026-10-27",
+          userLastActive: now.toISOString(),
+          status: "pending",
+          emailAddress: "foo@bar.com",
+        },
+      ],
+    });
+    dynamoMock.on(TransactWriteCommand).resolves({});
+    sqsMock.on(SendMessageCommand).resolves({});
+
+    const event: DynamoDBStreamEvent = {
+      Records: [generateDynamoStreamRecord("EznkQXGrWxi0cQMSACY15UzvG1Q")],
+    };
+
+    await handler(event, {} as Context);
+
+    const skippedCall = sqsMock
+      .commandCalls(SendMessageCommand)
+      .find(
+        (call) =>
+          call.args[0].input.QueueUrl === "TXMA_QUEUE_URL" &&
+          JSON.parse(call.args[0].input.MessageBody as string).event_name ===
+            "HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED"
+      );
+    expect(skippedCall).toBeDefined();
+    const auditEvent = JSON.parse(skippedCall!.args[0].input.MessageBody ?? "");
+    expect(auditEvent.extensions.accountTrackerNotificationSkipReason).toBe(
+      "MigratedVerifyAccount"
+    );
+
+    vi.useRealTimers();
+  });
+
+  test("sends MigratedVerifyAccount audit event when date is 27 October even if deletion is not within 30 days", async () => {
+    // Set now to a date where 2026-10-27 is more than 30 days away
+    const now = new Date("2026-09-01T12:30:00.000Z");
+    vi.useFakeTimers();
+    vi.setSystemTime(now);
+
+    dynamoMock.on(QueryCommand).resolves({
+      Items: [
+        {
+          commonSubjectId: "qwerty",
+          dateForDeletion: "2026-10-27",
+          userLastActive: now.toISOString(),
+          status: "pending",
+          emailAddress: "foo@bar.com",
+        },
+      ],
+    });
+    dynamoMock.on(TransactWriteCommand).resolves({});
+    sqsMock.on(SendMessageCommand).resolves({});
+
+    const event: DynamoDBStreamEvent = {
+      Records: [generateDynamoStreamRecord("EznkQXGrWxi0cQMSACY15UzvG1Q")],
+    };
+
+    await handler(event, {} as Context);
+
+    const skippedCall = sqsMock
+      .commandCalls(SendMessageCommand)
+      .find(
+        (call) =>
+          call.args[0].input.QueueUrl === "TXMA_QUEUE_URL" &&
+          JSON.parse(call.args[0].input.MessageBody as string).event_name ===
+            "HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED"
+      );
+    expect(skippedCall).toBeDefined();
+    const auditEvent = JSON.parse(skippedCall!.args[0].input.MessageBody ?? "");
+    expect(auditEvent.extensions.accountTrackerNotificationSkipReason).toBe(
+      "MigratedVerifyAccount"
+    );
+
+    // No notification email should be sent
+    const notificationCalls = sqsMock
+      .commandCalls(SendMessageCommand)
+      .filter((call) => call.args[0].input.QueueUrl === "https://sqsq-url");
+    expect(notificationCalls.length).toEqual(0);
+
+    vi.useRealTimers();
+  });
+
+  test("does not send HOME_ACCOUNT_TRACKER_ACCOUNT_REACTIVATED when deletion is not within 30 days", async () => {
+    const outside30DaysDate = new Date();
+    outside30DaysDate.setDate(outside30DaysDate.getDate() + 45);
+    const dateStr = outside30DaysDate.toISOString().split("T")[0];
+
+    dynamoMock.on(QueryCommand).resolves({
+      Items: [
+        {
+          commonSubjectId: "qwerty",
+          dateForDeletion: dateStr,
+          userLastActive: new Date(Date.now() - 100000).toISOString(),
+          status: "pending",
+          emailAddress: "foo@bar.com",
+          hasSetupMfa: true,
+        },
+      ],
+    });
+    dynamoMock.on(TransactWriteCommand).resolves({});
+    sqsMock.on(SendMessageCommand).resolves({});
+
+    const event: DynamoDBStreamEvent = {
+      Records: [generateDynamoStreamRecord("test-client")],
+    };
+
+    await handler(event, {} as Context);
+
+    const reactivationCall = sqsMock
+      .commandCalls(SendMessageCommand)
+      .find(
+        (call) =>
+          JSON.parse(call.args[0].input.MessageBody as string).event_name ===
+          "HOME_ACCOUNT_TRACKER_ACCOUNT_REACTIVATED"
+      );
+    expect(reactivationCall).toBeUndefined();
+  });
+
   test("does not send message when date for deletion is 27th October 2026", async () => {
     const now = new Date("2026-10-01T12:30:00.000Z");
     vi.useFakeTimers();

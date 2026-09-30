@@ -140,6 +140,11 @@ Conditions:
     - !Equals [!Ref Environment, integration]
     - !Equals [!Ref Environment, production]
 
+  BackfillReplayEnabled: !Or
+    - !Equals [!Ref Environment, dev]
+    - !Equals [!Ref Environment, staging]
+    - !Equals [!Ref Environment, production]
+
 Globals:
   Function:
     CodeUri: src
@@ -3525,7 +3530,7 @@ Resources:
                 - Pattern: '{ "eventName": ["INSERT"], "dynamodb": { "NewImage": { "event": { "M": { "event_name": { "S": ["AUTH_TOKEN_SENT_TO_ORCHESTRATION", "AUTH_CODE_VERIFIED", "AUTH_PASSKEY_VERIFICATION_SUCCESSFUL", "STS_REFRESH_TOKEN_ISSUED"] } } } } } }'
         BackfillQueue:
           Type: SQS
-          Condition: IsProduction
+          Condition: BackfillReplayEnabled
           Properties:
             Queue: !GetAtt RawEventsBackfillQueue.Arn
             BatchSize: 50
@@ -3730,7 +3735,7 @@ Resources:
               - !GetAtt QueueKmsKey.Arn
               - !GetAtt AuditEncryptionKey.Arn
           - !If
-            - IsProduction
+            - BackfillReplayEnabled
             - Effect: Allow
               Action:
                 - sqs:ReceiveMessage
@@ -3833,7 +3838,7 @@ Resources:
 
   RawEventsBackfillQueue:
     Type: AWS::SQS::Queue
-    Condition: IsProduction
+    Condition: BackfillReplayEnabled
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
     Properties:
@@ -3845,7 +3850,7 @@ Resources:
 
   RawEventsBackfillDeadLetterQueue:
     Type: AWS::SQS::Queue
-    Condition: IsProduction
+    Condition: BackfillReplayEnabled
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
     Properties:
@@ -3854,7 +3859,7 @@ Resources:
 
   ReplayRawEventsBackfillFunction:
     Type: AWS::Serverless::Function
-    Condition: IsProduction
+    Condition: BackfillReplayEnabled
     DependsOn:
       - ReplayRawEventsBackfillFunctionLogGroup
     Properties:
@@ -3890,7 +3895,7 @@ Resources:
 
   ReplayRawEventsBackfillFunctionLogGroup:
     Type: AWS::Logs::LogGroup
-    Condition: IsProduction
+    Condition: BackfillReplayEnabled
     Properties:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-replay-raw-events-backfill"
       RetentionInDays: 90
@@ -3898,7 +3903,7 @@ Resources:
 
   ReplayRawEventsBackfillRole:
     Type: AWS::IAM::Role
-    Condition: IsProduction
+    Condition: BackfillReplayEnabled
     Properties:
       PermissionsBoundary: !If
         - UsePermissionsBoundary
@@ -3920,7 +3925,7 @@ Resources:
 
   ReplayRawEventsBackfillPolicy:
     Type: AWS::IAM::ManagedPolicy
-    Condition: IsProduction
+    Condition: BackfillReplayEnabled
     Properties:
       PolicyDocument:
         Version: "2012-10-17"
@@ -3937,7 +3942,7 @@ Resources:
           - Effect: Allow
             Action:
               - lambda:InvokeFunction
-            Resource: !GetAtt ReplayRawEventsBackfillFunction.Arn
+            Resource: !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${AWS::StackName}-ReplayRawEventsBackfillFunction-*"
           - Effect: Allow
             Action:
               - kms:Decrypt

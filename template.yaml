@@ -135,8 +135,6 @@ Conditions:
 
   IsProduction: !Equals [!Ref Environment, production]
 
-  IsDevelopment: !Equals [!Ref Environment, dev]
-
   BackupEnabled: !Or
     - !Equals [!Ref Environment, staging]
     - !Equals [!Ref Environment, integration]
@@ -7707,7 +7705,6 @@ Resources:
           Type: Schedule
           Properties:
             Schedule: "cron(0 6 * * ? *)"
-            Enabled: !If [IsDevelopment, true, false]
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt InactiveAccountDeletionForecastDeadLetterQueue.Arn

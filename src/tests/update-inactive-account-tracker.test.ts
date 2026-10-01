@@ -1861,6 +1861,42 @@ describe("UpdateInactiveAccountTracker handler", () => {
     });
   });
 
+  test("does not send HOME_ACCOUNT_TRACKER_ACCOUNT_REACTIVATED when deletion is not within 30 days", async () => {
+    const outside30DaysDate = new Date();
+    outside30DaysDate.setDate(outside30DaysDate.getDate() + 45);
+    const dateStr = outside30DaysDate.toISOString().split("T")[0];
+
+    dynamoMock.on(QueryCommand).resolves({
+      Items: [
+        {
+          commonSubjectId: "qwerty",
+          dateForDeletion: dateStr,
+          userLastActive: new Date(Date.now() - 100000).toISOString(),
+          status: "pending",
+          emailAddress: "foo@bar.com",
+          hasSetupMfa: true,
+        },
+      ],
+    });
+    dynamoMock.on(TransactWriteCommand).resolves({});
+    sqsMock.on(SendMessageCommand).resolves({});
+
+    const event: DynamoDBStreamEvent = {
+      Records: [generateDynamoStreamRecord("test-client")],
+    };
+
+    await handler(event, {} as Context);
+
+    const reactivationCall = sqsMock
+      .commandCalls(SendMessageCommand)
+      .find(
+        (call) =>
+          JSON.parse(call.args[0].input.MessageBody as string).event_name ===
+          "HOME_ACCOUNT_TRACKER_ACCOUNT_REACTIVATED"
+      );
+    expect(reactivationCall).toBeUndefined();
+  });
+
   test("does not send message when date for deletion is 27th October 2026", async () => {
     const now = new Date("2026-10-01T12:30:00.000Z");
     vi.useFakeTimers();
@@ -2055,6 +2091,94 @@ describe("UpdateInactiveAccountTracker handler", () => {
       };
       await handler(event, {} as Context);
       expect(dynamoMock).toHaveReceivedCommand(TransactWriteCommand);
+    });
+  });
+
+  test("puts record in batchItemFailures when user_id is missing on a non-AUTH_CODE_VERIFIED event", async () => {
+    const record = {
+      dynamodb: {
+        SequenceNumber: "999",
+        NewImage: {
+          event: {
+            M: {
+              event_name: { S: "AUTH_AUTH_CODE_ISSUED" },
+              timestamp: { N: "1711929600" },
+              user: { M: {} },
+            },
+          },
+        },
+      },
+    };
+    const event: DynamoDBStreamEvent = { Records: [record as DynamoDBRecord] };
+    const result = await handler(event, {} as Context);
+    expect(result).toEqual<DynamoDBBatchResponse>({
+      batchItemFailures: [{ itemIdentifier: "999" }],
+    });
+  });
+
+  test("omits userLastActiveSourceId from new record when event_id is absent", async () => {
+    dynamoMock.on(QueryCommand).resolves({ Items: [] });
+    dynamoMock.on(TransactWriteCommand).resolves({});
+    const recordWithoutEventId = {
+      dynamodb: {
+        NewImage: {
+          event: {
+            M: {
+              client_id: { S: "test-client" },
+              timestamp: { N: `${timestamp}` },
+              user: { M: { user_id: { S: "qwerty" } } },
+            },
+          },
+        },
+      },
+    };
+    const event: DynamoDBStreamEvent = {
+      Records: [recordWithoutEventId as DynamoDBRecord],
+    };
+    await handler(event, {} as Context);
+    expect(dynamoMock).toHaveReceivedCommandWith(TransactWriteCommand, {
+      TransactItems: expect.arrayContaining([
+        expect.objectContaining({
+          Put: expect.objectContaining({
+            Item: expect.not.objectContaining({
+              userLastActiveSourceId: expect.anything(),
+            }),
+          }),
+        }),
+      ]),
+    });
+  });
+
+  test("omits userLastActiveSourceId from record when existing record has no userLastActiveSourceId and event is older", async () => {
+    const futureDate = new Date(Date.now() + 86400000).toISOString();
+    dynamoMock.on(QueryCommand).resolves({
+      Items: [
+        {
+          commonSubjectId: "qwerty",
+          dateForDeletion: "2099-01-01",
+          userLastActive: futureDate,
+          userLastActiveSource: "SOME_EVENT",
+          // no userLastActiveSourceId
+          status: "pending",
+          statusLastUpdated: "",
+        },
+      ],
+    });
+    dynamoMock.on(TransactWriteCommand).resolves({});
+    const event: DynamoDBStreamEvent = {
+      Records: [generateDynamoStreamRecord("test-client")],
+    };
+    await handler(event, {} as Context);
+    expect(dynamoMock).toHaveReceivedCommandWith(TransactWriteCommand, {
+      TransactItems: expect.arrayContaining([
+        expect.objectContaining({
+          Put: expect.objectContaining({
+            Item: expect.not.objectContaining({
+              userLastActiveSourceId: expect.anything(),
+            }),
+          }),
+        }),
+      ]),
     });
   });
 

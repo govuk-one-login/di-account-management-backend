@@ -1,6 +1,5 @@
 import { Context } from "aws-lambda";
 import { DynamoDBClient, ScanCommand } from "@aws-sdk/client-dynamodb";
-import { unmarshall } from "@aws-sdk/util-dynamodb";
 import {
   SQSClient,
   SendMessageBatchCommand,
@@ -91,22 +90,22 @@ const sendBatch = async (
 };
 
 const buildStreamRecord = (
-  item: Record<string, unknown>
+  item: Record<string, AttributeValue>
 ): Record<string, unknown> => ({
   eventName: "INSERT",
   dynamodb: {
     NewImage: {
       event: {
-        M: item["event"],
+        M: item["event"]?.M,
       },
     },
-    SequenceNumber: item["id"] ?? "backfill",
+    SequenceNumber: item["id"]?.S ?? "backfill",
   },
 });
 
 const dispatchItems = async (
   queueUrl: string,
-  items: ReturnType<typeof unmarshall>[]
+  items: Record<string, AttributeValue>[]
 ): Promise<number> => {
   await Promise.all(
     Array.from({ length: Math.ceil(items.length / 10) }, (_, i) => {
@@ -150,10 +149,7 @@ const processSegment = async (
     })
   );
 
-  const dispatched = await dispatchItems(
-    queueUrl,
-    (scanResult.Items ?? []).map((item) => unmarshall(item))
-  );
+  const dispatched = await dispatchItems(queueUrl, scanResult.Items ?? []);
 
   return { nextCursor: scanResult.LastEvaluatedKey, dispatched };
 };

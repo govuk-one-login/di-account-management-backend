@@ -2060,6 +2060,80 @@ describe("UpdateInactiveAccountTracker handler", () => {
     });
   });
 
+  describe("TransactionConflict retry", () => {
+    const makeTransactionConflictError = () =>
+      Object.assign(
+        new Error(
+          "Transaction cancelled, please refer cancellation reasons for specific reasons [TransactionConflict]"
+        ),
+        {
+          name: "TransactionCanceledException",
+          CancellationReasons: [{ Code: "TransactionConflict" }],
+        }
+      );
+
+    test("retries on TransactionConflict and succeeds on second attempt", async () => {
+      vi.useFakeTimers();
+      dynamoMock.on(QueryCommand).resolves({ Items: [] });
+      dynamoMock
+        .on(TransactWriteCommand)
+        .rejectsOnce(makeTransactionConflictError())
+        .resolvesOnce({});
+
+      const record = generateDynamoStreamRecord("test-client");
+      record.dynamodb!.SequenceNumber = "seq-1";
+      const event: DynamoDBStreamEvent = { Records: [record] };
+      const resultPromise = handler(event, {} as Context);
+      await vi.runAllTimersAsync();
+      const result = await resultPromise;
+
+      expect(result).toEqual<DynamoDBBatchResponse>({ batchItemFailures: [] });
+      expect(dynamoMock).toHaveReceivedCommandTimes(TransactWriteCommand, 2);
+      expect(loggerWarnMock).toHaveBeenCalledWith(
+        expect.stringContaining("TransactionConflict on attempt 1")
+      );
+      vi.useRealTimers();
+    });
+
+    test("exhausts all retries and adds to batchItemFailures after 4 TransactionConflict failures", async () => {
+      vi.useFakeTimers();
+      dynamoMock.on(QueryCommand).resolves({ Items: [] });
+      dynamoMock
+        .on(TransactWriteCommand)
+        .rejects(makeTransactionConflictError());
+
+      const record = generateDynamoStreamRecord("test-client");
+      record.dynamodb!.SequenceNumber = "seq-2";
+      const event: DynamoDBStreamEvent = { Records: [record] };
+      const resultPromise = handler(event, {} as Context);
+      await vi.runAllTimersAsync();
+      const result = await resultPromise;
+
+      expect(result).toEqual<DynamoDBBatchResponse>({
+        batchItemFailures: [{ itemIdentifier: "seq-2" }],
+      });
+      expect(dynamoMock).toHaveReceivedCommandTimes(TransactWriteCommand, 4);
+      vi.useRealTimers();
+    });
+
+    test("does not retry non-conflict transaction errors", async () => {
+      dynamoMock.on(QueryCommand).resolves({ Items: [] });
+      dynamoMock
+        .on(TransactWriteCommand)
+        .rejects(new Error("ConditionalCheckFailed"));
+
+      const record = generateDynamoStreamRecord("test-client");
+      record.dynamodb!.SequenceNumber = "seq-3";
+      const event: DynamoDBStreamEvent = { Records: [record] };
+      const result = await handler(event, {} as Context);
+
+      expect(result).toEqual<DynamoDBBatchResponse>({
+        batchItemFailures: [{ itemIdentifier: "seq-3" }],
+      });
+      expect(dynamoMock).toHaveReceivedCommandTimes(TransactWriteCommand, 1);
+    });
+  });
+
   describe("SQS event source", () => {
     const makeSQSEvent = (
       records: DynamoDBRecord[],

@@ -4008,7 +4008,7 @@ Resources:
           - Effect: Allow
             Action:
               - lambda:InvokeFunction
-            Resource: !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${AWS::StackName}-ReplayRawEventsBackfillFunction-*"
+            Resource: !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${Environment}-${AWS::StackName}-replay-raw-events-backfill"
           - Effect: Allow
             Action:
               - kms:Decrypt

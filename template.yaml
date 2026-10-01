@@ -7806,6 +7806,29 @@ Resources:
       MessageRetentionPeriod: 1209600
       KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
 
+  OverdueDeletionAccountsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [!Ref AWS::StackName, !Ref Environment, OverdueDeletionAccountsAlarm],
+        ]
+      AlarmDescription: "Inactive accounts past their dateForDeletion by 5 or more days have not been deleted."
+      Namespace: "account-management-backend"
+      MetricName: "OverdueDeletionAccounts"
+      Dimensions:
+        - Name: service
+          Value: inactive-account-deletion-forecast
+      Statistic: Maximum
+      Period: 86400
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/HighAlertNotificationTopic/ARN}}"
+
   #########################################
   # Public API infra
   #########################################

@@ -3605,7 +3605,7 @@ Resources:
       Handler: update-inactive-account-tracker.handler
       MemorySize: 192
       ReservedConcurrentExecutions: 80
-      Timeout: 300
+      Timeout: 180
       Role: !GetAtt UpdateInactiveAccountTrackerRole.Arn
       Environment:
         Variables:

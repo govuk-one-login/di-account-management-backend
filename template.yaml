@@ -3585,6 +3585,76 @@ Resources:
         Banner:
           - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
 
+  UpdateInactiveAccountTrackerForBackillReplayFunction:
+    Type: AWS::Serverless::Function
+    DependsOn:
+      - UpdateInactiveAccountTrackerFunctionForBackfillReplayLogGroup
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-update-iad-tracker-backfill-replay
+      CodeUri: src
+      PackageType: Zip
+      Events:
+        BackfillQueue:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt RawEventsBackfillQueue.Arn
+            BatchSize: 50
+            MaximumBatchingWindowInSeconds: 30
+            FunctionResponseTypes:
+              - ReportBatchItemFailures
+      Handler: update-inactive-account-tracker.handler
+      MemorySize: 192
+      ReservedConcurrentExecutions: 80
+      Timeout: 180
+      Role: !GetAtt UpdateInactiveAccountTrackerRole.Arn
+      Environment:
+        Variables:
+          NODE_OPTIONS: --enable-source-maps
+          ACCOUNT_SAVED_NOTIFICATION_QUEUE_URL: !Ref AccountSavedNotificationQueue
+          INACTIVE_ACCOUNT_TRACKER_TABLE_NAME: !Ref InactiveAccountTrackerStoreTableName
+          USER_NOTIFICATIONS_TABLE_NAME: !Ref UserNotificationsTableName
+          OLH_CLIENT_ID:
+            !FindInMap [EnvironmentVariables, !Ref Environment, OLHCLIENTID]
+          AUTH_BACKFILL_COMPLETE_DATETIME:
+            !FindInMap [
+              EnvironmentVariables,
+              !Ref Environment,
+              AUTHBACKFILLCOMPLETEDATETIME,
+            ]
+          GOV_UK_APP_CLIENT_ID:
+            !FindInMap [
+              EnvironmentVariables,
+              !Ref Environment,
+              GOVUKAPPCLIENTID,
+            ]
+          NOTIFICATION_QUEUE_URL: !Ref NotificationQueue
+          NOTIFY_TEMPLATE_IDS:
+            !FindInMap [
+              EnvironmentVariables,
+              !Ref Environment,
+              NOTIFYTEMPLATEIDS,
+            ]
+          SEND_INACTIVE_ACCOUNT_DELETION_EMAILS:
+            !FindInMap [
+              EnvironmentConfiguration,
+              !Ref Environment,
+              sendInactiveAccountDeletionEmails,
+            ]
+          TXMA_QUEUE_URL: !Ref AuditOutputQueue
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Format: "esm"
+        OutExtension:
+          - .js=.mjs
+        Target: "es2022"
+        Sourcemap: true
+        EntryPoints:
+          - update-inactive-account-tracker.ts
+        Banner:
+          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
+
   UpdateInactiveAccountTrackerDeadLetterQueue:
     Type: AWS::SQS::Queue
     DeletionPolicy: Delete
@@ -3714,12 +3784,19 @@ Resources:
               - kms:Decrypt
             Resource:
               - !GetAtt DatabaseKmsKey.Arn
+              - !GetAtt QueueKmsKey.Arn
           - Effect: Allow
             Action:
               - kms:GenerateDataKey*
             Resource:
               - !GetAtt QueueKmsKey.Arn
               - !GetAtt AuditEncryptionKey.Arn
+          - Effect: Allow
+            Action:
+              - sqs:ReceiveMessage
+              - sqs:DeleteMessage
+              - sqs:GetQueueAttributes
+            Resource: !GetAtt RawEventsBackfillQueue.Arn
 
   UpdateInactiveAccountTrackerFunctionLogGroup:
     Type: AWS::Logs::LogGroup
@@ -3728,11 +3805,29 @@ Resources:
       RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
+  UpdateInactiveAccountTrackerFunctionForBackfillReplayLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${AWS::StackName}-update-iad-tracker-backfill-replay"
+      RetentionInDays: 90
+      KmsKeyId: !GetAtt LoggingKmsKey.Arn
+
   AuthEventTriggeredOnAlreadyDeletingAccountFilter:
     Type: AWS::Logs::MetricFilter
     Properties:
       FilterPattern: "AUTH_EVENT_ON_DELETING_ACCOUNT"
       LogGroupName: !Ref UpdateInactiveAccountTrackerFunctionLogGroup
+      MetricTransformations:
+        - MetricName: AuthEventTriggeredOnAlreadyDeletingAccountCount
+          MetricNamespace: !Ref SystemTagValue
+          MetricValue: 1
+          Unit: Count
+
+  AuthEventTriggeredOnAlreadyDeletingAccountDuringBackfillReplayFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      FilterPattern: "AUTH_EVENT_ON_DELETING_ACCOUNT"
+      LogGroupName: !Ref UpdateInactiveAccountTrackerFunctionForBackfillReplayLogGroup
       MetricTransformations:
         - MetricName: AuthEventTriggeredOnAlreadyDeletingAccountCount
           MetricNamespace: !Ref SystemTagValue
@@ -3808,6 +3903,128 @@ Resources:
       EvaluationPeriods: 1
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+
+  #########################################
+  # Raw Events Backfill Replay
+  #########################################
+
+  RawEventsBackfillQueue:
+    Type: AWS::SQS::Queue
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
+      VisibilityTimeout: 900
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt RawEventsBackfillDeadLetterQueue.Arn
+        maxReceiveCount: 3
+
+  RawEventsBackfillDeadLetterQueue:
+    Type: AWS::SQS::Queue
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      MessageRetentionPeriod: 1209600
+      KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
+
+  ReplayRawEventsBackfillFunction:
+    Type: AWS::Serverless::Function
+    DependsOn:
+      - ReplayRawEventsBackfillFunctionLogGroup
+    Properties:
+      FunctionName: !Sub ${Environment}-${AWS::StackName}-replay-raw-events-backfill
+      CodeUri: src
+      PackageType: Zip
+      MemorySize: 512
+      Timeout: 900
+      ReservedConcurrentExecutions: 1
+      EventInvokeConfig:
+        MaximumRetryAttempts: 0
+      Handler: replay-raw-events-backfill.handler
+      Role: !GetAtt ReplayRawEventsBackfillRole.Arn
+      Environment:
+        Variables:
+          NODE_OPTIONS: --enable-source-maps
+          BACKFILL_TABLE_NAME: raw_events_restored_iad_dpt_backfill
+          BACKFILL_QUEUE_URL: !Ref RawEventsBackfillQueue
+          CHECKPOINT_PARAMETER_NAME: !Sub "/${AWS::StackName}/${Environment}/replay-raw-events-backfill/checkpoint"
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Format: "esm"
+        OutExtension:
+          - .js=.mjs
+        Target: "es2022"
+        Sourcemap: true
+        Banner:
+          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
+        EntryPoints:
+          - replay-raw-events-backfill.ts
+
+  ReplayRawEventsBackfillFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-replay-raw-events-backfill"
+      RetentionInDays: 90
+      KmsKeyId: !GetAtt LoggingKmsKey.Arn
+
+  ReplayRawEventsBackfillRole:
+    Type: AWS::IAM::Role
+    Properties:
+      PermissionsBoundary: !If
+        - UsePermissionsBoundary
+        - !Ref PermissionsBoundary
+        - !Ref AWS::NoValue
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+        - !Ref ReplayRawEventsBackfillPolicy
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+
+  ReplayRawEventsBackfillPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - dynamodb:Scan
+            Resource: !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/raw_events_restored_iad_dpt_backfill"
+          - Effect: Allow
+            Action:
+              - sqs:SendMessage
+              - sqs:SendMessageBatch
+            Resource: !GetAtt RawEventsBackfillQueue.Arn
+          - Effect: Allow
+            Action:
+              - lambda:InvokeFunction
+            Resource: !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${AWS::StackName}-ReplayRawEventsBackfillFunction-*"
+          - Effect: Allow
+            Action:
+              - kms:Decrypt
+            Resource:
+              - !GetAtt DatabaseKmsKey.Arn
+              - !GetAtt QueueKmsKey.Arn
+          - Effect: Allow
+            Action:
+              - kms:GenerateDataKey*
+            Resource: !GetAtt QueueKmsKey.Arn
+          - Effect: Allow
+            Action:
+              - ssm:GetParameter
+              - ssm:PutParameter
+              - ssm:DeleteParameter
+            Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/${Environment}/replay-raw-events-backfill/checkpoint"
 
   #########################################
   # Update User Email

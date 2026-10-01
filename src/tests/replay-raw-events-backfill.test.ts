@@ -199,7 +199,7 @@ describe("scanning and dispatching", () => {
     });
   });
 
-  test("message body contains NewImage with event.M", async () => {
+  test("message body contains NewImage with marshalled event.M", async () => {
     setupSinglePageScan("STS_REFRESH_TOKEN_ISSUED");
 
     await handler({}, makeContext());
@@ -207,14 +207,13 @@ describe("scanning and dispatching", () => {
     const calls = sqsMock.commandCalls(SendMessageBatchCommand);
     expect(calls.length).toBe(1);
     const body = JSON.parse(calls[0].args[0].input.Entries![0].MessageBody!);
-    expect(body.Records[0]).toMatchObject({
-      eventName: "INSERT",
-      dynamodb: {
-        NewImage: {
-          event: { M: expect.any(Object) },
-        },
-      },
+    const newImage = body.Records[0].dynamodb.NewImage;
+    // event.M must contain AttributeValue-shaped objects (e.g. { S: "..." }),
+    // not plain JS values — the tracker handler calls unmarshall() on it
+    expect(newImage.event.M.event_name).toEqual({
+      S: "STS_REFRESH_TOKEN_ISSUED",
     });
+    expect(newImage.event.M.user.M.user_id).toEqual({ S: "user-1" });
   });
 
   test("batches items into groups of 10 for SQS", async () => {

@@ -1,7 +1,10 @@
 import {
   Context,
   DynamoDBStreamEvent,
+  DynamoDBRecord,
   DynamoDBBatchResponse,
+  SQSEvent,
+  SQSBatchResponse,
 } from "aws-lambda";
 import { AttributeValue, DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
@@ -502,10 +505,36 @@ const processRecord = async (
   }
 };
 
+const isSQSEvent = (event: DynamoDBStreamEvent | SQSEvent): event is SQSEvent =>
+  event.Records[0]?.eventSource === "aws:sqs";
+
+interface NormalisedRecord {
+  dynamoRecord: DynamoDBRecord;
+  failureId: string;
+}
+
+const normaliseRecords = (
+  event: DynamoDBStreamEvent | SQSEvent
+): NormalisedRecord[] => {
+  if (!isSQSEvent(event)) {
+    return event.Records.map((dynamoRecord) => ({
+      dynamoRecord,
+      failureId: dynamoRecord.dynamodb?.SequenceNumber ?? "",
+    }));
+  }
+  return event.Records.flatMap((sqsRecord) => {
+    const parsed = JSON.parse(sqsRecord.body) as DynamoDBStreamEvent;
+    return parsed.Records.map((dynamoRecord) => ({
+      dynamoRecord,
+      failureId: sqsRecord.messageId,
+    }));
+  });
+};
+
 export const handler = async (
-  event: DynamoDBStreamEvent,
+  event: DynamoDBStreamEvent | SQSEvent,
   context: Context
-): Promise<DynamoDBBatchResponse> => {
+): Promise<DynamoDBBatchResponse | SQSBatchResponse> => {
   logger.addContext(context);
 
   const tableName = getEnvironmentVariable(
@@ -518,12 +547,13 @@ export const handler = async (
   const backfillCompleteDatetime =
     process.env["AUTH_BACKFILL_COMPLETE_DATETIME"] ?? "";
 
+  const records = normaliseRecords(event);
   const batchItemFailures: DynamoDBBatchResponse["batchItemFailures"] = [];
-  logger.info(`Invoked with ${event.Records.length} to process`);
+  logger.info(`Invoked with ${records.length} to process`);
 
-  for (const record of event.Records) {
+  for (const { dynamoRecord, failureId } of records) {
     const txmaEvent = unmarshall(
-      record.dynamodb?.NewImage?.event.M as Record<string, AttributeValue>
+      dynamoRecord.dynamodb?.NewImage?.event.M as Record<string, AttributeValue>
     ) as TxmaEvent;
 
     try {
@@ -535,13 +565,8 @@ export const handler = async (
         backfillCompleteDatetime
       );
     } catch (error) {
-      logger.error(
-        `Failed to process record ${record.dynamodb?.SequenceNumber}`,
-        { error }
-      );
-      batchItemFailures.push({
-        itemIdentifier: record.dynamodb?.SequenceNumber ?? "",
-      });
+      logger.error(`Failed to process record ${failureId}`, { error });
+      batchItemFailures.push({ itemIdentifier: failureId });
     }
   }
 

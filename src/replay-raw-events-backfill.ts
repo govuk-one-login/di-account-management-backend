@@ -1,17 +1,17 @@
 import { Context } from "aws-lambda";
-import { DynamoDBClient, ScanCommand } from "@aws-sdk/client-dynamodb";
+import {
+  DynamoDBClient,
+  ScanCommand,
+  GetItemCommand,
+  PutItemCommand,
+  DeleteItemCommand,
+} from "@aws-sdk/client-dynamodb";
 import {
   SQSClient,
   SendMessageBatchCommand,
   SendMessageBatchRequestEntry,
 } from "@aws-sdk/client-sqs";
 import { LambdaClient, InvokeCommand } from "@aws-sdk/client-lambda";
-import {
-  SSMClient,
-  GetParameterCommand,
-  PutParameterCommand,
-  DeleteParameterCommand,
-} from "@aws-sdk/client-ssm";
 import { Logger } from "@aws-lambda-powertools/logger";
 import { getEnvironmentVariable } from "./common/utils.js";
 import type { AttributeValue } from "@aws-sdk/client-dynamodb";
@@ -20,7 +20,6 @@ const logger = new Logger();
 const dynamoClient = new DynamoDBClient({});
 const sqsClient = new SQSClient({});
 const lambdaClient = new LambdaClient({});
-const ssmClient = new SSMClient({});
 
 type SegmentCursor =
   "NOT_STARTED" | "FINISHED" | Record<string, AttributeValue>;
@@ -37,41 +36,41 @@ export interface ReplayInput {
   fresh?: boolean;
 }
 
+const CHECKPOINT_KEY = "CHECKPOINT";
+
 const loadCheckpoint = async (
-  parameterName: string
+  tableName: string
 ): Promise<CheckpointState | null> => {
-  try {
-    const result = await ssmClient.send(
-      new GetParameterCommand({ Name: parameterName })
-    );
-    return result.Parameter?.Value
-      ? (JSON.parse(result.Parameter.Value) as CheckpointState)
-      : null;
-  } catch (error: unknown) {
-    if (error instanceof Error && error.name === "ParameterNotFound") {
-      return null;
-    }
-    throw error;
-  }
+  const result = await dynamoClient.send(
+    new GetItemCommand({
+      TableName: tableName,
+      Key: { id: { S: CHECKPOINT_KEY } },
+    })
+  );
+  return result.Item?.state?.S
+    ? (JSON.parse(result.Item.state.S) as CheckpointState)
+    : null;
 };
 
 const saveCheckpoint = async (
-  parameterName: string,
+  tableName: string,
   state: CheckpointState
 ): Promise<void> => {
-  await ssmClient.send(
-    new PutParameterCommand({
-      Name: parameterName,
-      Value: JSON.stringify(state),
-      Type: "String",
-      Tier: "Advanced",
-      Overwrite: true,
+  await dynamoClient.send(
+    new PutItemCommand({
+      TableName: tableName,
+      Item: { id: { S: CHECKPOINT_KEY }, state: { S: JSON.stringify(state) } },
     })
   );
 };
 
-const clearCheckpoint = async (parameterName: string): Promise<void> => {
-  await ssmClient.send(new DeleteParameterCommand({ Name: parameterName }));
+const clearCheckpoint = async (tableName: string): Promise<void> => {
+  await dynamoClient.send(
+    new DeleteItemCommand({
+      TableName: tableName,
+      Key: { id: { S: CHECKPOINT_KEY } },
+    })
+  );
 };
 
 const sendBatch = async (
@@ -162,13 +161,11 @@ export const handler = async (
   const queueUrl = getEnvironmentVariable("BACKFILL_QUEUE_URL");
   const functionName = getEnvironmentVariable("AWS_LAMBDA_FUNCTION_NAME");
   const totalSegments = Number(getEnvironmentVariable("TOTAL_SEGMENTS"));
-  const checkpointParameter = getEnvironmentVariable(
-    "CHECKPOINT_PARAMETER_NAME"
-  );
+  const checkpointTableName = getEnvironmentVariable("CHECKPOINT_TABLE_NAME");
 
   const existingCheckpoint = event.fresh
     ? null
-    : await loadCheckpoint(checkpointParameter);
+    : await loadCheckpoint(checkpointTableName);
 
   const segmentCursors: SegmentCursor[] =
     existingCheckpoint?.segmentCursors ??
@@ -190,7 +187,7 @@ export const handler = async (
         totalDispatched,
         remainingMs: context.getRemainingTimeInMillis(),
       });
-      await saveCheckpoint(checkpointParameter, {
+      await saveCheckpoint(checkpointTableName, {
         segmentCursors,
         totalDispatched,
       });
@@ -205,7 +202,7 @@ export const handler = async (
     }
 
     if (Date.now() - lastCheckpointTime >= CHECKPOINT_INTERVAL_MS) {
-      await saveCheckpoint(checkpointParameter, {
+      await saveCheckpoint(checkpointTableName, {
         segmentCursors,
         totalDispatched,
       });
@@ -240,6 +237,6 @@ export const handler = async (
     });
   }
 
-  await clearCheckpoint(checkpointParameter);
+  await clearCheckpoint(checkpointTableName);
   logger.info("Replay backfill complete", { totalDispatched });
 };

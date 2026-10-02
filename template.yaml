@@ -3947,7 +3947,7 @@ Resources:
           NODE_OPTIONS: --enable-source-maps
           BACKFILL_TABLE_NAME: raw_events_restored_iad_dpt_backfill
           BACKFILL_QUEUE_URL: !Ref RawEventsBackfillQueue
-          CHECKPOINT_PARAMETER_NAME: !Sub "/${AWS::StackName}/${Environment}/replay-raw-events-backfill/checkpoint"
+          CHECKPOINT_TABLE_NAME: !Ref ReplayRawEventsBackfillCheckpoint
           TOTAL_SEGMENTS: "100"
     Metadata:
       BuildMethod: esbuild
@@ -4022,10 +4022,27 @@ Resources:
             Resource: !GetAtt QueueKmsKey.Arn
           - Effect: Allow
             Action:
-              - ssm:GetParameter
-              - ssm:PutParameter
-              - ssm:DeleteParameter
-            Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/${Environment}/replay-raw-events-backfill/checkpoint"
+              - dynamodb:GetItem
+              - dynamodb:PutItem
+              - dynamodb:DeleteItem
+            Resource: !GetAtt ReplayRawEventsBackfillCheckpoint.Arn
+
+  ReplayRawEventsBackfillCheckpoint:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      BillingMode: PAY_PER_REQUEST
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      SSESpecification:
+        SSEEnabled: true
+        SSEType: KMS
+        KMSMasterKeyId: !GetAtt DatabaseKmsKey.Arn
 
   #########################################
   # Update User Email

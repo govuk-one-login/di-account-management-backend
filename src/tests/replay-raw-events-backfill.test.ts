@@ -58,6 +58,8 @@ const makeItem = (eventName: string, id = "item-id") =>
 
 const EMPTY_SCAN = { Items: [], LastEvaluatedKey: undefined };
 
+const TOTAL_SEGMENTS = 100;
+
 // Returns a scan mock that returns one page of items for segment 0 and empty for all others
 const setupSinglePageScan = (eventName: string, itemCount = 1) => {
   const items = Array.from({ length: itemCount }, (_, i) =>
@@ -66,7 +68,7 @@ const setupSinglePageScan = (eventName: string, itemCount = 1) => {
   dynamoMock
     .on(ScanCommand, { Segment: 0 })
     .resolvesOnce({ Items: items, LastEvaluatedKey: undefined });
-  for (let seg = 1; seg < 10; seg++) {
+  for (let seg = 1; seg < TOTAL_SEGMENTS; seg++) {
     dynamoMock.on(ScanCommand, { Segment: seg }).resolvesOnce(EMPTY_SCAN);
   }
 };
@@ -115,7 +117,7 @@ describe("checkpoint loading", () => {
   test("resumes from checkpoint when one exists", async () => {
     const cursor = { id: { S: "last-seen-id" }, timestamp: { N: "123" } };
     const checkpoint = {
-      segmentCursors: [cursor, ...new Array(9).fill("NOT_STARTED")],
+      segmentCursors: [cursor, ...new Array(99).fill("NOT_STARTED")],
       totalDispatched: 500,
     };
     ssmMock.on(GetParameterCommand).resolves({
@@ -126,7 +128,7 @@ describe("checkpoint loading", () => {
       Items: [makeItem("AUTH_CODE_VERIFIED")],
       LastEvaluatedKey: undefined,
     });
-    for (let seg = 1; seg < 10; seg++) {
+    for (let seg = 1; seg < TOTAL_SEGMENTS; seg++) {
       dynamoMock.on(ScanCommand, { Segment: seg }).resolvesOnce(EMPTY_SCAN);
     }
 
@@ -174,14 +176,14 @@ describe("checkpoint loading", () => {
 });
 
 describe("scanning and dispatching", () => {
-  test("scans all 10 segments", async () => {
-    for (let seg = 0; seg < 10; seg++) {
+  test("scans all 100 segments", async () => {
+    for (let seg = 0; seg < TOTAL_SEGMENTS; seg++) {
       dynamoMock.on(ScanCommand, { Segment: seg }).resolvesOnce(EMPTY_SCAN);
     }
 
     await handler({}, makeContext());
 
-    expect(dynamoMock.commandCalls(ScanCommand).length).toBe(10);
+    expect(dynamoMock.commandCalls(ScanCommand).length).toBe(TOTAL_SEGMENTS);
   });
 
   test("sends matching items to SQS as stream-shaped records", async () => {
@@ -221,12 +223,10 @@ describe("scanning and dispatching", () => {
     const items = Array.from({ length: 25 }, (_, i) =>
       makeItem("AUTH_CODE_VERIFIED", `item-${i}`)
     );
+    dynamoMock.on(ScanCommand).resolves(EMPTY_SCAN);
     dynamoMock
       .on(ScanCommand, { Segment: 0 })
       .resolvesOnce({ Items: items, LastEvaluatedKey: undefined });
-    for (let seg = 1; seg < 10; seg++) {
-      dynamoMock.on(ScanCommand, { Segment: seg }).resolvesOnce(EMPTY_SCAN);
-    }
 
     await handler({}, makeContext());
 
@@ -250,7 +250,7 @@ describe("scanning and dispatching", () => {
         Items: [makeItem("AUTH_CODE_VERIFIED", "p2")],
         LastEvaluatedKey: undefined,
       });
-    for (let seg = 1; seg < 10; seg++) {
+    for (let seg = 1; seg < TOTAL_SEGMENTS; seg++) {
       dynamoMock.on(ScanCommand, { Segment: seg }).resolves(EMPTY_SCAN);
     }
 
@@ -265,9 +265,7 @@ describe("scanning and dispatching", () => {
   });
 
   test("does not send to SQS when scan returns no items", async () => {
-    for (let seg = 0; seg < 10; seg++) {
-      dynamoMock.on(ScanCommand, { Segment: seg }).resolvesOnce(EMPTY_SCAN);
-    }
+    dynamoMock.on(ScanCommand).resolves(EMPTY_SCAN);
 
     await handler({}, makeContext());
 
@@ -307,7 +305,7 @@ describe("timeout and reinvocation", () => {
   });
 
   test("saves checkpoint to SSM before reinvoking", async () => {
-    for (let seg = 0; seg < 10; seg++) {
+    for (let seg = 0; seg < TOTAL_SEGMENTS; seg++) {
       dynamoMock.on(ScanCommand, { Segment: seg }).resolves(EMPTY_SCAN);
     }
 
@@ -324,7 +322,7 @@ describe("timeout and reinvocation", () => {
 
   test("returns without completing scan when reinvoking", async () => {
     // All segments have more pages, but we're near timeout immediately
-    for (let seg = 0; seg < 10; seg++) {
+    for (let seg = 0; seg < TOTAL_SEGMENTS; seg++) {
       dynamoMock.on(ScanCommand, { Segment: seg }).resolves({
         Items: [makeItem("AUTH_CODE_VERIFIED")],
         LastEvaluatedKey: { id: { S: "cursor" } },
@@ -381,7 +379,7 @@ describe("periodic checkpointing", () => {
 
 describe("completion", () => {
   test("clears checkpoint on successful completion", async () => {
-    for (let seg = 0; seg < 10; seg++) {
+    for (let seg = 0; seg < TOTAL_SEGMENTS; seg++) {
       dynamoMock.on(ScanCommand, { Segment: seg }).resolvesOnce(EMPTY_SCAN);
     }
 
@@ -403,7 +401,7 @@ describe("completion", () => {
   });
 
   test("does not reinvoke Lambda on completion", async () => {
-    for (let seg = 0; seg < 10; seg++) {
+    for (let seg = 0; seg < TOTAL_SEGMENTS; seg++) {
       dynamoMock.on(ScanCommand, { Segment: seg }).resolvesOnce(EMPTY_SCAN);
     }
 
@@ -431,14 +429,14 @@ describe("scan parameters", () => {
     });
   });
 
-  test("scans with TotalSegments: 10", async () => {
+  test("scans with TotalSegments: 100", async () => {
     setupSinglePageScan("AUTH_CODE_VERIFIED");
 
     await handler({}, makeContext());
 
     const calls = dynamoMock.commandCalls(ScanCommand);
     for (const call of calls) {
-      expect(call.args[0].input.TotalSegments).toBe(10);
+      expect(call.args[0].input.TotalSegments).toBe(TOTAL_SEGMENTS);
     }
   });
 

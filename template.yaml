@@ -3935,7 +3935,7 @@ Resources:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-replay-raw-events-backfill
       CodeUri: src
       PackageType: Zip
-      MemorySize: 512
+      MemorySize: 10240
       Timeout: 900
       ReservedConcurrentExecutions: 1
       EventInvokeConfig:
@@ -3948,6 +3948,7 @@ Resources:
           BACKFILL_TABLE_NAME: raw_events_restored_iad_dpt_backfill
           BACKFILL_QUEUE_URL: !Ref RawEventsBackfillQueue
           CHECKPOINT_PARAMETER_NAME: !Sub "/${AWS::StackName}/${Environment}/replay-raw-events-backfill/checkpoint"
+          TOTAL_SEGMENTS: "100"
     Metadata:
       BuildMethod: esbuild
       BuildProperties:

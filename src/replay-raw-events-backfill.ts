@@ -22,8 +22,6 @@ const sqsClient = new SQSClient({});
 const lambdaClient = new LambdaClient({});
 const ssmClient = new SSMClient({});
 
-const TOTAL_SEGMENTS = 100;
-
 type SegmentCursor =
   "NOT_STARTED" | "FINISHED" | Record<string, AttributeValue>;
 // Reinvoke with ~60s remaining to allow time for the invocation and any in-flight batch
@@ -66,6 +64,7 @@ const saveCheckpoint = async (
       Name: parameterName,
       Value: JSON.stringify(state),
       Type: "String",
+      Tier: "Advanced",
       Overwrite: true,
     })
   );
@@ -126,7 +125,8 @@ const processSegment = async (
   segment: number,
   cursor: Record<string, AttributeValue> | null,
   tableName: string,
-  queueUrl: string
+  queueUrl: string,
+  totalSegments: number
 ): Promise<{
   nextCursor: Record<string, AttributeValue> | undefined;
   dispatched: number;
@@ -135,7 +135,7 @@ const processSegment = async (
     new ScanCommand({
       TableName: tableName,
       Segment: segment,
-      TotalSegments: TOTAL_SEGMENTS,
+      TotalSegments: totalSegments,
       ExclusiveStartKey: cursor ?? undefined,
       FilterExpression: "event.event_name IN (:e1, :e2, :e3, :e4)",
       ExpressionAttributeValues: {
@@ -161,6 +161,7 @@ export const handler = async (
   const tableName = getEnvironmentVariable("BACKFILL_TABLE_NAME");
   const queueUrl = getEnvironmentVariable("BACKFILL_QUEUE_URL");
   const functionName = getEnvironmentVariable("AWS_LAMBDA_FUNCTION_NAME");
+  const totalSegments = Number(getEnvironmentVariable("TOTAL_SEGMENTS"));
   const checkpointParameter = getEnvironmentVariable(
     "CHECKPOINT_PARAMETER_NAME"
   );
@@ -171,7 +172,7 @@ export const handler = async (
 
   const segmentCursors: SegmentCursor[] =
     existingCheckpoint?.segmentCursors ??
-    new Array<"NOT_STARTED">(TOTAL_SEGMENTS).fill("NOT_STARTED");
+    new Array<"NOT_STARTED">(totalSegments).fill("NOT_STARTED");
 
   let totalDispatched = existingCheckpoint?.totalDispatched ?? 0;
 
@@ -221,7 +222,8 @@ export const handler = async (
             ? null
             : (cursor as Record<string, AttributeValue>),
           tableName,
-          queueUrl
+          queueUrl,
+          totalSegments
         );
       })
     );

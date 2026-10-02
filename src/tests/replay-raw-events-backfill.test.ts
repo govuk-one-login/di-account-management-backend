@@ -1,13 +1,13 @@
 import { vi, describe, test, expect, beforeEach, afterEach } from "vitest";
-import { DynamoDBClient, ScanCommand } from "@aws-sdk/client-dynamodb";
+import {
+  DynamoDBClient,
+  ScanCommand,
+  GetItemCommand,
+  PutItemCommand,
+  DeleteItemCommand,
+} from "@aws-sdk/client-dynamodb";
 import { SQSClient, SendMessageBatchCommand } from "@aws-sdk/client-sqs";
 import { LambdaClient, InvokeCommand } from "@aws-sdk/client-lambda";
-import {
-  SSMClient,
-  GetParameterCommand,
-  PutParameterCommand,
-  DeleteParameterCommand,
-} from "@aws-sdk/client-ssm";
 import { mockClient } from "aws-sdk-client-mock";
 import type { Context } from "aws-lambda";
 import { marshall } from "@aws-sdk/util-dynamodb";
@@ -31,14 +31,12 @@ import { handler } from "../replay-raw-events-backfill.js";
 const dynamoMock = mockClient(DynamoDBClient);
 const sqsMock = mockClient(SQSClient);
 const lambdaMock = mockClient(LambdaClient);
-const ssmMock = mockClient(SSMClient);
 
 const BACKFILL_TABLE_NAME = "raw_events_restored_iad_dpt_backfill";
 const BACKFILL_QUEUE_URL =
   "https://sqs.eu-west-2.amazonaws.com/123/backfill-queue";
 const FUNCTION_NAME = "production-stack-replay-raw-events-backfill";
-const CHECKPOINT_PARAMETER_NAME =
-  "/stack/production/replay-raw-events-backfill/checkpoint";
+const CHECKPOINT_TABLE_NAME = "replay-raw-events-backfill-checkpoint";
 
 const makeContext = (remainingMs = 900_000): Context =>
   ({
@@ -77,21 +75,16 @@ beforeEach(() => {
   dynamoMock.reset();
   sqsMock.reset();
   lambdaMock.reset();
-  ssmMock.reset();
 
   process.env.BACKFILL_TABLE_NAME = BACKFILL_TABLE_NAME;
   process.env.BACKFILL_QUEUE_URL = BACKFILL_QUEUE_URL;
   process.env.AWS_LAMBDA_FUNCTION_NAME = FUNCTION_NAME;
-  process.env.CHECKPOINT_PARAMETER_NAME = CHECKPOINT_PARAMETER_NAME;
+  process.env.CHECKPOINT_TABLE_NAME = CHECKPOINT_TABLE_NAME;
   process.env.TOTAL_SEGMENTS = String(TOTAL_SEGMENTS);
 
-  ssmMock.on(GetParameterCommand).rejects(
-    Object.assign(new Error("ParameterNotFound"), {
-      name: "ParameterNotFound",
-    })
-  );
-  ssmMock.on(PutParameterCommand).resolves({});
-  ssmMock.on(DeleteParameterCommand).resolves({});
+  dynamoMock.on(GetItemCommand).resolves({ Item: undefined });
+  dynamoMock.on(PutItemCommand).resolves({});
+  dynamoMock.on(DeleteItemCommand).resolves({});
   sqsMock.on(SendMessageBatchCommand).resolves({ Successful: [], Failed: [] });
   lambdaMock.on(InvokeCommand).resolves({});
 });
@@ -106,8 +99,9 @@ describe("checkpoint loading", () => {
 
     await handler({}, makeContext());
 
-    expect(ssmMock).toHaveReceivedCommandWith(GetParameterCommand, {
-      Name: CHECKPOINT_PARAMETER_NAME,
+    expect(dynamoMock).toHaveReceivedCommandWith(GetItemCommand, {
+      TableName: CHECKPOINT_TABLE_NAME,
+      Key: { id: { S: "CHECKPOINT" } },
     });
     expect(mockLogger.info).toHaveBeenCalledWith(
       "Replay backfill started",
@@ -121,8 +115,11 @@ describe("checkpoint loading", () => {
       segmentCursors: [cursor, ...new Array(99).fill("NOT_STARTED")],
       totalDispatched: 500,
     };
-    ssmMock.on(GetParameterCommand).resolves({
-      Parameter: { Value: JSON.stringify(checkpoint) },
+    dynamoMock.on(GetItemCommand).resolves({
+      Item: {
+        id: { S: "CHECKPOINT" },
+        state: { S: JSON.stringify(checkpoint) },
+      },
     });
     // Segment 0 has one more page, all others empty
     dynamoMock.on(ScanCommand, { Segment: 0 }).resolvesOnce({
@@ -150,16 +147,11 @@ describe("checkpoint loading", () => {
   });
 
   test("ignores checkpoint and starts fresh when fresh: true", async () => {
-    ssmMock.on(GetParameterCommand).resolves({
-      Parameter: {
-        Value: JSON.stringify({ segmentCursors: [], totalDispatched: 999 }),
-      },
-    });
     setupSinglePageScan("AUTH_CODE_VERIFIED");
 
     await handler({ fresh: true }, makeContext());
 
-    expect(ssmMock).not.toHaveReceivedCommand(GetParameterCommand);
+    expect(dynamoMock).not.toHaveReceivedCommand(GetItemCommand);
     expect(mockLogger.info).toHaveBeenCalledWith(
       "Replay backfill started",
       expect.objectContaining({
@@ -169,8 +161,8 @@ describe("checkpoint loading", () => {
     );
   });
 
-  test("throws when SSM GetParameter fails with an unexpected error", async () => {
-    ssmMock.on(GetParameterCommand).rejects(new Error("AccessDenied"));
+  test("throws when DynamoDB GetItem fails with an unexpected error", async () => {
+    dynamoMock.on(GetItemCommand).rejects(new Error("AccessDenied"));
 
     await expect(handler({}, makeContext())).rejects.toThrow("AccessDenied");
   });
@@ -312,12 +304,12 @@ describe("timeout and reinvocation", () => {
 
     await handler({}, makeContext(59_000));
 
-    const ssmCalls = ssmMock.commandCalls(PutParameterCommand);
+    const ssmCalls = dynamoMock.commandCalls(PutItemCommand);
     const lambdaCalls = lambdaMock.commandCalls(InvokeCommand);
     expect(ssmCalls.length).toBeGreaterThan(0);
     expect(lambdaCalls.length).toBeGreaterThan(0);
-    expect(ssmCalls[ssmCalls.length - 1].args[0].input.Name).toBe(
-      CHECKPOINT_PARAMETER_NAME
+    expect(ssmCalls[ssmCalls.length - 1].args[0].input.TableName).toBe(
+      CHECKPOINT_TABLE_NAME
     );
   });
 
@@ -333,7 +325,7 @@ describe("timeout and reinvocation", () => {
     await handler({}, makeContext(59_000));
 
     // Should not have cleared the checkpoint (that only happens on completion)
-    expect(ssmMock).not.toHaveReceivedCommand(DeleteParameterCommand);
+    expect(dynamoMock).not.toHaveReceivedCommand(DeleteItemCommand);
     expect(mockLogger.info).not.toHaveBeenCalledWith(
       "Replay backfill complete",
       expect.anything()
@@ -355,7 +347,7 @@ describe("periodic checkpointing", () => {
 
     await handler({}, makeContext());
 
-    expect(ssmMock).toHaveReceivedCommand(PutParameterCommand);
+    expect(dynamoMock).toHaveReceivedCommand(PutItemCommand);
     expect(mockLogger.info).toHaveBeenCalledWith(
       "Checkpoint saved",
       expect.objectContaining({ totalDispatched: expect.any(Number) })
@@ -371,8 +363,7 @@ describe("periodic checkpointing", () => {
 
     await handler({}, makeContext());
 
-    // Only the final DeleteParameter on completion — no PutParameter
-    expect(ssmMock).not.toHaveReceivedCommand(PutParameterCommand);
+    expect(dynamoMock).not.toHaveReceivedCommand(PutItemCommand);
 
     vi.spyOn(Date, "now").mockRestore();
   });
@@ -386,8 +377,9 @@ describe("completion", () => {
 
     await handler({}, makeContext());
 
-    expect(ssmMock).toHaveReceivedCommandWith(DeleteParameterCommand, {
-      Name: CHECKPOINT_PARAMETER_NAME,
+    expect(dynamoMock).toHaveReceivedCommandWith(DeleteItemCommand, {
+      TableName: CHECKPOINT_TABLE_NAME,
+      Key: { id: { S: "CHECKPOINT" } },
     });
   });
 

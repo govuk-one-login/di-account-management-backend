@@ -3949,7 +3949,6 @@ Resources:
           BACKFILL_QUEUE_URL: !Ref RawEventsBackfillQueue
           CHECKPOINT_PARAMETER_NAME: !Sub "/${AWS::StackName}/${Environment}/replay-raw-events-backfill/checkpoint"
           TOTAL_SEGMENTS: "100"
-          TOTAL_SEGMENTS: 100
     Metadata:
       BuildMethod: esbuild
       BuildProperties:

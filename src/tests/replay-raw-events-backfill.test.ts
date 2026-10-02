@@ -83,6 +83,7 @@ beforeEach(() => {
   process.env.BACKFILL_QUEUE_URL = BACKFILL_QUEUE_URL;
   process.env.AWS_LAMBDA_FUNCTION_NAME = FUNCTION_NAME;
   process.env.CHECKPOINT_PARAMETER_NAME = CHECKPOINT_PARAMETER_NAME;
+  process.env.TOTAL_SEGMENTS = String(TOTAL_SEGMENTS);
 
   ssmMock.on(GetParameterCommand).rejects(
     Object.assign(new Error("ParameterNotFound"), {

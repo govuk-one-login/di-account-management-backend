@@ -3604,7 +3604,7 @@ Resources:
               - ReportBatchItemFailures
       Handler: update-inactive-account-tracker.handler
       MemorySize: 192
-      ReservedConcurrentExecutions: 80
+      ReservedConcurrentExecutions: 250
       Timeout: 180
       Role: !GetAtt UpdateInactiveAccountTrackerRole.Arn
       Environment:

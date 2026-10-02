@@ -22,7 +22,7 @@ const sqsClient = new SQSClient({});
 const lambdaClient = new LambdaClient({});
 const ssmClient = new SSMClient({});
 
-const TOTAL_SEGMENTS = 10;
+const TOTAL_SEGMENTS = 100;
 
 type SegmentCursor =
   "NOT_STARTED" | "FINISHED" | Record<string, AttributeValue>;

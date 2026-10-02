@@ -4019,7 +4019,9 @@ Resources:
           - Effect: Allow
             Action:
               - kms:GenerateDataKey*
-            Resource: !GetAtt QueueKmsKey.Arn
+            Resource:
+              - !GetAtt QueueKmsKey.Arn
+              - !GetAtt DatabaseKmsKey.Arn
           - Effect: Allow
             Action:
               - dynamodb:GetItem

@@ -3935,7 +3935,7 @@ Resources:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-replay-raw-events-backfill
       CodeUri: src
       PackageType: Zip
-      MemorySize: 512
+      MemorySize: 10240
       Timeout: 900
       ReservedConcurrentExecutions: 1
       EventInvokeConfig:

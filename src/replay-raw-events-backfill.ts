@@ -23,8 +23,7 @@ const lambdaClient = new LambdaClient({});
 
 type SegmentCursor =
   "NOT_STARTED" | "FINISHED" | Record<string, AttributeValue>;
-// Reinvoke with ~60s remaining to allow time for the invocation and any in-flight batch
-const REINVOKE_THRESHOLD_MS = 60_000;
+const REINVOKE_THRESHOLD_MS = 150_000;
 const CHECKPOINT_INTERVAL_MS = 60_000;
 
 interface CheckpointState {

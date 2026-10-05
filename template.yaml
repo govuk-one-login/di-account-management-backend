@@ -3937,6 +3937,7 @@ Resources:
       PackageType: Zip
       MemorySize: 10240
       Timeout: 900
+      RecursiveLoop: Allow
       ReservedConcurrentExecutions: 1
       EventInvokeConfig:
         MaximumRetryAttempts: 0

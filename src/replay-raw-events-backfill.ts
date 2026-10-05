@@ -23,8 +23,7 @@ const lambdaClient = new LambdaClient({});
 
 type SegmentCursor =
   "NOT_STARTED" | "FINISHED" | Record<string, AttributeValue>;
-// Reinvoke with ~60s remaining to allow time for the invocation and any in-flight batch
-const REINVOKE_THRESHOLD_MS = 60_000;
+const REINVOKE_THRESHOLD_MS = 150_000;
 const CHECKPOINT_INTERVAL_MS = 60_000;
 
 interface CheckpointState {
@@ -187,17 +186,19 @@ export const handler = async (
         totalDispatched,
         remainingMs: context.getRemainingTimeInMillis(),
       });
-      await saveCheckpoint(checkpointTableName, {
-        segmentCursors,
-        totalDispatched,
-      });
-      await lambdaClient.send(
-        new InvokeCommand({
-          FunctionName: functionName,
-          InvocationType: "Event",
-          Payload: Buffer.from(JSON.stringify({})),
-        })
-      );
+      await Promise.allSettled([
+        saveCheckpoint(checkpointTableName, {
+          segmentCursors,
+          totalDispatched,
+        }),
+        lambdaClient.send(
+          new InvokeCommand({
+            FunctionName: functionName,
+            InvocationType: "Event",
+            Payload: Buffer.from(JSON.stringify({})),
+          })
+        ),
+      ]);
       return;
     }
 

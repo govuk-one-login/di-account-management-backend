@@ -186,19 +186,17 @@ export const handler = async (
         totalDispatched,
         remainingMs: context.getRemainingTimeInMillis(),
       });
-      await Promise.allSettled([
-        saveCheckpoint(checkpointTableName, {
-          segmentCursors,
-          totalDispatched,
-        }),
-        lambdaClient.send(
-          new InvokeCommand({
-            FunctionName: functionName,
-            InvocationType: "Event",
-            Payload: Buffer.from(JSON.stringify({})),
-          })
-        ),
-      ]);
+      await saveCheckpoint(checkpointTableName, {
+        segmentCursors,
+        totalDispatched,
+      });
+      await lambdaClient.send(
+        new InvokeCommand({
+          FunctionName: functionName,
+          InvocationType: "Event",
+          Payload: Buffer.from(JSON.stringify({})),
+        })
+      );
       return;
     }
 

@@ -5069,6 +5069,8 @@ Resources:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-delete-inactive-account-tracker
       CodeUri: src
       PackageType: Zip
+      Timeout: 10
+      MemorySize: 256
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt DeleteInactiveAccountTrackerDeadLetterQueue.Arn

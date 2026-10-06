@@ -12,7 +12,10 @@ import { Logger } from "@aws-lambda-powertools/logger";
 import { sendSqsMessage } from "./common/sqs.js";
 import { isUserIdBlocked } from "./common/account-interventions-service-client.js";
 import checkIfDateIs27October from "./common/check-if-date-is-27-october.js";
-import { notificationConfiguration } from "./common/notification-configuration.js";
+import {
+  notificationConfiguration,
+  homeAccountTrackerNotificationSkippedReasons,
+} from "./common/notification-configuration.js";
 
 const logger = new Logger();
 
@@ -115,23 +118,14 @@ export const maybeEnqueueDeletionEmail = async (
     logger.info("Skipping IAD deletion email: no email address");
     return;
   }
-
-  if (checkIfDateIs27October(dateForDeletion ?? "")) {
-    logger.info(
-      "Skipping IAD deletion email: user is likely migrated from GOVUK Verify"
-    );
-    return;
-  }
-
-  if (hasSetupMfa === false) {
-    logger.info("Skipping IAD deletion email: user has not set up MFA");
+  const skipNotificationAuditEvent = async (reason: string) => {
     await sendAuditEvent("HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED", {
       user: {
         user_id: userId,
         email: emailAddress,
       },
       extensions: {
-        accountTrackerNotificationSkipReason: "UnusableAccount",
+        accountTrackerNotificationSkipReason: reason,
         ...(notificationConfiguration.INACTIVE_ACCOUNT_DELETED_CONFIRMATION
           .auditEventNotificationType && {
           accountTrackerNotificationType:
@@ -143,6 +137,23 @@ export const maybeEnqueueDeletionEmail = async (
         }),
       },
     });
+  };
+
+  if (checkIfDateIs27October(dateForDeletion ?? "")) {
+    logger.info(
+      "Skipping IAD deletion email: user is likely migrated from GOVUK Verify"
+    );
+    await skipNotificationAuditEvent(
+      homeAccountTrackerNotificationSkippedReasons.isLikelyVerify
+    );
+    return;
+  }
+
+  if (hasSetupMfa === false) {
+    logger.info("Skipping IAD deletion email: user has not set up MFA");
+    await skipNotificationAuditEvent(
+      homeAccountTrackerNotificationSkippedReasons.unusable
+    );
     return;
   }
 
@@ -150,11 +161,18 @@ export const maybeEnqueueDeletionEmail = async (
     logger.info(
       "Skipping IAD deletion email: user has undeliverable email address"
     );
+    await skipNotificationAuditEvent(
+      homeAccountTrackerNotificationSkippedReasons.undeliverable
+    );
+
     return;
   }
 
   if (await isUserIdBlocked(userId)) {
     logger.info("Skipping IAD deletion email: user is blocked");
+    await skipNotificationAuditEvent(
+      homeAccountTrackerNotificationSkippedReasons.suspended
+    );
     return;
   }
 

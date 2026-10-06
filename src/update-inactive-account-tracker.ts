@@ -362,6 +362,48 @@ const getEffectiveClientId = (
   return txmaEvent.client_id;
 };
 
+const sleep = (ms: number): Promise<void> =>
+  new Promise((resolve) => setTimeout(resolve, ms));
+
+const isTransactionConflict = (error: unknown): boolean =>
+  error instanceof Error &&
+  error.cause instanceof Error &&
+  (error.cause as { name?: string }).name === "TransactionCanceledException" &&
+  (
+    error.cause as { CancellationReasons?: { Code: string }[] }
+  ).CancellationReasons?.some((r) => r.Code === "TransactionConflict") === true;
+
+const processRecordWithRetry = async (
+  txmaEvent: TxmaEvent,
+  tableName: string,
+  userNotificationsTableName: string,
+  olhClientId: string,
+  backfillCompleteDatetime: string,
+  maxAttempts = 4
+): Promise<void> => {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await processRecord(
+        txmaEvent,
+        tableName,
+        userNotificationsTableName,
+        olhClientId,
+        backfillCompleteDatetime
+      );
+    } catch (error) {
+      if (isTransactionConflict(error) && attempt < maxAttempts) {
+        const delay = 50 * Math.pow(2, attempt - 1) + Math.random() * 50;
+        logger.warn(
+          `TransactionConflict on attempt ${attempt} for event ${txmaEvent.event_id}, retrying in ${Math.round(delay)}ms`
+        );
+        await sleep(delay);
+      } else {
+        throw error;
+      }
+    }
+  }
+};
+
 const processRecord = async (
   txmaEvent: TxmaEvent,
   tableName: string,
@@ -558,7 +600,7 @@ export const handler = async (
     ) as TxmaEvent;
 
     try {
-      await processRecord(
+      await processRecordWithRetry(
         txmaEvent,
         tableName,
         userNotificationsTableName,

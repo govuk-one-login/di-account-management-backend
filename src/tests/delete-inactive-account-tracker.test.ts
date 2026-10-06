@@ -216,7 +216,8 @@ describe("maybeEnqueueDeletionEmail", () => {
     });
   });
 
-  test("does not enqueue email when hasUndeliverableEmailAddress is true", async () => {
+  test("does not enqueue email and emits PreviouslyUndeliverable skipped audit event when hasUndeliverableEmailAddress is true", async () => {
+    sqsMock.on(SendMessageCommand).resolves({ MessageId: "test-message-id" });
     await maybeEnqueueDeletionEmail(
       "user-id",
       "user@example.com",
@@ -227,23 +228,31 @@ describe("maybeEnqueueDeletionEmail", () => {
 
     expect(notificationSendCount()).toEqual(0);
     expect(mockIsUserIdBlocked).not.toHaveBeenCalled();
-  });
 
-  test("does not enqueue email when user is blocked", async () => {
-    mockIsUserIdBlocked.mockResolvedValue(aisSuspended);
-
-    await maybeEnqueueDeletionEmail(
-      "user-id",
-      "user@example.com",
-      false,
-      true,
-      "2026-10-20"
+    const txmaCall = sqsMock
+      .commandCalls(SendMessageCommand)
+      .find(
+        (call) =>
+          call.args[0].input.QueueUrl ===
+          "https://sqs.eu-west-2.amazonaws.com/123456789012/TxmaQueue"
+      );
+    expect(txmaCall).toBeDefined();
+    const auditEvent = JSON.parse(
+      txmaCall!.args[0].input.MessageBody as string
     );
-
-    expect(notificationSendCount()).toEqual(0);
+    expect(auditEvent.event_name).toBe(
+      "HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED"
+    );
+    expect(auditEvent.user).toMatchObject({ user_id: "user-id" });
+    expect(auditEvent.extensions).toMatchObject({
+      accountTrackerNotificationSkipReason: "PreviouslyUndeliverable",
+      accountTrackerNotificationType: "Deletion",
+      accountTrackerAccountDeletionDate: "2026-10-20",
+    });
   });
 
-  test("does not enqueue email when date for deletion is 27th October 2026", async () => {
+  test("does not enqueue email and emits MigratedVerifyAccount skipped audit event when date for deletion is 27th October 2026", async () => {
+    sqsMock.on(SendMessageCommand).resolves({ MessageId: "test-message-id" });
     await maybeEnqueueDeletionEmail(
       "user-id",
       "user@example.com",
@@ -253,10 +262,32 @@ describe("maybeEnqueueDeletionEmail", () => {
     );
 
     expect(notificationSendCount()).toEqual(0);
+
+    const txmaCall = sqsMock
+      .commandCalls(SendMessageCommand)
+      .find(
+        (call) =>
+          call.args[0].input.QueueUrl ===
+          "https://sqs.eu-west-2.amazonaws.com/123456789012/TxmaQueue"
+      );
+    expect(txmaCall).toBeDefined();
+    const auditEvent = JSON.parse(
+      txmaCall!.args[0].input.MessageBody as string
+    );
+    expect(auditEvent.event_name).toBe(
+      "HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED"
+    );
+    expect(auditEvent.user).toMatchObject({ user_id: "user-id" });
+    expect(auditEvent.extensions).toMatchObject({
+      accountTrackerNotificationSkipReason: "MigratedVerifyAccount",
+      accountTrackerNotificationType: "Deletion",
+      accountTrackerAccountDeletionDate: "2026-10-27",
+    });
   });
 
-  test("does not enqueue email when user is blocked", async () => {
+  test("does not enqueue email and emits IndefiniteSuspension skipped audit event when user is blocked", async () => {
     mockIsUserIdBlocked.mockResolvedValue(aisSuspended);
+    sqsMock.on(SendMessageCommand).resolves({ MessageId: "test-message-id" });
 
     await maybeEnqueueDeletionEmail(
       "user-id",
@@ -267,6 +298,27 @@ describe("maybeEnqueueDeletionEmail", () => {
     );
 
     expect(notificationSendCount()).toEqual(0);
+
+    const txmaCall = sqsMock
+      .commandCalls(SendMessageCommand)
+      .find(
+        (call) =>
+          call.args[0].input.QueueUrl ===
+          "https://sqs.eu-west-2.amazonaws.com/123456789012/TxmaQueue"
+      );
+    expect(txmaCall).toBeDefined();
+    const auditEvent = JSON.parse(
+      txmaCall!.args[0].input.MessageBody as string
+    );
+    expect(auditEvent.event_name).toBe(
+      "HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED"
+    );
+    expect(auditEvent.user).toMatchObject({ user_id: "user-id" });
+    expect(auditEvent.extensions).toMatchObject({
+      accountTrackerNotificationSkipReason: "IndefiniteSuspension",
+      accountTrackerNotificationType: "Deletion",
+      accountTrackerAccountDeletionDate: "2026-10-20",
+    });
   });
 
   test("does not enqueue email and emits UnusableAccount skipped audit event when user has not set up MFA", async () => {

@@ -16,6 +16,8 @@ const dynamoDocClient = DynamoDBDocumentClient.from(dynamoClient);
 
 const FORECAST_DAYS = 5 * 365;
 const SKIP_EMAIL_REASON_BREAKDOWN_DAYS = 90;
+const PRECEDING_FORECAST_DAYS = 90;
+const OVERDUE_DELETION_THRESHOLD_DAYS = 5;
 const TTL_SECONDS = 365 * 24 * 60 * 60;
 const BATCH_SIZE = 20;
 const REMAINING_TIME_THRESHOLD_MS = 10_000;
@@ -24,6 +26,13 @@ export const buildDates = (fromDate: Date, days: number): string[] =>
   Array.from({ length: days }, (_, i) => {
     const d = new Date(fromDate);
     d.setDate(d.getDate() + i + 1);
+    return d.toISOString().split("T")[0];
+  });
+
+export const buildPastDates = (fromDate: Date, days: number): string[] =>
+  Array.from({ length: days }, (_, i) => {
+    const d = new Date(fromDate);
+    d.setDate(d.getDate() - (i + 1));
     return d.toISOString().split("T")[0];
   });
 
@@ -52,6 +61,45 @@ const publishRecordCountMetric = async (tableName: string): Promise<void> => {
   }
 };
 
+const publishOverdueDeletionMetric = async (
+  tableName: string
+): Promise<void> => {
+  const pastDates = buildPastDates(new Date(), PRECEDING_FORECAST_DAYS);
+
+  const batchTotals = await Promise.all(
+    chunk(pastDates, BATCH_SIZE).map(async (batch) => {
+      const results = await Promise.all(
+        batch.map((date) => countAccountsForDate(tableName, date))
+      );
+
+      return batch.reduce((batchOverdue, date, i) => {
+        const { total } = results[i];
+        const daysAgo = Math.floor(
+          (Date.now() - new Date(date).getTime()) / (24 * 60 * 60 * 1000)
+        );
+        const isOverdue = daysAgo >= OVERDUE_DELETION_THRESHOLD_DAYS;
+
+        logger.info("Preceding deletion forecast", {
+          dateForDeletion: date,
+          accountsToDelete: total,
+          overdue: isOverdue && total > 0,
+        });
+
+        return isOverdue ? batchOverdue + total : batchOverdue;
+      }, 0);
+    })
+  );
+
+  const overdueAccounts = batchTotals.reduce((sum, n) => sum + n, 0);
+
+  metrics.addMetric(
+    "OverdueDeletionAccounts",
+    MetricUnit.Count,
+    overdueAccounts
+  );
+  metrics.publishStoredMetrics();
+};
+
 export const handler = async (
   _event: unknown,
   context: Context
@@ -72,6 +120,7 @@ export const handler = async (
   );
 
   await publishRecordCountMetric(tableName);
+  await publishOverdueDeletionMetric(tableName);
 
   let processed = 0;
 

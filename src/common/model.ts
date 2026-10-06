@@ -220,11 +220,7 @@ export interface Personalisation {
 }
 
 export type InactiveAccountStatus =
-  | "pending"
-  | "deleting"
-  | "30DayWarningSent"
-  | "7DayWarningSent"
-  | "permanentSuspension";
+  "pending" | "deleting" | "30DayWarningSent" | "7DayWarningSent";
 
 export interface InactiveAccountTrackerRecord {
   dateForDeletion: string;

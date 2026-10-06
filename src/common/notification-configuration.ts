@@ -42,3 +42,10 @@ export const notificationConfiguration: NotificationConfig = {
     auditEventNotificationType: "Deletion",
   },
 };
+
+export const homeAccountTrackerNotificationSkippedReasons = {
+  suspended: "IndefiniteSuspension",
+  undeliverable: "PreviouslyUndeliverable",
+  unusable: "UnusableAccount",
+  isLikelyVerify: "MigratedVerifyAccount",
+};

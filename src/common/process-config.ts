@@ -9,7 +9,7 @@ import { sendInactiveAccountEmailsIsDisabled } from "./iadGuards/sendInactiveAcc
 import { dateForDeletionIs27October } from "./iadGuards/dateForDeletionIs27October.js";
 import { doesNotHaveEmailAddress } from "./iadGuards/doesNotHaveEmailAddress.js";
 import { hasNotSetupMfa } from "./iadGuards/hasNotSetupMfa.js";
-
+import { homeAccountTrackerNotificationSkippedReasons } from "./notification-configuration.js";
 export type Guard = (trackerRecord: InactiveAccountTrackerRecord) => Promise<{
   guardActivated: boolean;
   guardName: string;
@@ -56,28 +56,32 @@ const warningsContinueWithoutActionsGuardsList: ProcessGuard[] = [
   {
     guard: dateForDeletionIs27October,
     contributeToAlarm: false,
-    skippedNotificationAuditEventReason: "MigratedVerifyAccount",
+    skippedNotificationAuditEventReason:
+      homeAccountTrackerNotificationSkippedReasons.isLikelyVerify,
     skippedNotificationAuditEventName:
       "HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED",
   },
   {
     guard: hasNotSetupMfa,
     contributeToAlarm: false,
-    skippedNotificationAuditEventReason: "UnusableAccount",
+    skippedNotificationAuditEventReason:
+      homeAccountTrackerNotificationSkippedReasons.unusable,
     skippedNotificationAuditEventName:
       "HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED",
   },
   {
     guard: hasUndeliverableEmailAddress,
     contributeToAlarm: false,
-    skippedNotificationAuditEventReason: "PreviouslyUndeliverable",
+    skippedNotificationAuditEventReason:
+      homeAccountTrackerNotificationSkippedReasons.undeliverable,
     skippedNotificationAuditEventName:
       "HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED",
   },
   {
     guard: hasAisBlockIntervention,
     contributeToAlarm: false,
-    skippedNotificationAuditEventReason: "IndefiniteSuspension",
+    skippedNotificationAuditEventReason:
+      homeAccountTrackerNotificationSkippedReasons.suspended,
     skippedNotificationAuditEventName:
       "HOME_ACCOUNT_TRACKER_NOTIFICATION_SKIPPED",
   },

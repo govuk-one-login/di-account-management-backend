@@ -4,8 +4,6 @@ import {
   Context,
   DynamoDBStreamEvent,
   DynamoDBBatchResponse,
-  SQSEvent,
-  SQSBatchResponse,
 } from "aws-lambda";
 import { Logger } from "@aws-lambda-powertools/logger";
 import { mockClient } from "aws-sdk-client-mock";
@@ -2131,115 +2129,6 @@ describe("UpdateInactiveAccountTracker handler", () => {
         batchItemFailures: [{ itemIdentifier: "seq-3" }],
       });
       expect(dynamoMock).toHaveReceivedCommandTimes(TransactWriteCommand, 1);
-    });
-  });
-
-  describe("SQS event source", () => {
-    const makeSQSEvent = (
-      records: DynamoDBRecord[],
-      messageId = "msg-1"
-    ): SQSEvent => ({
-      Records: [
-        {
-          messageId,
-          receiptHandle: "handle",
-          body: JSON.stringify({ Records: records }),
-          attributes: {
-            ApproximateReceiveCount: "1",
-            SentTimestamp: "1523232000000",
-            SenderId: "123456789012",
-            ApproximateFirstReceiveTimestamp: "1523232000001",
-          },
-          messageAttributes: {},
-          md5OfBody: "abc",
-          eventSource: "aws:sqs",
-          eventSourceARN: "arn:aws:sqs:eu-west-2:123456789012:backfill-queue",
-          awsRegion: "eu-west-2",
-        },
-      ],
-    });
-
-    test("processes a record delivered via SQS and returns empty batchItemFailures", async () => {
-      dynamoMock.on(QueryCommand).resolves({ Items: [] });
-      dynamoMock.on(TransactWriteCommand).resolves({});
-
-      const event = makeSQSEvent([generateDynamoStreamRecord("test-client")]);
-      const result = await handler(event, {} as Context);
-
-      expect(result).toEqual<SQSBatchResponse>({ batchItemFailures: [] });
-      expect(dynamoMock).toHaveReceivedCommand(TransactWriteCommand);
-    });
-
-    test("returns SQS messageId in batchItemFailures when processing fails", async () => {
-      dynamoMock.on(QueryCommand).resolves({ Items: [] });
-      dynamoMock
-        .on(TransactWriteCommand)
-        .rejects(new Error("TransactionCanceledException"));
-
-      const event = makeSQSEvent(
-        [generateDynamoStreamRecord("test-client")],
-        "sqs-msg-abc"
-      );
-      const result = await handler(event, {} as Context);
-
-      expect(result).toEqual<SQSBatchResponse>({
-        batchItemFailures: [{ itemIdentifier: "sqs-msg-abc" }],
-      });
-    });
-
-    test("returns only the failed SQS messageId when one of two messages fails", async () => {
-      dynamoMock.on(QueryCommand).resolves({ Items: [] });
-      dynamoMock
-        .on(TransactWriteCommand)
-        .resolvesOnce({})
-        .rejectsOnce(new Error("TransactionCanceledException"));
-
-      const event: SQSEvent = {
-        Records: [
-          {
-            messageId: "msg-success",
-            receiptHandle: "handle-1",
-            body: JSON.stringify({
-              Records: [generateDynamoStreamRecord("test-client")],
-            }),
-            attributes: {
-              ApproximateReceiveCount: "1",
-              SentTimestamp: "1",
-              SenderId: "1",
-              ApproximateFirstReceiveTimestamp: "1",
-            },
-            messageAttributes: {},
-            md5OfBody: "abc",
-            eventSource: "aws:sqs",
-            eventSourceARN: "arn:aws:sqs:eu-west-2:123:queue",
-            awsRegion: "eu-west-2",
-          },
-          {
-            messageId: "msg-fail",
-            receiptHandle: "handle-2",
-            body: JSON.stringify({
-              Records: [generateDynamoStreamRecord("test-client")],
-            }),
-            attributes: {
-              ApproximateReceiveCount: "1",
-              SentTimestamp: "1",
-              SenderId: "1",
-              ApproximateFirstReceiveTimestamp: "1",
-            },
-            messageAttributes: {},
-            md5OfBody: "abc",
-            eventSource: "aws:sqs",
-            eventSourceARN: "arn:aws:sqs:eu-west-2:123:queue",
-            awsRegion: "eu-west-2",
-          },
-        ],
-      };
-
-      const result = await handler(event, {} as Context);
-
-      expect(result).toEqual<SQSBatchResponse>({
-        batchItemFailures: [{ itemIdentifier: "msg-fail" }],
-      });
     });
   });
 

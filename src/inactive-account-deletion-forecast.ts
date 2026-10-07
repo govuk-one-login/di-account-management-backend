@@ -14,9 +14,9 @@ const logger = new Logger();
 const dynamoClient = new DynamoDBClient({});
 const dynamoDocClient = DynamoDBDocumentClient.from(dynamoClient);
 
-const FORECAST_DAYS = 5 * 365;
+const DAYS_TO_FORECAST_AFTER_TODAY = 5 * 365 - 1;
 const SKIP_EMAIL_REASON_BREAKDOWN_DAYS = 90;
-const PRECEDING_FORECAST_DAYS = 90;
+const DAYS_TO_FORECAST_BEFORE_TODAY = 30;
 const OVERDUE_DELETION_THRESHOLD_DAYS = 5;
 const TTL_SECONDS = 365 * 24 * 60 * 60;
 const BATCH_SIZE = 20;
@@ -26,13 +26,6 @@ export const buildDates = (fromDate: Date, days: number): string[] =>
   Array.from({ length: days }, (_, i) => {
     const d = new Date(fromDate);
     d.setDate(d.getDate() + i);
-    return d.toISOString().split("T")[0];
-  });
-
-export const buildPastDates = (fromDate: Date, days: number): string[] =>
-  Array.from({ length: days }, (_, i) => {
-    const d = new Date(fromDate);
-    d.setDate(d.getDate() - (i + 1));
     return d.toISOString().split("T")[0];
   });
 
@@ -61,45 +54,6 @@ const publishRecordCountMetric = async (tableName: string): Promise<void> => {
   }
 };
 
-const publishOverdueDeletionMetric = async (
-  tableName: string
-): Promise<void> => {
-  const pastDates = buildPastDates(new Date(), PRECEDING_FORECAST_DAYS);
-
-  const batchTotals = await Promise.all(
-    chunk(pastDates, BATCH_SIZE).map(async (batch) => {
-      const results = await Promise.all(
-        batch.map((date) => countAccountsForDate(tableName, date))
-      );
-
-      return batch.reduce((batchOverdue, date, i) => {
-        const { total } = results[i];
-        const daysAgo = Math.floor(
-          (Date.now() - new Date(date).getTime()) / (24 * 60 * 60 * 1000)
-        );
-        const isOverdue = daysAgo >= OVERDUE_DELETION_THRESHOLD_DAYS;
-
-        logger.info("Preceding deletion forecast", {
-          dateForDeletion: date,
-          accountsToDelete: total,
-          overdue: isOverdue && total > 0,
-        });
-
-        return isOverdue ? batchOverdue + total : batchOverdue;
-      }, 0);
-    })
-  );
-
-  const overdueAccounts = batchTotals.reduce((sum, n) => sum + n, 0);
-
-  metrics.addMetric(
-    "OverdueDeletionAccounts",
-    MetricUnit.Count,
-    overdueAccounts
-  );
-  metrics.publishStoredMetrics();
-};
-
 export const handler = async (
   _event: unknown,
   context: Context
@@ -111,25 +65,36 @@ export const handler = async (
 
   const tableName = getEnvironmentVariable("TABLE_NAME");
   const forecastTableName = getEnvironmentVariable("FORECAST_TABLE_NAME");
-  const dates = buildDates(new Date(), FORECAST_DAYS);
-  const forecastedAt = new Date().toISOString();
-  const ttl = Math.floor(Date.now() / 1000) + TTL_SECONDS;
+  const now = new Date();
+  const todayDate = now.toISOString().split("T")[0];
+  const scheduleStart = new Date(now);
+  scheduleStart.setDate(
+    scheduleStart.getDate() - DAYS_TO_FORECAST_BEFORE_TODAY
+  );
+  const dates = buildDates(
+    scheduleStart,
+    DAYS_TO_FORECAST_BEFORE_TODAY + 1 + DAYS_TO_FORECAST_AFTER_TODAY
+  );
+  const forecastedAt = now.toISOString();
+  const ttl = Math.floor(now.getTime() / 1000) + TTL_SECONDS;
   const breakdownCutoffDate = new Date();
   breakdownCutoffDate.setDate(
     breakdownCutoffDate.getDate() + SKIP_EMAIL_REASON_BREAKDOWN_DAYS
   );
 
   await publishRecordCountMetric(tableName);
-  await publishOverdueDeletionMetric(tableName);
 
   let processed = 0;
+  let overdueAccounts = 0;
+  let nearTimeOut = false;
 
   for (const batch of chunk(dates, BATCH_SIZE)) {
     const results = await Promise.all(
       batch.map((date) => {
         const parsedDate = new Date(date);
         return countAccountsForDate(tableName, date, {
-          includeSkipEmailReasonBreakdown: parsedDate <= breakdownCutoffDate,
+          includeSkipEmailReasonBreakdown:
+            date >= todayDate && parsedDate <= breakdownCutoffDate,
         });
       })
     );
@@ -139,6 +104,15 @@ export const handler = async (
         const { total, emailForecast } = results[i];
         const is27October = checkIfDateIs27October(date);
 
+        const daysAgo = Math.floor(
+          (now.getTime() - new Date(date).getTime()) / (24 * 60 * 60 * 1000)
+        );
+        const isOverdue = daysAgo >= OVERDUE_DELETION_THRESHOLD_DAYS;
+
+        if (isOverdue) {
+          overdueAccounts += total;
+        }
+
         const logData: Record<string, unknown> = {
           dateForDeletion: date,
           accountsToDelete: total,
@@ -147,6 +121,7 @@ export const handler = async (
         };
 
         logger.info("Deletion forecast", logData);
+
         return dynamoDocClient.send(
           new PutCommand({
             TableName: forecastTableName,
@@ -165,12 +140,23 @@ export const handler = async (
     processed += batch.length;
 
     if (context.getRemainingTimeInMillis() < REMAINING_TIME_THRESHOLD_MS) {
+      nearTimeOut = true;
       logger.info(
         `Approaching timeout, stopping. Forecasted ${processed} of ${dates.length} dates.`
       );
-      return;
+      break;
     }
   }
 
-  logger.info(`Saved deletion forecast for ${processed} dates`);
+  metrics.addMetric(
+    "OverdueDeletionAccounts",
+    MetricUnit.Count,
+    overdueAccounts
+  );
+  metrics.publishStoredMetrics();
+
+  logger.info(
+    `Saved deletion forecast for ${processed} of ${dates.length} dates`,
+    { nearTimeOut }
+  );
 };

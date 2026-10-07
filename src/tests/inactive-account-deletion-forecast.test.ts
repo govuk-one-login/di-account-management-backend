@@ -8,23 +8,24 @@ import { DynamoDBClient, DescribeTableCommand } from "@aws-sdk/client-dynamodb";
 import { mockClient } from "aws-sdk-client-mock";
 import { Logger } from "@aws-lambda-powertools/logger";
 import { Context } from "aws-lambda";
-import {
-  buildDates,
-  buildPastDates,
-  handler,
-} from "../inactive-account-deletion-forecast.js";
+import { buildDates, handler } from "../inactive-account-deletion-forecast.js";
 
 const dynamoDocumentMock = mockClient(DynamoDBDocumentClient);
 const dynamoMock = mockClient(DynamoDBClient);
 
 const SKIP_EMAIL_REASON_BREAKDOWN_DAYS = 90;
 const FORECAST_DAYS = 1825;
-const PRECEDING_FORECAST_DAYS = 90;
+const PRECEDING_FORECAST_DAYS = 30;
 const EXPECTED_QUERY_COUNT =
   PRECEDING_FORECAST_DAYS +
   (SKIP_EMAIL_REASON_BREAKDOWN_DAYS + 1) * 2 +
   (FORECAST_DAYS - (SKIP_EMAIL_REASON_BREAKDOWN_DAYS + 1));
 
+const datesFrom = (today: Date, precedingDays: number, totalDays: number) => {
+  const start = new Date(today);
+  start.setDate(start.getDate() - precedingDays);
+  return buildDates(start, totalDays);
+};
 const mockContext = (remainingMs = 900_000): Context =>
   ({
     getRemainingTimeInMillis: () => remainingMs,
@@ -76,23 +77,6 @@ describe("buildDates", () => {
   });
 });
 
-describe("buildPastDates", () => {
-  test("returns the correct number of dates ending yesterday", () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-01-05T00:00:00.000Z"));
-
-    const dates = buildPastDates(new Date(), 3);
-    expect(dates).toEqual(["2026-01-04", "2026-01-03", "2026-01-02"]);
-
-    vi.useRealTimers();
-  });
-
-  test("returns 90 dates for the preceding-forecast window", () => {
-    const dates = buildPastDates(new Date(), 90);
-    expect(dates).toHaveLength(90);
-  });
-});
-
 describe("handler", () => {
   beforeEach(() => {
     dynamoDocumentMock.reset();
@@ -137,7 +121,7 @@ describe("handler", () => {
       EXPECTED_QUERY_COUNT
     );
     expect(dynamoDocumentMock.commandCalls(PutCommand)).toHaveLength(
-      FORECAST_DAYS
+      FORECAST_DAYS + PRECEDING_FORECAST_DAYS
     );
 
     vi.useRealTimers();
@@ -165,10 +149,11 @@ describe("handler", () => {
       getRemainingTimeInMillis: () => 900_000,
     } as unknown as Context;
 
-    // Only need the first batch to have processed; time runs out immediately after.
+    // Today lands in the second batch, since the first batch is filled by
+    // dates still in the past. Time runs out right after.
     let remainingCalls = 0;
     context.getRemainingTimeInMillis = () =>
-      remainingCalls++ === 0 ? 900_000 : 5_000;
+      remainingCalls++ <= 1 ? 900_000 : 5_000;
 
     await handler({}, context);
 
@@ -277,20 +262,33 @@ describe("handler", () => {
 
   test.each([
     {
-      label: "stops on the first batch",
+      label: "stops during the first (all-past) batch",
       remainingTimesMs: [5_000],
-      expectedProcessed: 20,
+      expectedPastWritten: 20,
+      expectedTodayOnwardsWritten: 0,
     },
     {
-      label: "continues past the first check and stops on a later batch",
-      remainingTimesMs: [900_000, 600_000, 300_000, 5_000],
-      expectedProcessed: 80,
+      label: "stops in the batch spanning yesterday and today",
+      remainingTimesMs: [900_000, 5_000],
+      expectedPastWritten: 30,
+      expectedTodayOnwardsWritten: 10,
+    },
+    {
+      label: "stops in a batch made up entirely of today-onwards dates",
+      remainingTimesMs: [900_000, 900_000, 5_000],
+      expectedPastWritten: 30,
+      expectedTodayOnwardsWritten: 30,
     },
   ])(
-    "stops once time is nearly up, forecasting only the soonest dates ($label)",
-    async ({ remainingTimesMs, expectedProcessed }) => {
+    "stops once time is nearly up, forecasting only the soonest remaining dates ($label)",
+    async ({
+      remainingTimesMs,
+      expectedPastWritten,
+      expectedTodayOnwardsWritten,
+    }) => {
       vi.useFakeTimers();
-      vi.setSystemTime(new Date("2026-01-01T00:00:00.000Z"));
+      const today = new Date("2026-01-01T00:00:00.000Z");
+      vi.setSystemTime(today);
 
       dynamoMock.on(DescribeTableCommand).resolves({ Table: { ItemCount: 0 } });
       dynamoDocumentMock
@@ -305,15 +303,20 @@ describe("handler", () => {
 
       await handler({}, context);
 
-      expect(dynamoDocumentMock.commandCalls(PutCommand)).toHaveLength(
-        expectedProcessed
-      );
-
-      const forecastedDates = dynamoDocumentMock
+      const todayString = today.toISOString().split("T")[0];
+      const putDates = dynamoDocumentMock
         .commandCalls(PutCommand)
-        .map((putCall) => putCall.args[0].input.Item?.dateForDeletion);
-      expect(forecastedDates).toEqual(
-        buildDates(new Date("2026-01-01T00:00:00.000Z"), expectedProcessed)
+        .map(
+          (putCall) => putCall.args[0].input.Item?.dateForDeletion as string
+        );
+
+      const pastWritten = putDates.filter((d) => d < todayString);
+      const todayOnwardsWritten = putDates.filter((d) => d >= todayString);
+
+      expect(pastWritten).toHaveLength(expectedPastWritten);
+      expect(todayOnwardsWritten).toHaveLength(expectedTodayOnwardsWritten);
+      expect(todayOnwardsWritten).toEqual(
+        buildDates(today, expectedTodayOnwardsWritten)
       );
 
       vi.useRealTimers();
@@ -356,9 +359,9 @@ describe("handler", () => {
       ([name]) => name === "OverdueDeletionAccounts"
     );
     expect(overdueCalls).toHaveLength(1);
-    // 90 preceding days, of which days 1-4 ago are not overdue (< 5 days):
-    // 86 overdue dates * 2 accounts each = 172.
-    expect(overdueCalls[0]).toEqual(["OverdueDeletionAccounts", "Count", 172]);
+    // 30 past days, of which days 1-4 ago are not overdue (< 5 days):
+    // 26 overdue dates * 2 accounts each = 52.
+    expect(overdueCalls[0]).toEqual(["OverdueDeletionAccounts", "Count", 52]);
 
     vi.useRealTimers();
   });
@@ -382,27 +385,53 @@ describe("handler", () => {
     vi.useRealTimers();
   });
 
-  test("logs preceding deletion forecast per date marking overdue dates with records", async () => {
+  test("persists a forecast record for every past date, in the same shape as today-onwards dates", async () => {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-06-15T00:00:00.000Z"));
+    const today = new Date("2026-06-15T00:00:00.000Z");
+    vi.setSystemTime(today);
 
     const infoSpy = vi.spyOn(Logger.prototype, "info");
 
     dynamoMock.on(DescribeTableCommand).resolves({ Table: { ItemCount: 0 } });
-    dynamoDocumentMock.on(QueryCommand).resolves({ Count: 3, ScannedCount: 3 });
+    dynamoDocumentMock.on(QueryCommand).resolves({ Count: 4, ScannedCount: 4 });
     dynamoDocumentMock.on(PutCommand).resolves({});
 
     await handler({}, mockContext());
 
-    expect(infoSpy).toHaveBeenCalledWith("Preceding deletion forecast", {
-      dateForDeletion: "2026-06-10",
-      accountsToDelete: 3,
-      overdue: true,
-    });
-    expect(infoSpy).toHaveBeenCalledWith("Preceding deletion forecast", {
+    const todayString = today.toISOString().split("T")[0];
+    const pastDates = datesFrom(today, 30, 30).filter((d) => d < todayString);
+    const putCalls = dynamoDocumentMock.commandCalls(PutCommand);
+    const putDates = putCalls.map(
+      (call) => call.args[0].input.Item?.dateForDeletion
+    );
+
+    for (const date of pastDates) {
+      expect(putDates).toContain(date);
+    }
+
+    expect(infoSpy).toHaveBeenCalledWith("Deletion forecast", {
       dateForDeletion: "2026-06-14",
-      accountsToDelete: 3,
-      overdue: false,
+      accountsToDelete: 4,
+    });
+
+    const pastPut = putCalls.find(
+      (call) => call.args[0].input.Item?.dateForDeletion === "2026-06-14"
+    );
+    expect(pastPut?.args[0].input).toEqual({
+      TableName: "forecast-table",
+      Item: {
+        dateForDeletion: "2026-06-14",
+        forecastedAt: "2026-06-15T00:00:00.000Z",
+        accountsToDelete: 4,
+        ttl:
+          Math.floor(new Date("2026-06-15T00:00:00.000Z").getTime() / 1000) +
+          365 * 24 * 60 * 60,
+        iadQueryLogicHash: {
+          hash: "test-hash",
+          algorithm: "sha256",
+          generatedAt: "1970-01-01T00:00:00.000Z",
+        },
+      },
     });
 
     vi.useRealTimers();

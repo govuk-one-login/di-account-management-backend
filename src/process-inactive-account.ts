@@ -24,7 +24,10 @@ type ProcessInactiveAccountMessage = InactiveAccountTrackerRecord & {
 import { getEnvironmentVariable } from "./common/utils.js";
 import { sendAuditEvent } from "./common/send-audit-event.js";
 import { mergeTrackerRecords } from "./common/merge-tracker-records.js";
-import { isIadCircuitBreakerTripped } from "./common/iad-circuit-breaker.js";
+import {
+  isIadCircuitBreakerTripped,
+  tripIadCircuitBreaker,
+} from "./common/iad-circuit-breaker.js";
 import { notificationConfiguration } from "./common/notification-configuration.js";
 
 const logger = new Logger();
@@ -86,6 +89,16 @@ async function runSubsetOfGuards(
               accountTrackerAccountDeletionDate: body.dateForDeletion,
             }),
           },
+        });
+      }
+
+      if (guard.contributeToAlarm) {
+        await tripIadCircuitBreaker({
+          guardrailType: guardResult.guardName,
+          processName: body.processName,
+          dateForDeletion: body.dateForDeletion,
+          commonSubjectId: body.commonSubjectId,
+          isDryRun: body.isDryRun,
         });
       }
 

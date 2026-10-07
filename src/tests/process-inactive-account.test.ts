@@ -48,8 +48,13 @@ const mockIsIadCircuitBreakerTripped = vi.hoisted(() =>
   vi.fn().mockResolvedValue(false)
 );
 
+const mockTripIadCircuitBreaker = vi.hoisted(() =>
+  vi.fn().mockResolvedValue(undefined)
+);
+
 vi.mock("../common/iad-circuit-breaker.js", () => ({
   isIadCircuitBreakerTripped: mockIsIadCircuitBreakerTripped,
+  tripIadCircuitBreaker: mockTripIadCircuitBreaker,
 }));
 
 import { handler } from "../process-inactive-account.js";
@@ -779,7 +784,7 @@ describe("process-inactive-account handler", () => {
     });
   });
 
-  test("skips deletion when hasRecentActivityLogEntry guard blocks the user", async () => {
+  test("skips deletion and trips the circuit breaker when hasRecentActivityLogEntry guard blocks the user", async () => {
     mockHasRecentActivityLogEntry.mockResolvedValue(recentActivity);
     process.env.ACCOUNT_DELETION_QUEUE_URL =
       "https://sqs.eu-west-2.amazonaws.com/123456789012/AccountDeletionQueue";
@@ -800,6 +805,13 @@ describe("process-inactive-account handler", () => {
     expect(sqsMock).not.toHaveReceivedCommand(SendMessageCommand);
     expect(dynamoMock).not.toHaveReceivedCommand(UpdateCommand);
     expect(mockMetrics.addMetric).not.toHaveBeenCalled();
+    expect(mockTripIadCircuitBreaker).toHaveBeenCalledWith(
+      expect.objectContaining({
+        guardrailType: "HomeActivityLogContradiction",
+        processName: "DeleteAccount",
+        dateForDeletion: "2026-08-15",
+      })
+    );
   });
 
   test("hasRecentActivityLogEntry guard is not called for Warning30Day process", async () => {
@@ -953,6 +965,13 @@ describe("process-inactive-account handler", () => {
     );
     expect(sqsMock).not.toHaveReceivedCommand(SendMessageCommand);
     expect(dynamoMock).not.toHaveReceivedCommand(UpdateCommand);
+    expect(mockTripIadCircuitBreaker).toHaveBeenCalledWith(
+      expect.objectContaining({
+        guardrailType: "DoesNotHaveEmailAddress",
+        processName: "Warning30Day",
+        dateForDeletion: "2026-08-15",
+      })
+    );
   });
 
   test("skips notification but still updates status when inactive account deletion feature flag guard is activated", async () => {

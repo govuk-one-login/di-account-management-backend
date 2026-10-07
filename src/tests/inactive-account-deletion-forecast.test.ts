@@ -22,8 +22,8 @@ const FORECAST_DAYS = 1825;
 const PRECEDING_FORECAST_DAYS = 90;
 const EXPECTED_QUERY_COUNT =
   PRECEDING_FORECAST_DAYS +
-  SKIP_EMAIL_REASON_BREAKDOWN_DAYS * 2 +
-  (FORECAST_DAYS - SKIP_EMAIL_REASON_BREAKDOWN_DAYS);
+  (SKIP_EMAIL_REASON_BREAKDOWN_DAYS + 1) * 2 +
+  (FORECAST_DAYS - (SKIP_EMAIL_REASON_BREAKDOWN_DAYS + 1));
 
 const mockContext = (remainingMs = 900_000): Context =>
   ({
@@ -50,12 +50,22 @@ vi.mock("../common/iad-query-logic-hash.json", () => ({
 }));
 
 describe("buildDates", () => {
-  test("returns the correct number of dates starting from tomorrow", () => {
+  test("returns the correct number of dates starting from today", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-01-01T00:00:00.000Z"));
 
     const dates = buildDates(new Date(), 3);
-    expect(dates).toEqual(["2026-01-02", "2026-01-03", "2026-01-04"]);
+    expect(dates).toEqual(["2026-01-01", "2026-01-02", "2026-01-03"]);
+
+    vi.useRealTimers();
+  });
+
+  test("returns a single date matching today when asked for one day", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-01-01T00:00:00.000Z"));
+
+    const dates = buildDates(new Date(), 1);
+    expect(dates).toEqual(["2026-01-01"]);
 
     vi.useRealTimers();
   });
@@ -165,7 +175,7 @@ describe("handler", () => {
     expect(infoSpy).toHaveBeenCalledWith(
       "Deletion forecast",
       expect.objectContaining({
-        dateForDeletion: "2026-01-02",
+        dateForDeletion: "2026-01-01",
         accountsToDelete: 10,
         willSendWarningEmails: 5,
         skippedNoMfa: 3,

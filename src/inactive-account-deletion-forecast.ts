@@ -25,7 +25,7 @@ const REMAINING_TIME_THRESHOLD_MS = 10_000;
 export const buildDates = (fromDate: Date, days: number): string[] =>
   Array.from({ length: days }, (_, i) => {
     const d = new Date(fromDate);
-    d.setDate(d.getDate() + i + 1);
+    d.setDate(d.getDate() + i);
     return d.toISOString().split("T")[0];
   });
 

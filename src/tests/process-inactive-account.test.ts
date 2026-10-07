@@ -182,7 +182,7 @@ describe("process-inactive-account handler", () => {
         emailAddressSourceId: body.emailAddressSourceId,
         hasSetupMfa: body.hasSetupMfa,
         guardrailType: "CircuitBreakerAlreadyTripped",
-        contributeToAlarm: "1",
+        isCritical: "1",
         continueProcessingRecords: "0",
         isDryRun: "0",
       }

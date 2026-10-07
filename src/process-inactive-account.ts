@@ -68,7 +68,7 @@ async function runSubsetOfGuards(
         emailAddressSourceId: body.emailAddressSourceId,
         hasSetupMfa: body.hasSetupMfa,
         guardrailType: guardResult.guardName,
-        contributeToAlarm: guard.contributeToAlarm ? "1" : "0",
+        isCritical: guard.isCritical ? "1" : "0",
         continueProcessingRecords: "1",
         isDryRun: body.isDryRun ? "1" : "0",
       });
@@ -92,7 +92,7 @@ async function runSubsetOfGuards(
         });
       }
 
-      if (guard.contributeToAlarm) {
+      if (guard.isCritical) {
         await tripIadCircuitBreaker({
           guardrailType: guardResult.guardName,
           processName: body.processName,
@@ -385,7 +385,7 @@ export const handler = async (
         emailAddressSourceId: body.emailAddressSourceId,
         hasSetupMfa: body.hasSetupMfa,
         guardrailType: "CircuitBreakerAlreadyTripped",
-        contributeToAlarm: "1",
+        isCritical: "1",
         continueProcessingRecords: "0",
         isDryRun: body.isDryRun ? "1" : "0",
       });

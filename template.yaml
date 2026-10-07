@@ -7646,8 +7646,8 @@ Resources:
           Dimensions:
             - Key: GuardrailType
               Value: $.guardrailType
-            - Key: ContributeToAlarm
-              Value: $.contributeToAlarm
+            - Key: IsCritical
+              Value: $.isCritical
             - Key: DryRun
               Value: $.isDryRun
 
@@ -7664,8 +7664,8 @@ Resources:
           Dimensions:
             - Key: GuardrailType
               Value: $.guardrailType
-            - Key: ContributeToAlarm
-              Value: $.contributeToAlarm
+            - Key: IsCritical
+              Value: $.isCritical
             - Key: DryRun
               Value: $.isDryRun
 
@@ -7679,7 +7679,7 @@ Resources:
         ]
       Metrics:
         - Id: iADGuardrailTriggered
-          Expression: SELECT SUM(GuardrailPreventedInactiveAccountDeletion) FROM "IAD" WHERE ContributeToAlarm = '1'
+          Expression: SELECT SUM(GuardrailPreventedInactiveAccountDeletion) FROM "IAD" WHERE IsCritical = '1'
           Period: 60
           ReturnData: true
       EvaluationPeriods: 1

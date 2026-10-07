@@ -48,7 +48,7 @@ const logAbort = (
 ): void => {
   logger.info("GuardrailAbortedQueryAndDispatchInactiveAccounts", {
     guardrailType,
-    contributeToAlarm: "1",
+    isCritical: "1",
     continueProcessingRecords: "0",
     isDryRun: isDryRun ? "1" : "0",
     processName,

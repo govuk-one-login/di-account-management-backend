@@ -17,7 +17,7 @@ export type Guard = (trackerRecord: InactiveAccountTrackerRecord) => Promise<{
 
 interface ProcessGuard {
   guard: Guard;
-  contributeToAlarm: boolean;
+  isCritical: boolean;
   skippedNotificationAuditEventName?: string;
   skippedNotificationAuditEventReason?: string;
 }
@@ -44,18 +44,18 @@ export type ProcessConfig = Record<
 const warningsAbortGuardsList: ProcessGuard[] = [
   {
     guard: doesNotHaveEmailAddress,
-    contributeToAlarm: true,
+    isCritical: true,
   },
 ];
 
 const warningsContinueWithoutActionsGuardsList: ProcessGuard[] = [
   {
     guard: sendInactiveAccountEmailsIsDisabled,
-    contributeToAlarm: false,
+    isCritical: false,
   },
   {
     guard: dateForDeletionIs27October,
-    contributeToAlarm: false,
+    isCritical: false,
     skippedNotificationAuditEventReason:
       homeAccountTrackerNotificationSkippedReasons.isLikelyVerify,
     skippedNotificationAuditEventName:
@@ -63,7 +63,7 @@ const warningsContinueWithoutActionsGuardsList: ProcessGuard[] = [
   },
   {
     guard: hasNotSetupMfa,
-    contributeToAlarm: false,
+    isCritical: false,
     skippedNotificationAuditEventReason:
       homeAccountTrackerNotificationSkippedReasons.unusable,
     skippedNotificationAuditEventName:
@@ -71,7 +71,7 @@ const warningsContinueWithoutActionsGuardsList: ProcessGuard[] = [
   },
   {
     guard: hasUndeliverableEmailAddress,
-    contributeToAlarm: false,
+    isCritical: false,
     skippedNotificationAuditEventReason:
       homeAccountTrackerNotificationSkippedReasons.undeliverable,
     skippedNotificationAuditEventName:
@@ -79,7 +79,7 @@ const warningsContinueWithoutActionsGuardsList: ProcessGuard[] = [
   },
   {
     guard: hasAisBlockIntervention,
-    contributeToAlarm: false,
+    isCritical: false,
     skippedNotificationAuditEventReason:
       homeAccountTrackerNotificationSkippedReasons.suspended,
     skippedNotificationAuditEventName:
@@ -126,11 +126,11 @@ export const processConfig: ProcessConfig = {
       abort: [
         {
           guard: doesNotHaveEmailAddress,
-          contributeToAlarm: true,
+          isCritical: true,
         },
         {
           guard: hasRecentActivityLogEntry,
-          contributeToAlarm: true,
+          isCritical: true,
         },
       ],
     },

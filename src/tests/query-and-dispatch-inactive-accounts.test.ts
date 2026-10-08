@@ -117,7 +117,7 @@ describe("handler", () => {
       "GuardrailAbortedQueryAndDispatchInactiveAccounts",
       {
         guardrailType: "CircuitBreakerAlreadyTripped",
-        contributeToAlarm: "1",
+        isCritical: "1",
         continueProcessingRecords: "0",
         isDryRun: "0",
         processName: "Warning30Day",
@@ -265,7 +265,7 @@ describe("handler", () => {
       "GuardrailAbortedQueryAndDispatchInactiveAccounts",
       {
         guardrailType: "HomeToDeleteMoreThanForecast",
-        contributeToAlarm: "1",
+        isCritical: "1",
         continueProcessingRecords: "0",
         isDryRun: "0",
         processName: "DeleteAccount",

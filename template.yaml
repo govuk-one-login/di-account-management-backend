@@ -8118,6 +8118,26 @@ Resources:
             - "UseExternalEvents"
             - Effect: Allow
               Principal:
+                AWS: !Sub
+                  - "arn:aws:iam::${AccountId}:root"
+                  - AccountId:
+                      !FindInMap [
+                        AuthenticationAccounts,
+                        !Ref Environment,
+                        "AccountNumber",
+                      ]
+              Action:
+                - kms:Encrypt
+                - kms:Decrypt
+                - kms:GenerateDataKey*
+                - kms:DescribeKey
+              Resource:
+                - "*"
+            - !Ref AWS::NoValue
+          - !If
+            - "UseExternalEvents"
+            - Effect: Allow
+              Principal:
                 Service: "dynamodb.amazonaws.com"
               Action:
                 - kms:Decrypt

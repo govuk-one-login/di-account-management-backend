@@ -3597,6 +3597,7 @@ Resources:
     Type: AWS::SQS::Queue
     Properties:
       KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
+      MessageRetentionPeriod: 1209600
       RedrivePolicy:
         deadLetterTargetArn: !GetAtt AccountSavedNotificationDeadLetterQueue.Arn
         maxReceiveCount: 5
@@ -3617,6 +3618,7 @@ Resources:
     Type: AWS::SQS::Queue
     Properties:
       KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
+      MessageRetentionPeriod: 1209600
       VisibilityTimeout: 720
       RedrivePolicy:
         deadLetterTargetArn: !GetAtt 30DayNotificationDeadLetterQueue.Arn
@@ -3638,6 +3640,7 @@ Resources:
     Type: AWS::SQS::Queue
     Properties:
       KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
+      MessageRetentionPeriod: 1209600
       VisibilityTimeout: 720
       RedrivePolicy:
         deadLetterTargetArn: !GetAtt 7DayNotificationDeadLetterQueue.Arn
@@ -3659,6 +3662,7 @@ Resources:
     Type: AWS::SQS::Queue
     Properties:
       KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
+      MessageRetentionPeriod: 1209600
       VisibilityTimeout: 720
       RedrivePolicy:
         deadLetterTargetArn: !GetAtt AccountDeletionProcessDeadLetterQueue.Arn

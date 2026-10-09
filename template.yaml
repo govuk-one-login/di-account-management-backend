@@ -3597,6 +3597,20 @@ Resources:
     Type: AWS::SQS::Queue
     Properties:
       KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
+      MessageRetentionPeriod: 1209600
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt AccountSavedNotificationDeadLetterQueue.Arn
+        maxReceiveCount: 5
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+
+  AccountSavedNotificationDeadLetterQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
+      MessageRetentionPeriod: 1209600
+      RedriveAllowPolicy:
+        redrivePermission: allowAll
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
 
@@ -3604,7 +3618,21 @@ Resources:
     Type: AWS::SQS::Queue
     Properties:
       KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
+      MessageRetentionPeriod: 1209600
       VisibilityTimeout: 720
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt 30DayNotificationDeadLetterQueue.Arn
+        maxReceiveCount: 5
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+
+  30DayNotificationDeadLetterQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
+      MessageRetentionPeriod: 1209600
+      RedriveAllowPolicy:
+        redrivePermission: allowAll
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
 
@@ -3612,7 +3640,21 @@ Resources:
     Type: AWS::SQS::Queue
     Properties:
       KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
+      MessageRetentionPeriod: 1209600
       VisibilityTimeout: 720
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt 7DayNotificationDeadLetterQueue.Arn
+        maxReceiveCount: 5
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+
+  7DayNotificationDeadLetterQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
+      MessageRetentionPeriod: 1209600
+      RedriveAllowPolicy:
+        redrivePermission: allowAll
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
 
@@ -3620,7 +3662,21 @@ Resources:
     Type: AWS::SQS::Queue
     Properties:
       KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
+      MessageRetentionPeriod: 1209600
       VisibilityTimeout: 720
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt AccountDeletionProcessDeadLetterQueue.Arn
+        maxReceiveCount: 5
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+
+  AccountDeletionProcessDeadLetterQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
+      MessageRetentionPeriod: 1209600
+      RedriveAllowPolicy:
+        redrivePermission: allowAll
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
 
@@ -3646,6 +3702,106 @@ Resources:
       Dimensions:
         - Name: QueueName
           Value: !GetAtt AccountSavedNotificationQueue.QueueName
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+
+  AccountSavedNotificationDeadLetterQueueOldestMessageAgeAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            AccountSavedNotificationDeadLetterQueueOldestMessageAgeAlarm,
+          ],
+        ]
+      MetricName: ApproximateAgeOfOldestMessage
+      Namespace: AWS/SQS
+      Statistic: Maximum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 300
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt AccountSavedNotificationDeadLetterQueue.QueueName
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+
+  30DayNotificationDeadLetterQueueOldestMessageAgeAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            30DayNotificationDeadLetterQueueOldestMessageAgeAlarm,
+          ],
+        ]
+      MetricName: ApproximateAgeOfOldestMessage
+      Namespace: AWS/SQS
+      Statistic: Maximum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 300
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt 30DayNotificationDeadLetterQueue.QueueName
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+
+  7DayNotificationDeadLetterQueueOldestMessageAgeAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            7DayNotificationDeadLetterQueueOldestMessageAgeAlarm,
+          ],
+        ]
+      MetricName: ApproximateAgeOfOldestMessage
+      Namespace: AWS/SQS
+      Statistic: Maximum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 300
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt 7DayNotificationDeadLetterQueue.QueueName
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+
+  AccountDeletionProcessDeadLetterQueueOldestMessageAgeAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            AccountDeletionProcessDeadLetterQueueOldestMessageAgeAlarm,
+          ],
+        ]
+      MetricName: ApproximateAgeOfOldestMessage
+      Namespace: AWS/SQS
+      Statistic: Maximum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 300
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt AccountDeletionProcessDeadLetterQueue.QueueName
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
 

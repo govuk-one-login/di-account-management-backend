@@ -1052,6 +1052,30 @@ Resources:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
       TreatMissingData: notBreaching
 
+  AuditDeadLetterQueueAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [!Ref AWS::StackName, !Ref Environment, AuditDeadLetterQueueAlarm],
+        ]
+      AlarmDescription: More than 1 audit event failed to be sent to TxMA in the last 5 minutes.
+      Namespace: "AWS/SQS"
+      MetricName: "ApproximateNumberOfMessagesVisible"
+      Dimensions:
+        - Name: "QueueName"
+          Value: !GetAtt AuditDeadLetterQueue.QueueName
+      Statistic: "Maximum"
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: "GreaterThanOrEqualToThreshold"
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      ActionsEnabled: true
+      TreatMissingData: notBreaching
+
   ######################
   # Save Raw Events
   ######################
@@ -2858,6 +2882,30 @@ Resources:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
       TreatMissingData: notBreaching
 
+  UserAccountDeletionTopicSubscriptionDeleteEmailSubscriptionsDeadLetterQueueAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [!Ref AWS::StackName, !Ref Environment, UserAccountDeletionTopicSubscriptionDeleteEmailSubscriptionsDeadLetterQueueAlarm],
+        ]
+      AlarmDescription: More than 1 account deletion email subscription cleanup message failed in the last 5 minutes.
+      Namespace: "AWS/SQS"
+      MetricName: "ApproximateNumberOfMessagesVisible"
+      Dimensions:
+        - Name: "QueueName"
+          Value: !GetAtt UserAccountDeletionTopicSubscriptionDeleteEmailSubscriptionsDeadLetterQueue.QueueName
+      Statistic: "Maximum"
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: "GreaterThanOrEqualToThreshold"
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      ActionsEnabled: true
+      TreatMissingData: notBreaching
+
   DeleteEmailSubscriptionsDeadLetterQueueOldestMessageAgeAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
@@ -2882,6 +2930,30 @@ Resources:
           Value: !GetAtt DeleteEmailSubscriptionsDeadLetterQueue.QueueName
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      TreatMissingData: notBreaching
+
+  DeleteEmailSubscriptionsDeadLetterQueueAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [!Ref AWS::StackName, !Ref Environment, DeleteEmailSubscriptionsDeadLetterQueueAlarm],
+        ]
+      AlarmDescription: More than 1 email subscription deletion failed in the last 5 minutes.
+      Namespace: "AWS/SQS"
+      MetricName: "ApproximateNumberOfMessagesVisible"
+      Dimensions:
+        - Name: "QueueName"
+          Value: !GetAtt DeleteEmailSubscriptionsDeadLetterQueue.QueueName
+      Statistic: "Maximum"
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: "GreaterThanOrEqualToThreshold"
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      ActionsEnabled: true
       TreatMissingData: notBreaching
 
   ActivityLogToFormatQueueOldestMessageAgeAlarm:
@@ -3622,6 +3694,30 @@ Resources:
       MessageRetentionPeriod: 1209600
       KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
 
+  UpdateInactiveAccountTrackerDeadLetterQueueAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [!Ref AWS::StackName, !Ref Environment, UpdateInactiveAccountTrackerDeadLetterQueueAlarm],
+        ]
+      AlarmDescription: More than 1 inactive account tracker update failed in the last 5 minutes.
+      Namespace: "AWS/SQS"
+      MetricName: "ApproximateNumberOfMessagesVisible"
+      Dimensions:
+        - Name: "QueueName"
+          Value: !GetAtt UpdateInactiveAccountTrackerDeadLetterQueue.QueueName
+      Statistic: "Maximum"
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: "GreaterThanOrEqualToThreshold"
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/HighAlertNotificationTopic/ARN}}"
+      ActionsEnabled: true
+      TreatMissingData: notBreaching
+
   AccountSavedNotificationQueue:
     Type: AWS::SQS::Queue
     Properties:
@@ -3787,6 +3883,30 @@ Resources:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
       TreatMissingData: notBreaching
 
+  30DayNotificationDeadLetterQueueAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [!Ref AWS::StackName, !Ref Environment, 30DayNotificationDeadLetterQueueAlarm],
+        ]
+      AlarmDescription: More than 1 message failed to be processed by the 30 day inactivity warning in the last 5 minutes.
+      Namespace: "AWS/SQS"
+      MetricName: "ApproximateNumberOfMessagesVisible"
+      Dimensions:
+        - Name: "QueueName"
+          Value: !GetAtt 30DayNotificationDeadLetterQueue.QueueName
+      Statistic: "Maximum"
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: "GreaterThanOrEqualToThreshold"
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      ActionsEnabled: true
+      TreatMissingData: notBreaching
+
   7DayNotificationDeadLetterQueueOldestMessageAgeAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
@@ -3813,6 +3933,30 @@ Resources:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
       TreatMissingData: notBreaching
 
+  7DayNotificationDeadLetterQueueAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [!Ref AWS::StackName, !Ref Environment, 7DayNotificationDeadLetterQueueAlarm],
+        ]
+      AlarmDescription: More than 1 message failed to be processed by the 7 day inactivity warning in the last 5 minutes.
+      Namespace: "AWS/SQS"
+      MetricName: "ApproximateNumberOfMessagesVisible"
+      Dimensions:
+        - Name: "QueueName"
+          Value: !GetAtt 7DayNotificationDeadLetterQueue.QueueName
+      Statistic: "Maximum"
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: "GreaterThanOrEqualToThreshold"
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      ActionsEnabled: true
+      TreatMissingData: notBreaching
+
   AccountDeletionProcessDeadLetterQueueOldestMessageAgeAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
@@ -3837,6 +3981,30 @@ Resources:
           Value: !GetAtt AccountDeletionProcessDeadLetterQueue.QueueName
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      TreatMissingData: notBreaching
+
+  AccountDeletionProcessDeadLetterQueueAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [!Ref AWS::StackName, !Ref Environment, AccountDeletionProcessDeadLetterQueueAlarm],
+        ]
+      AlarmDescription: More than 1 inactive account deletion request failed to be processed in the last 5 minutes.
+      Namespace: "AWS/SQS"
+      MetricName: "ApproximateNumberOfMessagesVisible"
+      Dimensions:
+        - Name: "QueueName"
+          Value: !GetAtt AccountDeletionProcessDeadLetterQueue.QueueName
+      Statistic: "Maximum"
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: "GreaterThanOrEqualToThreshold"
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/HighAlertNotificationTopic/ARN}}"
+      ActionsEnabled: true
       TreatMissingData: notBreaching
 
   UpdateInactiveAccountTrackerRole:
@@ -4262,6 +4430,30 @@ Resources:
     Properties:
       MessageRetentionPeriod: 1209600
       KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
+
+  PublishAccountDeletionDeadLetterQueueAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [!Ref AWS::StackName, !Ref Environment, PublishAccountDeletionDeadLetterQueueAlarm],
+        ]
+      AlarmDescription: More than 1 account deletion publish failed in the last 5 minutes.
+      Namespace: "AWS/SQS"
+      MetricName: "ApproximateNumberOfMessagesVisible"
+      Dimensions:
+        - Name: "QueueName"
+          Value: !GetAtt PublishAccountDeletionDeadLetterQueue.QueueName
+      Statistic: "Maximum"
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: "GreaterThanOrEqualToThreshold"
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      ActionsEnabled: true
+      TreatMissingData: notBreaching
 
   PublishAccountDeletionRole:
     Type: AWS::IAM::Role
@@ -7780,6 +7972,30 @@ Resources:
       MessageRetentionPeriod: 1209600
       KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
 
+  ProcessInactiveAccountDeadLetterQueueAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [!Ref AWS::StackName, !Ref Environment, ProcessInactiveAccountDeadLetterQueueAlarm],
+        ]
+      AlarmDescription: More than 1 inactive account notification or deletion request failed to be processed in the last 5 minutes.
+      Namespace: "AWS/SQS"
+      MetricName: "ApproximateNumberOfMessagesVisible"
+      Dimensions:
+        - Name: "QueueName"
+          Value: !GetAtt ProcessInactiveAccountDeadLetterQueue.QueueName
+      Statistic: "Maximum"
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: "GreaterThanOrEqualToThreshold"
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      ActionsEnabled: true
+      TreatMissingData: notBreaching
+
   ProcessInactiveAccountFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -8014,6 +8230,30 @@ Resources:
     Properties:
       MessageRetentionPeriod: 1209600
       KmsMasterKeyId: !GetAtt QueueKmsKey.Arn
+
+  InactiveAccountDeletionForecastDeadLetterQueueAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [!Ref AWS::StackName, !Ref Environment, InactiveAccountDeletionForecastDeadLetterQueueAlarm],
+        ]
+      AlarmDescription: More than 1 inactive account deletion forecast failed to be published in the last 5 minutes.
+      Namespace: "AWS/SQS"
+      MetricName: "ApproximateNumberOfMessagesVisible"
+      Dimensions:
+        - Name: "QueueName"
+          Value: !GetAtt InactiveAccountDeletionForecastDeadLetterQueue.QueueName
+      Statistic: "Maximum"
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: "GreaterThanOrEqualToThreshold"
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      ActionsEnabled: true
+      TreatMissingData: notBreaching
 
   OverdueDeletionAccountsAlarm:
     Type: AWS::CloudWatch::Alarm

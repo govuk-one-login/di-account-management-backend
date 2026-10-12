@@ -2275,7 +2275,7 @@ Resources:
       Threshold: 1
       ComparisonOperator: "GreaterThanOrEqualToThreshold"
       AlarmActions:
-        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/HighAlertNotificationTopic/ARN}}"
       ActionsEnabled: true
 
   AccountDeletionDeadLetterQueueOldestMessageAgeAlarm:

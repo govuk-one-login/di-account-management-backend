@@ -80,6 +80,7 @@ describe("UpdateInactiveAccountTracker handler", () => {
     delete process.env.SEND_INACTIVE_ACCOUNT_DELETION_EMAILS;
     delete process.env.TXMA_QUEUE_URL;
     delete process.env.AWS_REGION;
+    vi.useRealTimers();
   });
 
   test("queries CommonSubjectIdIndex with user_id", async () => {
@@ -479,6 +480,8 @@ describe("UpdateInactiveAccountTracker handler", () => {
   });
 
   test("does not send account-saved notification when the DynamoDB write fails", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-06-01T00:00:00.000Z"));
     const within30DaysDate = new Date();
     within30DaysDate.setDate(within30DaysDate.getDate() + 15);
     const dateStr = within30DaysDate.toISOString().split("T")[0];
@@ -1310,6 +1313,8 @@ describe("UpdateInactiveAccountTracker handler", () => {
   });
 
   test("sends INACTIVE_ACCOUNT_SAVED_APP to SQS when user is within 30 days of deletion and logs in via App", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-06-01T00:00:00.000Z"));
     const within30DaysDate = new Date();
     within30DaysDate.setDate(within30DaysDate.getDate() + 15);
     const dateStr = within30DaysDate.toISOString().split("T")[0];
@@ -1392,6 +1397,8 @@ describe("UpdateInactiveAccountTracker handler", () => {
   });
 
   test("sends INACTIVE_ACCOUNT_SAVED_HOME to SQS when user is within 30 days of deletion and logs in via Home", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-06-01T00:00:00.000Z"));
     const within30DaysDate = new Date();
     within30DaysDate.setDate(within30DaysDate.getDate() + 15);
     const dateStr = within30DaysDate.toISOString().split("T")[0];
@@ -1474,6 +1481,8 @@ describe("UpdateInactiveAccountTracker handler", () => {
   });
 
   test("does not send account saved email and emits UnusableAccount skipped audit event when user has not set up MFA", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-06-01T00:00:00.000Z"));
     const within30DaysDate = new Date();
     within30DaysDate.setDate(within30DaysDate.getDate() + 15);
     const dateStr = within30DaysDate.toISOString().split("T")[0];
@@ -1528,6 +1537,8 @@ describe("UpdateInactiveAccountTracker handler", () => {
   });
 
   test("sends INACTIVE_ACCOUNT_SAVED_RP to SQS when user is within 30 days of deletion and logs in via an RP that is not GOVUK App or OLH", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-06-01T00:00:00.000Z"));
     const within30DaysDate = new Date();
     within30DaysDate.setDate(within30DaysDate.getDate() + 15);
     const dateStr = within30DaysDate.toISOString().split("T")[0];
@@ -1610,6 +1621,8 @@ describe("UpdateInactiveAccountTracker handler", () => {
   });
 
   test("sends INACTIVE_ACCOUNT_SAVED_APP to SQS when STS_REFRESH_TOKEN_ISSUED event has no client_id", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-06-01T00:00:00.000Z"));
     const within30DaysDate = new Date();
     within30DaysDate.setDate(within30DaysDate.getDate() + 15);
     const dateStr = within30DaysDate.toISOString().split("T")[0];
@@ -1655,6 +1668,8 @@ describe("UpdateInactiveAccountTracker handler", () => {
   });
 
   test("logs warning when no email address and deletion date is within 30 days", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-06-01T00:00:00.000Z"));
     const within30DaysDate = new Date();
     within30DaysDate.setDate(within30DaysDate.getDate() + 15);
     const dateStr = within30DaysDate.toISOString().split("T")[0];
@@ -1720,6 +1735,8 @@ describe("UpdateInactiveAccountTracker handler", () => {
   });
 
   test("does not send SQS message when newItem has no emailAddress, even if deletion date is within 30 days", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-06-01T00:00:00.000Z"));
     const within30DaysDate = new Date();
     within30DaysDate.setDate(within30DaysDate.getDate() + 15);
     const dateStr = within30DaysDate.toISOString().split("T")[0];
@@ -1783,6 +1800,8 @@ describe("UpdateInactiveAccountTracker handler", () => {
   });
 
   test("does not send message when deletion date is too far in the future", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-06-01T00:00:00.000Z"));
     const outside30DaysDate = new Date();
     outside30DaysDate.setDate(outside30DaysDate.getDate() + 45);
     const dateStr = outside30DaysDate.toISOString().split("T")[0];
@@ -1811,6 +1830,8 @@ describe("UpdateInactiveAccountTracker handler", () => {
   });
 
   test("does not send message when inactive account deletion emails feature flag is off", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-06-01T00:00:00.000Z"));
     const within30DaysDate = new Date();
     within30DaysDate.setDate(within30DaysDate.getDate() + 15);
     const dateStr = within30DaysDate.toISOString().split("T")[0];
@@ -1862,6 +1883,8 @@ describe("UpdateInactiveAccountTracker handler", () => {
   });
 
   test("does not send HOME_ACCOUNT_TRACKER_ACCOUNT_REACTIVATED when deletion is not within 30 days", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-06-01T00:00:00.000Z"));
     const outside30DaysDate = new Date();
     outside30DaysDate.setDate(outside30DaysDate.getDate() + 45);
     const dateStr = outside30DaysDate.toISOString().split("T")[0];

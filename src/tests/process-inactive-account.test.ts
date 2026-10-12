@@ -140,6 +140,48 @@ describe("process-inactive-account handler", () => {
     process.env.USER_NOTIFICATIONS_TABLE_NAME = "test-user-notifications-table";
   });
 
+  test("logs ProcessInactiveAccount for each record before processing", async () => {
+    const infoSpy = vi.spyOn(Logger.prototype, "info");
+
+    const body = {
+      commonSubjectId: "user-123",
+      emailAddress: "test@example.com",
+      dateForDeletion: "2026-08-15",
+      processName: "Warning30Day",
+      status: "pending",
+      statusLastUpdated: "2026-01-01T00:00:00.000Z",
+      userLastActive: "2021-06-20T00:00:00.000Z",
+      userLastActiveSource: "AUTH_AUTH_CODE_ISSUED",
+      userLastActiveSourceId: "event-guid",
+      userLastActiveUpdated: "2026-01-01T00:00:00.000Z",
+      emailAddressLastUpdated: "2026-01-01T00:00:00.000Z",
+      emailAddressSource: "AUTH_AUTH_CODE_ISSUED",
+      emailAddressSourceId: "email-event-guid",
+      hasSetupMfa: "false",
+      isDryRun: false,
+    };
+
+    await handler(buildSqsEvent([body]), {} as Context);
+
+    expect(infoSpy).toHaveBeenCalledWith("ProcessInactiveAccount", {
+      dateForDeletion: body.dateForDeletion,
+      processName: body.processName,
+      status: body.status,
+      statusLastUpdated: body.statusLastUpdated,
+      userLastActive: body.userLastActive,
+      userLastActiveSource: body.userLastActiveSource,
+      userLastActiveSourceId: body.userLastActiveSourceId,
+      userLastActiveUpdated: body.userLastActiveUpdated,
+      emailAddressLastUpdated: body.emailAddressLastUpdated,
+      emailAddressSource: body.emailAddressSource,
+      emailAddressSourceId: body.emailAddressSourceId,
+      hasSetupMfa: body.hasSetupMfa,
+      isDryRun: "0",
+    });
+
+    infoSpy.mockRestore();
+  });
+
   test("aborts early and logs when circuit breaker is active", async () => {
     mockIsIadCircuitBreakerTripped.mockResolvedValue(true);
 
@@ -1176,6 +1218,73 @@ describe("process-inactive-account handler", () => {
     );
     // status should still be updated in the inactive account tracker
     expect(dynamoMock).toHaveReceivedCommand(UpdateCommand);
+  });
+
+  describe("Successfully processed inactive account log", () => {
+    test("logs skippedActions as '0' when notification was sent", async () => {
+      const infoSpy = vi.spyOn(Logger.prototype, "info");
+
+      const body = {
+        commonSubjectId: "user-123",
+        emailAddress: "test@example.com",
+        dateForDeletion: "2026-08-15",
+        processName: "Warning30Day",
+        status: "pending",
+        statusLastUpdated: "2026-01-01T00:00:00.000Z",
+        userLastActive: "2021-06-20T00:00:00.000Z",
+        userLastActiveSource: "AUTH_AUTH_CODE_ISSUED",
+        userLastActiveSourceId: "event-guid",
+        userLastActiveUpdated: "2026-01-01T00:00:00.000Z",
+        emailAddressLastUpdated: "2026-01-01T00:00:00.000Z",
+        emailAddressSource: "AUTH_AUTH_CODE_ISSUED",
+        emailAddressSourceId: "email-event-guid",
+        hasSetupMfa: "false",
+      };
+
+      await handler(buildSqsEvent([body]), {} as Context);
+
+      expect(infoSpy).toHaveBeenCalledWith(
+        "Successfully processed inactive account",
+        expect.objectContaining({
+          dateForDeletion: body.dateForDeletion,
+          processName: body.processName,
+          status: body.status,
+          targetStatus: "30DayWarningSent",
+          skippedActions: "0",
+        })
+      );
+
+      infoSpy.mockRestore();
+    });
+
+    test("logs skippedActions as '1' when a continueWithoutActions guard activated", async () => {
+      mockSendInactiveAccountEmailsIsDisabled.mockResolvedValue(
+        inactiveAccountEmailsFeatureFlagDisabled
+      );
+
+      const infoSpy = vi.spyOn(Logger.prototype, "info");
+
+      const body = {
+        commonSubjectId: "user-456",
+        emailAddress: "user@example.com",
+        dateForDeletion: "2026-07-27",
+        processName: "Warning7Day",
+        status: "30DayWarningSent",
+      };
+
+      await handler(buildSqsEvent([body]), {} as Context);
+
+      expect(infoSpy).toHaveBeenCalledWith(
+        "Successfully processed inactive account",
+        expect.objectContaining({
+          processName: body.processName,
+          targetStatus: "7DayWarningSent",
+          skippedActions: "1",
+        })
+      );
+
+      infoSpy.mockRestore();
+    });
   });
 
   describe("guard short-circuit behaviour", () => {

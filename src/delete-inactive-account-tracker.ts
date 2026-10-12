@@ -207,6 +207,14 @@ export const handler = async (
 
         const result = await deleteUserData(userData, accountDeletionReason);
 
+        if (accountDeletionReason === "INACTIVE_ACCOUNT") {
+          logger.info("InactiveAccountDeleted", {
+            hasUndeliverableEmailAddress: result.hasUndeliverableEmailAddress,
+            hasSetupMfa: result.hasSetupMfa,
+            dateForDeletion: result.dateForDeletion,
+          });
+        }
+
         if (result.deleted && accountDeletionReason === "INACTIVE_ACCOUNT") {
           await maybeEnqueueDeletionEmail(
             userData.user_id,

@@ -42,6 +42,22 @@ enum GuardsOutcome {
   abort = "abort",
 }
 
+const getBodyFieldsForLogging = (body: ProcessInactiveAccountMessage) => ({
+  dateForDeletion: body.dateForDeletion,
+  processName: body.processName,
+  status: body.status,
+  statusLastUpdated: body.statusLastUpdated,
+  userLastActive: body.userLastActive,
+  userLastActiveSource: body.userLastActiveSource,
+  userLastActiveSourceId: body.userLastActiveSourceId,
+  userLastActiveUpdated: body.userLastActiveUpdated,
+  emailAddressLastUpdated: body.emailAddressLastUpdated,
+  emailAddressSource: body.emailAddressSource,
+  emailAddressSourceId: body.emailAddressSourceId,
+  hasSetupMfa: body.hasSetupMfa,
+  isDryRun: body.isDryRun ? "1" : "0",
+});
+
 async function runSubsetOfGuards(
   guards: NonNullable<ProcessConfig[number]["guards"]>[keyof NonNullable<
     ProcessConfig[number]["guards"]
@@ -55,22 +71,10 @@ async function runSubsetOfGuards(
 
     if (guardResult.guardActivated) {
       logger.info(logMessage, {
-        dateForDeletion: body.dateForDeletion,
-        processName: body.processName,
-        status: body.status,
-        statusLastUpdated: body.statusLastUpdated,
-        userLastActive: body.userLastActive,
-        userLastActiveSource: body.userLastActiveSource,
-        userLastActiveSourceId: body.userLastActiveSourceId,
-        userLastActiveUpdated: body.userLastActiveUpdated,
-        emailAddressLastUpdated: body.emailAddressLastUpdated,
-        emailAddressSource: body.emailAddressSource,
-        emailAddressSourceId: body.emailAddressSourceId,
-        hasSetupMfa: body.hasSetupMfa,
+        ...getBodyFieldsForLogging(body),
         guardrailType: guardResult.guardName,
         isCritical: guard.isCritical ? "1" : "0",
         continueProcessingRecords: "1",
-        isDryRun: body.isDryRun ? "1" : "0",
       });
 
       if (guard.skippedNotificationAuditEventName) {
@@ -344,8 +348,10 @@ async function processRecord(
   await emitAuditEvent(process, body);
 
   logger.info("Successfully processed inactive account", {
-    processName: body.processName,
+    ...getBodyFieldsForLogging(body),
     targetStatus: process.targetStatus,
+    skippedActions:
+      runGuardsOutcome === GuardsOutcome.continueWithoutActions ? "1" : "0",
   });
 }
 
@@ -368,26 +374,16 @@ export const handler = async (
   for (const record of event.Records) {
     const body = JSON.parse(record.body) as ProcessInactiveAccountMessage;
 
+    logger.info("ProcessInactiveAccount", getBodyFieldsForLogging(body));
+
     const circuitBreakerTripped = await isIadCircuitBreakerTripped();
 
     if (circuitBreakerTripped) {
       logger.info("GuardrailAbortedProcessInactiveAccounts", {
-        dateForDeletion: body.dateForDeletion,
-        processName: body.processName,
-        status: body.status,
-        statusLastUpdated: body.statusLastUpdated,
-        userLastActive: body.userLastActive,
-        userLastActiveSource: body.userLastActiveSource,
-        userLastActiveSourceId: body.userLastActiveSourceId,
-        userLastActiveUpdated: body.userLastActiveUpdated,
-        emailAddressLastUpdated: body.emailAddressLastUpdated,
-        emailAddressSource: body.emailAddressSource,
-        emailAddressSourceId: body.emailAddressSourceId,
-        hasSetupMfa: body.hasSetupMfa,
+        ...getBodyFieldsForLogging(body),
         guardrailType: "CircuitBreakerAlreadyTripped",
         isCritical: "1",
         continueProcessingRecords: "0",
-        isDryRun: body.isDryRun ? "1" : "0",
       });
       // Report this and every remaining record in the batch as failed so
       // SQS retries them later, rather than silently dropping them.

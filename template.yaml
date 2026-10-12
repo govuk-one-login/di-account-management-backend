@@ -282,6 +282,20 @@ Mappings:
     production:
       AccountNumber: "211125303002"
 
+  IADDeleteAccountSchedule:
+    demo:
+      State: "DISABLED"
+    dev:
+      State: "DISABLED"
+    build:
+      State: "DISABLED"
+    staging:
+      State: "ENABLED"
+    integration:
+      State: "DISABLED"
+    production:
+      State: "DISABLED"
+
   EnvironmentVariables:
     ### These environment variables are referenced further down the file.
     ### Please ensure that any variables defined for an environment are defined for _all_ environments.
@@ -7324,13 +7338,24 @@ Resources:
         Warning7DayScheduleEvent:
           Type: Schedule
           Properties:
-            Schedule: "cron(0 9 * * ? *)"
+            Schedule: "cron(15 9 * * ? *)"
             Input: '{"processName": "Warning7Day"}'
         DeletionDryRunScheduleEvent:
           Type: Schedule
           Properties:
-            Schedule: "cron(0 1 * * ? *)"
+            Schedule: "cron(0 7 * * ? *)"
             Input: '{"processName": "DeletionDryRun"}'
+        DeleteAccountScheduleEvent:
+          Type: Schedule
+          Properties:
+            Schedule: "cron(15 10 ? * MON-FRI *)"
+            Input: '{"processName": "DeleteAccount"}'
+            State:
+              !FindInMap [
+                IADDeleteAccountSchedule,
+                !Ref Environment,
+                State,
+              ]
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt QueryAndDispatchInactiveAccountsDeadLetterQueue.Arn

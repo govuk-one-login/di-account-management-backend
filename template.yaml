@@ -870,6 +870,7 @@ Resources:
           Value: !GetAtt TxMAInputDummyQueue.QueueName
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      TreatMissingData: notBreaching
 
   TxMAIADInputDummyQueue:
     Type: AWS::SQS::Queue
@@ -902,6 +903,7 @@ Resources:
           Value: !GetAtt TxMAIADInputDummyQueue.QueueName
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      TreatMissingData: notBreaching
 
   ########################################
   # Output queue for audit events to TxMA
@@ -1022,6 +1024,7 @@ Resources:
           Value: !GetAtt AuditOutputQueue.QueueName
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      TreatMissingData: notBreaching
 
   AuditDeadLetterQueueOldestMessageAgeAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -1047,6 +1050,7 @@ Resources:
           Value: !GetAtt AuditDeadLetterQueue.QueueName
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      TreatMissingData: notBreaching
 
   ######################
   # Save Raw Events
@@ -1237,6 +1241,7 @@ Resources:
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
       ActionsEnabled: true
+      TreatMissingData: notBreaching
 
   SaveRawEventsDeadLetterQueueOldestMessageAgeAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -1262,6 +1267,7 @@ Resources:
           Value: !GetAtt SaveRawEventsDeadLetterQueue.QueueName
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      TreatMissingData: notBreaching
 
   SaveRawEventsFunctionSuccessRate:
     Type: AWS::CloudWatch::Alarm
@@ -1525,6 +1531,7 @@ Resources:
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
       ActionsEnabled: true
+      TreatMissingData: notBreaching
 
   QueryUserServicesDeadLetterQueueOldestMessageAgeAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -1550,6 +1557,7 @@ Resources:
           Value: !GetAtt QueryUserServicesDeadLetterQueue.QueueName
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      TreatMissingData: notBreaching
 
   UserServicesToFormatQueueOldestMessageAgeAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -1575,6 +1583,7 @@ Resources:
           Value: !GetAtt UserServicesToFormatQueue.QueueName
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      TreatMissingData: notBreaching
 
   QueryUserServicesFunctionSuccessRate:
     Type: AWS::CloudWatch::Alarm
@@ -1771,6 +1780,7 @@ Resources:
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
       ActionsEnabled: true
+      TreatMissingData: notBreaching
 
   FormatUserServicesDeadLetterQueueOldestMessageAgeAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -1796,6 +1806,7 @@ Resources:
           Value: !GetAtt FormatUserServicesDeadLetterQueue.QueueName
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      TreatMissingData: notBreaching
 
   UserServicesToWriteQueueOldestMessageAgeAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -1821,6 +1832,7 @@ Resources:
           Value: !GetAtt UserServicesToWriteQueue.QueueName
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      TreatMissingData: notBreaching
 
   FormatUserServicesFunctionSuccessRate:
     Type: AWS::CloudWatch::Alarm
@@ -2058,6 +2070,7 @@ Resources:
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
       ActionsEnabled: true
+      TreatMissingData: notBreaching
 
   WriteUserServicesDeadLetterQueueOldestMessageAgeAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -2083,6 +2096,7 @@ Resources:
           Value: !GetAtt WriteUserServicesDeadLetterQueue.QueueName
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      TreatMissingData: notBreaching
 
   WriteUserServicesFunctionSuccessRate:
     Type: AWS::CloudWatch::Alarm
@@ -2277,6 +2291,7 @@ Resources:
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/HighAlertNotificationTopic/ARN}}"
       ActionsEnabled: true
+      TreatMissingData: notBreaching
 
   AccountDeletionDeadLetterQueueOldestMessageAgeAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -2302,6 +2317,7 @@ Resources:
           Value: !GetAtt AccountDeletionDeadLetterQueue.QueueName
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      TreatMissingData: notBreaching
 
   AccountDeletionQueueOldestMessageAgeAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -2327,6 +2343,7 @@ Resources:
           Value: !GetAtt AccountDeletionQueue.QueueName
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      TreatMissingData: notBreaching
 
   ################################
   # Deleting User Services Records
@@ -2510,6 +2527,7 @@ Resources:
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
       ActionsEnabled: true
+      TreatMissingData: notBreaching
 
   DeleteDeadLetterQueueAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -2533,6 +2551,7 @@ Resources:
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
       ActionsEnabled: true
+      TreatMissingData: notBreaching
 
   DeleteUserServicesDeadLetterQueueOldestMessageAgeAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -2558,6 +2577,7 @@ Resources:
           Value: !GetAtt DeleteUserServicesDeadLetterQueue.QueueName
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      TreatMissingData: notBreaching
 
   UserAccountDeletionTopicDeadLetterQueueOldestMessageAgeAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -2583,6 +2603,7 @@ Resources:
           Value: !GetAtt UserAccountDeletionTopicDeadLetterQueue.QueueName
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      TreatMissingData: notBreaching
 
   DeleteUserServicesFunctionSuccessRate:
     Type: AWS::CloudWatch::Alarm
@@ -2835,6 +2856,7 @@ Resources:
           Value: !GetAtt UserAccountDeletionTopicSubscriptionDeleteEmailSubscriptionsDeadLetterQueue.QueueName
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      TreatMissingData: notBreaching
 
   DeleteEmailSubscriptionsDeadLetterQueueOldestMessageAgeAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -2860,6 +2882,7 @@ Resources:
           Value: !GetAtt DeleteEmailSubscriptionsDeadLetterQueue.QueueName
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      TreatMissingData: notBreaching
 
   ActivityLogToFormatQueueOldestMessageAgeAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -2885,6 +2908,7 @@ Resources:
           Value: !GetAtt ActivityLogToFormatQueue.QueueName
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      TreatMissingData: notBreaching
 
   DeleteEmailSubscriptionsFunctionSuccessRate:
     Type: AWS::CloudWatch::Alarm
@@ -3103,6 +3127,7 @@ Resources:
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
       ActionsEnabled: true
+      TreatMissingData: notBreaching
 
   WriteActivityLogDeadLetterQueueOldestMessageAgeAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -3128,6 +3153,7 @@ Resources:
           Value: !GetAtt WriteActivityLogDeadLetterQueue.QueueName
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      TreatMissingData: notBreaching
 
   WriteActivityLogFunctionSuccessRate:
     Type: AWS::CloudWatch::Alarm
@@ -3361,6 +3387,7 @@ Resources:
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
       ActionsEnabled: true
+      TreatMissingData: notBreaching
 
   FormatActivityLogDeadLetterQueueOldestMessageAgeAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -3386,6 +3413,7 @@ Resources:
           Value: !GetAtt FormatActivityLogDeadLetterQueue.QueueName
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      TreatMissingData: notBreaching
 
   ActivityLogToWriteQueueOldestMessageAgeAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -3411,6 +3439,7 @@ Resources:
           Value: !GetAtt ActivityLogToWriteQueue.QueueName
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      TreatMissingData: notBreaching
 
   FormatActivityLogFunctionSuccessRate:
     Type: AWS::CloudWatch::Alarm
@@ -3704,6 +3733,7 @@ Resources:
           Value: !GetAtt AccountSavedNotificationQueue.QueueName
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      TreatMissingData: notBreaching
 
   AccountSavedNotificationDeadLetterQueueOldestMessageAgeAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -3729,6 +3759,7 @@ Resources:
           Value: !GetAtt AccountSavedNotificationDeadLetterQueue.QueueName
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      TreatMissingData: notBreaching
 
   30DayNotificationDeadLetterQueueOldestMessageAgeAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -3754,6 +3785,7 @@ Resources:
           Value: !GetAtt 30DayNotificationDeadLetterQueue.QueueName
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      TreatMissingData: notBreaching
 
   7DayNotificationDeadLetterQueueOldestMessageAgeAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -3779,6 +3811,7 @@ Resources:
           Value: !GetAtt 7DayNotificationDeadLetterQueue.QueueName
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      TreatMissingData: notBreaching
 
   AccountDeletionProcessDeadLetterQueueOldestMessageAgeAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -3804,6 +3837,7 @@ Resources:
           Value: !GetAtt AccountDeletionProcessDeadLetterQueue.QueueName
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      TreatMissingData: notBreaching
 
   UpdateInactiveAccountTrackerRole:
     Type: AWS::IAM::Role
@@ -4122,6 +4156,7 @@ Resources:
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
       ActionsEnabled: true
+      TreatMissingData: notBreaching
 
   UpdateUserEmailFunctionSuccessRate:
     Type: AWS::CloudWatch::Alarm
@@ -4353,6 +4388,7 @@ Resources:
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
       ActionsEnabled: true
+      TreatMissingData: notBreaching
 
   DeleteActivityLogFunction:
     DependsOn:
@@ -4519,6 +4555,7 @@ Resources:
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
       ActionsEnabled: true
+      TreatMissingData: notBreaching
 
   DeleteActivityLogSubscriptionDeadLetterQueueOldestMessageAgeAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -4544,6 +4581,7 @@ Resources:
           Value: !GetAtt DeleteActivityLogSubscriptionDeadLetterQueue.QueueName
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      TreatMissingData: notBreaching
 
   DeleteActivityLogDeadLetterQueueOldestMessageAgeAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -4569,6 +4607,7 @@ Resources:
           Value: !GetAtt DeleteActivityLogDeadLetterQueue.QueueName
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      TreatMissingData: notBreaching
 
   DeleteActivityLogFunctionSuccessRate:
     Type: AWS::CloudWatch::Alarm
@@ -4816,6 +4855,7 @@ Resources:
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
       ActionsEnabled: true
+      TreatMissingData: notBreaching
 
   DeleteUserNotificationsSubscriptionDeadLetterQueueAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -4843,6 +4883,7 @@ Resources:
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
       ActionsEnabled: true
+      TreatMissingData: notBreaching
 
   DeleteUserNotificationsDeadLetterQueueOldestMessageAgeAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -4868,6 +4909,7 @@ Resources:
           Value: !GetAtt DeleteUserNotificationsDeadLetterQueue.QueueName
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      TreatMissingData: notBreaching
 
   DeleteUserNotificationsSubscriptionDeadLetterQueueOldestMessageAgeAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -4893,6 +4935,7 @@ Resources:
           Value: !GetAtt DeleteUserNotificationsSubscriptionDeadLetterQueue.QueueName
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      TreatMissingData: notBreaching
 
   DeleteUserNotificationsFunctionSuccessRate:
     Type: AWS::CloudWatch::Alarm
@@ -5159,6 +5202,7 @@ Resources:
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
       ActionsEnabled: true
+      TreatMissingData: notBreaching
 
   DeleteInactiveAccountTrackerSubscriptionDeadLetterQueueAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -5186,6 +5230,7 @@ Resources:
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
       ActionsEnabled: true
+      TreatMissingData: notBreaching
 
   DeleteInactiveAccountTrackerDeadLetterQueueOldestMessageAgeAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -5211,6 +5256,7 @@ Resources:
           Value: !GetAtt DeleteInactiveAccountTrackerDeadLetterQueue.QueueName
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      TreatMissingData: notBreaching
 
   DeleteInactiveAccountTrackerSubscriptionDeadLetterQueueOldestMessageAgeAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -5236,6 +5282,7 @@ Resources:
           Value: !GetAtt DeleteInactiveAccountTrackerSubscriptionDeadLetterQueue.QueueName
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      TreatMissingData: notBreaching
 
   DeleteInactiveAccountTrackerFunctionSuccessRate:
     Type: AWS::CloudWatch::Alarm
@@ -5992,6 +6039,7 @@ Resources:
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/HighAlertNotificationTopic/ARN}}"
       ActionsEnabled: true
+      TreatMissingData: notBreaching
 
   TriggerSuspiciousActivityStepFunctionLambdaExecutionRetryAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -6142,6 +6190,7 @@ Resources:
           Value: !GetAtt TriggerSuspiciousActivityStepDeadLetterQueue.QueueName
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      TreatMissingData: notBreaching
 
   TriggerSuspiciousActivityStepFunctionSuccessRate:
     Type: AWS::CloudWatch::Alarm
@@ -7479,6 +7528,7 @@ Resources:
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
       ActionsEnabled: true
+      TreatMissingData: notBreaching
 
   QueryAndDispatchInactiveAccountsDeadLetterQueueOldestMessageAgeAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -7504,6 +7554,7 @@ Resources:
           Value: !GetAtt QueryAndDispatchInactiveAccountsDeadLetterQueue.QueueName
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      TreatMissingData: notBreaching
 
   QueryAndDispatchInactiveAccountsFunctionSuccessRate:
     Type: AWS::CloudWatch::Alarm

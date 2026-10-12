@@ -1229,7 +1229,7 @@ Resources:
       Dimensions:
         - Name: "QueueName"
           Value: !GetAtt SaveRawEventsDeadLetterQueue.QueueName
-      Statistic: "Sum"
+      Statistic: "Maximum"
       Period: 300
       EvaluationPeriods: 1
       Threshold: 1
@@ -1517,7 +1517,7 @@ Resources:
       Dimensions:
         - Name: "QueueName"
           Value: !GetAtt QueryUserServicesDeadLetterQueue.QueueName
-      Statistic: "Sum"
+      Statistic: "Maximum"
       Period: 300
       EvaluationPeriods: 1
       Threshold: 1
@@ -1763,7 +1763,7 @@ Resources:
       Dimensions:
         - Name: "QueueName"
           Value: !GetAtt FormatUserServicesDeadLetterQueue.QueueName
-      Statistic: "Sum"
+      Statistic: "Maximum"
       Period: 300
       EvaluationPeriods: 1
       Threshold: 1
@@ -2050,7 +2050,7 @@ Resources:
       Dimensions:
         - Name: "QueueName"
           Value: !GetAtt WriteUserServicesDeadLetterQueue.QueueName
-      Statistic: "Sum"
+      Statistic: "Maximum"
       Period: 300
       EvaluationPeriods: 1
       Threshold: 1
@@ -2269,7 +2269,7 @@ Resources:
       Dimensions:
         - Name: "QueueName"
           Value: !GetAtt AccountDeletionDeadLetterQueue.QueueName
-      Statistic: "Sum"
+      Statistic: "Maximum"
       Period: 300
       EvaluationPeriods: 1
       Threshold: 1
@@ -2502,7 +2502,7 @@ Resources:
       Dimensions:
         - Name: "QueueName"
           Value: !GetAtt UserAccountDeletionTopicDeadLetterQueue.QueueName
-      Statistic: "Sum"
+      Statistic: "Maximum"
       Period: 300
       EvaluationPeriods: 1
       Threshold: 1
@@ -2525,7 +2525,7 @@ Resources:
       Dimensions:
         - Name: "QueueName"
           Value: !GetAtt DeleteUserServicesDeadLetterQueue.QueueName
-      Statistic: "Sum"
+      Statistic: "Maximum"
       Period: 300
       EvaluationPeriods: 1
       Threshold: 1
@@ -3095,7 +3095,7 @@ Resources:
       Dimensions:
         - Name: "QueueName"
           Value: !GetAtt WriteActivityLogDeadLetterQueue.QueueName
-      Statistic: "Sum"
+      Statistic: "Maximum"
       Period: 300
       EvaluationPeriods: 1
       Threshold: 1
@@ -3353,7 +3353,7 @@ Resources:
       Dimensions:
         - Name: "QueueName"
           Value: !GetAtt FormatActivityLogDeadLetterQueue.QueueName
-      Statistic: "Sum"
+      Statistic: "Maximum"
       Period: 300
       EvaluationPeriods: 1
       Threshold: 1
@@ -4114,7 +4114,7 @@ Resources:
       Dimensions:
         - Name: "QueueName"
           Value: !GetAtt UpdateUserEmailDeadLetterQueue.QueueName
-      Statistic: "Sum"
+      Statistic: "Maximum"
       Period: 300
       EvaluationPeriods: 1
       Threshold: 1
@@ -4345,7 +4345,7 @@ Resources:
       Dimensions:
         - Name: "QueueName"
           Value: !GetAtt DeleteActivityLogSubscriptionDeadLetterQueue.QueueName
-      Statistic: "Sum"
+      Statistic: "Maximum"
       Period: 300
       EvaluationPeriods: 1
       Threshold: 1
@@ -4511,7 +4511,7 @@ Resources:
       Dimensions:
         - Name: "QueueName"
           Value: !GetAtt DeleteActivityLogDeadLetterQueue.QueueName
-      Statistic: "Sum"
+      Statistic: "Maximum"
       Period: 300
       EvaluationPeriods: 1
       Threshold: 1
@@ -4808,7 +4808,7 @@ Resources:
       Dimensions:
         - Name: "QueueName"
           Value: !GetAtt DeleteUserNotificationsDeadLetterQueue.QueueName
-      Statistic: "Sum"
+      Statistic: "Maximum"
       Period: 300
       EvaluationPeriods: 1
       Threshold: 1
@@ -4835,7 +4835,7 @@ Resources:
       Dimensions:
         - Name: "QueueName"
           Value: !GetAtt DeleteUserNotificationsSubscriptionDeadLetterQueue.QueueName
-      Statistic: "Sum"
+      Statistic: "Maximum"
       Period: 300
       EvaluationPeriods: 1
       Threshold: 1
@@ -5151,7 +5151,7 @@ Resources:
       Dimensions:
         - Name: "QueueName"
           Value: !GetAtt DeleteInactiveAccountTrackerDeadLetterQueue.QueueName
-      Statistic: "Sum"
+      Statistic: "Maximum"
       Period: 300
       EvaluationPeriods: 1
       Threshold: 1
@@ -5178,7 +5178,7 @@ Resources:
       Dimensions:
         - Name: "QueueName"
           Value: !GetAtt DeleteInactiveAccountTrackerSubscriptionDeadLetterQueue.QueueName
-      Statistic: "Sum"
+      Statistic: "Maximum"
       Period: 300
       EvaluationPeriods: 1
       Threshold: 1
@@ -5984,7 +5984,7 @@ Resources:
       Dimensions:
         - Name: "QueueName"
           Value: !GetAtt TriggerSuspiciousActivityStepDeadLetterQueue.QueueName
-      Statistic: "Sum"
+      Statistic: "Maximum"
       Period: 300
       EvaluationPeriods: 1
       Threshold: 10
@@ -7471,7 +7471,7 @@ Resources:
       Dimensions:
         - Name: "QueueName"
           Value: !GetAtt QueryAndDispatchInactiveAccountsDeadLetterQueue.QueueName
-      Statistic: "Sum"
+      Statistic: "Maximum"
       Period: 300
       EvaluationPeriods: 1
       Threshold: 1

@@ -2359,8 +2359,8 @@ Resources:
       Namespace: AWS/SQS
       Statistic: Maximum
       Period: 300
-      EvaluationPeriods: 1
-      Threshold: 300
+      EvaluationPeriods: 2
+      Threshold: 1800
       ComparisonOperator: GreaterThanOrEqualToThreshold
       Dimensions:
         - Name: QueueName
@@ -3751,6 +3751,32 @@ Resources:
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
 
+  30DayNotificationQueueOldestMessageAgeAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            30DayNotificationQueueOldestMessageAgeAlarm,
+          ],
+        ]
+      MetricName: ApproximateAgeOfOldestMessage
+      Namespace: AWS/SQS
+      Statistic: Maximum
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 1800
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt 30DayNotificationQueue.QueueName
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      TreatMissingData: notBreaching
+
   30DayNotificationDeadLetterQueue:
     Type: AWS::SQS::Queue
     Properties:
@@ -3773,6 +3799,32 @@ Resources:
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
 
+  7DayNotificationQueueOldestMessageAgeAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            7DayNotificationQueueOldestMessageAgeAlarm,
+          ],
+        ]
+      MetricName: ApproximateAgeOfOldestMessage
+      Namespace: AWS/SQS
+      Statistic: Maximum
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 1800
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt 7DayNotificationQueue.QueueName
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      TreatMissingData: notBreaching
+
   7DayNotificationDeadLetterQueue:
     Type: AWS::SQS::Queue
     Properties:
@@ -3794,6 +3846,32 @@ Resources:
         maxReceiveCount: 5
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
+
+  AccountDeletionProcessQueueOldestMessageAgeAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName:
+        !Join [
+          "-",
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            AccountDeletionProcessQueueOldestMessageAgeAlarm,
+          ],
+        ]
+      MetricName: ApproximateAgeOfOldestMessage
+      Namespace: AWS/SQS
+      Statistic: Maximum
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 1800
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt AccountDeletionProcessQueue.QueueName
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      TreatMissingData: notBreaching
 
   AccountDeletionProcessDeadLetterQueue:
     Type: AWS::SQS::Queue

@@ -5101,6 +5101,17 @@ Resources:
       RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
+  DeleteInactiveAccountTrackerFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      FilterPattern: '{ $.message = "InactiveAccountDeleted" }'
+      LogGroupName: !Ref DeleteInactiveAccountTrackerFunctionLogGroup
+      MetricTransformations:
+        - MetricName: InactiveAccountDeleted
+          MetricNamespace: IAD
+          MetricValue: 1
+          Unit: Count
+
   DeleteInactiveAccountTrackerCSLSSubscription:
     Condition: ExportLogsToSplunk
     Type: AWS::Logs::SubscriptionFilter
@@ -7824,6 +7835,40 @@ Resources:
               Value: $.isCritical
             - Key: DryRun
               Value: $.isDryRun
+
+  ProcessInactiveAccountsIADFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      FilterPattern: '{ $.message = "ProcessInactiveAccount" }'
+      LogGroupName: !Ref ProcessInactiveAccountFunctionLogGroup
+      MetricTransformations:
+        - MetricName: ProcessInactiveAccount
+          MetricNamespace: IAD
+          MetricValue: 1
+          Unit: Count
+          Dimensions:
+            - Key: ProcessName
+              Value: $.processName
+            - Key: DryRun
+              Value: $.isDryRun
+
+  ProcessedInactiveAccountsIADFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      FilterPattern: '{ $.message = "Successfully processed inactive account" }'
+      LogGroupName: !Ref ProcessInactiveAccountFunctionLogGroup
+      MetricTransformations:
+        - MetricName: ProcessedInactiveAccount
+          MetricNamespace: IAD
+          MetricValue: 1
+          Unit: Count
+          Dimensions:
+            - Key: ProcessName
+              Value: $.processName
+            - Key: DryRun
+              Value: $.isDryRun
+            - Key: SkippedActions
+              Value: $.skippedActions
 
   IADGuardrailTriggeredAlarm:
     Type: AWS::CloudWatch::Alarm

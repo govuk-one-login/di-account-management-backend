@@ -391,6 +391,49 @@ describe("handler", () => {
     expect(notificationSendCount()).toEqual(1);
   });
 
+  test("logs InactiveAccountDeleted when account_deletion_reason is INACTIVE_ACCOUNT", async () => {
+    const { Logger } = await import("@aws-lambda-powertools/logger");
+    const infoSpy = vi.spyOn(Logger.prototype, "info");
+
+    dynamoMock.on(QueryCommand).resolves({ Items: [trackerItem] });
+
+    const event = createSnsEvent({ user_id: "user-id" });
+    event.Records[0].Sns.MessageAttributes = {
+      account_deletion_reason: { Type: "String", Value: "INACTIVE_ACCOUNT" },
+    };
+
+    await handler(event, {} as Context);
+
+    expect(infoSpy).toHaveBeenCalledWith("InactiveAccountDeleted", {
+      hasUndeliverableEmailAddress: trackerItem.hasUndeliverableEmailAddress,
+      hasSetupMfa: trackerItem.hasSetupMfa,
+      dateForDeletion: trackerItem.dateForDeletion,
+    });
+
+    infoSpy.mockRestore();
+  });
+
+  test("does not log InactiveAccountDeleted when account_deletion_reason is not INACTIVE_ACCOUNT", async () => {
+    const { Logger } = await import("@aws-lambda-powertools/logger");
+    const infoSpy = vi.spyOn(Logger.prototype, "info");
+
+    dynamoMock.on(QueryCommand).resolves({ Items: [trackerItem] });
+
+    const event = createSnsEvent({ user_id: "user-id" });
+    event.Records[0].Sns.MessageAttributes = {
+      account_deletion_reason: { Type: "String", Value: "OTHER_REASON" },
+    };
+
+    await handler(event, {} as Context);
+
+    expect(infoSpy).not.toHaveBeenCalledWith(
+      "InactiveAccountDeleted",
+      expect.anything()
+    );
+
+    infoSpy.mockRestore();
+  });
+
   test("does not enqueue email when account_deletion_reason is absent", async () => {
     dynamoMock.on(QueryCommand).resolves({ Items: [trackerItem] });
 

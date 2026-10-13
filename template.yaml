@@ -2289,7 +2289,7 @@ Resources:
           "-",
           [!Ref AWS::StackName, !Ref Environment, AccountDeletionDLQAlarm],
         ]
-      AlarmDescription: More than 1 account deletion message failed in the last 5 minutes.
+      AlarmDescription: "More than 1 account deletion message failed in the last 5 minutes. Runbook: https://govukverify.atlassian.net/wiki/x/FYB2pgE"
       Namespace: "AWS/SQS"
       MetricName: "ApproximateNumberOfMessagesVisible"
       Dimensions:
@@ -2316,6 +2316,7 @@ Resources:
             AccountDeletionQueueOldestMessageAgeAlarm,
           ],
         ]
+      AlarmDescription: "The cross-team account deletion handover queue has a backlog of 30 minutes or more. Runbook: https://govukverify.atlassian.net/wiki/x/FYB2pgE"
       MetricName: ApproximateAgeOfOldestMessage
       Namespace: AWS/SQS
       Statistic: Maximum
@@ -2498,7 +2499,7 @@ Resources:
             UserAccountDeletionTopicDeadLetterQueueAlarm,
           ],
         ]
-      AlarmDescription: More than 1 user account deletion request failed in the last 5 minutes.
+      AlarmDescription: "More than 1 user account deletion request failed in the last 5 minutes. Runbook: https://govukverify.atlassian.net/wiki/x/FYB2pgE"
       Namespace: "AWS/SQS"
       MetricName: "ApproximateNumberOfMessagesVisible"
       Dimensions:
@@ -3820,6 +3821,7 @@ Resources:
             AccountDeletionProcessQueueOldestMessageAgeAlarm,
           ],
         ]
+      AlarmDescription: "The inactive account deletion process queue has a backlog of 30 minutes or more. Runbook: https://govukverify.atlassian.net/wiki/x/FYB2pgE"
       MetricName: ApproximateAgeOfOldestMessage
       Namespace: AWS/SQS
       Statistic: Maximum
@@ -3949,7 +3951,7 @@ Resources:
           "-",
           [!Ref AWS::StackName, !Ref Environment, AccountDeletionProcessDeadLetterQueueAlarm],
         ]
-      AlarmDescription: More than 1 inactive account deletion request failed to be processed in the last 5 minutes.
+      AlarmDescription: "More than 1 inactive account deletion request failed to be processed in the last 5 minutes. Runbook: https://govukverify.atlassian.net/wiki/x/FYB2pgE"
       Namespace: "AWS/SQS"
       MetricName: "ApproximateNumberOfMessagesVisible"
       Dimensions:
@@ -4397,7 +4399,7 @@ Resources:
           "-",
           [!Ref AWS::StackName, !Ref Environment, PublishAccountDeletionDeadLetterQueueAlarm],
         ]
-      AlarmDescription: More than 1 account deletion publish failed in the last 5 minutes.
+      AlarmDescription: "More than 1 account deletion publish failed in the last 5 minutes. Runbook: https://govukverify.atlassian.net/wiki/x/FYB2pgE"
       Namespace: "AWS/SQS"
       MetricName: "ApproximateNumberOfMessagesVisible"
       Dimensions:
@@ -5349,7 +5351,7 @@ Resources:
             DeleteInactiveAccountTrackerDeadLetterQueueAlarm,
           ],
         ]
-      AlarmDescription: More than 1 inactive account tracker record failed to be deleted in the last 5 minutes.
+      AlarmDescription: "More than 1 inactive account tracker record failed to be deleted in the last 5 minutes. Runbook: https://govukverify.atlassian.net/wiki/x/FYB2pgE"
       Namespace: "AWS/SQS"
       MetricName: "ApproximateNumberOfMessagesVisible"
       Dimensions:
@@ -5377,7 +5379,7 @@ Resources:
             DeleteInactiveAccountTrackerSubscriptionDeadLetterQueueAlarm,
           ],
         ]
-      AlarmDescription: More than 1 deletion of inactive account tracker records failed in the last 5 minutes.
+      AlarmDescription: "More than 1 deletion of inactive account tracker records failed in the last 5 minutes. Runbook: https://govukverify.atlassian.net/wiki/x/FYB2pgE"
       Namespace: "AWS/SQS"
       MetricName: "ApproximateNumberOfMessagesVisible"
       Dimensions:
@@ -5404,6 +5406,7 @@ Resources:
             DeleteInactiveAccountTrackerFunctionSuccessRate,
           ],
         ]
+      AlarmDescription: "The delete-inactive-account-tracker success rate dropped below 95% over 5 minutes. Runbook: https://govukverify.atlassian.net/wiki/x/FYB2pgE"
       Metrics:
         - Id: errors
           MetricStat:
@@ -7633,7 +7636,7 @@ Resources:
             QueryAndDispatchInactiveAccountsDeadLetterQueueAlarm,
           ],
         ]
-      AlarmDescription: More than 1 query and dispatch of inactive accounts failed in the last 5 minutes.
+      AlarmDescription: "More than 1 query and dispatch of inactive accounts failed in the last 5 minutes. Runbook: https://govukverify.atlassian.net/wiki/x/FYB2pgE"
       Namespace: "AWS/SQS"
       MetricName: "ApproximateNumberOfMessagesVisible"
       Dimensions:
@@ -7660,6 +7663,7 @@ Resources:
             QueryAndDispatchInactiveAccountsFunctionSuccessRate,
           ],
         ]
+      AlarmDescription: "The dispatch-inactive-accounts success rate dropped below 95% over 5 minutes. Runbook: https://govukverify.atlassian.net/wiki/x/FYB2pgE"
       Metrics:
         - Id: errors
           MetricStat:
@@ -8034,6 +8038,7 @@ Resources:
           "-",
           [!Ref AWS::StackName, !Ref Environment, IADGuardrailTriggered],
         ]
+      AlarmDescription: "A critical IAD guardrail aborted dispatch or per-account processing. Runbook: https://govukverify.atlassian.net/wiki/x/FYB2pgE"
       Metrics:
         - Id: iADGuardrailTriggered
           Expression: SELECT SUM(GuardrailPreventedInactiveAccountDeletion) FROM "IAD" WHERE IsCritical = '1'
@@ -8173,7 +8178,7 @@ Resources:
           "-",
           [!Ref AWS::StackName, !Ref Environment, InactiveAccountDeletionForecastDeadLetterQueueAlarm],
         ]
-      AlarmDescription: More than 1 inactive account deletion forecast failed to be published in the last 5 minutes.
+      AlarmDescription: "More than 1 inactive account deletion forecast failed to be published in the last 5 minutes. Runbook: https://govukverify.atlassian.net/wiki/x/FYB2pgE"
       Namespace: "AWS/SQS"
       MetricName: "ApproximateNumberOfMessagesVisible"
       Dimensions:
@@ -8197,7 +8202,7 @@ Resources:
           "-",
           [!Ref AWS::StackName, !Ref Environment, OverdueDeletionAccountsAlarm],
         ]
-      AlarmDescription: "Inactive accounts past their dateForDeletion by 5 or more days have not been deleted."
+      AlarmDescription: "Inactive accounts past their dateForDeletion by 5 or more days have not been deleted. Runbook: https://govukverify.atlassian.net/wiki/x/FYB2pgE"
       Namespace: "account-management-backend"
       MetricName: "OverdueDeletionAccounts"
       Dimensions:

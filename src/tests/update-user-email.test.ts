@@ -11,6 +11,16 @@ import { handler } from "../update-user-email.js";
 
 const dynamoMock = mockClient(DynamoDBDocumentClient);
 
+const mockMetrics = vi.hoisted(() => ({
+  publishStoredMetrics: vi.fn(),
+  addDimension: vi.fn(),
+  addMetric: vi.fn(),
+}));
+
+vi.mock("../common/metrics.js", () => ({
+  initMetrics: vi.fn(() => mockMetrics),
+}));
+
 describe("update-user-email", () => {
   vi.spyOn(Logger.prototype, "info").mockImplementation(() => undefined);
   const loggerWarnMock = vi
@@ -21,6 +31,7 @@ describe("update-user-email", () => {
     process.env.INACTIVE_ACCOUNT_TRACKER_TABLE_NAME =
       "test-inactive-tracker-table";
     dynamoMock.reset();
+    vi.clearAllMocks();
   });
 
   afterEach(() => {
@@ -83,6 +94,32 @@ describe("update-user-email", () => {
       KeyConditionExpression: "commonSubjectId = :uid",
       ExpressionAttributeValues: { ":uid": "test-user-id" },
     });
+  });
+
+  it("publishes EmailUpdateProcessing and EmailUpdated metrics when a record is successfully updated", async () => {
+    dynamoMock.on(QueryCommand).resolves({
+      Items: [
+        { dateForDeletion: "2031-06-30", commonSubjectId: "test-user-id" },
+      ],
+    });
+    dynamoMock.on(UpdateCommand).resolves({});
+
+    await handler(
+      createEvent("test-user-id", "new-email@example.com"),
+      {} as Context
+    );
+
+    expect(mockMetrics.addMetric).toHaveBeenCalledWith(
+      "EmailUpdateProcessing",
+      "Count",
+      1
+    );
+    expect(mockMetrics.addMetric).toHaveBeenCalledWith(
+      "EmailUpdated",
+      "Count",
+      1
+    );
+    expect(mockMetrics.publishStoredMetrics).toHaveBeenCalledTimes(2);
   });
 
   it("uses event_timestamp_ms for emailAddressLastUpdated when present", async () => {
@@ -219,6 +256,17 @@ describe("update-user-email", () => {
       "No inactive account tracker record found for user",
       { userId: "test-user-id" }
     );
+    expect(mockMetrics.addMetric).toHaveBeenCalledWith(
+      "EmailUpdateProcessing",
+      "Count",
+      1
+    );
+    expect(mockMetrics.addMetric).toHaveBeenCalledWith(
+      "EmailUpdateNoRecord",
+      "Count",
+      1
+    );
+    expect(mockMetrics.publishStoredMetrics).toHaveBeenCalledTimes(2);
   });
 
   it("processes multiple records in a single event", async () => {
@@ -277,6 +325,17 @@ describe("update-user-email", () => {
 
     expect(dynamoMock).toHaveReceivedCommandTimes(QueryCommand, 2);
     expect(dynamoMock).toHaveReceivedCommandTimes(UpdateCommand, 2);
+    expect(mockMetrics.publishStoredMetrics).toHaveBeenCalledTimes(4);
+    expect(mockMetrics.addMetric).toHaveBeenCalledWith(
+      "EmailUpdateProcessing",
+      "Count",
+      1
+    );
+    expect(
+      mockMetrics.addMetric.mock.calls.filter(
+        (call) => call[0] === "EmailUpdateProcessing"
+      )
+    ).toHaveLength(2);
   });
 
   it("throws an error when INACTIVE_ACCOUNT_TRACKER_TABLE_NAME is not set", async () => {

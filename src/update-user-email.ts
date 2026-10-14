@@ -9,8 +9,11 @@ import {
 import { TxmaEvent } from "./common/model.js";
 import { getEnvironmentVariable } from "./common/utils.js";
 import { Logger } from "@aws-lambda-powertools/logger";
+import { MetricUnit } from "@aws-lambda-powertools/metrics";
+import { initMetrics } from "./common/metrics.js";
 
 const logger = new Logger();
+const metrics = initMetrics("update-user-email");
 const dynamoClient = new DynamoDBClient({});
 const dynamoDocClient = DynamoDBDocumentClient.from(dynamoClient);
 
@@ -36,6 +39,8 @@ const handleRecord = async (
     userId,
     eventName: txmaEvent.event_name,
   });
+  metrics.addMetric("EmailUpdateProcessing", MetricUnit.Count, 1);
+  metrics.publishStoredMetrics();
 
   const queryResponse = await dynamoDocClient.send(
     new QueryCommand({
@@ -50,6 +55,8 @@ const handleRecord = async (
     logger.warn("No inactive account tracker record found for user", {
       userId,
     });
+    metrics.addMetric("EmailUpdateNoRecord", MetricUnit.Count, 1);
+    metrics.publishStoredMetrics();
     return;
   }
 
@@ -84,6 +91,8 @@ const handleRecord = async (
       "Successfully updated email address in inactive account tracker",
       { userId }
     );
+    metrics.addMetric("EmailUpdated", MetricUnit.Count, 1);
+    metrics.publishStoredMetrics();
   } catch (error) {
     const err = error as Error;
     if (err.name === "ConditionalCheckFailedException") {

@@ -814,6 +814,61 @@ Resources:
                 Resource: !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${InactiveAccountTrackerStoreTableName}"
         - !Ref AWS::NoValue
 
+  InactiveAccountTrackerStoreReadCapacityAnomalyAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${InactiveAccountTrackerStoreTableName}-Read-Anomaly"
+      AlarmDescription: "Triggers when read traffic deviates from the expected baseline. Runbook: https://govukverify.atlassian.net/wiki/x/FYB2pgE"
+      ComparisonOperator: LessThanLowerOrGreaterThanUpperThreshold
+      EvaluationPeriods: 2
+      DatapointsToAlarm: 2
+      TreatMissingData: missing
+      ThresholdMetricId: anomalyBand
+      Metrics:
+        - Id: actualReads
+          ReturnData: true
+          MetricStat:
+            Metric:
+              MetricName: ConsumedReadCapacityUnits
+              Namespace: AWS/DynamoDB
+              Dimensions:
+                - Name: TableName
+                  Value: !Ref InactiveAccountTrackerStoreTableName
+            Stat: Sum
+            Period: 300
+        - Id: anomalyBand
+          Expression: ANOMALY_DETECTION_BAND(actualReads, 2)
+          Label: "Read Capacity Expected Band"
+          ReturnData: true
+
+  InactiveAccountTrackerStoreWriteCapacityAnomalyAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${InactiveAccountTrackerStoreTableName}-Write-Anomaly"
+      AlarmDescription: "Triggers when write traffic deviates from the expected baseline. Runbook: https://govukverify.atlassian.net/wiki/x/FYB2pgE"
+      ComparisonOperator: LessThanLowerOrGreaterThanUpperThreshold
+      EvaluationPeriods: 2
+      DatapointsToAlarm: 2
+      TreatMissingData: missing
+      ThresholdMetricId: anomalyBand
+      Metrics:
+        - Id: actualWrites
+          ReturnData: true
+          MetricStat:
+            Metric:
+              MetricName: ConsumedWriteCapacityUnits
+              Namespace: AWS/DynamoDB
+              Dimensions:
+                - Name: TableName
+                  Value: !Ref InactiveAccountTrackerStoreTableName
+            Stat: Sum
+            Period: 300
+        - Id: anomalyBand
+          Expression: ANOMALY_DETECTION_BAND(actualWrites, 2)
+          Label: "Write Capacity Expected Band"
+          ReturnData: true
+
+
   ######################################
   # User Notifications store
   ######################################

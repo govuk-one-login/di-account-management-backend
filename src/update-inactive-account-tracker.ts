@@ -320,6 +320,8 @@ const handleNotification = async (
     publicSubjectId: newItem.publicSubjectId,
     notificationType: notificationType,
   });
+  metrics.addMetric("AccountSaved", MetricUnit.Count, 1);
+  metrics.publishStoredMetrics();
 
   const currentEventConfiguration = notificationConfiguration[notificationType];
   await sendAuditEvent(currentEventConfiguration.auditEvent ?? "", {
@@ -412,6 +414,8 @@ const processRecord = async (
   backfillCompleteDatetime: string
 ): Promise<void> => {
   logger.info(`Processing event with ID ${txmaEvent.event_id}`);
+  metrics.addMetric("ActivityProcessing", MetricUnit.Count, 1);
+  metrics.publishStoredMetrics();
 
   const userId = txmaEvent.user?.user_id;
 
@@ -506,6 +510,8 @@ const processRecord = async (
       new TransactWriteCommand({ TransactItems: transactionItems })
     );
     logger.info(`DynamoDB updated for event id: ${txmaEvent.event_id}`);
+    metrics.addMetric("ActivityUpdated", MetricUnit.Count, 1);
+    metrics.publishStoredMetrics();
 
     if (isDeletionIn30DaysOrLess) {
       await sendAuditEvent("HOME_ACCOUNT_TRACKER_ACCOUNT_REACTIVATED", {
@@ -612,6 +618,8 @@ export const handler = async (
         `Failed to process record ${record.dynamodb?.SequenceNumber}`,
         { error }
       );
+      metrics.addMetric("ActivityFailed", MetricUnit.Count, 1);
+      metrics.publishStoredMetrics();
       batchItemFailures.push({
         itemIdentifier: record.dynamodb?.SequenceNumber ?? "",
       });

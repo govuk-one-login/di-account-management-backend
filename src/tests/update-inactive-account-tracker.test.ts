@@ -134,6 +134,28 @@ describe("UpdateInactiveAccountTracker handler", () => {
     });
   });
 
+  test("publishes ActivityProcessing and ActivityUpdated metrics for a successfully processed record", async () => {
+    dynamoMock.on(QueryCommand).resolves({ Items: [] });
+    dynamoMock.on(TransactWriteCommand).resolves({});
+    const event: DynamoDBStreamEvent = {
+      Records: [generateDynamoStreamRecord("test-client")],
+    };
+
+    await handler(event, {} as Context);
+
+    expect(mockMetrics.addMetric).toHaveBeenCalledWith(
+      "ActivityProcessing",
+      "Count",
+      1
+    );
+    expect(mockMetrics.addMetric).toHaveBeenCalledWith(
+      "ActivityUpdated",
+      "Count",
+      1
+    );
+    expect(mockMetrics.publishStoredMetrics).toHaveBeenCalled();
+  });
+
   test("uses event timestamp as latestDate when no existing record", async () => {
     dynamoMock.on(QueryCommand).resolves({ Items: [] });
     dynamoMock.on(TransactWriteCommand).resolves({});
@@ -477,6 +499,25 @@ describe("UpdateInactiveAccountTracker handler", () => {
     expect(result).toEqual<DynamoDBBatchResponse>({
       batchItemFailures: [{ itemIdentifier: "1234567890" }],
     });
+  });
+
+  test("publishes ActivityFailed metric when a record fails to process", async () => {
+    dynamoMock.on(QueryCommand).resolves({ Items: [] });
+    dynamoMock
+      .on(TransactWriteCommand)
+      .rejects(new Error("TransactionCanceledException"));
+    const record = generateDynamoStreamRecord("test-client");
+    record.dynamodb!.SequenceNumber = "1234567890";
+    const event: DynamoDBStreamEvent = { Records: [record] };
+
+    await handler(event, {} as Context);
+
+    expect(mockMetrics.addMetric).toHaveBeenCalledWith(
+      "ActivityFailed",
+      "Count",
+      1
+    );
+    expect(mockMetrics.publishStoredMetrics).toHaveBeenCalled();
   });
 
   test("does not send account-saved notification when the DynamoDB write fails", async () => {
@@ -1372,6 +1413,12 @@ describe("UpdateInactiveAccountTracker handler", () => {
       }
     );
 
+    expect(mockMetrics.addMetric).toHaveBeenCalledWith(
+      "AccountSaved",
+      "Count",
+      1
+    );
+
     // check the correct txma event is being sent out
     const txmaCallInput = sqsCalls[2].args[0].input;
 
@@ -2019,7 +2066,7 @@ describe("UpdateInactiveAccountTracker handler", () => {
       "Count",
       10
     );
-    expect(mockMetrics.publishStoredMetrics).toHaveBeenCalledTimes(1);
+    expect(mockMetrics.publishStoredMetrics).toHaveBeenCalledTimes(4);
 
     vi.useRealTimers();
   });

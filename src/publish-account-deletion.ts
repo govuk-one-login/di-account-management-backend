@@ -9,6 +9,13 @@ import { Logger } from "@aws-lambda-powertools/logger";
 const logger = new Logger();
 const snsClient = new SNSClient({});
 
+export interface DeletionMessage {
+  user_id: string;
+  public_subject_id?: string;
+  legacy_subject_id?: string;
+  account_deletion_reason?: string;
+}
+
 export const handler = async (
   event: DynamoDBStreamEvent,
   context: Context
@@ -29,16 +36,17 @@ export const handler = async (
 
     logger.info(`Publishing account deletion for user`);
 
+    const deletionMessage: DeletionMessage = {
+      user_id: userId,
+      public_subject_id: txmaEvent.user.public_subject_id,
+      legacy_subject_id: txmaEvent.user.legacy_subject_id,
+      account_deletion_reason: txmaEvent.extensions?.account_deletion_reason,
+    };
+
     await snsClient.send(
       new PublishCommand({
         TopicArn: topicArn,
-        Message: JSON.stringify({
-          user_id: userId,
-          public_subject_id: txmaEvent.user.public_subject_id,
-          legacy_subject_id: txmaEvent.user.legacy_subject_id,
-          account_deletion_reason:
-            txmaEvent.extensions?.account_deletion_reason,
-        }),
+        Message: JSON.stringify(deletionMessage),
       })
     );
   }

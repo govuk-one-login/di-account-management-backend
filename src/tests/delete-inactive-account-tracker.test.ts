@@ -9,17 +9,19 @@ import { mockClient } from "aws-sdk-client-mock";
 import "aws-sdk-client-mock-vitest";
 import {
   handler,
-  validateUserData,
-  deleteUserData,
+  validateMessage,
+  deleteTrackerItem,
   maybeEnqueueDeletionEmail,
 } from "../delete-inactive-account-tracker.js";
+import { DeletionMessage } from "../publish-account-deletion.js";
 
 import {
   TEST_SNS_EVENT_WITH_TWO_RECORDS,
-  TEST_USER_DATA,
   createSnsEvent,
 } from "./testFixtures.js";
 import { Context } from "aws-lambda";
+
+const TEST_DELETION_MESSAGE: DeletionMessage = { user_id: "user-id" };
 
 const dynamoMock = mockClient(DynamoDBDocumentClient);
 const sqsMock = mockClient(SQSClient);
@@ -61,7 +63,7 @@ const notificationSendCount = () =>
     .filter((call) => call.args[0].input.QueueUrl === NOTIFICATION_QUEUE_URL)
     .length;
 
-describe("deleteUserData", () => {
+describe("deleteTrackerItem", () => {
   beforeEach(() => {
     dynamoMock.reset();
     sqsMock.reset();
@@ -76,13 +78,13 @@ describe("deleteUserData", () => {
   test("queries the GSI and deletes matching records", async () => {
     dynamoMock.on(QueryCommand).resolves({ Items: [trackerItem] });
 
-    await deleteUserData(TEST_USER_DATA, "INACTIVE_ACCOUNT");
+    await deleteTrackerItem(TEST_DELETION_MESSAGE, "INACTIVE_ACCOUNT");
 
     expect(dynamoMock).toHaveReceivedCommandWith(QueryCommand, {
       TableName: "TABLE_NAME",
       IndexName: "CommonSubjectIdIndex",
       KeyConditionExpression: "commonSubjectId = :uid",
-      ExpressionAttributeValues: { ":uid": TEST_USER_DATA.user_id },
+      ExpressionAttributeValues: { ":uid": TEST_DELETION_MESSAGE.user_id },
     });
     expect(dynamoMock).toHaveReceivedCommandWith(DeleteCommand, {
       TableName: "TABLE_NAME",
@@ -103,7 +105,7 @@ describe("deleteUserData", () => {
     );
     expect(auditEvent.event_name).toBe("HOME_ACCOUNT_TRACKER_RECORD_DELETED");
     expect(auditEvent.user).toMatchObject({
-      user_id: TEST_USER_DATA.user_id,
+      user_id: TEST_DELETION_MESSAGE.user_id,
       email: "user@example.com",
       public_subject_id: "public-user-id",
     });
@@ -119,7 +121,7 @@ describe("deleteUserData", () => {
   test("does not emit an audit event when no records are found", async () => {
     dynamoMock.on(QueryCommand).resolves({ Items: [] });
 
-    await deleteUserData(TEST_USER_DATA);
+    await deleteTrackerItem(TEST_DELETION_MESSAGE);
 
     expect(sqsMock.commandCalls(SendMessageCommand).length).toEqual(0);
   });
@@ -132,7 +134,7 @@ describe("deleteUserData", () => {
       ],
     });
 
-    await deleteUserData(TEST_USER_DATA);
+    await deleteTrackerItem(TEST_DELETION_MESSAGE);
 
     const recordDeletedEvents = sqsMock
       .commandCalls(SendMessageCommand)
@@ -147,7 +149,7 @@ describe("deleteUserData", () => {
   test("returns deleted: false when no records found", async () => {
     dynamoMock.on(QueryCommand).resolves({ Items: [] });
 
-    const result = await deleteUserData(TEST_USER_DATA);
+    const result = await deleteTrackerItem(TEST_DELETION_MESSAGE);
 
     expect(result).toEqual({ deleted: false });
     expect(dynamoMock.commandCalls(DeleteCommand).length).toEqual(0);
@@ -156,7 +158,7 @@ describe("deleteUserData", () => {
   test("returns deleted: true with emailAddress and hasUndeliverableEmailAddress from first item", async () => {
     dynamoMock.on(QueryCommand).resolves({ Items: [trackerItem] });
 
-    const result = await deleteUserData(TEST_USER_DATA);
+    const result = await deleteTrackerItem(TEST_DELETION_MESSAGE);
 
     expect(result).toEqual({
       deleted: true,
@@ -175,7 +177,7 @@ describe("deleteUserData", () => {
       ],
     });
 
-    await deleteUserData(TEST_USER_DATA);
+    await deleteTrackerItem(TEST_DELETION_MESSAGE);
 
     expect(dynamoMock.commandCalls(DeleteCommand).length).toEqual(2);
   });
@@ -381,12 +383,13 @@ describe("handler", () => {
   test("enqueues deletion email when account_deletion_reason is INACTIVE_ACCOUNT", async () => {
     dynamoMock.on(QueryCommand).resolves({ Items: [trackerItem] });
 
-    const event = createSnsEvent({ user_id: "user-id" });
-    event.Records[0].Sns.MessageAttributes = {
-      account_deletion_reason: { Type: "String", Value: "INACTIVE_ACCOUNT" },
-    };
-
-    await handler(event, {} as Context);
+    await handler(
+      createSnsEvent({
+        user_id: "user-id",
+        account_deletion_reason: "INACTIVE_ACCOUNT",
+      }),
+      {} as Context
+    );
 
     expect(notificationSendCount()).toEqual(1);
   });
@@ -397,12 +400,13 @@ describe("handler", () => {
 
     dynamoMock.on(QueryCommand).resolves({ Items: [trackerItem] });
 
-    const event = createSnsEvent({ user_id: "user-id" });
-    event.Records[0].Sns.MessageAttributes = {
-      account_deletion_reason: { Type: "String", Value: "INACTIVE_ACCOUNT" },
-    };
-
-    await handler(event, {} as Context);
+    await handler(
+      createSnsEvent({
+        user_id: "user-id",
+        account_deletion_reason: "INACTIVE_ACCOUNT",
+      }),
+      {} as Context
+    );
 
     expect(infoSpy).toHaveBeenCalledWith("InactiveAccountDeleted", {
       hasUndeliverableEmailAddress: trackerItem.hasUndeliverableEmailAddress,
@@ -419,12 +423,13 @@ describe("handler", () => {
 
     dynamoMock.on(QueryCommand).resolves({ Items: [trackerItem] });
 
-    const event = createSnsEvent({ user_id: "user-id" });
-    event.Records[0].Sns.MessageAttributes = {
-      account_deletion_reason: { Type: "String", Value: "OTHER_REASON" },
-    };
-
-    await handler(event, {} as Context);
+    await handler(
+      createSnsEvent({
+        user_id: "user-id",
+        account_deletion_reason: "OTHER_REASON",
+      }),
+      {} as Context
+    );
 
     expect(infoSpy).not.toHaveBeenCalledWith(
       "InactiveAccountDeleted",
@@ -445,12 +450,13 @@ describe("handler", () => {
   test("does not enqueue email when account_deletion_reason is not INACTIVE_ACCOUNT", async () => {
     dynamoMock.on(QueryCommand).resolves({ Items: [trackerItem] });
 
-    const event = createSnsEvent({ user_id: "user-id" });
-    event.Records[0].Sns.MessageAttributes = {
-      account_deletion_reason: { Type: "String", Value: "OTHER_REASON" },
-    };
-
-    await handler(event, {} as Context);
+    await handler(
+      createSnsEvent({
+        user_id: "user-id",
+        account_deletion_reason: "OTHER_REASON",
+      }),
+      {} as Context
+    );
 
     expect(notificationSendCount()).toEqual(0);
   });
@@ -476,12 +482,13 @@ describe("handler", () => {
   test("does not enqueue email when no tracker records found", async () => {
     dynamoMock.on(QueryCommand).resolves({ Items: [] });
 
-    const event = createSnsEvent({ user_id: "user-id" });
-    event.Records[0].Sns.MessageAttributes = {
-      account_deletion_reason: { Type: "String", Value: "INACTIVE_ACCOUNT" },
-    };
-
-    await handler(event, {} as Context);
+    await handler(
+      createSnsEvent({
+        user_id: "user-id",
+        account_deletion_reason: "INACTIVE_ACCOUNT",
+      }),
+      {} as Context
+    );
 
     expect(notificationSendCount()).toEqual(0);
   });
@@ -505,15 +512,15 @@ describe("handler", () => {
   });
 });
 
-describe("validateUserData", () => {
+describe("validateMessage", () => {
   test("doesn't throw an error with valid data", () => {
-    expect(validateUserData(TEST_USER_DATA)).toBe(TEST_USER_DATA);
+    expect(validateMessage(TEST_DELETION_MESSAGE)).toBe(TEST_DELETION_MESSAGE);
   });
 
   test("throws an error when user_id is missing", () => {
     const userData = JSON.parse(JSON.stringify({ foo: "bar" }));
     expect(() => {
-      validateUserData(userData);
+      validateMessage(userData);
     }).toThrow();
   });
 });

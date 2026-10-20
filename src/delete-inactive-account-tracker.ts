@@ -5,7 +5,6 @@ import {
   QueryCommand,
   DeleteCommand,
 } from "@aws-sdk/lib-dynamodb";
-import { UserData } from "./common/model.js";
 import { getEnvironmentVariable } from "./common/utils.js";
 import { sendAuditEvent } from "./common/send-audit-event.js";
 import { Logger } from "@aws-lambda-powertools/logger";
@@ -16,6 +15,7 @@ import {
   notificationConfiguration,
   homeAccountTrackerNotificationSkippedReasons,
 } from "./common/notification-configuration.js";
+import { DeletionMessage } from "./publish-account-deletion.js";
 
 const logger = new Logger();
 
@@ -30,17 +30,15 @@ const dynamoDocClient = DynamoDBDocumentClient.from(
   translateConfig
 );
 
-export const validateUserData = (userData: UserData): UserData => {
-  if (userData.user_id) {
-    return userData;
+export const validateMessage = (message: DeletionMessage): DeletionMessage => {
+  if (message.user_id) {
+    return message;
   }
-  throw new Error(
-    `userData did not have a user_id: ${JSON.stringify(userData)}`
-  );
+  throw new Error(`message did not have a user_id: ${JSON.stringify(message)}`);
 };
 
-export const deleteUserData = async (
-  userData: UserData,
+export const deleteTrackerItem = async (
+  message: DeletionMessage,
   accountDeletionReason?: string
 ): Promise<{
   deleted: boolean;
@@ -56,7 +54,7 @@ export const deleteUserData = async (
       TableName: TABLE_NAME,
       IndexName: "CommonSubjectIdIndex",
       KeyConditionExpression: "commonSubjectId = :uid",
-      ExpressionAttributeValues: { ":uid": userData.user_id },
+      ExpressionAttributeValues: { ":uid": message.user_id },
     })
   );
 
@@ -199,13 +197,12 @@ export const handler = async (
         logger.info(
           `started processing message with ID: ${record.Sns.MessageId}`
         );
-        const userData: UserData = JSON.parse(record.Sns.Message);
-        validateUserData(userData);
+        const message: DeletionMessage = JSON.parse(record.Sns.Message);
+        validateMessage(message);
 
-        const accountDeletionReason =
-          record.Sns.MessageAttributes?.account_deletion_reason?.Value;
+        const accountDeletionReason = message.account_deletion_reason;
 
-        const result = await deleteUserData(userData, accountDeletionReason);
+        const result = await deleteTrackerItem(message, accountDeletionReason);
 
         if (accountDeletionReason === "INACTIVE_ACCOUNT") {
           logger.info("InactiveAccountDeleted", {
@@ -217,7 +214,7 @@ export const handler = async (
 
         if (result.deleted && accountDeletionReason === "INACTIVE_ACCOUNT") {
           await maybeEnqueueDeletionEmail(
-            userData.user_id,
+            message.user_id,
             result.emailAddress,
             result.hasUndeliverableEmailAddress,
             result.hasSetupMfa,

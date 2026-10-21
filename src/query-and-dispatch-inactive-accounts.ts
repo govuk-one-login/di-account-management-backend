@@ -244,6 +244,115 @@ const forecastNumberOfDeletionsAlignsWithReality = async (
   return false;
 };
 
+interface ProcessDateResult {
+  dispatched: number;
+  stopRun: boolean;
+  capReached: boolean;
+}
+
+interface ProcessDateArgs {
+  processName: string;
+  targetDate: string;
+  tableName: string;
+  queueUrl: string;
+  allowedStatuses: string[];
+  isDryRun: boolean;
+  maxBatchSize: number | undefined;
+  dispatchedSoFar: number;
+}
+
+const processDate = async ({
+  processName,
+  targetDate,
+  tableName,
+  queueUrl,
+  allowedStatuses,
+  isDryRun,
+  maxBatchSize,
+  dispatchedSoFar,
+}: ProcessDateArgs): Promise<ProcessDateResult> => {
+  const stop = (dispatched: number): ProcessDateResult => ({
+    dispatched,
+    stopRun: true,
+    capReached: false,
+  });
+
+  if (
+    !(await forecastQueryLogicHashMatches(
+      processName,
+      targetDate,
+      dispatchedSoFar,
+      isDryRun
+    )) ||
+    !(await forecastNumberOfDeletionsAlignsWithReality(
+      processName,
+      targetDate,
+      tableName,
+      dispatchedSoFar,
+      isDryRun
+    ))
+  ) {
+    return stop(dispatchedSoFar);
+  }
+
+  logger.info(`Querying accounts for deletion date: ${targetDate}`);
+
+  let dispatched = dispatchedSoFar;
+  let eligibleForDate = 0;
+
+  for await (const page of queryAccountsByDate(tableName, targetDate)) {
+    if (await isIadCircuitBreakerTripped()) {
+      logAbort(
+        "CircuitBreakerAlreadyTripped",
+        processName,
+        targetDate,
+        dispatched,
+        isDryRun
+      );
+      return stop(dispatched);
+    }
+
+    const eligible = filterEligible(page, allowedStatuses);
+    eligibleForDate += eligible.length;
+
+    if (isDryRun) {
+      continue;
+    }
+
+    const result = await dispatchPageWithCap(
+      eligible,
+      queueUrl,
+      processName,
+      isDryRun,
+      maxBatchSize,
+      dispatched
+    );
+    dispatched += result.dispatched;
+
+    if (result.capReached) {
+      logger.info(
+        `Reached maxBatchSize of ${maxBatchSize}; stopping dispatch for ${processName}`,
+        {
+          maxBatchSize,
+          processName,
+          targetDate,
+          dispatched,
+          residualOnStoppingPage: result.residualOnStoppingPage,
+        }
+      );
+      return { dispatched, stopRun: false, capReached: true };
+    }
+  }
+
+  if (isDryRun) {
+    logger.info(
+      `Dry Run ${processName}: found ${eligibleForDate} accounts for date ${targetDate}`
+    );
+  }
+
+  return { dispatched, stopRun: false, capReached: false };
+};
+
 export const handler = async (
   event: QueryAndDispatchEvent,
   context: Context
@@ -274,83 +383,24 @@ export const handler = async (
       break;
     }
 
-    const targetDate = calculateTargetDate(days);
+    const result = await processDate({
+      processName: event.processName,
+      targetDate: calculateTargetDate(days),
+      tableName,
+      queueUrl,
+      allowedStatuses,
+      isDryRun,
+      maxBatchSize,
+      dispatchedSoFar: dispatched,
+    });
 
-    if (
-      !(await forecastQueryLogicHashMatches(
-        event.processName,
-        targetDate,
-        dispatched,
-        isDryRun
-      ))
-    ) {
+    dispatched = result.dispatched;
+
+    if (result.stopRun) {
       return;
     }
-
-    if (
-      !(await forecastNumberOfDeletionsAlignsWithReality(
-        event.processName,
-        targetDate,
-        tableName,
-        dispatched,
-        isDryRun
-      ))
-    ) {
-      return;
-    }
-
-    logger.info(`Querying accounts for deletion date: ${targetDate}`);
-
-    let eligibleForDate = 0;
-
-    for await (const page of queryAccountsByDate(tableName, targetDate)) {
-      if (await isIadCircuitBreakerTripped()) {
-        logAbort(
-          "CircuitBreakerAlreadyTripped",
-          event.processName,
-          targetDate,
-          dispatched,
-          isDryRun
-        );
-        return;
-      }
-
-      const eligible = filterEligible(page, allowedStatuses);
-      eligibleForDate += eligible.length;
-
-      if (isDryRun) {
-        continue;
-      }
-
-      const result = await dispatchPageWithCap(
-        eligible,
-        queueUrl,
-        event.processName,
-        isDryRun,
-        maxBatchSize,
-        dispatched
-      );
-      dispatched += result.dispatched;
-
-      if (result.capReached) {
-        logger.info(
-          `Reached maxBatchSize of ${maxBatchSize}; stopping dispatch for ${event.processName}`,
-          {
-            maxBatchSize,
-            processName: event.processName,
-            targetDate,
-            dispatched,
-            residualOnStoppingPage: result.residualOnStoppingPage,
-          }
-        );
-        break;
-      }
-    }
-
-    if (isDryRun) {
-      logger.info(
-        `Dry Run ${event.processName}: found ${eligibleForDate} accounts for date ${targetDate}`
-      );
+    if (result.capReached) {
+      break;
     }
   }
 

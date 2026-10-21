@@ -117,7 +117,12 @@ export const processConfig: ProcessConfig = {
     daysToDeletion: [
       0, -1, -2, -3, -4, -5, -6, -7, -8, -9, -10, -11, -12, -13, -14,
     ],
-    allowedStatuses: ["pending", "30DayWarningSent", "7DayWarningSent", "deleting"],
+    allowedStatuses: [
+      "pending",
+      "30DayWarningSent",
+      "7DayWarningSent",
+      "deleting",
+    ],
     targetStatus: "deleting",
     targetQueueUrlEnvVar: "ACCOUNT_DELETION_QUEUE_URL",
     auditEventName: "HOME_ACCOUNT_TRACKER_ACCOUNT_DELETION_REQUESTED",

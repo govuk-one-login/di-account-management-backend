@@ -197,39 +197,39 @@ const buildTrackerRecord = (
 
   const emailFields = newEmailAddress
     ? {
-      emailAddress: newEmailAddress,
-      emailAddressSource: txmaEvent.event_name,
-      emailAddressSourceId: txmaEvent.event_id,
-      emailAddressLastUpdated: eventDateTime,
-    }
+        emailAddress: newEmailAddress,
+        emailAddressSource: txmaEvent.event_name,
+        emailAddressSourceId: txmaEvent.event_id,
+        emailAddressLastUpdated: eventDateTime,
+      }
     : {
-      ...(previousTrackerRecord?.emailAddress && {
-        emailAddress: previousTrackerRecord.emailAddress,
-      }),
-      emailAddressSource: previousTrackerRecord?.emailAddressSource,
-      emailAddressSourceId: previousTrackerRecord?.emailAddressSourceId,
-      emailAddressLastUpdated: previousTrackerRecord?.emailAddressLastUpdated,
-    };
+        ...(previousTrackerRecord?.emailAddress && {
+          emailAddress: previousTrackerRecord.emailAddress,
+        }),
+        emailAddressSource: previousTrackerRecord?.emailAddressSource,
+        emailAddressSourceId: previousTrackerRecord?.emailAddressSourceId,
+        emailAddressLastUpdated: previousTrackerRecord?.emailAddressLastUpdated,
+      };
 
   const activityAndStatusFields = isNewLatestDate
     ? {
-      userLastActiveSource: txmaEvent.event_name,
-      ...(txmaEvent.event_id && {
-        userLastActiveSourceId: txmaEvent.event_id,
-      }),
-      userLastActiveUpdated: eventDateTime,
-      status: "pending" as const,
-      statusLastUpdated: eventDateTime,
-    }
+        userLastActiveSource: txmaEvent.event_name,
+        ...(txmaEvent.event_id && {
+          userLastActiveSourceId: txmaEvent.event_id,
+        }),
+        userLastActiveUpdated: eventDateTime,
+        status: "pending" as const,
+        statusLastUpdated: eventDateTime,
+      }
     : {
-      userLastActiveSource: previousTrackerRecord!.userLastActiveSource,
-      ...(previousTrackerRecord!.userLastActiveSourceId && {
-        userLastActiveSourceId: previousTrackerRecord!.userLastActiveSourceId,
-      }),
-      userLastActiveUpdated: previousTrackerRecord!.userLastActiveUpdated,
-      status: previousTrackerRecord!.status,
-      statusLastUpdated: previousTrackerRecord!.statusLastUpdated,
-    };
+        userLastActiveSource: previousTrackerRecord!.userLastActiveSource,
+        ...(previousTrackerRecord!.userLastActiveSourceId && {
+          userLastActiveSourceId: previousTrackerRecord!.userLastActiveSourceId,
+        }),
+        userLastActiveUpdated: previousTrackerRecord!.userLastActiveUpdated,
+        status: previousTrackerRecord!.status,
+        statusLastUpdated: previousTrackerRecord!.statusLastUpdated,
+      };
 
   return {
     commonSubjectId: userId,

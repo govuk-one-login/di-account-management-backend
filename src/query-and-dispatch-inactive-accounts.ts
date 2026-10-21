@@ -24,6 +24,7 @@ const sqsClient = new SQSClient({ maxAttempts: 5 });
 
 export interface QueryAndDispatchEvent {
   processName: string;
+  maxBatchSize?: number;
 }
 
 export const calculateTargetDate = (daysToDeletion: number): string => {
@@ -35,6 +36,14 @@ export const calculateTargetDate = (daysToDeletion: number): string => {
 export const validateEvent = (event: QueryAndDispatchEvent): void => {
   if (!event.processName || !processConfig[event.processName]) {
     throw new Error(`Unknown processName: ${event.processName}`);
+  }
+  if (
+    event.maxBatchSize !== undefined &&
+    (!Number.isInteger(event.maxBatchSize) || event.maxBatchSize < 1)
+  ) {
+    throw new Error(
+      `Invalid maxBatchSize: ${event.maxBatchSize}. Must be a positive integer.`
+    );
   }
 };
 
@@ -223,9 +232,15 @@ export const handler = async (
   } = processConfig[event.processName];
   const queueUrl = getEnvironmentVariable(queueUrlEnvVar);
 
+  const { maxBatchSize } = event;
+
   let dispatched = 0;
 
   for (const days of daysToDeletion) {
+    if (maxBatchSize !== undefined && dispatched >= maxBatchSize) {
+      break;
+    }
+
     const targetDate = calculateTargetDate(days);
 
     if (
@@ -271,12 +286,25 @@ export const handler = async (
       eligibleForDate += eligible.length;
 
       if (!isDryRun) {
+        let toDispatch = eligible;
+        if (maxBatchSize !== undefined) {
+          const remaining = maxBatchSize - dispatched;
+          toDispatch = eligible.slice(0, remaining);
+        }
+
         dispatched += await dispatchEligibleRecords(
-          eligible,
+          toDispatch,
           queueUrl,
           event.processName,
           isDryRun
         );
+
+        if (maxBatchSize !== undefined && dispatched >= maxBatchSize) {
+          logger.info(
+            `Reached maxBatchSize of ${maxBatchSize}; stopping dispatch for ${event.processName}`
+          );
+          break;
+        }
       }
     }
 

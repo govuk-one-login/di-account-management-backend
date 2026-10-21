@@ -67,6 +67,21 @@ describe("validateEvent", () => {
   test("does not throw for valid input", () => {
     expect(() => validateEvent({ processName: "Warning30Day" })).not.toThrow();
   });
+
+  test("does not throw when maxBatchSize is a positive integer", () => {
+    expect(() =>
+      validateEvent({ processName: "Warning30Day", maxBatchSize: 5 })
+    ).not.toThrow();
+  });
+
+  test.each([0, -1, 2.5])(
+    "throws when maxBatchSize is not a positive integer (%s)",
+    (maxBatchSize) => {
+      expect(() =>
+        validateEvent({ processName: "Warning30Day", maxBatchSize })
+      ).toThrow(`Invalid maxBatchSize: ${maxBatchSize}`);
+    }
+  );
 });
 
 describe("calculateTargetDate", () => {
@@ -89,6 +104,8 @@ describe("handler", () => {
     process.env.TABLE_NAME = "inactive-accounts-table";
     process.env.WARNING_30_DAY_NOTIFICATION_QUEUE_URL =
       "https://sqs.eu-west-2.amazonaws.com/123/queue";
+    process.env.WARNING_7_DAY_NOTIFICATION_QUEUE_URL =
+      "https://sqs.eu-west-2.amazonaws.com/123/queue-7day";
     process.env.ACCOUNT_DELETION_QUEUE_URL =
       "https://sqs.eu-west-2.amazonaws.com/123/deletion-queue";
     process.env.FORECAST_TABLE_NAME = "forecast-table";
@@ -444,5 +461,153 @@ describe("handler", () => {
 
     infoSpy.mockRestore();
     vi.useRealTimers();
+  });
+
+  describe("maxBatchSize", () => {
+    const countEntriesDispatched = (): number =>
+      sqsMock
+        .commandCalls(SendMessageBatchCommand)
+        .reduce(
+          (sum, call) => sum + (call.args[0].input.Entries?.length ?? 0),
+          0
+        );
+
+    test("dispatches no more than maxBatchSize records within a single page", async () => {
+      // 25 eligible records in one page, cap at 12.
+      const records = Array.from({ length: 25 }, (_, i) => ({
+        ...mockRecord,
+        commonSubjectId: `user-${i}`,
+      }));
+      dynamoMock.on(QueryCommand).resolves({ Items: records });
+      sqsMock
+        .on(SendMessageBatchCommand)
+        .resolves({ Successful: [], Failed: [] });
+
+      await handler(
+        { processName: "Warning7Day", maxBatchSize: 12 },
+        {} as Context
+      );
+
+      expect(countEntriesDispatched()).toBe(12);
+    });
+
+    test("stops dispatching across pages once maxBatchSize is reached", async () => {
+      const page = (startIndex: number) =>
+        Array.from({ length: 10 }, (_, i) => ({
+          ...mockRecord,
+          commonSubjectId: `user-${startIndex + i}`,
+        }));
+
+      // Two pages of 10; cap at 15 means the first page (10) dispatches
+      // fully and the second page is trimmed to 5, then paging stops.
+      dynamoMock
+        .on(QueryCommand)
+        .resolvesOnce({
+          Items: page(0),
+          LastEvaluatedKey: { dateForDeletion: "x", commonSubjectId: "user-9" },
+        })
+        .resolves({ Items: page(10) });
+      sqsMock
+        .on(SendMessageBatchCommand)
+        .resolves({ Successful: [], Failed: [] });
+
+      await handler(
+        { processName: "Warning7Day", maxBatchSize: 15 },
+        {} as Context
+      );
+
+      expect(countEntriesDispatched()).toBe(15);
+      // Only the first page needed to be fetched beyond the initial query;
+      // paging halts once the cap is hit rather than draining every page.
+      expect(dynamoMock.commandCalls(QueryCommand)).toHaveLength(2);
+    });
+
+    test("stops processing further dates once maxBatchSize is reached", async () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date("2026-06-17T12:00:00.000Z"));
+
+      vi.mocked(getLatestForecastItemForDate).mockResolvedValue({
+        iadQueryLogicHash: {
+          hash: "test-hash",
+          algorithm: "sha256",
+          generatedAt: "",
+        },
+        accountsToDelete: 1000,
+        dateForDeletion: "2026-06-17",
+        forecastedAt: "",
+        ttl: 0,
+      });
+
+      // DeleteAccount iterates 15 dates. Each date returns 10 eligible
+      // records; a cap of 10 should be satisfied by the first date alone.
+      const records = Array.from({ length: 10 }, (_, i) => ({
+        ...mockRecord,
+        commonSubjectId: `user-${i}`,
+      }));
+      dynamoMock
+        .on(QueryCommand)
+        .resolves({ Count: 10, ScannedCount: 10, Items: records });
+      sqsMock
+        .on(SendMessageBatchCommand)
+        .resolves({ Successful: [], Failed: [] });
+
+      const infoSpy = vi.spyOn(Logger.prototype, "info");
+
+      await handler(
+        { processName: "DeleteAccount", maxBatchSize: 10 },
+        {} as Context
+      );
+
+      expect(countEntriesDispatched()).toBe(10);
+      expect(infoSpy).toHaveBeenCalledWith(
+        "Reached maxBatchSize of 10; stopping dispatch for DeleteAccount"
+      );
+
+      infoSpy.mockRestore();
+      vi.useRealTimers();
+    });
+
+    test("dispatches all records when maxBatchSize is omitted", async () => {
+      const records = Array.from({ length: 25 }, (_, i) => ({
+        ...mockRecord,
+        commonSubjectId: `user-${i}`,
+      }));
+      dynamoMock.on(QueryCommand).resolves({ Items: records });
+      sqsMock
+        .on(SendMessageBatchCommand)
+        .resolves({ Successful: [], Failed: [] });
+
+      await handler({ processName: "Warning7Day" }, {} as Context);
+
+      expect(countEntriesDispatched()).toBe(25);
+    });
+
+    test("does not apply maxBatchSize to a dry run", async () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date("2026-06-17T12:00:00.000Z"));
+
+      const infoSpy = vi.spyOn(Logger.prototype, "info");
+
+      dynamoMock.on(QueryCommand).resolves({
+        Items: Array.from({ length: 5 }, (_, i) => ({
+          ...mockRecord,
+          commonSubjectId: `user-${i}`,
+        })),
+      });
+
+      await handler(
+        { processName: "DeletionDryRun", maxBatchSize: 2 },
+        {} as Context
+      );
+
+      expect(sqsMock.commandCalls(SendMessageBatchCommand)).toHaveLength(0);
+      // All 11 dates still queried; the cap only governs real dispatch.
+      expect(infoSpy).toHaveBeenCalledWith(
+        "Dry Run DeletionDryRun: found 5 accounts for date 2026-06-17"
+      );
+
+      infoSpy.mockRestore();
+      vi.useRealTimers();
+    });
   });
 });

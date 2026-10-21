@@ -318,30 +318,32 @@ export const handler = async (
       const eligible = filterEligible(page, allowedStatuses);
       eligibleForDate += eligible.length;
 
-      if (!isDryRun) {
-        const result = await dispatchPageWithCap(
-          eligible,
-          queueUrl,
-          event.processName,
-          isDryRun,
-          maxBatchSize,
-          dispatched
-        );
-        dispatched += result.dispatched;
+      if (isDryRun) {
+        continue;
+      }
 
-        if (result.capReached) {
-          logger.info(
-            `Reached maxBatchSize of ${maxBatchSize}; stopping dispatch for ${event.processName}`,
-            {
-              maxBatchSize,
-              processName: event.processName,
-              targetDate,
-              dispatched,
-              residualOnStoppingPage: result.residualOnStoppingPage,
-            }
-          );
-          break;
-        }
+      const result = await dispatchPageWithCap(
+        eligible,
+        queueUrl,
+        event.processName,
+        isDryRun,
+        maxBatchSize,
+        dispatched
+      );
+      dispatched += result.dispatched;
+
+      if (result.capReached) {
+        logger.info(
+          `Reached maxBatchSize of ${maxBatchSize}; stopping dispatch for ${event.processName}`,
+          {
+            maxBatchSize,
+            processName: event.processName,
+            targetDate,
+            dispatched,
+            residualOnStoppingPage: result.residualOnStoppingPage,
+          }
+        );
+        break;
       }
     }
 

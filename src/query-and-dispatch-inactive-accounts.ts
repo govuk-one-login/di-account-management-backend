@@ -301,7 +301,14 @@ export const handler = async (
 
         if (maxBatchSize !== undefined && dispatched >= maxBatchSize) {
           logger.info(
-            `Reached maxBatchSize of ${maxBatchSize}; stopping dispatch for ${event.processName}`
+            `Reached maxBatchSize of ${maxBatchSize}; stopping dispatch for ${event.processName}`,
+            {
+              maxBatchSize,
+              processName: event.processName,
+              targetDate,
+              dispatched,
+              residualOnStoppingPage: eligible.length - toDispatch.length,
+            }
           );
           break;
         }

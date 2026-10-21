@@ -560,7 +560,13 @@ describe("handler", () => {
 
       expect(countEntriesDispatched()).toBe(10);
       expect(infoSpy).toHaveBeenCalledWith(
-        "Reached maxBatchSize of 10; stopping dispatch for DeleteAccount"
+        "Reached maxBatchSize of 10; stopping dispatch for DeleteAccount",
+        expect.objectContaining({
+          maxBatchSize: 10,
+          processName: "DeleteAccount",
+          dispatched: 10,
+          residualOnStoppingPage: expect.any(Number),
+        })
       );
 
       infoSpy.mockRestore();

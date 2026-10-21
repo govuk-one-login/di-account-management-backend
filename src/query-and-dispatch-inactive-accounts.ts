@@ -133,6 +133,39 @@ const dispatchEligibleRecords = async (
   return dispatched;
 };
 
+const dispatchPageWithCap = async (
+  eligible: InactiveAccountTrackerRecord[],
+  queueUrl: string,
+  processName: string,
+  isDryRun: boolean,
+  maxBatchSize: number | undefined,
+  dispatchedSoFar: number
+): Promise<{
+  dispatched: number;
+  capReached: boolean;
+  residualOnStoppingPage: number;
+}> => {
+  const toDispatch =
+    maxBatchSize === undefined
+      ? eligible
+      : eligible.slice(0, maxBatchSize - dispatchedSoFar);
+
+  const dispatched = await dispatchEligibleRecords(
+    toDispatch,
+    queueUrl,
+    processName,
+    isDryRun
+  );
+
+  return {
+    dispatched,
+    capReached:
+      maxBatchSize !== undefined &&
+      dispatchedSoFar + dispatched >= maxBatchSize,
+    residualOnStoppingPage: eligible.length - toDispatch.length,
+  };
+};
+
 const forecastQueryLogicHashMatches = async (
   processName: string,
   targetDate: string,
@@ -286,20 +319,17 @@ export const handler = async (
       eligibleForDate += eligible.length;
 
       if (!isDryRun) {
-        let toDispatch = eligible;
-        if (maxBatchSize !== undefined) {
-          const remaining = maxBatchSize - dispatched;
-          toDispatch = eligible.slice(0, remaining);
-        }
-
-        dispatched += await dispatchEligibleRecords(
-          toDispatch,
+        const result = await dispatchPageWithCap(
+          eligible,
           queueUrl,
           event.processName,
-          isDryRun
+          isDryRun,
+          maxBatchSize,
+          dispatched
         );
+        dispatched += result.dispatched;
 
-        if (maxBatchSize !== undefined && dispatched >= maxBatchSize) {
+        if (result.capReached) {
           logger.info(
             `Reached maxBatchSize of ${maxBatchSize}; stopping dispatch for ${event.processName}`,
             {
@@ -307,7 +337,7 @@ export const handler = async (
               processName: event.processName,
               targetDate,
               dispatched,
-              residualOnStoppingPage: eligible.length - toDispatch.length,
+              residualOnStoppingPage: result.residualOnStoppingPage,
             }
           );
           break;

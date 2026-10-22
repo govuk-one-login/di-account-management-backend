@@ -202,6 +202,89 @@ const forecastNumberOfDeletionsAlignsWithReality = async (
   return false;
 };
 
+interface ProcessDateResult {
+  dispatched: number;
+  stopRun: boolean;
+}
+
+interface ProcessDateArgs {
+  processName: string;
+  targetDate: string;
+  tableName: string;
+  queueUrl: string;
+  allowedStatuses: string[];
+  isDryRun: boolean;
+  dispatchedSoFar: number;
+}
+
+const processDate = async ({
+  processName,
+  targetDate,
+  tableName,
+  queueUrl,
+  allowedStatuses,
+  isDryRun,
+  dispatchedSoFar,
+}: ProcessDateArgs): Promise<ProcessDateResult> => {
+  if (
+    !(await forecastQueryLogicHashMatches(
+      processName,
+      targetDate,
+      dispatchedSoFar,
+      isDryRun
+    )) ||
+    !(await forecastNumberOfDeletionsAlignsWithReality(
+      processName,
+      targetDate,
+      tableName,
+      dispatchedSoFar,
+      isDryRun
+    ))
+  ) {
+    return { dispatched: dispatchedSoFar, stopRun: true };
+  }
+
+  logger.info(`Querying accounts for deletion date: ${targetDate}`);
+
+  let dispatched = dispatchedSoFar;
+  let eligibleForDate = 0;
+
+  for await (const page of queryAccountsByDate(tableName, targetDate)) {
+    if (await isIadCircuitBreakerTripped()) {
+      logAbort(
+        "CircuitBreakerAlreadyTripped",
+        processName,
+        targetDate,
+        dispatched,
+        isDryRun
+      );
+      return { dispatched, stopRun: true };
+    }
+
+    const eligible = filterEligible(page, allowedStatuses);
+    eligibleForDate += eligible.length;
+
+    if (isDryRun) {
+      continue;
+    }
+
+    dispatched += await dispatchEligibleRecords(
+      eligible,
+      queueUrl,
+      processName,
+      isDryRun
+    );
+  }
+
+  if (isDryRun) {
+    logger.info(
+      `Dry Run ${processName}: found ${eligibleForDate} accounts for date ${targetDate}`
+    );
+  }
+
+  return { dispatched, stopRun: false };
+};
+
 export const handler = async (
   event: QueryAndDispatchEvent,
   context: Context
@@ -226,64 +309,20 @@ export const handler = async (
   let dispatched = 0;
 
   for (const days of daysToDeletion) {
-    const targetDate = calculateTargetDate(days);
+    const result = await processDate({
+      processName: event.processName,
+      targetDate: calculateTargetDate(days),
+      tableName,
+      queueUrl,
+      allowedStatuses,
+      isDryRun,
+      dispatchedSoFar: dispatched,
+    });
 
-    if (
-      !(await forecastQueryLogicHashMatches(
-        event.processName,
-        targetDate,
-        dispatched,
-        isDryRun
-      ))
-    ) {
+    dispatched = result.dispatched;
+
+    if (result.stopRun) {
       return;
-    }
-
-    if (
-      !(await forecastNumberOfDeletionsAlignsWithReality(
-        event.processName,
-        targetDate,
-        tableName,
-        dispatched,
-        isDryRun
-      ))
-    ) {
-      return;
-    }
-
-    logger.info(`Querying accounts for deletion date: ${targetDate}`);
-
-    let eligibleForDate = 0;
-
-    for await (const page of queryAccountsByDate(tableName, targetDate)) {
-      if (await isIadCircuitBreakerTripped()) {
-        logAbort(
-          "CircuitBreakerAlreadyTripped",
-          event.processName,
-          targetDate,
-          dispatched,
-          isDryRun
-        );
-        return;
-      }
-
-      const eligible = filterEligible(page, allowedStatuses);
-      eligibleForDate += eligible.length;
-
-      if (!isDryRun) {
-        dispatched += await dispatchEligibleRecords(
-          eligible,
-          queueUrl,
-          event.processName,
-          isDryRun
-        );
-      }
-    }
-
-    if (isDryRun) {
-      logger.info(
-        `Dry Run ${event.processName}: found ${eligibleForDate} accounts for date ${targetDate}`
-      );
     }
   }
 

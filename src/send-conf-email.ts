@@ -26,9 +26,18 @@ export const getClientInfo = (
   return registry[id];
 };
 
+// Welsh (cy) day-period abbreviations. Intl's output for the `cy` locale
+// depends on the bundled ICU version (older ICU emitted "yb"/"yh", newer ICU
+// falls back to English "AM"/"PM"), so we resolve the day period explicitly to
+// keep Welsh emails correct and stable across Node/ICU upgrades.
+const WELSH_DAY_PERIODS: Record<string, string> = {
+  am: "yb", // y bore (morning)
+  pm: "yh", // yr hwyr (afternoon/evening)
+};
+
 const formatTimestamp = (timestamp: number, language: string) => {
   const date = new Date(timestamp * 1000);
-  return Intl.DateTimeFormat(language, {
+  const formatter = Intl.DateTimeFormat(language, {
     month: "long",
     day: "numeric",
     year: "numeric",
@@ -36,7 +45,26 @@ const formatTimestamp = (timestamp: number, language: string) => {
     minute: "numeric",
     hourCycle: "h12",
     timeZone: "GB",
-  }).format(date);
+  });
+
+  if (language !== "cy") {
+    return formatter.format(date);
+  }
+
+  // Rebuild the string from parts so we can substitute the correct Welsh
+  // day period regardless of what the current ICU build produces. Spacing
+  // around the day period differs between ICU versions, so normalise it to a
+  // single separating space.
+  let result = "";
+  for (const part of formatter.formatToParts(date)) {
+    if (part.type === "dayPeriod") {
+      const welsh = WELSH_DAY_PERIODS[part.value.toLowerCase()] ?? part.value;
+      result = `${result.trimEnd()} ${welsh}`;
+    } else {
+      result += part.value;
+    }
+  }
+  return result;
 };
 
 export const formatActivityObjectForEmail = (

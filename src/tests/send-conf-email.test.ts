@@ -89,6 +89,19 @@ describe("formatActivityObjectForEmail", () => {
     expect(getTranslationsMock).toHaveBeenCalled;
   });
 
+  test("should format afternoon times with the Welsh 'yh' day period", () => {
+    process.env.ENVIRONMENT_NAME = "local";
+
+    const input = getInput();
+    // 2024-03-15 15:30:00 GMT — an afternoon GB time, so the day period is pm.
+    input.suspicious_activity.timestamp = 1710516600;
+
+    const result = formatActivityObjectForEmail(input);
+
+    expect(result.personalisation.dateCy).toBe("15 Mawrth 2024 am 3:30 yh");
+    expect(result.personalisation.dateEn).toBe("15 March 2024 at 3:30 pm");
+  });
+
   // test("should include description for One Login Home events", () => {
   //   process.env.ENVIRONMENT_NAME = "local";
 

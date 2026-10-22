@@ -212,29 +212,6 @@ describe("UpdateInactiveAccountTracker handler", () => {
     });
   });
 
-  test("returns early and logs warning when currentItem status is deleting", async () => {
-    dynamoMock.on(QueryCommand).resolves({
-      Items: [
-        {
-          commonSubjectId: "qwerty",
-          dateForDeletion: "2026-01-01",
-          userLastActive: "2026-01-01T00:00:00.000Z",
-          status: "deleting",
-          emailAddress: "x",
-          statusLastUpdated: "",
-        },
-      ],
-    });
-    const event: DynamoDBStreamEvent = {
-      Records: [generateDynamoStreamRecord("test-client")],
-    };
-    await handler(event, {} as Context);
-    expect(loggerWarnMock).toHaveBeenCalledWith(
-      "AUTH_EVENT_ON_DELETING_ACCOUNT"
-    );
-    expect(dynamoMock).not.toHaveReceivedCommand(TransactWriteCommand);
-  });
-
   test("merges duplicate tracker records and processes the event successfully", async () => {
     dynamoMock.on(QueryCommand).resolves({
       Items: [

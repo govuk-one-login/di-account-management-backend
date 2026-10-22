@@ -24,6 +24,7 @@ const sqsClient = new SQSClient({ maxAttempts: 5 });
 
 export interface QueryAndDispatchEvent {
   processName: string;
+  maxBatchSize?: number;
 }
 
 export const calculateTargetDate = (daysToDeletion: number): string => {
@@ -35,6 +36,12 @@ export const calculateTargetDate = (daysToDeletion: number): string => {
 export const validateEvent = (event: QueryAndDispatchEvent): void => {
   if (!event.processName || !processConfig[event.processName]) {
     throw new Error(`Unknown processName: ${event.processName}`);
+  }
+  if (
+    event.maxBatchSize !== undefined &&
+    (!Number.isInteger(event.maxBatchSize) || event.maxBatchSize <= 0)
+  ) {
+    throw new Error(`Invalid maxBatchSize: ${event.maxBatchSize}`);
   }
 };
 
@@ -205,7 +212,29 @@ const forecastNumberOfDeletionsAlignsWithReality = async (
 interface ProcessDateResult {
   dispatched: number;
   stopRun: boolean;
+  capReached: boolean;
 }
+
+const applyBatchCap = (
+  eligible: InactiveAccountTrackerRecord[],
+  maxBatchSize: number | undefined,
+  dispatchedSoFar: number
+): {
+  toDispatch: InactiveAccountTrackerRecord[];
+  capReached: boolean;
+  residual: number;
+} => {
+  if (maxBatchSize === undefined) {
+    return { toDispatch: eligible, capReached: false, residual: 0 };
+  }
+  const remaining = maxBatchSize - dispatchedSoFar;
+  const toDispatch = eligible.slice(0, remaining);
+  return {
+    toDispatch,
+    capReached: eligible.length >= remaining,
+    residual: eligible.length - toDispatch.length,
+  };
+};
 
 interface ProcessDateArgs {
   processName: string;
@@ -214,6 +243,7 @@ interface ProcessDateArgs {
   queueUrl: string;
   allowedStatuses: string[];
   isDryRun: boolean;
+  maxBatchSize: number | undefined;
   dispatchedSoFar: number;
 }
 
@@ -224,6 +254,7 @@ const processDate = async ({
   queueUrl,
   allowedStatuses,
   isDryRun,
+  maxBatchSize,
   dispatchedSoFar,
 }: ProcessDateArgs): Promise<ProcessDateResult> => {
   if (
@@ -241,7 +272,7 @@ const processDate = async ({
       isDryRun
     ))
   ) {
-    return { dispatched: dispatchedSoFar, stopRun: true };
+    return { dispatched: dispatchedSoFar, stopRun: true, capReached: false };
   }
 
   logger.info(`Querying accounts for deletion date: ${targetDate}`);
@@ -258,7 +289,7 @@ const processDate = async ({
         dispatched,
         isDryRun
       );
-      return { dispatched, stopRun: true };
+      return { dispatched, stopRun: true, capReached: false };
     }
 
     const eligible = filterEligible(page, allowedStatuses);
@@ -268,12 +299,32 @@ const processDate = async ({
       continue;
     }
 
-    dispatched += await dispatchEligibleRecords(
+    const { toDispatch, capReached, residual } = applyBatchCap(
       eligible,
+      maxBatchSize,
+      dispatched
+    );
+
+    dispatched += await dispatchEligibleRecords(
+      toDispatch,
       queueUrl,
       processName,
       isDryRun
     );
+
+    if (capReached) {
+      logger.info(
+        `Reached maxBatchSize of ${maxBatchSize}; stopping dispatch for ${processName}`,
+        {
+          maxBatchSize,
+          processName,
+          targetDate,
+          dispatched,
+          residualOnStoppingPage: residual,
+        }
+      );
+      return { dispatched, stopRun: false, capReached: true };
+    }
   }
 
   if (isDryRun) {
@@ -282,7 +333,7 @@ const processDate = async ({
     );
   }
 
-  return { dispatched, stopRun: false };
+  return { dispatched, stopRun: false, capReached: false };
 };
 
 export const handler = async (
@@ -306,9 +357,15 @@ export const handler = async (
   } = processConfig[event.processName];
   const queueUrl = getEnvironmentVariable(queueUrlEnvVar);
 
+  const { maxBatchSize } = event;
+
   let dispatched = 0;
 
   for (const days of daysToDeletion) {
+    if (maxBatchSize !== undefined && dispatched >= maxBatchSize) {
+      break;
+    }
+
     const result = await processDate({
       processName: event.processName,
       targetDate: calculateTargetDate(days),
@@ -316,6 +373,7 @@ export const handler = async (
       queueUrl,
       allowedStatuses,
       isDryRun,
+      maxBatchSize,
       dispatchedSoFar: dispatched,
     });
 
@@ -323,6 +381,9 @@ export const handler = async (
 
     if (result.stopRun) {
       return;
+    }
+    if (result.capReached) {
+      break;
     }
   }
 

@@ -7445,6 +7445,7 @@ Resources:
       FunctionName: !Sub ${Environment}-${AWS::StackName}-dispatch-inactive-accounts
       CodeUri: src
       PackageType: Zip
+      MemorySize: 512
       Timeout: 900
       Events:
         Warning30DayScheduleEvent:

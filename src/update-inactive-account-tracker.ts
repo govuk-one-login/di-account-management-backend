@@ -449,11 +449,6 @@ const processRecord = async (
     `User has existing tracker record for event_id ${txmaEvent.event_id}: ${Boolean(previousTrackerRecord)}`
   );
 
-  if (previousTrackerRecord?.status === "deleting") {
-    logger.warn("AUTH_EVENT_ON_DELETING_ACCOUNT");
-    return;
-  }
-
   const eventDate = getEventDate(txmaEvent);
 
   if (

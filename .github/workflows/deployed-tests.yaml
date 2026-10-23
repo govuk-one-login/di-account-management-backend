@@ -172,7 +172,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: ${{ github.workspace }}
-        run: npm ci
+        run: npm ci --ignore-scripts
 
       - name: Set up AWS creds
         uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # pin@v1-node16

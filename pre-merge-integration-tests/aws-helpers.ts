@@ -133,6 +133,9 @@ export async function pollForItem(
       break;
     }
 
+    // Intentional sequential pause between poll attempts; the loop must wait
+    // before re-querying. Parallelising this would defeat the purpose.
+    // NOSONAR: await-in-loop is deliberate here.
     await new Promise((resolve) => setTimeout(resolve, 1000));
   }
 
@@ -261,6 +264,10 @@ export async function deleteItemsByIndex(
   let exclusiveStartKey: Record<string, unknown> | undefined;
 
   do {
+    // Sequential by necessity: each page's query depends on the previous
+    // page's LastEvaluatedKey (ExclusiveStartKey), so pages cannot be fetched
+    // in parallel.
+    // NOSONAR: await-in-loop is an inherent pagination dependency.
     const response = await documentClient.send(
       new QueryCommand({
         TableName: tableName,
@@ -274,15 +281,20 @@ export async function deleteItemsByIndex(
 
     const items = response.Items ?? [];
 
-    for (const item of items) {
-      const key: PrimaryKey = {};
-      for (const field of keyFields) {
-        if (field in item) {
-          key[field] = (item as Record<string, unknown>)[field];
+    // Deletes within a page are independent of one another, so issue them
+    // concurrently. deleteItem never throws (it warns on failure), so a single
+    // failed delete does not reject the batch.
+    await Promise.all(
+      items.map((item) => {
+        const key: PrimaryKey = {};
+        for (const field of keyFields) {
+          if (field in item) {
+            key[field] = (item as Record<string, unknown>)[field];
+          }
         }
-      }
-      await deleteItem(tableName, key);
-    }
+        return deleteItem(tableName, key);
+      })
+    );
 
     exclusiveStartKey = response.LastEvaluatedKey;
   } while (exclusiveStartKey !== undefined);

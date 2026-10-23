@@ -42,7 +42,7 @@ function deliveryReceiptsUrl(): string {
 async function getNotifyBearerToken(): Promise<string> {
   const secretArn = getNotifySecretArn();
   if (typeof secretArn !== "string" || secretArn.length === 0) {
-    throw new MissingConfigError("NOTIFY_DELIVERY_RECEIPTS_SECRET_ARN");
+    throw new MissingConfigError("NOTIFY_DELIVERY_RECEIPTS_SECRET_ARN"); // pragma: allowlist secret
   }
 
   try {

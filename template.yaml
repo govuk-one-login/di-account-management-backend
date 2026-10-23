@@ -2,6 +2,16 @@ AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 Description: "A template to create the GOV.UK One login Account backend infrastructure"
 
+Metadata:
+  # E3724 ("Validate Globals section") incorrectly flags CodeSigningConfigArn as
+  # an unexpected property of Globals.Function. It is a valid SAM Globals Function
+  # property (see aws/aws-sam-cli#4274); this is a cfn-lint schema-lag false
+  # positive, so the check is ignored for this template.
+  cfn-lint:
+    config:
+      ignore_checks:
+        - E3724
+
 Parameters:
   UserServicesStoreTableName:
     Type: String

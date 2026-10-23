@@ -36,12 +36,12 @@ export function getNotifySecretArn(): string | undefined {
 // are set to non-empty values.
 export function notifyTestsConfigured(): boolean {
   const baseUrl = process.env.PUBLIC_API_BASE_URL;
-  const secretArn = process.env.NOTIFY_DELIVERY_RECEIPTS_SECRET_ARN;
+  const arn = process.env.NOTIFY_DELIVERY_RECEIPTS_SECRET_ARN;
   return (
     typeof baseUrl === "string" &&
     baseUrl.length > 0 &&
-    typeof secretArn === "string" &&
-    secretArn.length > 0
+    typeof arn === "string" &&
+    arn.length > 0
   );
 }
 

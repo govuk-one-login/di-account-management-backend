@@ -1,10 +1,10 @@
 import { Guard } from "../process-config.js";
 
-export const doesNotHaveEmailAddress: Guard = async ({ emailAddress }) => {
+export const doesNotHaveEmailAddress: Guard = ({ emailAddress }) => {
   const guardActivated =
     typeof emailAddress !== "string" || !emailAddress.length;
-  return {
+  return Promise.resolve({
     guardActivated,
     guardName: "DoesNotHaveEmailAddress",
-  };
+  });
 };

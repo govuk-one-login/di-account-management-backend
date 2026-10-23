@@ -1,4 +1,4 @@
-import { defineConfig } from "vitest/config";
+import { configDefaults, defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
@@ -12,6 +12,12 @@ export default defineConfig({
       "**/tests/*/*.test.ts",
       "**/tests/*.test.ts",
       "scripts/hash-iad-query-logic/*.test.ts",
+    ],
+    // Preserve Vitest's default excludes and keep integration tests out of the
+    // unit run so `npm test` never discovers them.
+    exclude: [
+      ...configDefaults.exclude,
+      "pre-merge-integration-tests/tests/**/*.integration.test.ts",
     ],
   },
 });

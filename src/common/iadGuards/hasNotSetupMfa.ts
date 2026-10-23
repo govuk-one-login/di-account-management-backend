@@ -1,7 +1,7 @@
 import { Guard } from "../process-config.js";
 
-export const hasNotSetupMfa: Guard = async ({ hasSetupMfa }) => {
+export const hasNotSetupMfa: Guard = ({ hasSetupMfa }) => {
   const guardActivated = hasSetupMfa === false;
 
-  return { guardActivated, guardName: "hasNotSetupMfa" };
+  return Promise.resolve({ guardActivated, guardName: "hasNotSetupMfa" });
 };

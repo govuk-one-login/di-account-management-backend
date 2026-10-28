@@ -3,7 +3,13 @@ import MockAdapter from "axios-mock-adapter";
 import axios from "axios";
 import { getAisStatus } from "../common/account-interventions-service-client.js";
 
-const mockAxios = new MockAdapter(axios);
+// Under nodenext, axios-mock-adapter resolves axios's types via the "import"
+// resolution mode while this file resolves them via the default mode, so TS
+// sees two unrelated AxiosInstance types. The runtime object is correct; cast
+// through unknown to bridge the duplicated type identities.
+const mockAxios = new MockAdapter(
+  axios as unknown as ConstructorParameters<typeof MockAdapter>[0]
+);
 
 describe("account-interventions-service-client", () => {
   const baseUrl = "https://ais.example.com";

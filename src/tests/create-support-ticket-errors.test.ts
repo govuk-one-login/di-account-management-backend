@@ -12,7 +12,13 @@ import { EventNamesEnum } from "../common/constants.js";
 import { Context } from "aws-lambda";
 
 const mockedSecretsManager = mockClient(SecretsManagerClient);
-const mockAxios = new MockAdapter(axios);
+// Under nodenext, axios-mock-adapter resolves axios's types via the "import"
+// resolution mode while this file resolves them via the default mode, so TS
+// sees two unrelated AxiosInstance types. The runtime object is correct; cast
+// through unknown to bridge the duplicated type identities.
+const mockAxios = new MockAdapter(
+  axios as unknown as ConstructorParameters<typeof MockAdapter>[0]
+);
 
 describe("handler error handling", () => {
   beforeEach(() => {

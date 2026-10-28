@@ -31,15 +31,10 @@
       ],
       "ignoreBinaries": ["zizmor", "brew", "sam", "read", "pre-commit"],
       "ignoreDependencies": [
-        "esbuild",
         "@typescript-eslint/eslint-plugin",
-        "eslint-plugin-prettier",
         "lint-staged",
         "aws-lambda",
       ],
-    },
-    "solutions/integration-tests": {
-      "entry": ["src/tests/**/*.ts"],
     },
   },
 }

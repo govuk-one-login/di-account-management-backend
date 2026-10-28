@@ -868,7 +868,6 @@ Resources:
           Label: "Write Capacity Expected Band"
           ReturnData: true
 
-
   ######################################
   # User Notifications store
   ######################################
@@ -2300,6 +2299,7 @@ Resources:
       RedrivePolicy:
         deadLetterTargetArn: !GetAtt AccountDeletionDeadLetterQueue.Arn
         maxReceiveCount: 5
+      VisibilityTimeout: 300
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
 
@@ -2905,7 +2905,11 @@ Resources:
       AlarmName:
         !Join [
           "-",
-          [!Ref AWS::StackName, !Ref Environment, UserAccountDeletionTopicSubscriptionDeleteEmailSubscriptionsDeadLetterQueueAlarm],
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            UserAccountDeletionTopicSubscriptionDeleteEmailSubscriptionsDeadLetterQueueAlarm,
+          ],
         ]
       AlarmDescription: More than 1 account deletion email subscription cleanup message failed in the last 5 minutes.
       Namespace: "AWS/SQS"
@@ -2955,7 +2959,11 @@ Resources:
       AlarmName:
         !Join [
           "-",
-          [!Ref AWS::StackName, !Ref Environment, DeleteEmailSubscriptionsDeadLetterQueueAlarm],
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            DeleteEmailSubscriptionsDeadLetterQueueAlarm,
+          ],
         ]
       AlarmDescription: More than 1 email subscription deletion failed in the last 5 minutes.
       Namespace: "AWS/SQS"
@@ -3716,7 +3724,11 @@ Resources:
       AlarmName:
         !Join [
           "-",
-          [!Ref AWS::StackName, !Ref Environment, UpdateInactiveAccountTrackerDeadLetterQueueAlarm],
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            UpdateInactiveAccountTrackerDeadLetterQueueAlarm,
+          ],
         ]
       AlarmDescription: More than 1 inactive account tracker update failed in the last 5 minutes.
       Namespace: "AWS/SQS"
@@ -3885,7 +3897,11 @@ Resources:
       AlarmName:
         !Join [
           "-",
-          [!Ref AWS::StackName, !Ref Environment, 30DayNotificationDeadLetterQueueAlarm],
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            30DayNotificationDeadLetterQueueAlarm,
+          ],
         ]
       AlarmDescription: More than 1 message failed to be processed by the 30 day inactivity warning in the last 5 minutes.
       Namespace: "AWS/SQS"
@@ -3908,7 +3924,11 @@ Resources:
       AlarmName:
         !Join [
           "-",
-          [!Ref AWS::StackName, !Ref Environment, 7DayNotificationDeadLetterQueueAlarm],
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            7DayNotificationDeadLetterQueueAlarm,
+          ],
         ]
       AlarmDescription: More than 1 message failed to be processed by the 7 day inactivity warning in the last 5 minutes.
       Namespace: "AWS/SQS"
@@ -3931,7 +3951,11 @@ Resources:
       AlarmName:
         !Join [
           "-",
-          [!Ref AWS::StackName, !Ref Environment, AccountDeletionProcessDeadLetterQueueAlarm],
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            AccountDeletionProcessDeadLetterQueueAlarm,
+          ],
         ]
       AlarmDescription: "More than 1 inactive account deletion request failed to be processed in the last 5 minutes. Runbook: https://govukverify.atlassian.net/wiki/x/FYB2pgE"
       Namespace: "AWS/SQS"
@@ -4378,7 +4402,11 @@ Resources:
       AlarmName:
         !Join [
           "-",
-          [!Ref AWS::StackName, !Ref Environment, PublishAccountDeletionDeadLetterQueueAlarm],
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            PublishAccountDeletionDeadLetterQueueAlarm,
+          ],
         ]
       AlarmDescription: "More than 1 account deletion publish failed in the last 5 minutes. Runbook: https://govukverify.atlassian.net/wiki/x/FYB2pgE"
       Namespace: "AWS/SQS"
@@ -7469,11 +7497,7 @@ Resources:
             Schedule: "cron(15 10 ? * MON-FRI *)"
             Input: '{"processName": "DeleteAccount"}'
             State:
-              !FindInMap [
-                IADDeleteAccountSchedule,
-                !Ref Environment,
-                State,
-              ]
+              !FindInMap [IADDeleteAccountSchedule, !Ref Environment, State]
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt QueryAndDispatchInactiveAccountsDeadLetterQueue.Arn
@@ -7678,6 +7702,7 @@ Resources:
       Handler: process-inactive-account.handler
       PackageType: Zip
       Timeout: 120
+      MemorySize: 512
       # Override the global ReservedConcurrentExecutions (10) so the per-source
       # SQS ScalingConfig.MaximumConcurrency (50 each) can actually scale up.
       ReservedConcurrentExecutions: 150
@@ -7853,7 +7878,11 @@ Resources:
       AlarmName:
         !Join [
           "-",
-          [!Ref AWS::StackName, !Ref Environment, ProcessInactiveAccountDeadLetterQueueAlarm],
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            ProcessInactiveAccountDeadLetterQueueAlarm,
+          ],
         ]
       AlarmDescription: More than 1 inactive account notification or deletion request failed to be processed in the last 5 minutes.
       Namespace: "AWS/SQS"
@@ -8147,7 +8176,11 @@ Resources:
       AlarmName:
         !Join [
           "-",
-          [!Ref AWS::StackName, !Ref Environment, InactiveAccountDeletionForecastDeadLetterQueueAlarm],
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            InactiveAccountDeletionForecastDeadLetterQueueAlarm,
+          ],
         ]
       AlarmDescription: "More than 1 inactive account deletion forecast failed to be published in the last 5 minutes. Runbook: https://govukverify.atlassian.net/wiki/x/FYB2pgE"
       Namespace: "AWS/SQS"

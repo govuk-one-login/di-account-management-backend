@@ -868,7 +868,6 @@ Resources:
           Label: "Write Capacity Expected Band"
           ReturnData: true
 
-
   ######################################
   # User Notifications store
   ######################################
@@ -1278,14 +1277,6 @@ Resources:
       RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
-  SaveRawEventsCSLSSubscription:
-    Condition: ExportLogsToSplunk
-    Type: AWS::Logs::SubscriptionFilter
-    Properties:
-      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
-      FilterPattern: ""
-      LogGroupName: !Ref SaveRawEventsFunctionLogGroup
-
   SaveRawEventsDLQAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
@@ -1558,14 +1549,6 @@ Resources:
       RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
-  QueryUserServicesCSLSSubscription:
-    Condition: ExportLogsToSplunk
-    Type: AWS::Logs::SubscriptionFilter
-    Properties:
-      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
-      FilterPattern: ""
-      LogGroupName: !Ref QueryUserServicesFunctionLogGroup
-
   UserServicesToFormatQueue:
     Type: AWS::SQS::Queue
     Properties:
@@ -1806,14 +1789,6 @@ Resources:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-format-user-services"
       RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
-
-  FormatUserServicesCSLSSubscription:
-    Condition: ExportLogsToSplunk
-    Type: AWS::Logs::SubscriptionFilter
-    Properties:
-      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
-      FilterPattern: ""
-      LogGroupName: !Ref FormatUserServicesFunctionLogGroup
 
   UserServicesToWriteQueue:
     Type: AWS::SQS::Queue
@@ -2102,14 +2077,6 @@ Resources:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-write-user-services"
       RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
-
-  WriteUserServicesCSLSSubscription:
-    Condition: ExportLogsToSplunk
-    Type: AWS::Logs::SubscriptionFilter
-    Properties:
-      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
-      FilterPattern: ""
-      LogGroupName: !Ref WriteUserServicesFunctionLogGroup
 
   WriteUserServicesDeadLetterQueueAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -2502,14 +2469,6 @@ Resources:
       RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
-  DeleteUserServicesCSLSSubscription:
-    Condition: ExportLogsToSplunk
-    Type: AWS::Logs::SubscriptionFilter
-    Properties:
-      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
-      FilterPattern: ""
-      LogGroupName: !Ref DeleteUserServicesFunctionLogGroup
-
   DeleteUserServicesDeadLetterQueue:
     Type: AWS::SQS::Queue
     DeletionPolicy: Delete
@@ -2858,14 +2817,6 @@ Resources:
       RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
-  DeleteEmailSubscriptionsCSLSSubscription:
-    Condition: ExportLogsToSplunk
-    Type: AWS::Logs::SubscriptionFilter
-    Properties:
-      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
-      FilterPattern: ""
-      LogGroupName: !Ref DeleteEmailSubscriptionsFunctionLogGroup
-
   ActivityLogToFormatQueue:
     Type: AWS::SQS::Queue
     Properties:
@@ -2905,7 +2856,11 @@ Resources:
       AlarmName:
         !Join [
           "-",
-          [!Ref AWS::StackName, !Ref Environment, UserAccountDeletionTopicSubscriptionDeleteEmailSubscriptionsDeadLetterQueueAlarm],
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            UserAccountDeletionTopicSubscriptionDeleteEmailSubscriptionsDeadLetterQueueAlarm,
+          ],
         ]
       AlarmDescription: More than 1 account deletion email subscription cleanup message failed in the last 5 minutes.
       Namespace: "AWS/SQS"
@@ -2955,7 +2910,11 @@ Resources:
       AlarmName:
         !Join [
           "-",
-          [!Ref AWS::StackName, !Ref Environment, DeleteEmailSubscriptionsDeadLetterQueueAlarm],
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            DeleteEmailSubscriptionsDeadLetterQueueAlarm,
+          ],
         ]
       AlarmDescription: More than 1 email subscription deletion failed in the last 5 minutes.
       Namespace: "AWS/SQS"
@@ -3181,14 +3140,6 @@ Resources:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-write-activity-log"
       RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
-
-  WriteActivityLogCSLSSubscription:
-    Condition: ExportLogsToSplunk
-    Type: AWS::Logs::SubscriptionFilter
-    Properties:
-      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
-      FilterPattern: ""
-      LogGroupName: !Ref WriteActivityLogFunctionLogGroup
 
   WriteActivityLogDeadLetterQueueAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -3431,14 +3382,6 @@ Resources:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-format-activity-log"
       RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
-
-  FormatActivityLogCSLSSubscription:
-    Condition: ExportLogsToSplunk
-    Type: AWS::Logs::SubscriptionFilter
-    Properties:
-      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
-      FilterPattern: ""
-      LogGroupName: !Ref FormatActivityLogFunctionLogGroup
 
   ActivityLogToWriteQueue:
     Type: AWS::SQS::Queue
@@ -3716,7 +3659,11 @@ Resources:
       AlarmName:
         !Join [
           "-",
-          [!Ref AWS::StackName, !Ref Environment, UpdateInactiveAccountTrackerDeadLetterQueueAlarm],
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            UpdateInactiveAccountTrackerDeadLetterQueueAlarm,
+          ],
         ]
       AlarmDescription: More than 1 inactive account tracker update failed in the last 5 minutes.
       Namespace: "AWS/SQS"
@@ -3885,7 +3832,11 @@ Resources:
       AlarmName:
         !Join [
           "-",
-          [!Ref AWS::StackName, !Ref Environment, 30DayNotificationDeadLetterQueueAlarm],
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            30DayNotificationDeadLetterQueueAlarm,
+          ],
         ]
       AlarmDescription: More than 1 message failed to be processed by the 30 day inactivity warning in the last 5 minutes.
       Namespace: "AWS/SQS"
@@ -3908,7 +3859,11 @@ Resources:
       AlarmName:
         !Join [
           "-",
-          [!Ref AWS::StackName, !Ref Environment, 7DayNotificationDeadLetterQueueAlarm],
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            7DayNotificationDeadLetterQueueAlarm,
+          ],
         ]
       AlarmDescription: More than 1 message failed to be processed by the 7 day inactivity warning in the last 5 minutes.
       Namespace: "AWS/SQS"
@@ -3931,7 +3886,11 @@ Resources:
       AlarmName:
         !Join [
           "-",
-          [!Ref AWS::StackName, !Ref Environment, AccountDeletionProcessDeadLetterQueueAlarm],
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            AccountDeletionProcessDeadLetterQueueAlarm,
+          ],
         ]
       AlarmDescription: "More than 1 inactive account deletion request failed to be processed in the last 5 minutes. Runbook: https://govukverify.atlassian.net/wiki/x/FYB2pgE"
       Namespace: "AWS/SQS"
@@ -4235,14 +4194,6 @@ Resources:
       RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
-  UpdateUserEmailCSLSSubscription:
-    Condition: ExportLogsToSplunk
-    Type: AWS::Logs::SubscriptionFilter
-    Properties:
-      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
-      FilterPattern: ""
-      LogGroupName: !Ref UpdateUserEmailFunctionLogGroup
-
   UpdateUserEmailDLQAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
@@ -4378,7 +4329,11 @@ Resources:
       AlarmName:
         !Join [
           "-",
-          [!Ref AWS::StackName, !Ref Environment, PublishAccountDeletionDeadLetterQueueAlarm],
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            PublishAccountDeletionDeadLetterQueueAlarm,
+          ],
         ]
       AlarmDescription: "More than 1 account deletion publish failed in the last 5 minutes. Runbook: https://govukverify.atlassian.net/wiki/x/FYB2pgE"
       Namespace: "AWS/SQS"
@@ -4629,14 +4584,6 @@ Resources:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-delete-activity-log"
       RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
-
-  DeleteActivityLogCSLSSubscription:
-    Condition: ExportLogsToSplunk
-    Type: AWS::Logs::SubscriptionFilter
-    Properties:
-      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
-      FilterPattern: ""
-      LogGroupName: !Ref DeleteActivityLogFunctionLogGroup
 
   DeleteActivityLogDeadLetterQueue:
     Type: AWS::SQS::Queue
@@ -4929,14 +4876,6 @@ Resources:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-delete-user-notifications"
       RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
-
-  DeleteUserNotificationsCSLSSubscription:
-    Condition: ExportLogsToSplunk
-    Type: AWS::Logs::SubscriptionFilter
-    Properties:
-      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
-      FilterPattern: ""
-      LogGroupName: !Ref DeleteUserNotificationsFunctionLogGroup
 
   DeleteUserNotificationsDeadLetterQueue:
     Type: AWS::SQS::Queue
@@ -5287,14 +5226,6 @@ Resources:
           MetricNamespace: IAD
           MetricValue: 1
           Unit: Count
-
-  DeleteInactiveAccountTrackerCSLSSubscription:
-    Condition: ExportLogsToSplunk
-    Type: AWS::Logs::SubscriptionFilter
-    Properties:
-      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
-      FilterPattern: ""
-      LogGroupName: !Ref DeleteInactiveAccountTrackerFunctionLogGroup
 
   DeleteInactiveAccountTrackerDeadLetterQueue:
     Type: AWS::SQS::Queue
@@ -5669,14 +5600,6 @@ Resources:
       RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
-  SendSuspiciousActivityToTxMACSLSSubscription:
-    Condition: ExportLogsToSplunk
-    Type: AWS::Logs::SubscriptionFilter
-    Properties:
-      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
-      FilterPattern: ""
-      LogGroupName: !Ref SendSuspiciousActivityFunctionLogGroup
-
   SendSuspiciousActivityFunctionSuccessRate:
     Type: AWS::CloudWatch::Alarm
     Properties:
@@ -5829,14 +5752,6 @@ Resources:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-send-conf-email"
       RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
-
-  SendConfEmailToTxMACSLSSubscription:
-    Condition: ExportLogsToSplunk
-    Type: AWS::Logs::SubscriptionFilter
-    Properties:
-      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
-      FilterPattern: ""
-      LogGroupName: !Ref SendConfEmailFunctionLogGroup
 
   SendConfEmailFunctionSuccessRate:
     Type: AWS::CloudWatch::Alarm
@@ -6029,14 +5944,6 @@ Resources:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-create-support-ticket"
       RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
-
-  CreateSupportTicketToTxMACSLSSubscription:
-    Condition: ExportLogsToSplunk
-    Type: AWS::Logs::SubscriptionFilter
-    Properties:
-      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
-      FilterPattern: ""
-      LogGroupName: !Ref CreateSupportTicketFunctionLogGroup
 
   CreateSupportTicketFunctionSuccessRate:
     Type: AWS::CloudWatch::Alarm
@@ -6250,14 +6157,6 @@ Resources:
       RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
-  TriggerSuspiciousActivityStepToTxMACSLSSubscription:
-    Condition: ExportLogsToSplunk
-    Type: AWS::Logs::SubscriptionFilter
-    Properties:
-      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
-      FilterPattern: ""
-      LogGroupName: !Ref TriggerSuspiciousActivityStepFunctionLogGroup
-
   TriggerSuspiciousActivityStepDeadLetterQueueOldestMessageAgeAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
@@ -6436,14 +6335,6 @@ Resources:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-rsa-step"
       RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
-
-  ReportSuspiciousActivityStepFunctionCSLSSubscription:
-    Condition: ExportLogsToSplunk
-    Type: AWS::Logs::SubscriptionFilter
-    Properties:
-      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
-      FilterPattern: ""
-      LogGroupName: !Ref ReportSuspiciousActivityStepFunctionLogGroup
 
   ReportSuspiciousActivityStepFunctionExecutionFailureAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -7293,14 +7184,6 @@ Resources:
       RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
-  NotificationServiceCSLSSubscription:
-    Condition: ExportLogsToSplunk
-    Type: AWS::Logs::SubscriptionFilter
-    Properties:
-      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
-      FilterPattern: ""
-      LogGroupName: !Ref NotificationServiceFunctionLogGroup
-
   NotificationServiceFunctionSuccessRate:
     Type: AWS::CloudWatch::Alarm
     Properties:
@@ -7469,11 +7352,7 @@ Resources:
             Schedule: "cron(15 10 ? * MON-FRI *)"
             Input: '{"processName": "DeleteAccount"}'
             State:
-              !FindInMap [
-                IADDeleteAccountSchedule,
-                !Ref Environment,
-                State,
-              ]
+              !FindInMap [IADDeleteAccountSchedule, !Ref Environment, State]
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt QueryAndDispatchInactiveAccountsDeadLetterQueue.Arn
@@ -7578,14 +7457,6 @@ Resources:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-dispatch-inactive-accounts"
       RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
-
-  QueryAndDispatchInactiveAccountsCSLSSubscription:
-    Condition: ExportLogsToSplunk
-    Type: AWS::Logs::SubscriptionFilter
-    Properties:
-      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
-      FilterPattern: ""
-      LogGroupName: !Ref QueryAndDispatchInactiveAccountsFunctionLogGroup
 
   QueryAndDispatchInactiveAccountsDeadLetterQueue:
     Type: AWS::SQS::Queue
@@ -7853,7 +7724,11 @@ Resources:
       AlarmName:
         !Join [
           "-",
-          [!Ref AWS::StackName, !Ref Environment, ProcessInactiveAccountDeadLetterQueueAlarm],
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            ProcessInactiveAccountDeadLetterQueueAlarm,
+          ],
         ]
       AlarmDescription: More than 1 inactive account notification or deletion request failed to be processed in the last 5 minutes.
       Namespace: "AWS/SQS"
@@ -7877,14 +7752,6 @@ Resources:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-process-inactive-account"
       RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
-
-  ProcessInactiveAccountCSLSSubscription:
-    Condition: ExportLogsToSplunk
-    Type: AWS::Logs::SubscriptionFilter
-    Properties:
-      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
-      FilterPattern: ""
-      LogGroupName: !Ref ProcessInactiveAccountFunctionLogGroup
 
   ProcessInactiveAccountFunctionSuccessRate:
     Type: AWS::CloudWatch::Alarm
@@ -8125,14 +7992,6 @@ Resources:
       RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
-  InactiveAccountDeletionForecastCSLSSubscription:
-    Condition: ExportLogsToSplunk
-    Type: AWS::Logs::SubscriptionFilter
-    Properties:
-      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
-      FilterPattern: ""
-      LogGroupName: !Ref InactiveAccountDeletionForecastFunctionLogGroup
-
   InactiveAccountDeletionForecastDeadLetterQueue:
     Type: AWS::SQS::Queue
     DeletionPolicy: Delete
@@ -8147,7 +8006,11 @@ Resources:
       AlarmName:
         !Join [
           "-",
-          [!Ref AWS::StackName, !Ref Environment, InactiveAccountDeletionForecastDeadLetterQueueAlarm],
+          [
+            !Ref AWS::StackName,
+            !Ref Environment,
+            InactiveAccountDeletionForecastDeadLetterQueueAlarm,
+          ],
         ]
       AlarmDescription: "More than 1 inactive account deletion forecast failed to be published in the last 5 minutes. Runbook: https://govukverify.atlassian.net/wiki/x/FYB2pgE"
       Namespace: "AWS/SQS"

@@ -2262,6 +2262,7 @@ Resources:
       RedrivePolicy:
         deadLetterTargetArn: !GetAtt AccountDeletionDeadLetterQueue.Arn
         maxReceiveCount: 5
+      VisibilityTimeout: 300
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
 
@@ -7544,6 +7545,7 @@ Resources:
       Handler: process-inactive-account.handler
       PackageType: Zip
       Timeout: 120
+      MemorySize: 512
       # Override the global ReservedConcurrentExecutions (10) so the per-source
       # SQS ScalingConfig.MaximumConcurrency (50 each) can actually scale up.
       ReservedConcurrentExecutions: 150

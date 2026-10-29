@@ -19,7 +19,6 @@ import {
   assertNoItem,
   deleteItem,
   getSecret,
-  httpPost,
   pollForItem,
   sendMessage,
   type MatchCriteria,
@@ -235,64 +234,5 @@ describe("deleteItem", () => {
     ).resolves.toBeUndefined();
     expect(warn).toHaveBeenCalledOnce();
     expect(warn.mock.calls[0][0]).toContain('table "activity_log"');
-  });
-});
-
-describe("httpPost", () => {
-  it("JSON-serialises object payloads and merges the content-type header", async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValue(new Response("ok-body", { status: 200 }));
-    vi.stubGlobal("fetch", fetchMock);
-
-    const result = await httpPost(
-      "https://api.example.gov.uk/x",
-      { a: 1 },
-      { Authorization: "Bearer token" }
-    );
-
-    expect(result).toStrictEqual({ status: 200, body: "ok-body" });
-    const [url, init] = fetchMock.mock.calls[0];
-    expect(url).toBe("https://api.example.gov.uk/x");
-    expect(init.method).toBe("POST");
-    expect(init.body).toBe(JSON.stringify({ a: 1 }));
-    expect(init.headers).toStrictEqual({
-      Authorization: "Bearer token",
-      "Content-Type": "application/json",
-    });
-  });
-
-  it("passes string payloads through unchanged", async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValue(new Response("", { status: 403 }));
-    vi.stubGlobal("fetch", fetchMock);
-
-    const result = await httpPost("https://api.example.gov.uk/x", "raw");
-
-    expect(result.status).toBe(403);
-    expect(fetchMock.mock.calls[0][1].body).toBe("raw");
-  });
-
-  it("returns non-2xx responses without throwing", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue(new Response("bad", { status: 400 }))
-    );
-
-    await expect(
-      httpPost("https://api.example.gov.uk/x", {})
-    ).resolves.toStrictEqual({ status: 400, body: "bad" });
-  });
-
-  it("re-throws a non-abort fetch error", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockRejectedValue(new Error("network down"))
-    );
-
-    await expect(httpPost("https://api.example.gov.uk/x", {})).rejects.toThrow(
-      "network down"
-    );
   });
 });

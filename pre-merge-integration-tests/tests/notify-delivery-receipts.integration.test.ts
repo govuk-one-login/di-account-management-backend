@@ -11,8 +11,8 @@ import {
   notifyTestsConfigured,
   MissingConfigError,
 } from "../config.js";
-import { generateEventId } from "../ids.js";
-import { httpPost, getSecret } from "../aws-helpers.js";
+import { generateEventId, httpPost } from "../helpers.js";
+import { getSecret } from "../aws-helpers.js";
 
 // Kept as a `type` (not `interface`) so the shape structurally satisfies
 // httpPost's `Record<string, unknown>` payload parameter; interfaces lack the

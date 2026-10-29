@@ -2,11 +2,6 @@ AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 Description: "A template to create the GOV.UK One login Account backend infrastructure"
 
-# E3724 is suppressed in .cfnlintrc.yaml (false positive for the valid SAM
-# Globals.Function property CodeSigningConfigArn). Inline Metadata.cfn-lint is
-# not honoured by `sam validate --lint`, so the suppression lives in the config
-# file, which both the cfn-lint and sam-validate pre-commit hooks read.
-
 Parameters:
   UserServicesStoreTableName:
     Type: String

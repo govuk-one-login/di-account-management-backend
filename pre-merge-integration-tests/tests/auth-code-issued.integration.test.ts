@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { PutCommand } from "@aws-sdk/lib-dynamodb";
 
 import { TABLES } from "../config.js";
-import { generateEventId, generateUserId } from "../ids.js";
+import { generateEventId, generateUserId } from "../helpers.js";
 import {
   documentClient,
   sendMessage,

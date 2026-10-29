@@ -122,11 +122,6 @@ Conditions:
     - !Equals [!Ref Environment, integration]
     - !Equals [!Ref Environment, production]
 
-  ExportLogsToSplunk:
-    Fn::Or:
-      - !Equals [!Ref Environment, integration]
-      - !Equals [!Ref Environment, production]
-
   GrantTestPermissions:
     Fn::Not:
       - Fn::Equals:

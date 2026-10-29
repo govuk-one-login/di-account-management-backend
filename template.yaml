@@ -122,11 +122,6 @@ Conditions:
     - !Equals [!Ref Environment, integration]
     - !Equals [!Ref Environment, production]
 
-  ExportLogsToSplunk:
-    Fn::Or:
-      - !Equals [!Ref Environment, integration]
-      - !Equals [!Ref Environment, production]
-
   GrantTestPermissions:
     Fn::Not:
       - Fn::Equals:
@@ -1277,14 +1272,6 @@ Resources:
       RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
-  SaveRawEventsCSLSSubscription:
-    Condition: ExportLogsToSplunk
-    Type: AWS::Logs::SubscriptionFilter
-    Properties:
-      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
-      FilterPattern: ""
-      LogGroupName: !Ref SaveRawEventsFunctionLogGroup
-
   SaveRawEventsDLQAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
@@ -1557,14 +1544,6 @@ Resources:
       RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
-  QueryUserServicesCSLSSubscription:
-    Condition: ExportLogsToSplunk
-    Type: AWS::Logs::SubscriptionFilter
-    Properties:
-      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
-      FilterPattern: ""
-      LogGroupName: !Ref QueryUserServicesFunctionLogGroup
-
   UserServicesToFormatQueue:
     Type: AWS::SQS::Queue
     Properties:
@@ -1805,14 +1784,6 @@ Resources:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-format-user-services"
       RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
-
-  FormatUserServicesCSLSSubscription:
-    Condition: ExportLogsToSplunk
-    Type: AWS::Logs::SubscriptionFilter
-    Properties:
-      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
-      FilterPattern: ""
-      LogGroupName: !Ref FormatUserServicesFunctionLogGroup
 
   UserServicesToWriteQueue:
     Type: AWS::SQS::Queue
@@ -2101,14 +2072,6 @@ Resources:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-write-user-services"
       RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
-
-  WriteUserServicesCSLSSubscription:
-    Condition: ExportLogsToSplunk
-    Type: AWS::Logs::SubscriptionFilter
-    Properties:
-      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
-      FilterPattern: ""
-      LogGroupName: !Ref WriteUserServicesFunctionLogGroup
 
   WriteUserServicesDeadLetterQueueAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -2502,14 +2465,6 @@ Resources:
       RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
-  DeleteUserServicesCSLSSubscription:
-    Condition: ExportLogsToSplunk
-    Type: AWS::Logs::SubscriptionFilter
-    Properties:
-      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
-      FilterPattern: ""
-      LogGroupName: !Ref DeleteUserServicesFunctionLogGroup
-
   DeleteUserServicesDeadLetterQueue:
     Type: AWS::SQS::Queue
     DeletionPolicy: Delete
@@ -2858,14 +2813,6 @@ Resources:
       RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
-  DeleteEmailSubscriptionsCSLSSubscription:
-    Condition: ExportLogsToSplunk
-    Type: AWS::Logs::SubscriptionFilter
-    Properties:
-      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
-      FilterPattern: ""
-      LogGroupName: !Ref DeleteEmailSubscriptionsFunctionLogGroup
-
   ActivityLogToFormatQueue:
     Type: AWS::SQS::Queue
     Properties:
@@ -3190,14 +3137,6 @@ Resources:
       RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
-  WriteActivityLogCSLSSubscription:
-    Condition: ExportLogsToSplunk
-    Type: AWS::Logs::SubscriptionFilter
-    Properties:
-      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
-      FilterPattern: ""
-      LogGroupName: !Ref WriteActivityLogFunctionLogGroup
-
   WriteActivityLogDeadLetterQueueAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
@@ -3439,14 +3378,6 @@ Resources:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-format-activity-log"
       RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
-
-  FormatActivityLogCSLSSubscription:
-    Condition: ExportLogsToSplunk
-    Type: AWS::Logs::SubscriptionFilter
-    Properties:
-      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
-      FilterPattern: ""
-      LogGroupName: !Ref FormatActivityLogFunctionLogGroup
 
   ActivityLogToWriteQueue:
     Type: AWS::SQS::Queue
@@ -4259,14 +4190,6 @@ Resources:
       RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
-  UpdateUserEmailCSLSSubscription:
-    Condition: ExportLogsToSplunk
-    Type: AWS::Logs::SubscriptionFilter
-    Properties:
-      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
-      FilterPattern: ""
-      LogGroupName: !Ref UpdateUserEmailFunctionLogGroup
-
   UpdateUserEmailDLQAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
@@ -4658,14 +4581,6 @@ Resources:
       RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
-  DeleteActivityLogCSLSSubscription:
-    Condition: ExportLogsToSplunk
-    Type: AWS::Logs::SubscriptionFilter
-    Properties:
-      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
-      FilterPattern: ""
-      LogGroupName: !Ref DeleteActivityLogFunctionLogGroup
-
   DeleteActivityLogDeadLetterQueue:
     Type: AWS::SQS::Queue
     DeletionPolicy: Delete
@@ -4957,14 +4872,6 @@ Resources:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-delete-user-notifications"
       RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
-
-  DeleteUserNotificationsCSLSSubscription:
-    Condition: ExportLogsToSplunk
-    Type: AWS::Logs::SubscriptionFilter
-    Properties:
-      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
-      FilterPattern: ""
-      LogGroupName: !Ref DeleteUserNotificationsFunctionLogGroup
 
   DeleteUserNotificationsDeadLetterQueue:
     Type: AWS::SQS::Queue
@@ -5315,14 +5222,6 @@ Resources:
           MetricNamespace: IAD
           MetricValue: 1
           Unit: Count
-
-  DeleteInactiveAccountTrackerCSLSSubscription:
-    Condition: ExportLogsToSplunk
-    Type: AWS::Logs::SubscriptionFilter
-    Properties:
-      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
-      FilterPattern: ""
-      LogGroupName: !Ref DeleteInactiveAccountTrackerFunctionLogGroup
 
   DeleteInactiveAccountTrackerDeadLetterQueue:
     Type: AWS::SQS::Queue
@@ -5697,14 +5596,6 @@ Resources:
       RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
-  SendSuspiciousActivityToTxMACSLSSubscription:
-    Condition: ExportLogsToSplunk
-    Type: AWS::Logs::SubscriptionFilter
-    Properties:
-      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
-      FilterPattern: ""
-      LogGroupName: !Ref SendSuspiciousActivityFunctionLogGroup
-
   SendSuspiciousActivityFunctionSuccessRate:
     Type: AWS::CloudWatch::Alarm
     Properties:
@@ -5857,14 +5748,6 @@ Resources:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-send-conf-email"
       RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
-
-  SendConfEmailToTxMACSLSSubscription:
-    Condition: ExportLogsToSplunk
-    Type: AWS::Logs::SubscriptionFilter
-    Properties:
-      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
-      FilterPattern: ""
-      LogGroupName: !Ref SendConfEmailFunctionLogGroup
 
   SendConfEmailFunctionSuccessRate:
     Type: AWS::CloudWatch::Alarm
@@ -6057,14 +5940,6 @@ Resources:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-create-support-ticket"
       RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
-
-  CreateSupportTicketToTxMACSLSSubscription:
-    Condition: ExportLogsToSplunk
-    Type: AWS::Logs::SubscriptionFilter
-    Properties:
-      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
-      FilterPattern: ""
-      LogGroupName: !Ref CreateSupportTicketFunctionLogGroup
 
   CreateSupportTicketFunctionSuccessRate:
     Type: AWS::CloudWatch::Alarm
@@ -6278,14 +6153,6 @@ Resources:
       RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
-  TriggerSuspiciousActivityStepToTxMACSLSSubscription:
-    Condition: ExportLogsToSplunk
-    Type: AWS::Logs::SubscriptionFilter
-    Properties:
-      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
-      FilterPattern: ""
-      LogGroupName: !Ref TriggerSuspiciousActivityStepFunctionLogGroup
-
   TriggerSuspiciousActivityStepDeadLetterQueueOldestMessageAgeAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
@@ -6464,14 +6331,6 @@ Resources:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-rsa-step"
       RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
-
-  ReportSuspiciousActivityStepFunctionCSLSSubscription:
-    Condition: ExportLogsToSplunk
-    Type: AWS::Logs::SubscriptionFilter
-    Properties:
-      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
-      FilterPattern: ""
-      LogGroupName: !Ref ReportSuspiciousActivityStepFunctionLogGroup
 
   ReportSuspiciousActivityStepFunctionExecutionFailureAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -7321,14 +7180,6 @@ Resources:
       RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
-  NotificationServiceCSLSSubscription:
-    Condition: ExportLogsToSplunk
-    Type: AWS::Logs::SubscriptionFilter
-    Properties:
-      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
-      FilterPattern: ""
-      LogGroupName: !Ref NotificationServiceFunctionLogGroup
-
   NotificationServiceFunctionSuccessRate:
     Type: AWS::CloudWatch::Alarm
     Properties:
@@ -7602,14 +7453,6 @@ Resources:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-dispatch-inactive-accounts"
       RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
-
-  QueryAndDispatchInactiveAccountsCSLSSubscription:
-    Condition: ExportLogsToSplunk
-    Type: AWS::Logs::SubscriptionFilter
-    Properties:
-      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
-      FilterPattern: ""
-      LogGroupName: !Ref QueryAndDispatchInactiveAccountsFunctionLogGroup
 
   QueryAndDispatchInactiveAccountsDeadLetterQueue:
     Type: AWS::SQS::Queue
@@ -7907,14 +7750,6 @@ Resources:
       RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
-  ProcessInactiveAccountCSLSSubscription:
-    Condition: ExportLogsToSplunk
-    Type: AWS::Logs::SubscriptionFilter
-    Properties:
-      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
-      FilterPattern: ""
-      LogGroupName: !Ref ProcessInactiveAccountFunctionLogGroup
-
   ProcessInactiveAccountFunctionSuccessRate:
     Type: AWS::CloudWatch::Alarm
     Properties:
@@ -8153,14 +7988,6 @@ Resources:
       LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-inactive-acc-del-forecast"
       RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
-
-  InactiveAccountDeletionForecastCSLSSubscription:
-    Condition: ExportLogsToSplunk
-    Type: AWS::Logs::SubscriptionFilter
-    Properties:
-      DestinationArn: !Sub "{{resolve:ssm:/${Environment}/Platform/Logs/Subscription/CSLS/ARN}}"
-      FilterPattern: ""
-      LogGroupName: !Ref InactiveAccountDeletionForecastFunctionLogGroup
 
   InactiveAccountDeletionForecastDeadLetterQueue:
     Type: AWS::SQS::Queue

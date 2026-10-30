@@ -95,6 +95,39 @@ describe("deleteUserData", () => {
     expect(activityRecords?.[3]).toEqual(activityLogEntry4);
   });
 
+  test("queries DynamoDB twice for two pages of results and all results should be unique", async () => {
+    const userData: UserData = {
+      govuk_signin_journey_id: "",
+      access_token: "",
+      public_subject_id: "",
+      user_id: userId,
+    };
+    const activityRecords = await getAllActivityLogEntriesForUser("TABLE_NAME", userData);
+    expect(dynamoMock.commandCalls(QueryCommand).length).toEqual(2);
+    const sessionIds = activityRecords?.map((r) => r.session_id);
+    expect(new Set(sessionIds).size).toEqual(sessionIds?.length);
+  });
+
+  test("second query uses ExclusiveStartKey from first page response", async () => {
+  const capturedKeys: unknown[] = [];
+
+  dynamoMock.reset();
+  dynamoMock.on(QueryCommand).callsFakeOnce((input) => {
+    capturedKeys.push(input.ExclusiveStartKey);
+    return { Items: [activityLogEntry1, activityLogEntry2], LastEvaluatedKey: activityLogEntry2 };
+  }).callsFake((input) => {
+    capturedKeys.push(input.ExclusiveStartKey);
+    return { Items: [activityLogEntry3, activityLogEntry4], LastEvaluatedKey: undefined };
+  });
+
+  const userData: UserData = { govuk_signin_journey_id: "", access_token: "", public_subject_id: "", user_id: userId };
+  await getAllActivityLogEntriesForUser("TABLE_NAME", userData);
+
+  expect(capturedKeys[0]).toBeUndefined();
+  expect(capturedKeys[1]).toEqual(activityLogEntry2);
+});
+
+
   test("map an activity to a deletion request structure", () => {
     const batchDeletePayload = buildBatchDeletionRequestArray([
       activityLogEntry,

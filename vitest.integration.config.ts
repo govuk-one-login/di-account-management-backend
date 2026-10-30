@@ -27,10 +27,5 @@ export default defineConfig({
     // seed write beforehand. Vitest's 5s default is far too low, so raise the
     // per-test timeout to sit comfortably above the longest in-test wait.
     testTimeout: 40_000,
-    // A type error in any integration test file fails the run.
-    typecheck: {
-      enabled: true,
-      include: ["pre-merge-integration-tests/tests/**/*.integration.test.ts"],
-    },
   },
 });

@@ -144,7 +144,7 @@ export const handler = async (
     let zendeskTicketTags: string | undefined;
     try {
       const ZENDESK_TAGS_KEY = getEnvironmentVariable("ZENDESK_TAGS_KEY");
-      zendeskTicketTags = await getSecret(ZENDESK_TAGS_KEY, {
+      zendeskTicketTags = await getSecret<string>(ZENDESK_TAGS_KEY, {
         maxAge: 900,
       });
     } catch {

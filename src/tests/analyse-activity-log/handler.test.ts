@@ -146,7 +146,7 @@ describe("analyse-activity-log handler", () => {
 
       const invokeCall = lambdaMock.commandCalls(InvokeCommand)[0];
       const payload = JSON.parse(
-        Buffer.from(invokeCall.args[0].input.Payload!).toString()
+        Buffer.from(invokeCall.args[0].input.Payload! as Uint8Array).toString()
       );
 
       expect(payload.ageThresholds).toHaveLength(6);
@@ -178,7 +178,7 @@ describe("analyse-activity-log handler", () => {
       expect(lambdaMock.commandCalls(InvokeCommand)).toHaveLength(1);
       const invokeCall = lambdaMock.commandCalls(InvokeCommand)[0];
       const payload = JSON.parse(
-        Buffer.from(invokeCall.args[0].input.Payload!).toString()
+        Buffer.from(invokeCall.args[0].input.Payload! as Uint8Array).toString()
       );
       expect(payload.cursors).toEqual([null, cursor]);
     });
@@ -354,7 +354,7 @@ describe("analyse-activity-log handler", () => {
       // Extract the payload from the self-invocation
       const invokeCall = lambdaMock.commandCalls(InvokeCommand)[0];
       const nextEvent = JSON.parse(
-        Buffer.from(invokeCall.args[0].input.Payload!).toString()
+        Buffer.from(invokeCall.args[0].input.Payload! as Uint8Array).toString()
       );
 
       // Invocation 2: segment 1 completes — cursor user (4 items) flushed, then 2 more users
@@ -444,7 +444,7 @@ describe("analyse-activity-log handler", () => {
       // nextCursors should preserve segment indices
       const invokeCall = lambdaMock.commandCalls(InvokeCommand)[0];
       const payload = JSON.parse(
-        Buffer.from(invokeCall.args[0].input.Payload!).toString()
+        Buffer.from(invokeCall.args[0].input.Payload! as Uint8Array).toString()
       );
       expect(payload.cursors).toHaveLength(3);
       expect(payload.cursors[0]).toBeNull();

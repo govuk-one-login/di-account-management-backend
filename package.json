@@ -8,6 +8,7 @@
   "scripts": {
     "clean": "rm -rf dist node_modules logs.json",
     "test": "vitest run",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --check .",

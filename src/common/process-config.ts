@@ -1,6 +1,6 @@
 import type {
   InactiveAccountStatus,
-  InactiveAccountTrackerRecord,
+  ConstructingInactiveAccountTrackerRecord,
 } from "./model.js";
 import { hasRecentActivityLogEntry } from "./iadGuards/hasRecentActivityLogEntry.js";
 import { hasAisBlockIntervention } from "./iadGuards/hasAisBlockIntervention.js";
@@ -10,7 +10,9 @@ import { dateForDeletionIs27October } from "./iadGuards/dateForDeletionIs27Octob
 import { doesNotHaveEmailAddress } from "./iadGuards/doesNotHaveEmailAddress.js";
 import { hasNotSetupMfa } from "./iadGuards/hasNotSetupMfa.js";
 import { homeAccountTrackerNotificationSkippedReasons } from "./notification-configuration.js";
-export type Guard = (trackerRecord: InactiveAccountTrackerRecord) => Promise<{
+export type Guard = (
+  trackerRecord: ConstructingInactiveAccountTrackerRecord
+) => Promise<{
   guardActivated: boolean;
   guardName: string;
 }>;

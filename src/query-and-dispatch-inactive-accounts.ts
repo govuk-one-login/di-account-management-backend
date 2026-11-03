@@ -8,7 +8,7 @@ import {
   queryAccountsByDate,
 } from "./common/query-inactive-accounts.js";
 import { retryFunction } from "./common/retry-function.js";
-import type { InactiveAccountTrackerRecord } from "./common/model.js";
+import type { ConstructingInactiveAccountTrackerRecord } from "./common/model.js";
 import iadQueryLogicHash from "./common/iad-query-logic-hash.json" with { type: "json" };
 import {
   tripIadCircuitBreaker,
@@ -66,15 +66,15 @@ const logAbort = (
 };
 
 const filterEligible = (
-  page: InactiveAccountTrackerRecord[],
+  page: ConstructingInactiveAccountTrackerRecord[],
   allowedStatuses: string[]
-): InactiveAccountTrackerRecord[] =>
+): ConstructingInactiveAccountTrackerRecord[] =>
   page.filter((record) => allowedStatuses.includes(record.status));
 
 const chunkRecords = (
-  records: InactiveAccountTrackerRecord[]
-): InactiveAccountTrackerRecord[][] => {
-  const chunks: InactiveAccountTrackerRecord[][] = [];
+  records: ConstructingInactiveAccountTrackerRecord[]
+): ConstructingInactiveAccountTrackerRecord[][] => {
+  const chunks: ConstructingInactiveAccountTrackerRecord[][] = [];
   for (let i = 0; i < records.length; i += SQS_BATCH_SIZE) {
     chunks.push(records.slice(i, i + SQS_BATCH_SIZE));
   }
@@ -82,7 +82,7 @@ const chunkRecords = (
 };
 
 const sendChunk = async (
-  chunk: InactiveAccountTrackerRecord[],
+  chunk: ConstructingInactiveAccountTrackerRecord[],
   queueUrl: string,
   processName: string,
   isDryRun: boolean
@@ -112,7 +112,7 @@ const sendChunk = async (
 };
 
 const dispatchEligibleRecords = async (
-  eligible: InactiveAccountTrackerRecord[],
+  eligible: ConstructingInactiveAccountTrackerRecord[],
   queueUrl: string,
   processName: string,
   isDryRun: boolean
@@ -216,11 +216,11 @@ interface ProcessDateResult {
 }
 
 const applyBatchCap = (
-  eligible: InactiveAccountTrackerRecord[],
+  eligible: ConstructingInactiveAccountTrackerRecord[],
   maxBatchSize: number | undefined,
   dispatchedSoFar: number
 ): {
-  toDispatch: InactiveAccountTrackerRecord[];
+  toDispatch: ConstructingInactiveAccountTrackerRecord[];
   capReached: boolean;
   residual: number;
 } => {

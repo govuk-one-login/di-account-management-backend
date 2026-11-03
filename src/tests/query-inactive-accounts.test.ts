@@ -5,7 +5,7 @@ import {
   queryAccountsByDate,
   countAccountsForDate,
 } from "../common/query-inactive-accounts.js";
-import type { InactiveAccountTrackerRecord } from "../common/model.js";
+import type { ConstructingInactiveAccountTrackerRecord } from "../common/model.js";
 
 const dynamoMock = mockClient(DynamoDBDocumentClient);
 
@@ -44,7 +44,7 @@ describe("queryAccountsByDate", () => {
         LastEvaluatedKey: undefined,
       });
 
-    const pages: InactiveAccountTrackerRecord[][] = [];
+    const pages: ConstructingInactiveAccountTrackerRecord[][] = [];
     for await (const page of queryAccountsByDate("table", "2026-06-20")) {
       pages.push(page);
     }
@@ -56,7 +56,7 @@ describe("queryAccountsByDate", () => {
   test("yields nothing when no results", async () => {
     dynamoMock.on(QueryCommand).resolves({ Items: [] });
 
-    const pages: InactiveAccountTrackerRecord[][] = [];
+    const pages: ConstructingInactiveAccountTrackerRecord[][] = [];
     for await (const page of queryAccountsByDate("table", "2026-06-20")) {
       pages.push(page);
     }
@@ -177,7 +177,7 @@ describe("queryAccountsByDate and countAccountsForDate use the same key conditio
   test("both functions query with matching KeyConditionExpression and ExpressionAttributeValues", async () => {
     dynamoMock.on(QueryCommand).resolves({ Items: [mockRecord], Count: 1 });
 
-    const pages: InactiveAccountTrackerRecord[][] = [];
+    const pages: ConstructingInactiveAccountTrackerRecord[][] = [];
     for await (const page of queryAccountsByDate(
       "shared-table",
       "2026-07-01"

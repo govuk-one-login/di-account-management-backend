@@ -1,10 +1,10 @@
 import { describe, afterEach, test, expect } from "vitest";
 import { sendInactiveAccountEmailsIsDisabled } from "../../common/iadGuards/sendInactiveAccountEmailsIsDisabled.js";
-import type { InactiveAccountTrackerRecord } from "../../common/model.js";
+import type { ConstructingInactiveAccountTrackerRecord } from "../../common/model.js";
 
 // The guard ignores its tracker-record argument, but the Guard type requires
 // one, so pass a minimal cast record to satisfy the signature.
-const trackerRecord = {} as InactiveAccountTrackerRecord;
+const trackerRecord = {} as ConstructingInactiveAccountTrackerRecord;
 
 describe("sendInactiveAccountEmailsIsDisabled", () => {
   afterEach(() => {

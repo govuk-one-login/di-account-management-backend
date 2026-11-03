@@ -6,7 +6,7 @@ import {
 } from "@aws-sdk/lib-dynamodb";
 import { mockClient } from "aws-sdk-client-mock";
 import "aws-sdk-client-mock-vitest";
-import type { InactiveAccountTrackerRecord } from "../common/model.js";
+import type { ConstructingInactiveAccountTrackerRecord } from "../common/model.js";
 import {
   computeMergedTrackerRecord,
   mergeTrackerRecords,
@@ -148,7 +148,7 @@ describe("computeMergedTrackerRecord (pure merge)", () => {
 });
 
 describe("mergeTrackerRecords (query + merge + persist)", () => {
-  type Record = InactiveAccountTrackerRecord;
+  type Record = ConstructingInactiveAccountTrackerRecord;
 
   const dynamoMock = mockClient(DynamoDBDocumentClient);
   const docClient = dynamoMock as unknown as DynamoDBDocumentClient;

@@ -13,7 +13,7 @@ import { TxmaEvent } from "./common/model.js";
 import { getEnvironmentVariable } from "./common/utils.js";
 import { mergeTrackerRecords } from "./common/merge-tracker-records.js";
 import { Logger } from "@aws-lambda-powertools/logger";
-import type { InactiveAccountTrackerRecord } from "./common/model.ts";
+import type { ConstructingInactiveAccountTrackerRecord } from "./common/model.ts";
 import assert from "node:assert/strict";
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 import { notificationConfiguration } from "./common/notification-configuration.js";
@@ -54,7 +54,7 @@ const getEventDate = (txmaEvent: TxmaEvent): Date => {
 
 const getLatestDate = (
   eventDate: Date,
-  trackerRecord: InactiveAccountTrackerRecord | null
+  trackerRecord: ConstructingInactiveAccountTrackerRecord | null
 ): Date => {
   const trackerDate = trackerRecord
     ? new Date(trackerRecord.userLastActive)
@@ -93,8 +93,8 @@ interface BuildTransactionItemsParams {
   userNotificationsTableName: string;
   olhClientId: string;
   userId: string;
-  newItem: InactiveAccountTrackerRecord;
-  previousTrackerRecord: InactiveAccountTrackerRecord | null;
+  newItem: ConstructingInactiveAccountTrackerRecord;
+  previousTrackerRecord: ConstructingInactiveAccountTrackerRecord | null;
   effectiveClientId: string | undefined;
   txmaEvent: TxmaEvent;
 }
@@ -164,10 +164,10 @@ const buildTransactionItems = ({
 
 const buildTrackerRecord = (
   txmaEvent: TxmaEvent,
-  previousTrackerRecord: InactiveAccountTrackerRecord | null,
+  previousTrackerRecord: ConstructingInactiveAccountTrackerRecord | null,
   eventDate: Date,
   userId: string
-): InactiveAccountTrackerRecord => {
+): ConstructingInactiveAccountTrackerRecord => {
   const eventDateTime = eventDate.toISOString();
   const latestDate = getLatestDate(eventDate, previousTrackerRecord);
 
@@ -262,7 +262,7 @@ const getNotificationType = (
 const buildSkippedNotificationExtensions = (
   notificationType: string,
   skipReason: string,
-  previousTrackerRecord: InactiveAccountTrackerRecord | null
+  previousTrackerRecord: ConstructingInactiveAccountTrackerRecord | null
 ) => ({
   accountTrackerNotificationSkipReason: skipReason,
   ...(notificationConfiguration[notificationType]
@@ -277,9 +277,9 @@ const buildSkippedNotificationExtensions = (
 
 const handleNotification = async (
   isDeletionIn30DaysOrLess: string | boolean | undefined,
-  newItem: InactiveAccountTrackerRecord,
+  newItem: ConstructingInactiveAccountTrackerRecord,
   notificationType: string,
-  previousTrackerRecord: InactiveAccountTrackerRecord | null,
+  previousTrackerRecord: ConstructingInactiveAccountTrackerRecord | null,
   notificationQueueUrl: string
 ): Promise<void> => {
   if (!isDeletionIn30DaysOrLess) return;

@@ -13,13 +13,14 @@ import { initMetrics } from "./common/metrics.js";
 import { processConfig, ProcessConfig } from "./common/process-config.js";
 import type {
   InactiveAccountStatus,
-  InactiveAccountTrackerRecord,
+  ConstructingInactiveAccountTrackerRecord,
 } from "./common/model.js";
 
-type ProcessInactiveAccountMessage = InactiveAccountTrackerRecord & {
-  processName: string;
-  isDryRun: boolean;
-};
+type ProcessInactiveAccountMessage =
+  ConstructingInactiveAccountTrackerRecord & {
+    processName: string;
+    isDryRun: boolean;
+  };
 
 import { getEnvironmentVariable } from "./common/utils.js";
 import { sendAuditEvent } from "./common/send-audit-event.js";

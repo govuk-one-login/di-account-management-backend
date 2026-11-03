@@ -519,8 +519,8 @@ Resources:
 
   DummyEventStore:
     Type: AWS::DynamoDB::Table
-    DeletionPolicy: Delete
-    UpdateReplacePolicy: Delete
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
     Properties:
       AttributeDefinitions:
         - AttributeName: id
@@ -529,6 +529,7 @@ Resources:
           AttributeType: N
       BillingMode: PAY_PER_REQUEST
       TableName: !Ref DummyEventStoreTableName
+      DeletionProtectionEnabled: true
       KeySchema:
         - AttributeName: id
           KeyType: HASH
@@ -560,8 +561,8 @@ Resources:
 
   RawEventsStore:
     Type: AWS::DynamoDB::Table
-    DeletionPolicy: Delete
-    UpdateReplacePolicy: Delete
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
     Properties:
       AttributeDefinitions:
         - AttributeName: id
@@ -570,6 +571,7 @@ Resources:
           AttributeType: N
       BillingMode: PAY_PER_REQUEST
       TableName: !Ref RawEventsStoreTableName
+      DeletionProtectionEnabled: true
       KeySchema:
         - AttributeName: id
           KeyType: HASH
@@ -604,14 +606,15 @@ Resources:
 
   UserServicesStore:
     Type: AWS::DynamoDB::Table
-    DeletionPolicy: Delete
-    UpdateReplacePolicy: Delete
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
     Properties:
       AttributeDefinitions:
         - AttributeName: user_id
           AttributeType: S
       BillingMode: PAY_PER_REQUEST
       TableName: !Ref UserServicesStoreTableName
+      DeletionProtectionEnabled: true
       KeySchema:
         - AttributeName: user_id
           KeyType: HASH
@@ -641,8 +644,8 @@ Resources:
 
   UserActivityLogsStore:
     Type: AWS::DynamoDB::Table
-    DeletionPolicy: Delete
-    UpdateReplacePolicy: Delete
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
     Properties:
       AttributeDefinitions:
         - AttributeName: user_id
@@ -660,6 +663,7 @@ Resources:
             ProjectionType: ALL
       BillingMode: PAY_PER_REQUEST
       TableName: !Ref ActivityLogsStoreTableName
+      DeletionProtectionEnabled: true
       KeySchema:
         - AttributeName: user_id
           KeyType: HASH
@@ -691,8 +695,8 @@ Resources:
 
   InactiveAccountDailyDeletionForecastStore:
     Type: AWS::DynamoDB::Table
-    DeletionPolicy: Delete
-    UpdateReplacePolicy: Delete
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
     Properties:
       AttributeDefinitions:
         - AttributeName: dateForDeletion
@@ -701,6 +705,7 @@ Resources:
           AttributeType: S
       BillingMode: PAY_PER_REQUEST
       TableName: !Ref InactiveAccountDailyDeletionForecastTableName
+      DeletionProtectionEnabled: true
       KeySchema:
         - AttributeName: dateForDeletion
           KeyType: HASH
@@ -735,8 +740,8 @@ Resources:
 
   InactiveAccountTrackerStore:
     Type: AWS::DynamoDB::Table
-    DeletionPolicy: Delete
-    UpdateReplacePolicy: Delete
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
     Properties:
       AttributeDefinitions:
         - AttributeName: dateForDeletion
@@ -760,6 +765,7 @@ Resources:
             ProjectionType: ALL
       BillingMode: PAY_PER_REQUEST
       TableName: !Ref InactiveAccountTrackerStoreTableName
+      DeletionProtectionEnabled: true
       KeySchema:
         - AttributeName: dateForDeletion
           KeyType: HASH
@@ -869,14 +875,15 @@ Resources:
 
   UserNotificationsStore:
     Type: AWS::DynamoDB::Table
-    DeletionPolicy: Delete
-    UpdateReplacePolicy: Delete
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
     Properties:
       AttributeDefinitions:
         - AttributeName: internalCommonSubjectId
           AttributeType: S
       BillingMode: PAY_PER_REQUEST
       TableName: !Ref UserNotificationsTableName
+      DeletionProtectionEnabled: true
       KeySchema:
         - AttributeName: internalCommonSubjectId
           KeyType: HASH
@@ -8392,6 +8399,7 @@ Resources:
           AttributeType: N
       BillingMode: PAY_PER_REQUEST
       TableName: !Ref InactiveAccountCircuitBreakerTableName
+      DeletionProtectionEnabled: true
       KeySchema:
         - AttributeName: pk
           KeyType: HASH

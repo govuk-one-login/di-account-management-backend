@@ -1,6 +1,7 @@
 import { Context } from "aws-lambda";
 import { SQSClient, SendMessageBatchCommand } from "@aws-sdk/client-sqs";
 import { Logger } from "@aws-lambda-powertools/logger";
+import * as v from "valibot";
 import { getEnvironmentVariable } from "./common/utils.js";
 import { processConfig } from "./common/process-config.js";
 import {
@@ -8,7 +9,11 @@ import {
   queryAccountsByDate,
 } from "./common/query-inactive-accounts.js";
 import { retryFunction } from "./common/retry-function.js";
-import type { ConstructingInactiveAccountTrackerRecord } from "./common/model.js";
+import {
+  processableInactiveAccountTrackerRecordSchema,
+  type ConstructingInactiveAccountTrackerRecord,
+  type ProcessableInactiveAccountTrackerRecord,
+} from "./common/model.js";
 import iadQueryLogicHash from "./common/iad-query-logic-hash.json" with { type: "json" };
 import {
   tripIadCircuitBreaker,
@@ -65,16 +70,101 @@ const logAbort = (
   });
 };
 
-const filterEligible = (
+interface ValidationIssue {
+  field: string | undefined;
+  message: string;
+}
+
+interface DataIntegrityIssue {
+  record: ConstructingInactiveAccountTrackerRecord;
+  issues: ValidationIssue[];
+}
+
+const logRecordDataIntegrityIssue = (
+  processName: string,
+  targetDate: string,
+  dispatchedBeforeAbort: number,
+  isDryRun: boolean,
+  { record, issues }: DataIntegrityIssue
+): void => {
+  logAbort(
+    "HasDataIntegrityIssue",
+    processName,
+    targetDate,
+    dispatchedBeforeAbort,
+    isDryRun,
+    {
+      commonSubjectId: record.commonSubjectId,
+      dateForDeletion: record.dateForDeletion,
+      issues,
+    }
+  );
+};
+
+const findDataIntegrityIssue = (
+  page: ConstructingInactiveAccountTrackerRecord[]
+): DataIntegrityIssue | undefined => {
+  for (const record of page) {
+    const result = v.safeParse(
+      processableInactiveAccountTrackerRecordSchema,
+      record
+    );
+
+    if (!result.success) {
+      return {
+        record,
+        issues: result.issues.map((issue) => ({
+          field: issue.path?.[0]?.key as string | undefined,
+          message: issue.message,
+        })),
+      };
+    }
+  }
+
+  return undefined;
+};
+
+const pageHasDataIntegrityIssue = async (
   page: ConstructingInactiveAccountTrackerRecord[],
+  processName: string,
+  targetDate: string,
+  dispatched: number,
+  isDryRun: boolean
+): Promise<boolean> => {
+  const dataIntegrityIssue = findDataIntegrityIssue(page);
+
+  if (!dataIntegrityIssue) return false;
+
+  await tripIadCircuitBreaker({
+    guardrailType: "HasDataIntegrityIssue",
+    processName,
+    targetDate,
+    dispatchedBeforeAbort: dispatched,
+    commonSubjectId: dataIntegrityIssue.record.commonSubjectId,
+    dateForDeletion: dataIntegrityIssue.record.dateForDeletion,
+    issues: dataIntegrityIssue.issues,
+    isDryRun,
+  });
+  logRecordDataIntegrityIssue(
+    processName,
+    targetDate,
+    dispatched,
+    isDryRun,
+    dataIntegrityIssue
+  );
+  return true;
+};
+
+const filterEligible = (
+  page: ProcessableInactiveAccountTrackerRecord[],
   allowedStatuses: string[]
-): ConstructingInactiveAccountTrackerRecord[] =>
+): ProcessableInactiveAccountTrackerRecord[] =>
   page.filter((record) => allowedStatuses.includes(record.status));
 
 const chunkRecords = (
-  records: ConstructingInactiveAccountTrackerRecord[]
-): ConstructingInactiveAccountTrackerRecord[][] => {
-  const chunks: ConstructingInactiveAccountTrackerRecord[][] = [];
+  records: ProcessableInactiveAccountTrackerRecord[]
+): ProcessableInactiveAccountTrackerRecord[][] => {
+  const chunks: ProcessableInactiveAccountTrackerRecord[][] = [];
   for (let i = 0; i < records.length; i += SQS_BATCH_SIZE) {
     chunks.push(records.slice(i, i + SQS_BATCH_SIZE));
   }
@@ -82,7 +172,7 @@ const chunkRecords = (
 };
 
 const sendChunk = async (
-  chunk: ConstructingInactiveAccountTrackerRecord[],
+  chunk: ProcessableInactiveAccountTrackerRecord[],
   queueUrl: string,
   processName: string,
   isDryRun: boolean
@@ -112,7 +202,7 @@ const sendChunk = async (
 };
 
 const dispatchEligibleRecords = async (
-  eligible: ConstructingInactiveAccountTrackerRecord[],
+  eligible: ProcessableInactiveAccountTrackerRecord[],
   queueUrl: string,
   processName: string,
   isDryRun: boolean
@@ -216,11 +306,11 @@ interface ProcessDateResult {
 }
 
 const applyBatchCap = (
-  eligible: ConstructingInactiveAccountTrackerRecord[],
+  eligible: ProcessableInactiveAccountTrackerRecord[],
   maxBatchSize: number | undefined,
   dispatchedSoFar: number
 ): {
-  toDispatch: ConstructingInactiveAccountTrackerRecord[];
+  toDispatch: ProcessableInactiveAccountTrackerRecord[];
   capReached: boolean;
   residual: number;
 } => {
@@ -292,7 +382,22 @@ const processDate = async ({
       return { dispatched, stopRun: true, capReached: false };
     }
 
-    const eligible = filterEligible(page, allowedStatuses);
+    if (
+      await pageHasDataIntegrityIssue(
+        page,
+        processName,
+        targetDate,
+        dispatched,
+        isDryRun
+      )
+    ) {
+      return { dispatched, stopRun: true, capReached: false };
+    }
+
+    const processablePage = page.map((record) =>
+      v.parse(processableInactiveAccountTrackerRecordSchema, record)
+    );
+    const eligible = filterEligible(processablePage, allowedStatuses);
     eligibleForDate += eligible.length;
 
     if (isDryRun) {

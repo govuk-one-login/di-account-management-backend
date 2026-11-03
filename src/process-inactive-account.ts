@@ -14,10 +14,17 @@ import { processConfig, ProcessConfig } from "./common/process-config.js";
 import type {
   InactiveAccountStatus,
   ConstructingInactiveAccountTrackerRecord,
+  ProcessableInactiveAccountTrackerRecord,
 } from "./common/model.js";
 
 type ProcessInactiveAccountMessage =
   ConstructingInactiveAccountTrackerRecord & {
+    processName: string;
+    isDryRun: boolean;
+  };
+
+type ProcessableInactiveAccountMessage =
+  ProcessableInactiveAccountTrackerRecord & {
     processName: string;
     isDryRun: boolean;
   };
@@ -163,7 +170,7 @@ async function writeUserNotification(
 
 async function enqueueNotification(
   process: ProcessDefinition,
-  body: ProcessInactiveAccountMessage,
+  body: ProcessableInactiveAccountMessage,
   notificationQueueUrl: string,
   userNotificationsTableName: string
 ): Promise<void> {
@@ -212,7 +219,7 @@ async function enqueueNotification(
 
 async function enqueueTargetMessage(
   process: ProcessDefinition,
-  body: ProcessInactiveAccountMessage
+  body: ProcessableInactiveAccountMessage
 ): Promise<void> {
   if (!process.targetQueueUrlEnvVar) return;
 
@@ -237,7 +244,7 @@ async function enqueueTargetMessage(
 
 async function updateTrackerStatus(
   process: ProcessDefinition,
-  body: ProcessInactiveAccountMessage,
+  body: ProcessableInactiveAccountMessage,
   inactiveAccountTrackerTableName: string
 ): Promise<void> {
   await dynamoDocClient.send(
@@ -259,7 +266,7 @@ async function updateTrackerStatus(
 
 async function emitAuditEvent(
   process: ProcessDefinition,
-  body: ProcessInactiveAccountMessage
+  body: ProcessableInactiveAccountMessage
 ): Promise<void> {
   if (!process.auditEventName) return;
 
@@ -335,18 +342,24 @@ async function processRecord(
 
   if (runGuardsOutcome === GuardsOutcome.abort) return;
 
+  const processableBody = body as ProcessableInactiveAccountMessage;
+
   if (runGuardsOutcome === GuardsOutcome.continue) {
     await enqueueNotification(
       process,
-      body,
+      processableBody,
       notificationQueueUrl,
       userNotificationsTableName
     );
-    await enqueueTargetMessage(process, body);
+    await enqueueTargetMessage(process, processableBody);
   }
 
-  await updateTrackerStatus(process, body, inactiveAccountTrackerTableName);
-  await emitAuditEvent(process, body);
+  await updateTrackerStatus(
+    process,
+    processableBody,
+    inactiveAccountTrackerTableName
+  );
+  await emitAuditEvent(process, processableBody);
 
   logger.info("Successfully processed inactive account", {
     ...getBodyFieldsForLogging(body),

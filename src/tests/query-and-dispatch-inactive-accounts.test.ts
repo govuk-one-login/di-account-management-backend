@@ -43,8 +43,10 @@ const mockRecord = {
   emailAddress: "test@example.com",
   userLastActive: "2021-06-20T00:00:00.000Z",
   userLastActiveSource: "AUTH_AUTH_CODE_ISSUED",
+  userLastActiveSourceId: "event-guid",
   userLastActiveUpdated: "2026-01-01T00:00:00.000Z",
   emailAddressSource: "AUTH_AUTH_CODE_ISSUED",
+  emailAddressSourceId: "email-event-guid",
   emailAddressLastUpdated: "2026-01-01T00:00:00.000Z",
   status: "pending",
   statusLastUpdated: "2026-01-01T00:00:00.000Z",
@@ -173,6 +175,45 @@ describe("handler", () => {
     await expect(
       handler({ processName: "unknown" }, {} as Context)
     ).rejects.toThrow("Unknown processName: unknown");
+  });
+
+  test("trips the circuit breaker and aborts the run when a record fails data integrity validation", async () => {
+    const brokenRecord = { ...mockRecord, commonSubjectId: "user-broken" };
+    delete (brokenRecord as Partial<typeof mockRecord>).emailAddress;
+
+    dynamoMock.on(QueryCommand).resolves({
+      Items: [brokenRecord, { ...mockRecord, commonSubjectId: "user-ok" }],
+    });
+    sqsMock
+      .on(SendMessageBatchCommand)
+      .resolves({ Successful: [], Failed: [] });
+
+    const infoSpy = vi.spyOn(Logger.prototype, "info");
+
+    await handler({ processName: "Warning30Day" }, {} as Context);
+
+    expect(tripIadCircuitBreaker).toHaveBeenCalledWith(
+      expect.objectContaining({
+        guardrailType: "HasDataIntegrityIssue",
+        processName: "Warning30Day",
+        commonSubjectId: "user-broken",
+      })
+    );
+    expect(infoSpy).toHaveBeenCalledWith(
+      "GuardrailAbortedQueryAndDispatchInactiveAccounts",
+      expect.objectContaining({
+        guardrailType: "HasDataIntegrityIssue",
+        isCritical: "1",
+        continueProcessingRecords: "0",
+        processName: "Warning30Day",
+        commonSubjectId: "user-broken",
+      })
+    );
+    // The run aborts entirely: no records from this page (including the
+    // otherwise-valid "user-ok") are dispatched, and no further dates are queried.
+    expect(sqsMock.commandCalls(SendMessageBatchCommand)).toHaveLength(0);
+
+    infoSpy.mockRestore();
   });
 
   test("retries then logs error and continues when batch send keeps throwing", async () => {

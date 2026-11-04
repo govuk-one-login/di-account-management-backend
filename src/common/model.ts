@@ -1,3 +1,5 @@
+import * as v from "valibot";
+
 export interface UserData {
   user_id: string;
   email?: string;
@@ -219,29 +221,56 @@ export interface Personalisation {
   timeCy: string;
 }
 
-export type InactiveAccountStatus =
-  "pending" | "deleting" | "30DayWarningSent" | "7DayWarningSent";
+export const processableInactiveAccountTrackerRecordSchema = v.object({
+  dateForDeletion: v.pipe(v.string(), v.isoDate()),
+  commonSubjectId: v.pipe(v.string(), v.nonEmpty()),
+  publicSubjectId: v.pipe(v.string(), v.nonEmpty()),
 
-export interface InactiveAccountTrackerRecord {
-  dateForDeletion: string;
-  commonSubjectId: string;
-  publicSubjectId: string;
+  status: v.picklist([
+    "pending",
+    "deleting",
+    "30DayWarningSent",
+    "7DayWarningSent",
+  ]),
+  statusLastUpdated: v.pipe(v.string(), v.nonEmpty()),
+  userLastActive: v.pipe(v.string(), v.nonEmpty()),
+  userLastActiveSource: v.pipe(v.string(), v.nonEmpty()),
+  userLastActiveSourceId: v.pipe(v.string(), v.nonEmpty()),
+  userLastActiveUpdated: v.pipe(v.string(), v.nonEmpty()),
 
-  status: InactiveAccountStatus;
-  statusLastUpdated: string;
-  userLastActive: string;
-  userLastActiveSource: string;
-  userLastActiveSourceId?: string;
-  userLastActiveUpdated: string;
+  emailAddress: v.pipe(v.string(), v.nonEmpty()),
+  emailAddressLastUpdated: v.pipe(v.string(), v.nonEmpty()),
+  emailAddressSource: v.pipe(v.string(), v.nonEmpty()),
+  emailAddressSourceId: v.pipe(v.string(), v.nonEmpty()),
 
-  emailAddress?: string;
-  emailAddressLastUpdated?: string;
-  emailAddressSource?: string;
-  emailAddressSourceId?: string;
+  hasSetupMfa: v.boolean(),
+  hasUndeliverableEmailAddress: v.optional(v.boolean()),
+});
 
-  hasSetupMfa: boolean;
-  hasUndeliverableEmailAddress?: boolean;
-}
+export type InactiveAccountStatus = v.InferOutput<
+  typeof processableInactiveAccountTrackerRecordSchema
+>["status"];
+
+export type ProcessableInactiveAccountTrackerRecord = v.InferOutput<
+  typeof processableInactiveAccountTrackerRecordSchema
+>;
+
+const INCREMENTALLY_POPULATED_FIELDS = [
+  "userLastActiveSourceId",
+  "emailAddress",
+  "emailAddressLastUpdated",
+  "emailAddressSource",
+  "emailAddressSourceId",
+] as const;
+
+export const inactiveAccountTrackerRecordSchema = v.partial(
+  processableInactiveAccountTrackerRecordSchema,
+  INCREMENTALLY_POPULATED_FIELDS
+);
+
+export type ConstructingInactiveAccountTrackerRecord = v.InferOutput<
+  typeof inactiveAccountTrackerRecordSchema
+>;
 
 export class DroppedEventError extends Error {
   constructor(message: string) {

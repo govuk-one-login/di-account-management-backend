@@ -1,12 +1,12 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, QueryCommand } from "@aws-sdk/lib-dynamodb";
-import type { InactiveAccountTrackerRecord } from "./model.js";
+import type { ConstructingInactiveAccountTrackerRecord } from "./model.js";
 
 const dynamoClient = new DynamoDBClient({});
 const dynamoDocClient = DynamoDBDocumentClient.from(dynamoClient);
 
 interface PaginatedQueryPage {
-  items?: InactiveAccountTrackerRecord[];
+  items?: ConstructingInactiveAccountTrackerRecord[];
   count: number;
   scannedCount: number;
 }
@@ -49,7 +49,8 @@ async function* paginatedQuery(
     );
 
     yield {
-      items: response.Items as InactiveAccountTrackerRecord[] | undefined,
+      items: response.Items as
+        ConstructingInactiveAccountTrackerRecord[] | undefined,
       count: response.Count ?? 0,
       scannedCount: response.ScannedCount ?? 0,
     };
@@ -60,7 +61,7 @@ async function* paginatedQuery(
 export async function* queryAccountsByDate(
   tableName: string,
   dateForDeletion: string
-): AsyncGenerator<InactiveAccountTrackerRecord[]> {
+): AsyncGenerator<ConstructingInactiveAccountTrackerRecord[]> {
   for await (const page of paginatedQuery(
     tableName,
     dateForDeletion,

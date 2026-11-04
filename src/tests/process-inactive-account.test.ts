@@ -22,7 +22,7 @@ const mockInitMetrics = vi.hoisted(() => vi.fn(() => mockMetrics));
 const mockHasAisBlockIntervention = vi.hoisted(() => vi.fn());
 const mockHasRecentActivityLogEntry = vi.hoisted(() => vi.fn());
 const mockSendInactiveAccountEmailsIsDisabled = vi.hoisted(() => vi.fn());
-const mockDoesNotHaveEmailAddress = vi.hoisted(() => vi.fn());
+const mockHasDataIntegrityIssue = vi.hoisted(() => vi.fn());
 
 vi.mock("../common/metrics.js", () => ({
   initMetrics: mockInitMetrics,
@@ -40,8 +40,8 @@ vi.mock("../common/iadGuards/sendInactiveAccountEmailsIsDisabled.js", () => ({
   sendInactiveAccountEmailsIsDisabled: mockSendInactiveAccountEmailsIsDisabled,
 }));
 
-vi.mock("../common/iadGuards/doesNotHaveEmailAddress.js", () => ({
-  doesNotHaveEmailAddress: mockDoesNotHaveEmailAddress,
+vi.mock("../common/iadGuards/hasDataIntegrityIssue.js", () => ({
+  hasDataIntegrityIssue: mockHasDataIntegrityIssue,
 }));
 
 const mockIsIadCircuitBreakerTripped = vi.hoisted(() =>
@@ -99,13 +99,13 @@ const inactiveAccountEmailsFeatureFlagEnabled = {
   guardActivated: false,
   guardName: "SendInactiveAccountEmailsFeatureFlag",
 };
-const doesNotHaveEmailAddressContinue = {
+const hasDataIntegrityIssueContinue = {
   guardActivated: false,
-  guardName: "DoesNotHaveEmailAddress",
+  guardName: "HasDataIntegrityIssue",
 };
-const doesNotHaveEmailAddressAbort = {
+const hasDataIntegrityIssueAbort = {
   guardActivated: true,
-  guardName: "DoesNotHaveEmailAddress",
+  guardName: "HasDataIntegrityIssue",
 };
 
 describe("process-inactive-account handler", () => {
@@ -124,9 +124,7 @@ describe("process-inactive-account handler", () => {
     mockSendInactiveAccountEmailsIsDisabled.mockResolvedValue(
       inactiveAccountEmailsFeatureFlagEnabled
     );
-    mockDoesNotHaveEmailAddress.mockResolvedValue(
-      doesNotHaveEmailAddressContinue
-    );
+    mockHasDataIntegrityIssue.mockResolvedValue(hasDataIntegrityIssueContinue);
     mockIsIadCircuitBreakerTripped.mockResolvedValue(false);
 
     process.env.NOTIFICATION_QUEUE_URL =
@@ -983,8 +981,8 @@ describe("process-inactive-account handler", () => {
     );
   });
 
-  test("skips processing when doesNotHaveEmailAddress guard returns Abort", async () => {
-    mockDoesNotHaveEmailAddress.mockResolvedValue(doesNotHaveEmailAddressAbort);
+  test("skips processing when hasDataIntegrityIssue guard returns Abort", async () => {
+    mockHasDataIntegrityIssue.mockResolvedValue(hasDataIntegrityIssueAbort);
 
     const event = buildSqsEvent([
       {
@@ -998,7 +996,7 @@ describe("process-inactive-account handler", () => {
 
     await handler(event, {} as Context);
 
-    expect(mockDoesNotHaveEmailAddress).toHaveBeenCalledWith(
+    expect(mockHasDataIntegrityIssue).toHaveBeenCalledWith(
       expect.objectContaining({
         commonSubjectId: "user-no-email",
         emailAddress: "",
@@ -1009,7 +1007,7 @@ describe("process-inactive-account handler", () => {
     expect(dynamoMock).not.toHaveReceivedCommand(UpdateCommand);
     expect(mockTripIadCircuitBreaker).toHaveBeenCalledWith(
       expect.objectContaining({
-        guardrailType: "DoesNotHaveEmailAddress",
+        guardrailType: "HasDataIntegrityIssue",
         processName: "Warning30Day",
         dateForDeletion: "2026-08-15",
       })
@@ -1289,9 +1287,7 @@ describe("process-inactive-account handler", () => {
 
   describe("guard short-circuit behaviour", () => {
     test("when an abort guard activates, continueWithoutActions guards are not run", async () => {
-      mockDoesNotHaveEmailAddress.mockResolvedValue(
-        doesNotHaveEmailAddressAbort
-      );
+      mockHasDataIntegrityIssue.mockResolvedValue(hasDataIntegrityIssueAbort);
 
       await handler(
         buildSqsEvent([

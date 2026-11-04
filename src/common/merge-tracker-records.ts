@@ -4,7 +4,7 @@ import {
   QueryCommand,
   TransactWriteCommand,
 } from "@aws-sdk/lib-dynamodb";
-import type { InactiveAccountTrackerRecord } from "./model.js";
+import type { ConstructingInactiveAccountTrackerRecord } from "./model.js";
 
 const toTime = (value: string | undefined): number => {
   if (!value) return 0;
@@ -13,9 +13,9 @@ const toTime = (value: string | undefined): number => {
 };
 
 const latestBy = (
-  records: InactiveAccountTrackerRecord[],
-  timestampField: keyof InactiveAccountTrackerRecord
-): InactiveAccountTrackerRecord =>
+  records: ConstructingInactiveAccountTrackerRecord[],
+  timestampField: keyof ConstructingInactiveAccountTrackerRecord
+): ConstructingInactiveAccountTrackerRecord =>
   records
     .slice(1)
     .reduce(
@@ -28,8 +28,8 @@ const latestBy = (
     );
 
 export const computeMergedTrackerRecord = (
-  records: InactiveAccountTrackerRecord[]
-): InactiveAccountTrackerRecord => {
+  records: ConstructingInactiveAccountTrackerRecord[]
+): ConstructingInactiveAccountTrackerRecord => {
   assert(records.length > 0, "cannot merge an empty set of tracker records");
 
   const latestActivity = latestBy(records, "userLastActiveUpdated");
@@ -38,7 +38,7 @@ export const computeMergedTrackerRecord = (
 
   // The winning userLastActive row also owns dateForDeletion/publicSubjectId, which are
   // derived from the user's most recent activity.
-  const merged: InactiveAccountTrackerRecord = {
+  const merged: ConstructingInactiveAccountTrackerRecord = {
     commonSubjectId: latestActivity.commonSubjectId,
     publicSubjectId: latestActivity.publicSubjectId,
     dateForDeletion: latestActivity.dateForDeletion,
@@ -80,7 +80,7 @@ export const mergeTrackerRecords = async (
   userId: string,
   dynamoDocClient: DynamoDBDocumentClient,
   tableName: string
-): Promise<InactiveAccountTrackerRecord | null> => {
+): Promise<ConstructingInactiveAccountTrackerRecord | null> => {
   const response = await dynamoDocClient.send(
     new QueryCommand({
       TableName: tableName,
@@ -90,7 +90,8 @@ export const mergeTrackerRecords = async (
     })
   );
 
-  const records = (response.Items ?? []) as InactiveAccountTrackerRecord[];
+  const records = (response.Items ??
+    []) as ConstructingInactiveAccountTrackerRecord[];
 
   if (records.length === 0) return null;
 

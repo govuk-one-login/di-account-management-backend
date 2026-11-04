@@ -1,16 +1,18 @@
 import type {
   InactiveAccountStatus,
-  InactiveAccountTrackerRecord,
+  ConstructingInactiveAccountTrackerRecord,
 } from "./model.js";
 import { hasRecentActivityLogEntry } from "./iadGuards/hasRecentActivityLogEntry.js";
 import { hasAisBlockIntervention } from "./iadGuards/hasAisBlockIntervention.js";
 import { hasUndeliverableEmailAddress } from "./iadGuards/hasUndeliverableEmailAddress.js";
 import { sendInactiveAccountEmailsIsDisabled } from "./iadGuards/sendInactiveAccountEmailsIsDisabled.js";
 import { dateForDeletionIs27October } from "./iadGuards/dateForDeletionIs27October.js";
-import { doesNotHaveEmailAddress } from "./iadGuards/doesNotHaveEmailAddress.js";
+import { hasDataIntegrityIssue } from "./iadGuards/hasDataIntegrityIssue.js";
 import { hasNotSetupMfa } from "./iadGuards/hasNotSetupMfa.js";
 import { homeAccountTrackerNotificationSkippedReasons } from "./notification-configuration.js";
-export type Guard = (trackerRecord: InactiveAccountTrackerRecord) => Promise<{
+export type Guard = (
+  trackerRecord: ConstructingInactiveAccountTrackerRecord
+) => Promise<{
   guardActivated: boolean;
   guardName: string;
 }>;
@@ -43,7 +45,7 @@ export type ProcessConfig = Record<
 
 const warningsAbortGuardsList: ProcessGuard[] = [
   {
-    guard: doesNotHaveEmailAddress,
+    guard: hasDataIntegrityIssue,
     isCritical: true,
   },
 ];
@@ -130,7 +132,7 @@ export const processConfig: ProcessConfig = {
     guards: {
       abort: [
         {
-          guard: doesNotHaveEmailAddress,
+          guard: hasDataIntegrityIssue,
           isCritical: true,
         },
         {

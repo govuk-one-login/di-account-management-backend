@@ -7327,6 +7327,92 @@ Resources:
       RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
+  #############################
+  # Analyse Tracker Integrity
+  #############################
+
+  AnalyseTrackerIntegrityFunction:
+    Type: AWS::Serverless::Function
+    DependsOn:
+      - AnalyseTrackerIntegrityFunctionLogGroup
+    Properties:
+      FunctionName: !Sub ${Environment}-${AWS::StackName}-analyse-tracker-integrity
+      CodeUri: src
+      PackageType: Zip
+      Timeout: 900
+      MemorySize: 6144
+      Handler: analyse-tracker-integrity/handler.handler
+      Role: !GetAtt AnalyseTrackerIntegrityRole.Arn
+      Environment:
+        Variables:
+          NODE_OPTIONS: --enable-source-maps --max-old-space-size=5120
+          TABLE_NAME: !Ref InactiveAccountTrackerStoreTableName
+      DeploymentPreference:
+        Alarms: []
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Format: "esm"
+        OutExtension:
+          - .js=.mjs
+        Target: "es2022"
+        Sourcemap: true
+        EntryPoints:
+          - analyse-tracker-integrity/handler.ts
+        Banner:
+          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url);
+
+  AnalyseTrackerIntegrityRole:
+    Type: AWS::IAM::Role
+    Properties:
+      PermissionsBoundary: !If
+        - UsePermissionsBoundary
+        - !Ref PermissionsBoundary
+        - !Ref AWS::NoValue
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+        - !Ref AnalyseTrackerIntegrityPolicy
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+
+  AnalyseTrackerIntegrityPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - dynamodb:Scan
+            Resource:
+              - !GetAtt InactiveAccountTrackerStore.Arn
+          - Effect: Allow
+            Action:
+              - kms:Decrypt
+            Resource:
+              - !GetAtt DatabaseKmsKey.Arn
+          - Effect: Allow
+            Action:
+              - lambda:InvokeFunction
+            Resource:
+              - !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${Environment}-${AWS::StackName}-analyse-tracker-integrity
+
+  AnalyseTrackerIntegrityFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-analyse-tracker-integrity"
+      RetentionInDays: 90
+      KmsKeyId: !GetAtt LoggingKmsKey.Arn
+
   ################################################
   # Query and Dispatch Inactive Accounts
   ################################################

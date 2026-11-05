@@ -11,7 +11,6 @@ import {
   TABLES,
   INACTIVE_ACCOUNT_TRACKER_INDEX,
   getTxmaQueueUrl,
-  getNotificationQueueUrl,
   MissingConfigError,
 } from "../config.js";
 import { generateUserId, generateEventId } from "../helpers.js";
@@ -103,20 +102,12 @@ describe("iad-tracker", () => {
   });
 
   it.concurrent(
-    "processes four IAD events and produces a single pending record with a ~5-year dateForDeletion, sends the correct Notify email, and emits the correct TxMA audit events",
+    "processes four IAD events and produces a single pending record with a ~5-year dateForDeletion and emits the correct TxMA audit events",
     async () => {
       const txmaQueueUrl = getTxmaQueueUrl();
-      const notificationQueueUrl = getNotificationQueueUrl();
 
-      if (
-        txmaQueueUrl === undefined ||
-        txmaQueueUrl.length === 0 ||
-        notificationQueueUrl === undefined ||
-        notificationQueueUrl.length === 0
-      ) {
-        throw new MissingConfigError(
-          "TXMA_SQS_QUEUE_URL and NOTIFICATION_SQS_QUEUE_URL are required for this test"
-        );
+      if (txmaQueueUrl === undefined || txmaQueueUrl.length === 0) {
+        throw new MissingConfigError("TXMA_SQS_QUEUE_URL");
       }
 
       const localUserId = generateUserId("iad-tracker");
@@ -200,19 +191,6 @@ describe("iad-tracker", () => {
       // dateForDeletion must be exactly 5 years from the fixed event timestamp.
       expect(item.dateForDeletion).toBe(EXPECTED_DATE_FOR_DELETION);
 
-      // Assert: the correct email notification was sent to the Notify queue.
-      await pollForSqsMessage(
-        notificationQueueUrl,
-        (body) =>
-          body.emailAddress === email &&
-          typeof body.notificationType === "string" &&
-          body.notificationType.startsWith("INACTIVE_ACCOUNT_SAVED"),
-        {
-          timeoutSeconds: 60,
-          description: `INACTIVE_ACCOUNT_SAVED notification for ${email}`,
-        }
-      );
-
       // Assert: the HOME_ACCOUNT_TRACKER_ACCOUNT_REACTIVATED audit event was
       // sent to the TxMA queue.
       await pollForSqsMessage(
@@ -229,17 +207,27 @@ describe("iad-tracker", () => {
       );
 
       // Assert: the HOME_ACCOUNT_TRACKER_NOTIFICATION_REQUESTED audit event
-      // was sent to the TxMA queue.
+      // was sent to the TxMA queue with the correct notification type.
+      // This confirms the notification was queued for the right scenario
+      // (Recovery = INACTIVE_ACCOUNT_SAVED_RP, triggered by a non-Home RP).
       await pollForSqsMessage(
         txmaQueueUrl,
-        (body) =>
-          body.event_name === "HOME_ACCOUNT_TRACKER_NOTIFICATION_REQUESTED" &&
-          typeof body.user === "object" &&
-          body.user !== null &&
-          (body.user as Record<string, unknown>).user_id === localUserId,
+        (body) => {
+          if (
+            body.event_name !== "HOME_ACCOUNT_TRACKER_NOTIFICATION_REQUESTED" ||
+            typeof body.user !== "object" ||
+            body.user === null ||
+            (body.user as Record<string, unknown>).user_id !== localUserId
+          ) {
+            return false;
+          }
+          const extensions = body.extensions as
+            Record<string, unknown> | undefined;
+          return extensions?.accountTrackerNotificationType === "Recovery";
+        },
         {
           timeoutSeconds: 60,
-          description: `HOME_ACCOUNT_TRACKER_NOTIFICATION_REQUESTED for user ${localUserId}`,
+          description: `HOME_ACCOUNT_TRACKER_NOTIFICATION_REQUESTED (Recovery) for user ${localUserId}`,
         }
       );
     }

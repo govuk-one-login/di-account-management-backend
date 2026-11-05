@@ -19,6 +19,7 @@ import {
   assertNoItem,
   deleteItem,
   getSecret,
+  pollForExactlyOneItem,
   pollForItem,
   sendMessage,
   type MatchCriteria,
@@ -111,6 +112,88 @@ describe("getSecret", () => {
     await expect(getSecret("arn:aws:secret:xyz")).rejects.toThrow(
       "was empty and could not be used"
     );
+  });
+});
+
+describe("pollForExactlyOneItem", () => {
+  it("returns the item when exactly one matches on the first attempt", async () => {
+    docMock.on(QueryCommand).resolves({ Items: [{ id: "a" }] });
+
+    const item = await pollForExactlyOneItem("activity_log", CRITERIA);
+
+    expect(item).toStrictEqual({ id: "a" });
+  });
+
+  it("keeps polling when zero items are returned, then resolves when one appears", async () => {
+    vi.useFakeTimers();
+    docMock
+      .on(QueryCommand)
+      .resolvesOnce({ Items: [] })
+      .resolvesOnce({ Items: [{ id: "a" }] });
+
+    const promise = pollForExactlyOneItem("activity_log", CRITERIA, {
+      timeoutSeconds: 5,
+    });
+    await vi.runAllTimersAsync();
+    await expect(promise).resolves.toStrictEqual({ id: "a" });
+  });
+
+  it("keeps polling when more than one item is returned, then resolves when count reaches one", async () => {
+    vi.useFakeTimers();
+    docMock
+      .on(QueryCommand)
+      .resolvesOnce({ Items: [{ id: "a" }, { id: "b" }] })
+      .resolvesOnce({ Items: [{ id: "a" }] });
+
+    const promise = pollForExactlyOneItem("activity_log", CRITERIA, {
+      timeoutSeconds: 5,
+    });
+    await vi.runAllTimersAsync();
+    await expect(promise).resolves.toStrictEqual({ id: "a" });
+  });
+
+  it("keeps polling when the single item does not satisfy matchItem, then resolves when it does", async () => {
+    vi.useFakeTimers();
+    docMock
+      .on(QueryCommand)
+      .resolvesOnce({ Items: [{ id: "a", ready: false }] })
+      .resolvesOnce({ Items: [{ id: "a", ready: true }] });
+
+    const promise = pollForExactlyOneItem("activity_log", CRITERIA, {
+      timeoutSeconds: 5,
+      matchItem: (item) => item.ready === true,
+    });
+    await vi.runAllTimersAsync();
+    await expect(promise).resolves.toStrictEqual({ id: "a", ready: true });
+  });
+
+  it("times out reporting last count when count never reaches one", async () => {
+    vi.useFakeTimers();
+    docMock.on(QueryCommand).resolves({ Items: [{ id: "a" }, { id: "b" }] });
+
+    const promise = pollForExactlyOneItem("activity_log", CRITERIA, {
+      timeoutSeconds: 0,
+      description: "my check",
+    });
+    const assertion = expect(promise).rejects.toThrow(
+      /Expected exactly one item.*for my check.*Last observed item count: 2/s
+    );
+    await vi.runAllTimersAsync();
+    await assertion;
+  });
+
+  it("times out reporting query errors when every attempt errors", async () => {
+    vi.useFakeTimers();
+    docMock.on(QueryCommand).rejects(new Error("boom"));
+
+    const promise = pollForExactlyOneItem("activity_log", CRITERIA, {
+      timeoutSeconds: 0,
+    });
+    const assertion = expect(promise).rejects.toThrow(
+      /Every query attempt returned a DynamoDB error/
+    );
+    await vi.runAllTimersAsync();
+    await assertion;
   });
 });
 

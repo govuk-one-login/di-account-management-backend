@@ -7,6 +7,8 @@ export const TABLES = {
   INACTIVE_ACCOUNT_TRACKER: "inactive_account_tracker_store",
 } as const;
 
+export const INACTIVE_ACCOUNT_TRACKER_INDEX = "CommonSubjectIdIndex";
+
 export const AWS_REGION = "eu-west-2";
 
 // Removes exactly one trailing slash (unlike Python's rstrip('/'), which strips
@@ -18,6 +20,14 @@ function stripOneTrailingSlash(value: string): string {
 // Named SQS_QUEUE_ARN for historical CI reasons but holds a Queue URL.
 export function getQueueUrl(): string | undefined {
   return process.env.SQS_QUEUE_ARN;
+}
+
+export function getTxmaQueueUrl(): string | undefined {
+  return process.env.TXMA_SQS_QUEUE_URL;
+}
+
+export function getNotificationQueueUrl(): string | undefined {
+  return process.env.NOTIFICATION_SQS_QUEUE_URL;
 }
 
 export function getPublicApiBaseUrl(): string | undefined {

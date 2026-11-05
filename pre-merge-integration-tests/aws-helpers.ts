@@ -2,7 +2,12 @@
 // deployed AWS infrastructure when run via the integration config; the unit
 // tests mock the clients instead.
 
-import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
+import {
+  SQSClient,
+  SendMessageCommand,
+  ReceiveMessageCommand,
+  DeleteMessageCommand,
+} from "@aws-sdk/client-sqs";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import {
   DynamoDBDocumentClient,
@@ -80,7 +85,7 @@ export async function getSecret(secretId: string): Promise<string> {
 
 export interface MatchCriteria {
   keyConditionExpression: string;
-  expressionAttributeNames: Record<string, string>;
+  expressionAttributeNames?: Record<string, string>;
   expressionAttributeValues: Record<string, unknown>;
 }
 
@@ -88,6 +93,83 @@ export interface PollOptions {
   indexName?: string;
   timeoutSeconds?: number;
   description?: string;
+  matchItem?: (item: Record<string, unknown>) => boolean;
+}
+
+// Polls the table (or `indexName`) with a 1s delay between attempts until
+// exactly one matching item is found, that item satisfies `matchItem` (if
+// supplied), and the timeout (default 30s) has not elapsed. Returns that item.
+// Continues polling if zero items are found (not yet written), more than one
+// item is found (tracker hasn't merged yet), or the single item does not yet
+// satisfy `matchItem` (not all events processed yet). On timeout, throws an
+// assertion failure naming the table, index, criteria, timeout, and the last
+// observed item count.
+export async function pollForExactlyOneItem(
+  tableName: string,
+  criteria: MatchCriteria,
+  options?: PollOptions
+): Promise<Record<string, unknown>> {
+  const timeoutSeconds = options?.timeoutSeconds ?? 30;
+  const indexName = options?.indexName;
+  const matchItem = options?.matchItem;
+
+  const deadline = Date.now() + timeoutSeconds * 1000;
+  let lastCount = 0;
+  let allAttemptsErrored = true;
+
+  for (;;) {
+    try {
+      const response = await documentClient.send(
+        new QueryCommand({
+          TableName: tableName,
+          IndexName: indexName,
+          KeyConditionExpression: criteria.keyConditionExpression,
+          ...(criteria.expressionAttributeNames !== undefined &&
+            Object.keys(criteria.expressionAttributeNames).length > 0 && {
+              ExpressionAttributeNames: criteria.expressionAttributeNames,
+            }),
+          ExpressionAttributeValues: criteria.expressionAttributeValues,
+        })
+      );
+
+      allAttemptsErrored = false;
+      const items = response.Items ?? [];
+      lastCount = items.length;
+
+      if (
+        lastCount === 1 &&
+        (matchItem === undefined ||
+          matchItem(items[0] as Record<string, unknown>))
+      ) {
+        return items[0] as Record<string, unknown>;
+      }
+    } catch {
+      // Swallow per-attempt query errors and keep polling.
+    }
+
+    if (Date.now() + 1000 >= deadline) {
+      break;
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 1000)); // NOSONAR: await-in-loop is deliberate here.
+  }
+
+  const indexClause = indexName !== undefined ? ` (index "${indexName}")` : "";
+  const descriptionClause =
+    options?.description !== undefined ? ` for ${options.description}` : "";
+  const criteriaDescription = JSON.stringify({
+    keyConditionExpression: criteria.keyConditionExpression,
+    expressionAttributeNames: criteria.expressionAttributeNames,
+    expressionAttributeValues: criteria.expressionAttributeValues,
+  });
+  const errorsClause = allAttemptsErrored
+    ? " Every query attempt returned a DynamoDB error during polling."
+    : `Last observed item count: ${lastCount}.`;
+
+  throw new Error(
+    `Expected exactly one item in table "${tableName}"${indexClause}${descriptionClause} ` +
+      `matching criteria ${criteriaDescription} within ${timeoutSeconds}s. ${errorsClause}`
+  );
 }
 
 // Polls the table (or `indexName`) with a 1s delay between attempts until a
@@ -113,7 +195,10 @@ export async function pollForItem(
           TableName: tableName,
           IndexName: indexName,
           KeyConditionExpression: criteria.keyConditionExpression,
-          ExpressionAttributeNames: criteria.expressionAttributeNames,
+          ...(criteria.expressionAttributeNames !== undefined &&
+            Object.keys(criteria.expressionAttributeNames).length > 0 && {
+              ExpressionAttributeNames: criteria.expressionAttributeNames,
+            }),
           ExpressionAttributeValues: criteria.expressionAttributeValues,
         })
       );
@@ -189,7 +274,10 @@ export async function assertNoItem(
         TableName: tableName,
         IndexName: indexName,
         KeyConditionExpression: criteria.keyConditionExpression,
-        ExpressionAttributeNames: criteria.expressionAttributeNames,
+        ...(criteria.expressionAttributeNames !== undefined &&
+          Object.keys(criteria.expressionAttributeNames).length > 0 && {
+            ExpressionAttributeNames: criteria.expressionAttributeNames,
+          }),
         ExpressionAttributeValues: criteria.expressionAttributeValues,
       }),
       { abortSignal: controller.signal }
@@ -218,6 +306,69 @@ export async function assertNoItem(
   throw new Error(
     `Expected no item in table "${tableName}"${indexClause}${descriptionClause}, ` +
       `but found ${matchCount} matching item${matchCount === 1 ? "" : "s"}.`
+  );
+}
+
+export interface SqsPollOptions {
+  timeoutSeconds?: number;
+  description?: string;
+}
+
+// Polls an SQS queue with a 1s delay between attempts until a message whose
+// parsed body satisfies `predicate` is found or the timeout (default 30s)
+// elapses. Received messages are deleted after being matched. On timeout,
+// throws an assertion failure.
+export async function pollForSqsMessage(
+  queueUrl: string,
+  predicate: (body: Record<string, unknown>) => boolean,
+  options?: SqsPollOptions
+): Promise<Record<string, unknown>> {
+  const timeoutSeconds = options?.timeoutSeconds ?? 30;
+  const deadline = Date.now() + timeoutSeconds * 1000;
+
+  for (;;) {
+    try {
+      const response = await sqsClient.send(
+        new ReceiveMessageCommand({
+          QueueUrl: queueUrl,
+          MaxNumberOfMessages: 10,
+          WaitTimeSeconds: 1,
+        })
+      );
+
+      for (const message of response.Messages ?? []) {
+        let parsed: Record<string, unknown>;
+        try {
+          parsed = JSON.parse(message.Body ?? "") as Record<string, unknown>;
+        } catch {
+          continue;
+        }
+
+        if (predicate(parsed)) {
+          await sqsClient.send(
+            new DeleteMessageCommand({
+              QueueUrl: queueUrl,
+              ReceiptHandle: message.ReceiptHandle,
+            })
+          );
+          return parsed;
+        }
+      }
+    } catch {
+      // Swallow per-attempt errors and keep polling.
+    }
+
+    if (Date.now() + 1000 >= deadline) {
+      break;
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 1000)); // NOSONAR: await-in-loop is deliberate here.
+  }
+
+  const descriptionClause =
+    options?.description !== undefined ? ` for ${options.description}` : "";
+  throw new Error(
+    `No matching SQS message found on queue "${queueUrl}"${descriptionClause} within ${timeoutSeconds}s.`
   );
 }
 

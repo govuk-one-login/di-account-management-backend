@@ -186,4 +186,9 @@ jobs:
           SQS_QUEUE_ARN: ${{ secrets.RawEventsQueue }}
           PUBLIC_API_BASE_URL: ${{ secrets.TEST_PUBLIC_API_BASE_URL }}
           NOTIFY_DELIVERY_RECEIPTS_SECRET_ARN: ${{ secrets.TEST_NOTIFY_DELIVERY_RECEIPTS_SECRET_ARN }}
+          TXMA_SQS_QUEUE_URL: ${{ secrets.TEST_TXMA_SQS_QUEUE_URL }}
+          NOTIFICATION_SQS_QUEUE_URL: ${{ secrets.TEST_NOTIFICATION_SQS_QUEUE_URL }}
         run: npm run test:integration
+
+
+https://sqs.eu-west-2.amazonaws.com/654654326096/home-backend-AuditOutputQueue-iWyYo1eviPry

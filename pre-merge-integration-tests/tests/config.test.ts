@@ -9,6 +9,8 @@ import {
   getNotifySecretArn,
   getPublicApiBaseUrl,
   getQueueUrl,
+  getTxmaQueueUrl,
+  getNotificationQueueUrl,
   MissingConfigError,
   notifyTestsConfigured,
   TABLES,
@@ -18,6 +20,8 @@ const ENV_KEYS = [
   "SQS_QUEUE_ARN",
   "PUBLIC_API_BASE_URL",
   "NOTIFY_DELIVERY_RECEIPTS_SECRET_ARN",
+  "TXMA_SQS_QUEUE_URL",
+  "NOTIFICATION_SQS_QUEUE_URL",
 ] as const;
 
 describe("config", () => {
@@ -108,6 +112,28 @@ describe("config", () => {
     it("returns the raw value when set", () => {
       process.env.NOTIFY_DELIVERY_RECEIPTS_SECRET_ARN = "arn:aws:secret:xyz"; // pragma: allowlist secret
       expect(getNotifySecretArn()).toBe("arn:aws:secret:xyz");
+    });
+  });
+
+  describe("getTxmaQueueUrl", () => {
+    it("returns undefined when unset", () => {
+      expect(getTxmaQueueUrl()).toBeUndefined();
+    });
+
+    it("returns the raw value when set", () => {
+      process.env.TXMA_SQS_QUEUE_URL = "https://sqs.eu-west-2.amazonaws.com/123/txma";
+      expect(getTxmaQueueUrl()).toBe("https://sqs.eu-west-2.amazonaws.com/123/txma");
+    });
+  });
+
+  describe("getNotificationQueueUrl", () => {
+    it("returns undefined when unset", () => {
+      expect(getNotificationQueueUrl()).toBeUndefined();
+    });
+
+    it("returns the raw value when set", () => {
+      process.env.NOTIFICATION_SQS_QUEUE_URL = "https://sqs.eu-west-2.amazonaws.com/123/notify";
+      expect(getNotificationQueueUrl()).toBe("https://sqs.eu-west-2.amazonaws.com/123/notify");
     });
   });
 

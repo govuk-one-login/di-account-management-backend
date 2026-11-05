@@ -116,6 +116,8 @@ Resources:
             Effect: Allow
             Action:
               - sqs:SendMessage
+              - sqs:ReceiveMessage
+              - sqs:DeleteMessage
               - dynamodb:Query
               - dynamodb:GetItem
               - dynamodb:DeleteItem

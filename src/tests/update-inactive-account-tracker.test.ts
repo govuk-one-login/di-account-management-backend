@@ -691,6 +691,57 @@ describe("UpdateInactiveAccountTracker handler", () => {
     });
   });
 
+  test("falls back to publicSubjectId from existing tracker record when event has empty string", async () => {
+    dynamoMock.on(QueryCommand).resolves({
+      Items: [
+        {
+          commonSubjectId: "qwerty",
+          dateForDeletion: "1978-11-29",
+          userLastActive: "1970-01-01T00:00:00.000Z",
+          emailAddress: "x",
+          publicSubjectId: "public-subject-from-record",
+          status: "pending",
+          statusLastUpdated: "",
+        },
+      ],
+    });
+    dynamoMock.on(TransactWriteCommand).resolves({});
+    const recordWithoutPublicSubjectId = {
+      dynamodb: {
+        NewImage: {
+          event: {
+            M: {
+              event_id: { S: "event_id" },
+              client_id: { S: "test-client" },
+              timestamp: { N: `${timestamp}` },
+              user: {
+                M: {
+                  user_id: { S: "qwerty" },
+                  public_subject_id: { S: "" },
+                },
+              },
+            },
+          },
+        },
+      },
+    };
+    const event: DynamoDBStreamEvent = {
+      Records: [recordWithoutPublicSubjectId as DynamoDBRecord],
+    };
+    await handler(event, {} as Context);
+    expect(dynamoMock).toHaveReceivedCommandWith(TransactWriteCommand, {
+      TransactItems: expect.arrayContaining([
+        expect.objectContaining({
+          Put: expect.objectContaining({
+            Item: expect.objectContaining({
+              publicSubjectId: "public-subject-from-record",
+            }),
+          }),
+        }),
+      ]),
+    });
+  });
+
   test("falls back to publicSubjectId from existing tracker record when not on event", async () => {
     dynamoMock.on(QueryCommand).resolves({
       Items: [

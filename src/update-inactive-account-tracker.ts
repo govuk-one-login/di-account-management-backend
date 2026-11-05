@@ -238,8 +238,8 @@ const buildTrackerRecord = (
     ...emailFields,
     ...activityAndStatusFields,
     publicSubjectId:
-      txmaEvent.user?.public_subject_id ??
-      previousTrackerRecord?.publicSubjectId ??
+      txmaEvent.user?.public_subject_id ||
+      previousTrackerRecord?.publicSubjectId ||
       "",
     hasSetupMfa: previousTrackerRecord?.hasSetupMfa ?? true,
   };

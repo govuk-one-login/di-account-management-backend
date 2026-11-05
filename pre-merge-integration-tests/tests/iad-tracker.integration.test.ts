@@ -1,4 +1,4 @@
-// Real-AWS integration test (run only via `npm run test:integration`): verifies
+// Real-AWS integration test verifies
 // that the four IAD audit events sent via SQS → SaveRawEvents → DynamoDB Stream
 // → UpdateInactiveAccountTracker produce a single correct record in
 // inactive_account_tracker_store, trigger the correct Notify email, and emit
@@ -28,7 +28,7 @@ import {
 // gets +1s so the last event deterministically wins userLastActiveSource.
 // The tracker sets dateForDeletion to 5 years from the highest timestamp, so
 // EXPECTED_DATE_FOR_DELETION is derived from the last event's timestamp.
-const BASE_EVENT_TIMESTAMP_S = 1700000000; // 2023-11-14T22:13:20.000Z
+const BASE_EVENT_TIMESTAMP_S = 1788220800; // 2026-09-01T00:00:00.000Z — after all known backfill thresholds (latest: 2026-08-25)
 // The four IAD audit events that flow through SaveRawEvents into the tracker.
 const IAD_EVENT_NAMES = [
   "AUTH_AUTH_CODE_ISSUED",
@@ -39,8 +39,7 @@ const IAD_EVENT_NAMES = [
 // Last event timestamp = BASE + (IAD_EVENT_NAMES.length - 1) seconds.
 const LAST_EVENT_TIMESTAMP_S =
   BASE_EVENT_TIMESTAMP_S + IAD_EVENT_NAMES.length - 1;
-// Exact dateForDeletion the tracker will write for the last (highest) timestamp:
-// getNewDateForInactiveAccountDeletion adds 5 years and formats as YYYY-MM-DD.
+// Exact dateForDeletion the tracker will write for the last (highest) timestamp.
 const _lastEventDate = new Date(LAST_EVENT_TIMESTAMP_S * 1000);
 _lastEventDate.setFullYear(_lastEventDate.getFullYear() + 5);
 const EXPECTED_DATE_FOR_DELETION = _lastEventDate.toISOString().split("T")[0];

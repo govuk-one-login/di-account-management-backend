@@ -121,8 +121,11 @@ describe("config", () => {
     });
 
     it("returns the raw value when set", () => {
-      process.env.TXMA_SQS_QUEUE_URL = "https://sqs.eu-west-2.amazonaws.com/123/txma";
-      expect(getTxmaQueueUrl()).toBe("https://sqs.eu-west-2.amazonaws.com/123/txma");
+      process.env.TXMA_SQS_QUEUE_URL =
+        "https://sqs.eu-west-2.amazonaws.com/123/txma";
+      expect(getTxmaQueueUrl()).toBe(
+        "https://sqs.eu-west-2.amazonaws.com/123/txma"
+      );
     });
   });
 
@@ -132,8 +135,11 @@ describe("config", () => {
     });
 
     it("returns the raw value when set", () => {
-      process.env.NOTIFICATION_SQS_QUEUE_URL = "https://sqs.eu-west-2.amazonaws.com/123/notify";
-      expect(getNotificationQueueUrl()).toBe("https://sqs.eu-west-2.amazonaws.com/123/notify");
+      process.env.NOTIFICATION_SQS_QUEUE_URL =
+        "https://sqs.eu-west-2.amazonaws.com/123/notify";
+      expect(getNotificationQueueUrl()).toBe(
+        "https://sqs.eu-west-2.amazonaws.com/123/notify"
+      );
     });
   });
 

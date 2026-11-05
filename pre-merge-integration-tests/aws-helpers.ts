@@ -99,9 +99,9 @@ export interface PollOptions {
 // Polls the table (or `indexName`) with a 1s delay between attempts until
 // exactly one matching item is found, that item satisfies `matchItem` (if
 // supplied), and the timeout (default 30s) has not elapsed. Returns that item.
-// Continues polling if zero items are found (not yet written), more than one
-// item is found (tracker hasn't merged yet), or the single item does not yet
-// satisfy `matchItem` (not all events processed yet). On timeout, throws an
+// Continues polling if zero items are found, more than one
+// item is found, or the single item does not yet
+// satisfy `matchItem`. On timeout, throws an
 // assertion failure naming the table, index, criteria, timeout, and the last
 // observed item count.
 export async function pollForExactlyOneItem(

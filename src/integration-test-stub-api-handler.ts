@@ -11,7 +11,7 @@ import { randomUUID } from "node:crypto";
 const dynamoClient = new DynamoDBClient({});
 const dynamoDocClient = DynamoDBDocumentClient.from(dynamoClient);
 
-const metrics = initMetrics("stub-api-handler");
+const metrics = initMetrics("integration-test-stub-api-handler");
 
 export const handler: APIGatewayProxyHandler =
   normalizeAPIGatewayProxyEventHandlerWrapper(
@@ -20,7 +20,7 @@ export const handler: APIGatewayProxyHandler =
 
       await dynamoDocClient.send(
         new PutCommand({
-          TableName: process.env.STUB_API_OUTPUTS_TABLE_NAME,
+          TableName: process.env.INTEGRATION_TEST_STUB_API_OUTPUTS_TABLE_NAME,
           Item: {
             id: randomUUID(),
             allItemsId: "an_item",

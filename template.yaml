@@ -88,7 +88,7 @@ Parameters:
     AllowedValues:
       - AllAtOnce
       - Linear10PercentEvery1Minute
-  StubApiOutputsTableAllItemsIndexName:
+  IntegrationTestStubApiOutputsTableAllItemsIndexName:
     Type: String
     Default: "AllItemsIndex"
 
@@ -7121,9 +7121,9 @@ Resources:
               !Ref Environment,
               notifyDontSendEmailsTo,
             ]
-          STUB_API_URL: !If
+          INTEGRATION_TEST_STUB_API_URL: !If
             - IsDemo
-            - !Sub "https://${StubApiGateway}.execute-api.${AWS::Region}.amazonaws.com/${Environment}"
+            - !Sub "https://${IntegrationTestStubApiGateway}.execute-api.${AWS::Region}.amazonaws.com/${Environment}"
             - !Ref AWS::NoValue
       DeploymentPreference:
         Alarms:
@@ -8536,10 +8536,10 @@ Resources:
         - !Ref AWS::NoValue
 
   #########################################
-  # Stub endpoint infra
+  # Integration Test Stub endpoint infra
   #########################################
 
-  StubApiGateway:
+  IntegrationTestStubApiGateway:
     Type: AWS::Serverless::Api
     Condition: IsDemo
     Metadata:
@@ -8579,7 +8579,7 @@ Resources:
           "tlsVersion": "$context.tlsVersion",
           "cipherSuite": "$context.cipherSuite"    
           }
-        DestinationArn: !GetAtt StubApiGatewayAccessLogGroup.Arn
+        DestinationArn: !GetAtt IntegrationTestStubApiGatewayAccessLogGroup.Arn
       MethodSettings:
         - MetricsEnabled: true
           CacheDataEncrypted: true
@@ -8597,15 +8597,15 @@ Resources:
                 aws:sourceVpce:
                   Fn::ImportValue: !Sub "${VpcStackName}-ExecuteApiGatewayEndpointId"
 
-  StubApiGatewayAccessLogGroup:
+  IntegrationTestStubApiGatewayAccessLogGroup:
     Type: AWS::Logs::LogGroup
     Condition: IsDemo
     Properties:
-      LogGroupName: !Sub "/aws/apigateway/${StubApiGateway}/${Environment}"
+      LogGroupName: !Sub "/aws/apigateway/${IntegrationTestStubApiGateway}/${Environment}"
       RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
-  StubApiLambda:
+  IntegrationTestStubApiLambda:
     Type: AWS::Serverless::Function
     Condition: IsDemo
     Properties:
@@ -8616,12 +8616,12 @@ Resources:
       DeploymentPreference:
         Alarms: []
       LoggingConfig:
-        LogGroup: !Ref StubApiLambdaLogGroup
-      Handler: stub-api-handler.handler
+        LogGroup: !Ref IntegrationTestStubApiLambdaLogGroup
+      Handler: integration-test-stub-api-handler.handler
       Environment:
         Variables:
-          STUB_API_OUTPUTS_TABLE_NAME: !Ref StubApiOutputsTable
-          STUB_API_OUTPUTS_ALL_ITEMS_INDEX_NAME: !Ref StubApiOutputsTableAllItemsIndexName
+          INTEGRATION_TEST_STUB_API_OUTPUTS_TABLE_NAME: !Ref IntegrationTestStubApiOutputsTable
+          INTEGRATION_TEST_STUB_API_OUTPUTS_ALL_ITEMS_INDEX_NAME: !Ref IntegrationTestStubApiOutputsTableAllItemsIndexName
       Policies:
         - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
         - Statement:
@@ -8637,20 +8637,20 @@ Resources:
                 - dynamodb:UpdateItem
                 - dynamodb:DeleteItem
                 - dynamodb:BatchWriteItem
-              Resource: !GetAtt StubApiOutputsTable.Arn
+              Resource: !GetAtt IntegrationTestStubApiOutputsTable.Arn
       Events:
         Root:
           Type: Api
           Properties:
             Method: ANY
             Path: /
-            RestApiId: !Ref StubApiGateway
+            RestApiId: !Ref IntegrationTestStubApiGateway
         CatchAll:
           Type: Api
           Properties:
             Method: ANY
             Path: /{proxy+}
-            RestApiId: !Ref StubApiGateway
+            RestApiId: !Ref IntegrationTestStubApiGateway
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -8663,23 +8663,23 @@ Resources:
         Banner:
           - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url); # Required in order to use AWS Lambda Powertools
         EntryPoints:
-          - stub-api-handler.ts
+          - integration-test-stub-api-handler.ts
 
-  StubApiLambdaLogGroup:
+  IntegrationTestStubApiLambdaLogGroup:
     Type: AWS::Logs::LogGroup
     Condition: IsDemo
     Properties:
-      LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-stub-api"
+      LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-integration-test-stub-api"
       RetentionInDays: 90
       KmsKeyId: !GetAtt LoggingKmsKey.Arn
 
-  StubApiOutputsTable:
+  IntegrationTestStubApiOutputsTable:
     Type: AWS::DynamoDB::Table
     Condition: IsDemo
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
     Properties:
-      TableName: !Sub ${AWS::StackName}-StubApiOutputs
+      TableName: !Sub ${AWS::StackName}-IntegrationTestStubApiOutputs
       BillingMode: PAY_PER_REQUEST
       ContributorInsightsSpecification:
         Enabled: true
@@ -8694,7 +8694,7 @@ Resources:
         - AttributeName: id
           KeyType: HASH
       GlobalSecondaryIndexes:
-        - IndexName: !Ref StubApiOutputsTableAllItemsIndexName
+        - IndexName: !Ref IntegrationTestStubApiOutputsTableAllItemsIndexName
           KeySchema:
             - AttributeName: allItemsId
               KeyType: HASH

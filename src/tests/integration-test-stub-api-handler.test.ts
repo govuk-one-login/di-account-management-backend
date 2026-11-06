@@ -17,11 +17,11 @@ vi.mock("../common/metrics.js", () => ({
   ) => fn,
 }));
 
-import { handler } from "../stub-api-handler.js";
+import { handler } from "../integration-test-stub-api-handler.js";
 
 const dynamoMock = mockClient(DynamoDBDocumentClient);
 
-const TABLE_NAME = "stub-api-outputs-table";
+const TABLE_NAME = "integration-test-stub-api-outputs-table";
 const UUID = "test-uuid-1234";
 const NOW_MS = 1_700_000_000_000;
 const NOW_S = Math.floor(NOW_MS / 1000);
@@ -41,10 +41,10 @@ const baseEvent = {
   isBase64Encoded: false,
 } as APIGatewayProxyEvent;
 
-describe("stub-api-handler", () => {
+describe("integration-test-stub-api-handler", () => {
   beforeEach(() => {
     dynamoMock.reset();
-    process.env.STUB_API_OUTPUTS_TABLE_NAME = TABLE_NAME;
+    process.env.INTEGRATION_TEST_STUB_API_OUTPUTS_TABLE_NAME = TABLE_NAME;
     vi.spyOn(Date, "now").mockReturnValue(NOW_MS);
   });
 

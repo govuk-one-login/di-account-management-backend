@@ -132,7 +132,7 @@ Conditions:
           - "none"
 
   IsProduction: !Equals [!Ref Environment, production]
-  IsDemo: !Equals [!Ref Environment, demo]
+  IsDemo: !Equals [!Ref Environment, dev]
 
   BackupEnabled: !Or
     - !Equals [!Ref Environment, staging]

@@ -132,7 +132,7 @@ Conditions:
           - "none"
 
   IsProduction: !Equals [!Ref Environment, production]
-  IsDemo: !Equals [!Ref Environment, dev]
+  IsDemo: !Equals [!Ref Environment, demo]
 
   BackupEnabled: !Or
     - !Equals [!Ref Environment, staging]
@@ -8169,6 +8169,7 @@ Resources:
           - id: "CKV_AWS_120"
             comment: "We don't want to cache reponses"
     Properties:
+      Name: backend-public-api
       StageName: !Ref Environment
       AlwaysDeploy: true
       TracingEnabled: true
@@ -8548,6 +8549,7 @@ Resources:
           - id: "CKV_AWS_120"
             comment: "We don't want to cache reponses"
     Properties:
+      Name: backend-integration-test-stub-api
       StageName: !Ref Environment
       AlwaysDeploy: true
       TracingEnabled: true

@@ -88,6 +88,9 @@ Parameters:
     AllowedValues:
       - AllAtOnce
       - Linear10PercentEvery1Minute
+  IntegrationTestStubApiOutputsTableAllItemsIndexName:
+    Type: String
+    Default: "AllItemsIndex"
 
 Conditions:
   UseCodeSigning:
@@ -129,6 +132,7 @@ Conditions:
           - "none"
 
   IsProduction: !Equals [!Ref Environment, production]
+  IsDemo: !Equals [!Ref Environment, demo]
 
   BackupEnabled: !Or
     - !Equals [!Ref Environment, staging]
@@ -7117,6 +7121,10 @@ Resources:
               !Ref Environment,
               notifyDontSendEmailsTo,
             ]
+          INTEGRATION_TEST_STUB_API_URL: !If
+            - IsDemo
+            - !Sub "https://${IntegrationTestStubApiGateway}.execute-api.${AWS::Region}.amazonaws.com/${Environment}"
+            - !Ref AWS::NoValue
       DeploymentPreference:
         Alarms:
           Fn::If:
@@ -8161,6 +8169,7 @@ Resources:
           - id: "CKV_AWS_120"
             comment: "We don't want to cache reponses"
     Properties:
+      Name: backend-public-api
       StageName: !Ref Environment
       AlwaysDeploy: true
       TracingEnabled: true
@@ -8526,6 +8535,184 @@ Resources:
                   - dynamodb:PutItem
                 Resource: "*"
         - !Ref AWS::NoValue
+
+  #########################################
+  # Integration Test Stub endpoint infra
+  #########################################
+
+  IntegrationTestStubApiGateway:
+    Type: AWS::Serverless::Api
+    Condition: IsDemo
+    Metadata:
+      checkov:
+        skip:
+          - id: "CKV_AWS_120"
+            comment: "We don't want to cache reponses"
+    Properties:
+      Name: backend-integration-test-stub-api
+      StageName: !Ref Environment
+      AlwaysDeploy: true
+      TracingEnabled: true
+      DisableExecuteApiEndpoint: false
+      EndpointConfiguration:
+        Type: PRIVATE
+        VpcEndpointIds:
+          - Fn::ImportValue: !Sub "${VpcStackName}-ExecuteApiGatewayEndpointId"
+      AccessLogSetting:
+        Format: >-
+          {
+          "requestId": "$context.requestId",
+          "requestTime": "$context.requestTime",
+          "requestTimeEpoch": "$context.requestTimeEpoch",
+          "httpMethod": "$context.httpMethod",
+          "domainName": "$context.domainName",
+          "path": "$context.path",
+          "protocol": "$context.protocol",
+          "status": "$context.status",
+          "responseLength": "$context.responseLength",
+          "responseLatency": "$context.responseLatency",
+          "authorizerLatency": "$context.authorizer.latency",
+          "integrationLatency": "$context.integrationLatency",
+          "integrationErrorMessage": "$context.integrationErrorMessage",
+          "errorMessage": "$context.error.message",
+          "errorResponseType": "$context.error.responseType",
+          "validationErrorString": "$context.error.validationErrorString",
+          "xrayTraceId": "$context.xrayTraceId",
+          "tlsVersion": "$context.tlsVersion",
+          "cipherSuite": "$context.cipherSuite"    
+          }
+        DestinationArn: !GetAtt IntegrationTestStubApiGatewayAccessLogGroup.Arn
+      MethodSettings:
+        - MetricsEnabled: true
+          CacheDataEncrypted: true
+          ResourcePath: /*
+          HttpMethod: "*"
+      Policy:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: "*"
+            Action: execute-api:Invoke
+            Resource: "*"
+            Condition:
+              StringEquals:
+                aws:sourceVpce:
+                  Fn::ImportValue: !Sub "${VpcStackName}-ExecuteApiGatewayEndpointId"
+
+  IntegrationTestStubApiGatewayAccessLogGroup:
+    Type: AWS::Logs::LogGroup
+    Condition: IsDemo
+    Properties:
+      LogGroupName: !Sub "/aws/apigateway/${IntegrationTestStubApiGateway}/${Environment}"
+      RetentionInDays: 90
+      KmsKeyId: !GetAtt LoggingKmsKey.Arn
+
+  IntegrationTestStubApiLambda:
+    Type: AWS::Serverless::Function
+    Condition: IsDemo
+    Properties:
+      VpcConfig:
+        SubnetIds:
+          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdA
+          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdB
+      DeploymentPreference:
+        Alarms: []
+      LoggingConfig:
+        LogGroup: !Ref IntegrationTestStubApiLambdaLogGroup
+      Handler: integration-test-stub-api-handler.handler
+      Environment:
+        Variables:
+          INTEGRATION_TEST_STUB_API_OUTPUTS_TABLE_NAME: !Ref IntegrationTestStubApiOutputsTable
+          INTEGRATION_TEST_STUB_API_OUTPUTS_ALL_ITEMS_INDEX_NAME: !Ref IntegrationTestStubApiOutputsTableAllItemsIndexName
+      Policies:
+        - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
+        - Statement:
+            - Effect: Allow
+              Action:
+                - kms:Decrypt
+                - kms:GenerateDataKey*
+              Resource: !GetAtt DatabaseKmsKey.Arn
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:PutItem
+                - dynamodb:UpdateItem
+                - dynamodb:DeleteItem
+                - dynamodb:BatchWriteItem
+              Resource: !GetAtt IntegrationTestStubApiOutputsTable.Arn
+      Events:
+        Root:
+          Type: Api
+          Properties:
+            Method: ANY
+            Path: /
+            RestApiId: !Ref IntegrationTestStubApiGateway
+        CatchAll:
+          Type: Api
+          Properties:
+            Method: ANY
+            Path: /{proxy+}
+            RestApiId: !Ref IntegrationTestStubApiGateway
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Format: "esm"
+        OutExtension:
+          - .js=.mjs
+        Target: "es2022"
+        Sourcemap: true
+        Banner:
+          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url); # Required in order to use AWS Lambda Powertools
+        EntryPoints:
+          - integration-test-stub-api-handler.ts
+
+  IntegrationTestStubApiLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Condition: IsDemo
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-integration-test-stub-api"
+      RetentionInDays: 90
+      KmsKeyId: !GetAtt LoggingKmsKey.Arn
+
+  IntegrationTestStubApiOutputsTable:
+    Type: AWS::DynamoDB::Table
+    Condition: IsDemo
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      TableName: !Sub ${AWS::StackName}-IntegrationTestStubApiOutputs
+      BillingMode: PAY_PER_REQUEST
+      ContributorInsightsSpecification:
+        Enabled: true
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: allItemsId
+          AttributeType: S
+        - AttributeName: createdAt
+          AttributeType: N
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: !Ref IntegrationTestStubApiOutputsTableAllItemsIndexName
+          KeySchema:
+            - AttributeName: allItemsId
+              KeyType: HASH
+            - AttributeName: createdAt
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        KMSMasterKeyId: !GetAtt DatabaseKmsKey.Arn
+        SSEEnabled: true
+        SSEType: KMS
+      TimeToLiveSpecification:
+        AttributeName: expiresAt
+        Enabled: true
 
 Outputs:
   GeneratorKey:

@@ -7080,11 +7080,6 @@ Resources:
 
   NotificationServiceFunction:
     Type: AWS::Serverless::Function
-    Metadata:
-      cfn-lint:
-        config:
-          ignore_checks:
-            - W1028
     DependsOn:
       - NotificationServiceFunctionLogGroup
     Properties:
@@ -7137,6 +7132,10 @@ Resources:
             - - !Ref NotificationServiceFunctionSuccessRate
             - - !Ref AWS::NoValue
     Metadata:
+      cfn-lint:
+        config:
+          ignore_checks:
+            - W1028
       BuildMethod: esbuild
       BuildProperties:
         Minify: true

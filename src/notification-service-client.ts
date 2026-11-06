@@ -47,7 +47,11 @@ export const setUpNotifyClient = async (
       batchItemFailures.push({ itemIdentifier: record.messageId });
       return;
     }
-    notifyClient = new NotifyClient(notifyApiKey);
+    notifyClient = new NotifyClient(
+      process.env["NOTIFY_API_URL"]
+        ? process.env["NOTIFY_API_URL"]
+        : notifyApiKey
+    );
   }
   return notifyClient;
 };

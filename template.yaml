@@ -88,6 +88,9 @@ Parameters:
     AllowedValues:
       - AllAtOnce
       - Linear10PercentEvery1Minute
+  StubApiOutputsTableAllItemsIndexName:
+    Type: String
+    Default: "AllItemsIndex"
 
 Conditions:
   UseCodeSigning:
@@ -129,6 +132,7 @@ Conditions:
           - "none"
 
   IsProduction: !Equals [!Ref Environment, production]
+  IsDemo: !Equals [!Ref Environment, demo]
 
   BackupEnabled: !Or
     - !Equals [!Ref Environment, staging]
@@ -7117,6 +7121,10 @@ Resources:
               !Ref Environment,
               notifyDontSendEmailsTo,
             ]
+          NOTIFY_API_URL: !If
+            - IsDemo
+            - !Sub "https://${StubApiGateway}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/notify"
+            - !Ref AWS::NoValue
       DeploymentPreference:
         Alarms:
           Fn::If:
@@ -8526,6 +8534,182 @@ Resources:
                   - dynamodb:PutItem
                 Resource: "*"
         - !Ref AWS::NoValue
+
+  #########################################
+  # Stub endpoint infra
+  #########################################
+
+  StubApiGateway:
+    Type: AWS::Serverless::Api
+    Condition: IsDemo
+    Metadata:
+      checkov:
+        skip:
+          - id: "CKV_AWS_120"
+            comment: "We don't want to cache reponses"
+    Properties:
+      StageName: !Ref Environment
+      AlwaysDeploy: true
+      TracingEnabled: true
+      DisableExecuteApiEndpoint: false
+      EndpointConfiguration:
+        Type: PRIVATE
+        VpcEndpointIds:
+          - Fn::ImportValue: !Sub "${VpcStackName}-ExecuteApiGatewayEndpointId"
+      AccessLogSetting:
+        Format: >-
+          {
+          "requestId": "$context.requestId",
+          "requestTime": "$context.requestTime",
+          "requestTimeEpoch": "$context.requestTimeEpoch",
+          "httpMethod": "$context.httpMethod",
+          "domainName": "$context.domainName",
+          "path": "$context.path",
+          "protocol": "$context.protocol",
+          "status": "$context.status",
+          "responseLength": "$context.responseLength",
+          "responseLatency": "$context.responseLatency",
+          "authorizerLatency": "$context.authorizer.latency",
+          "integrationLatency": "$context.integrationLatency",
+          "integrationErrorMessage": "$context.integrationErrorMessage",
+          "errorMessage": "$context.error.message",
+          "errorResponseType": "$context.error.responseType",
+          "validationErrorString": "$context.error.validationErrorString",
+          "xrayTraceId": "$context.xrayTraceId",
+          "tlsVersion": "$context.tlsVersion",
+          "cipherSuite": "$context.cipherSuite"    
+          }
+        DestinationArn: !GetAtt StubApiGatewayAccessLogGroup.Arn
+      MethodSettings:
+        - MetricsEnabled: true
+          CacheDataEncrypted: true
+          ResourcePath: /*
+          HttpMethod: "*"
+      Policy:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: "*"
+            Action: execute-api:Invoke
+            Resource: "*"
+            Condition:
+              StringEquals:
+                aws:sourceVpce:
+                  Fn::ImportValue: !Sub "${VpcStackName}-ExecuteApiGatewayEndpointId"
+
+  StubApiGatewayAccessLogGroup:
+    Type: AWS::Logs::LogGroup
+    Condition: IsDemo
+    Properties:
+      LogGroupName: !Sub "/aws/apigateway/${StubApiGateway}/${Environment}"
+      RetentionInDays: 90
+      KmsKeyId: !GetAtt LoggingKmsKey.Arn
+
+  StubApiLambda:
+    Type: AWS::Serverless::Function
+    Condition: IsDemo
+    Properties:
+      VpcConfig:
+        SubnetIds:
+          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdA
+          - Fn::ImportValue: !Sub ${VpcStackName}-PrivateSubnetIdB
+      DeploymentPreference:
+        Alarms: []
+      LoggingConfig:
+        LogGroup: !Ref StubApiLambdaLogGroup
+      Handler: stub-api-handler.handler
+      Environment:
+        Variables:
+          STUB_API_OUTPUTS_TABLE_NAME: !Ref StubApiOutputsTable
+          STUB_API_OUTPUTS_ALL_ITEMS_INDEX_NAME: !Ref StubApiOutputsTableAllItemsIndexName
+      Policies:
+        - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
+        - Statement:
+            - Effect: Allow
+              Action:
+                - kms:GenerateDataKey*
+              Resource: !GetAtt DatabaseKmsKey.Arn
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:PutItem
+                - dynamodb:UpdateItem
+                - dynamodb:DeleteItem
+                - dynamodb:BatchWriteItem
+              Resource: !GetAtt StubApiOutputsTable.Arn
+      Events:
+        Root:
+          Type: Api
+          Properties:
+            Method: ANY
+            Path: /
+            RestApiId: !Ref StubApiGateway
+        CatchAll:
+          Type: Api
+          Properties:
+            Method: ANY
+            Path: /{proxy+}
+            RestApiId: !Ref StubApiGateway
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Format: "esm"
+        OutExtension:
+          - .js=.mjs
+        Target: "es2022"
+        Sourcemap: true
+        Banner:
+          - js=import { createRequire } from 'module'; const require = createRequire(import.meta.url); # Required in order to use AWS Lambda Powertools
+        EntryPoints:
+          - stub-api-handler.ts
+
+  StubApiLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Condition: IsDemo
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${Environment}-${AWS::StackName}-stub-api"
+      RetentionInDays: 90
+      KmsKeyId: !GetAtt LoggingKmsKey.Arn
+
+  StubApiOutputsTable:
+    Type: AWS::DynamoDB::Table
+    Condition: IsDemo
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      TableName: !Sub ${AWS::StackName}-StubApiOutputs
+      BillingMode: PAY_PER_REQUEST
+      ContributorInsightsSpecification:
+        Enabled: true
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: allItemsId
+          AttributeType: S
+        - AttributeName: createdAt
+          AttributeType: N
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: !Ref StubApiOutputsTableAllItemsIndexName
+          KeySchema:
+            - AttributeName: allItemsId
+              KeyType: HASH
+            - AttributeName: createdAt
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        KMSMasterKeyId: !GetAtt DatabaseKmsKey.Arn
+        SSEEnabled: true
+        SSEType: KMS
+      TimeToLiveSpecification:
+        AttributeName: expiresAt
+        Enabled: true
 
 Outputs:
   GeneratorKey:

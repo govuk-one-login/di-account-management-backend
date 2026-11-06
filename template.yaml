@@ -132,7 +132,7 @@ Conditions:
           - "none"
 
   IsProduction: !Equals [!Ref Environment, production]
-  IsDemo: !Equals [!Ref Environment, dev]
+  IsDemo: !Equals [!Ref Environment, demo]
 
   BackupEnabled: !Or
     - !Equals [!Ref Environment, staging]
@@ -7080,6 +7080,11 @@ Resources:
 
   NotificationServiceFunction:
     Type: AWS::Serverless::Function
+    Metadata:
+      cfn-lint:
+        config:
+          ignore_checks:
+            - W1028
     DependsOn:
       - NotificationServiceFunctionLogGroup
     Properties:
@@ -7121,9 +7126,9 @@ Resources:
               !Ref Environment,
               notifyDontSendEmailsTo,
             ]
-          NOTIFY_API_URL: !If
+          STUB_API_URL: !If
             - IsDemo
-            - !Sub "https://${StubApiGateway}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/notify"
+            - !Sub "https://${StubApiGateway}.execute-api.${AWS::Region}.amazonaws.com/${Environment}"
             - !Ref AWS::NoValue
       DeploymentPreference:
         Alarms:

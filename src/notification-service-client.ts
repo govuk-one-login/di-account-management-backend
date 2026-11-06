@@ -48,8 +48,8 @@ export const setUpNotifyClient = async (
       return;
     }
     notifyClient = new NotifyClient(
-      process.env["NOTIFY_API_URL"]
-        ? process.env["NOTIFY_API_URL"]
+      process.env["STUB_API_URL"]
+        ? `${process.env["STUB_API_URL"]}/notify`
         : notifyApiKey
     );
   }

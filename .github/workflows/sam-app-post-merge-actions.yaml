@@ -37,7 +37,7 @@ jobs:
         working-directory: ./
 
       - name: Set up Python 3.9
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # pin@v4
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # pin@v4
         with:
           python-version: "3.9"
 
@@ -79,7 +79,7 @@ jobs:
         run: sam build --manifest package.json
 
       - name: Deploy SAM app
-        uses: govuk-one-login/devplatform-upload-action@7076683de6e38a0ecdfbcd273b510a47c7b9489c # pin@v3
+        uses: govuk-one-login/devplatform-upload-action@6677f824e2e0899e207870cfc8224858d1dd6fac # pin@v3
         with:
           artifact-bucket-name: ${{ secrets.ARTIFACT_BUCKET_NAME }}
           signing-profile-name: ${{ secrets.SIGNING_PROFILE_NAME }}

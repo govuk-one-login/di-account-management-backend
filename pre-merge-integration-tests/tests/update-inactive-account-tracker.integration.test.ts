@@ -50,10 +50,10 @@ function trackerCriteria(userId: string) {
 }
 
 // Polls the IntegrationTestStubApiOutputsTable for any item written after
-// `afterEpochSeconds` whose stored event path contains `pathFragment`.
+// `afterEpochSeconds` whose request body contains `notificationType`.
 async function pollForStubOutput(
   afterEpochSeconds: number,
-  pathFragment: string,
+  notificationType: string,
   description: string
 ): Promise<Record<string, unknown>> {
   const tableName = getStubOutputsTableName();
@@ -73,9 +73,14 @@ async function pollForStubOutput(
     );
 
     const match = (response.Items ?? []).find((item) => {
-      const path = (item.event as Record<string, unknown>)?.path as
+      const body = (item.event as Record<string, unknown>)?.body as
         string | undefined;
-      return path?.includes(pathFragment);
+      try {
+        const parsed = JSON.parse(body ?? "") as Record<string, unknown>;
+        return parsed.notificationType === notificationType;
+      } catch {
+        return false;
+      }
     });
 
     if (match !== undefined) return match;
@@ -85,7 +90,7 @@ async function pollForStubOutput(
   }
 
   throw new Error(
-    `No stub output matching path "${pathFragment}" found within 30s for ${description}`
+    `No stub output with notificationType "${notificationType}" found within 30s for ${description}`
   );
 }
 
@@ -421,12 +426,18 @@ describe("update-inactive-account-tracker", () => {
       );
 
       const notifyItems = (response.Items ?? []).filter((item) => {
-        const path = (item.event as Record<string, unknown>)?.path as
+        const body = (item.event as Record<string, unknown>)?.body as
           string | undefined;
-        return (
-          path?.includes("INACTIVE_ACCOUNT_SAVED") &&
-          JSON.stringify(item).includes(userId)
-        );
+        try {
+          const parsed = JSON.parse(body ?? "") as Record<string, unknown>;
+          return (
+            typeof parsed.notificationType === "string" &&
+            parsed.notificationType.startsWith("INACTIVE_ACCOUNT_SAVED") &&
+            parsed.emailAddress === `${userId}@example.com`
+          );
+        } catch {
+          return false;
+        }
       });
 
       expect(notifyItems).toHaveLength(0);

@@ -92,6 +92,7 @@ export interface PollOptions {
   indexName?: string;
   timeoutSeconds?: number;
   description?: string;
+  itemPredicate?: (item: Record<string, unknown>) => boolean;
 }
 
 // Polls the table (or `indexName`) with a 1s delay between attempts until a
@@ -129,7 +130,10 @@ export async function pollForItem(
 
       const items = response.Items;
       if (items !== undefined && items.length > 0) {
-        return items[0] as Record<string, unknown>;
+        const match = options?.itemPredicate
+          ? items.find(options.itemPredicate)
+          : items[0];
+        if (match !== undefined) return match as Record<string, unknown>;
       }
     } catch (err) {
       lastError = err;

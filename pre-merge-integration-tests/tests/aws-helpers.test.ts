@@ -166,6 +166,21 @@ describe("pollForItem", () => {
     await expect(promise).resolves.toStrictEqual({ id: "found" });
   });
 
+  it("keeps polling when itemPredicate does not match and returns when it does", async () => {
+    vi.useFakeTimers();
+    docMock
+      .on(QueryCommand)
+      .resolvesOnce({ Items: [{ id: "a", status: "old" }] })
+      .resolvesOnce({ Items: [{ id: "a", status: "new" }] });
+
+    const promise = pollForItem("activity_log", CRITERIA, {
+      timeoutSeconds: 10,
+      itemPredicate: (item) => item.status === "new",
+    });
+    await vi.runAllTimersAsync();
+    await expect(promise).resolves.toStrictEqual({ id: "a", status: "new" });
+  });
+
   it("times out and reports the query errors when every attempt fails", async () => {
     vi.useFakeTimers();
     docMock.on(QueryCommand).rejects(new Error("boom"));

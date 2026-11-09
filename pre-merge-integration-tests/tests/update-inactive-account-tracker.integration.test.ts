@@ -354,6 +354,7 @@ describe("update-inactive-account-tracker", () => {
           indexName: "CommonSubjectIdIndex",
           timeoutSeconds: 30,
           description: `updated tracker record for ${userId}`,
+          itemPredicate: (item) => item.dateForDeletion !== dateForDeletion,
         }
       );
 
@@ -531,6 +532,7 @@ describe("update-inactive-account-tracker", () => {
           indexName: "CommonSubjectIdIndex",
           timeoutSeconds: 30,
           description: `updated tracker record for ${userId}`,
+          itemPredicate: (item) => item.dateForDeletion !== dateForDeletion,
         }
       );
 
@@ -595,6 +597,7 @@ describe("update-inactive-account-tracker", () => {
           indexName: "CommonSubjectIdIndex",
           timeoutSeconds: 30,
           description: `updated tracker record for ${userId}`,
+          itemPredicate: (item) => item.dateForDeletion !== dateForDeletion,
         }
       );
 

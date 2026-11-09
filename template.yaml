@@ -993,6 +993,15 @@ Resources:
               - sqs:GetQueueAttributes
               - sqs:ReceiveMessage
             Resource: !GetAtt AuditOutputQueue.Arn
+          - !If
+            - IsDemo
+            - Effect: Allow
+              Principal:
+                AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+              Action:
+                - sqs:ReceiveMessage
+              Resource: !GetAtt AuditOutputQueue.Arn
+            - !Ref AWS::NoValue
 
   AuditDeadLetterQueue:
     Type: AWS::SQS::Queue

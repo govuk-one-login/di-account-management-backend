@@ -22,6 +22,7 @@ import {
   sendMessage,
   pollForItem,
   pollAuditQueue,
+  pollForStubOutput,
 } from "../aws-helpers.js";
 
 // In demo: OLH_CLIENT_ID="oneLoginHome", GOV_UK_APP_CLIENT_ID="govukApp"
@@ -44,58 +45,6 @@ function trackerCriteria(userId: string) {
     expressionAttributeNames: {} as Record<string, string>,
     expressionAttributeValues: { ":id": userId },
   };
-}
-
-// Polls the IntegrationTestStubApiOutputsTable for any item written after
-// `afterEpochSeconds` whose request body contains `notificationType`.
-async function pollForStubOutput(
-  afterEpochSeconds: number,
-  notificationType: string,
-  emailAddress: string,
-  description: string
-): Promise<Record<string, unknown>> {
-  const tableName = getStubOutputsTableName();
-  const deadline = Date.now() + 30_000;
-
-  for (;;) {
-    const response = await documentClient.send(
-      new QueryCommand({
-        TableName: tableName,
-        IndexName: STUB_OUTPUTS_ALL_ITEMS_INDEX,
-        KeyConditionExpression: "allItemsId = :a AND createdAt > :t",
-        ExpressionAttributeValues: {
-          ":a": "an_item",
-          ":t": afterEpochSeconds,
-        },
-      })
-    );
-
-    const match = (response.Items ?? []).find((item) => {
-      try {
-        const event =
-          typeof item.event === "string"
-            ? (JSON.parse(item.event) as Record<string, unknown>)
-            : (item.event as Record<string, unknown>);
-        const bodyValue = (event?.body as Record<string, unknown>)?.S ?? event?.body;
-        const parsed = JSON.parse(bodyValue as string) as Record<string, unknown>;
-        return (
-          parsed.notificationType === notificationType &&
-          parsed.emailAddress === emailAddress
-        );
-      } catch {
-        return false;
-      }
-    });
-
-    if (match !== undefined) return match;
-
-    if (Date.now() + 1_000 >= deadline) break;
-    await new Promise((resolve) => setTimeout(resolve, 1_000)); // NOSONAR
-  }
-
-  throw new Error(
-    `No stub output with notificationType "${notificationType}" for ${emailAddress} found within 30s for ${description}`
-  );
 }
 
 function seedTrackerItem(
@@ -382,8 +331,7 @@ describe("update-inactive-account-tracker", () => {
 
       await pollForStubOutput(
         testStartEpochS,
-        "INACTIVE_ACCOUNT_SAVED_RP",
-        `${userId}@example.com`,
+        (parsed) => parsed.email_address === `${userId}@example.com`,
         `RP notification for ${userId}`
       );
     }
@@ -559,8 +507,7 @@ describe("update-inactive-account-tracker", () => {
 
       await pollForStubOutput(
         testStartEpochS,
-        "INACTIVE_ACCOUNT_SAVED_HOME",
-        `${userId}@example.com`,
+        (parsed) => parsed.email_address === `${userId}@example.com`,
         `OLH notification for ${userId}`
       );
     }
@@ -624,8 +571,7 @@ describe("update-inactive-account-tracker", () => {
 
       await pollForStubOutput(
         testStartEpochS,
-        "INACTIVE_ACCOUNT_SAVED_APP",
-        `${userId}@example.com`,
+        (parsed) => parsed.email_address === `${userId}@example.com`,
         `App notification for ${userId}`
       );
     }

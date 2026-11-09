@@ -25,6 +25,7 @@ import {
   getSecret,
   pollAuditQueue,
   pollForItem,
+  pollForStubOutput,
   sendMessage,
   type MatchCriteria,
 } from "../aws-helpers.js";
@@ -355,6 +356,139 @@ describe("pollAuditQueue", () => {
     });
     const assertion = expect(promise).rejects.toThrow(
       /No matching audit event found in queue within 0s\./
+    );
+    await vi.runAllTimersAsync();
+    await assertion;
+  });
+});
+
+describe("pollForStubOutput", () => {
+  function makeItem(body: Record<string, unknown>, createdAt = 1000) {
+    return {
+      id: "some-id",
+      allItemsId: "an_item",
+      createdAt,
+      event: JSON.stringify({ body: { S: JSON.stringify(body) } }),
+      expiresAt: createdAt + 86400,
+    };
+  }
+
+  it("returns the matching item when the predicate matches on the first poll", async () => {
+    docMock.on(QueryCommand).resolves({
+      Items: [
+        makeItem({
+          notificationType: "INACTIVE_ACCOUNT_SAVED_RP",
+          emailAddress: "user@example.com",
+        }),
+      ],
+    });
+
+    const result = await pollForStubOutput(
+      900,
+      (p) => p.notificationType === "INACTIVE_ACCOUNT_SAVED_RP",
+      "RP notification"
+    );
+
+    expect(result.createdAt).toBe(1000);
+  });
+
+  it("handles event.body as a plain string (pre-parsed object form)", async () => {
+    docMock.on(QueryCommand).resolves({
+      Items: [
+        {
+          id: "x",
+          allItemsId: "an_item",
+          createdAt: 1000,
+          event: { body: JSON.stringify({ notificationType: "SOME_TYPE" }) },
+        },
+      ],
+    });
+
+    const result = await pollForStubOutput(
+      900,
+      (p) => p.notificationType === "SOME_TYPE",
+      "some notification"
+    );
+
+    expect(result.createdAt).toBe(1000);
+  });
+
+  it("skips items where the predicate does not match and returns the one that does", async () => {
+    docMock.on(QueryCommand).resolves({
+      Items: [
+        makeItem({
+          notificationType: "OTHER_TYPE",
+          emailAddress: "other@example.com",
+        }),
+        makeItem(
+          {
+            notificationType: "INACTIVE_ACCOUNT_SAVED_HOME",
+            emailAddress: "user@example.com",
+          },
+          1001
+        ),
+      ],
+    });
+
+    const result = await pollForStubOutput(
+      900,
+      (p) => p.notificationType === "INACTIVE_ACCOUNT_SAVED_HOME",
+      "HOME notification"
+    );
+
+    expect(result.createdAt).toBe(1001);
+  });
+
+  it("retries when no items match and returns on a later poll", async () => {
+    vi.useFakeTimers();
+    docMock
+      .on(QueryCommand)
+      .resolvesOnce({ Items: [] })
+      .resolvesOnce({
+        Items: [makeItem({ notificationType: "INACTIVE_ACCOUNT_SAVED_APP" })],
+      });
+
+    const promise = pollForStubOutput(
+      900,
+      (p) => p.notificationType === "INACTIVE_ACCOUNT_SAVED_APP",
+      "APP notification"
+    );
+    await vi.runAllTimersAsync();
+    await expect(promise).resolves.toBeDefined();
+  });
+
+  it("skips items with unparseable event JSON without throwing", async () => {
+    vi.useFakeTimers();
+    docMock
+      .on(QueryCommand)
+      .resolvesOnce({
+        Items: [
+          {
+            id: "bad",
+            allItemsId: "an_item",
+            createdAt: 1000,
+            event: "not-json",
+          },
+        ],
+      })
+      .resolvesOnce({ Items: [makeItem({ notificationType: "TARGET" })] });
+
+    const promise = pollForStubOutput(
+      900,
+      (p) => p.notificationType === "TARGET",
+      "target"
+    );
+    await vi.runAllTimersAsync();
+    await expect(promise).resolves.toBeDefined();
+  });
+
+  it("throws with the description on timeout", async () => {
+    vi.useFakeTimers();
+    docMock.on(QueryCommand).resolves({ Items: [] });
+
+    const promise = pollForStubOutput(900, () => false, "my notification");
+    const assertion = expect(promise).rejects.toThrow(
+      "No stub output found within 30s for my notification"
     );
     await vi.runAllTimersAsync();
     await assertion;

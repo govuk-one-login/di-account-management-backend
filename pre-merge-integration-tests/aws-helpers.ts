@@ -18,7 +18,13 @@ import {
   GetSecretValueCommand,
 } from "@aws-sdk/client-secrets-manager";
 
-import { AWS_REGION, getQueueUrl, MissingConfigError } from "./config.js";
+import {
+  AWS_REGION,
+  getQueueUrl,
+  getStubOutputsTableName,
+  STUB_OUTPUTS_ALL_ITEMS_INDEX,
+  MissingConfigError,
+} from "./config.js";
 
 const sqsClient = new SQSClient({ region: AWS_REGION });
 const dynamoDbClient = new DynamoDBClient({ region: AWS_REGION });
@@ -305,6 +311,58 @@ export async function pollAuditQueue(
   throw new Error(
     `No matching audit event found in queue${descriptionClause} within ${timeoutSeconds}s.`
   );
+}
+
+// Polls the IntegrationTestStubApiOutputsTable for any item written after
+// `afterEpochSeconds` whose parsed request body satisfies `predicate`. The
+// `event` field may arrive as a raw JSON string (DynamoDB-marshalled) or as a
+// pre-parsed object; both forms are handled. Throws after 30s with no match.
+export async function pollForStubOutput(
+  afterEpochSeconds: number,
+  predicate: (parsed: Record<string, unknown>) => boolean,
+  description: string
+): Promise<Record<string, unknown>> {
+  const tableName = getStubOutputsTableName();
+  const deadline = Date.now() + 30_000;
+
+  for (;;) {
+    const response = await documentClient.send(
+      new QueryCommand({
+        TableName: tableName,
+        IndexName: STUB_OUTPUTS_ALL_ITEMS_INDEX,
+        KeyConditionExpression: "allItemsId = :a AND createdAt > :t",
+        ExpressionAttributeValues: {
+          ":a": "an_item",
+          ":t": afterEpochSeconds,
+        },
+      })
+    );
+
+    const match = (response.Items ?? []).find((item) => {
+      try {
+        const event =
+          typeof item.event === "string"
+            ? (JSON.parse(item.event) as Record<string, unknown>)
+            : (item.event as Record<string, unknown>);
+        const bodyValue =
+          (event?.body as Record<string, unknown>)?.S ?? event?.body;
+        const parsed = JSON.parse(bodyValue as string) as Record<
+          string,
+          unknown
+        >;
+        return predicate(parsed);
+      } catch {
+        return false;
+      }
+    });
+
+    if (match !== undefined) return match as Record<string, unknown>;
+
+    if (Date.now() + 1_000 >= deadline) break;
+    await new Promise((resolve) => setTimeout(resolve, 1_000)); // NOSONAR
+  }
+
+  throw new Error(`No stub output found within 30s for ${description}`);
 }
 
 // Deletes the item identified by `key` within 30s. On any error (including the

@@ -107,48 +107,79 @@ export async function pollForItem(
 ): Promise<Record<string, unknown>> {
   const timeoutSeconds = options?.timeoutSeconds ?? 30;
   const indexName = options?.indexName;
-
   const deadline = Date.now() + timeoutSeconds * 1000;
   let allAttemptsErrored = true;
   let lastError: unknown;
 
   for (;;) {
-    try {
-      const response = await documentClient.send(
-        new QueryCommand({
-          TableName: tableName,
-          IndexName: indexName,
-          KeyConditionExpression: criteria.keyConditionExpression,
-          ...(Object.keys(criteria.expressionAttributeNames).length > 0 && {
-            ExpressionAttributeNames: criteria.expressionAttributeNames,
-          }),
-          ExpressionAttributeValues: criteria.expressionAttributeValues,
-        })
-      );
+    const match = await queryForMatch(
+      tableName,
+      criteria,
+      indexName,
+      options?.itemPredicate
+    )
+      .then((m) => {
+        allAttemptsErrored = false;
+        return m;
+      })
+      .catch((err: unknown) => {
+        lastError = err;
+        return undefined;
+      });
 
-      allAttemptsErrored = false;
+    if (match !== undefined) return match;
 
-      const items = response.Items;
-      if (items !== undefined && items.length > 0) {
-        const match = options?.itemPredicate
-          ? items.find(options.itemPredicate)
-          : items[0];
-        if (match !== undefined) return match as Record<string, unknown>;
-      }
-    } catch (err) {
-      lastError = err;
-    }
-
-    // The 1s delay must not push us past the deadline.
-    if (Date.now() + 1000 >= deadline) {
-      break;
-    }
+    if (Date.now() + 1000 >= deadline) break;
 
     // Intentional sequential pause between poll attempts; the loop must wait
     // before re-querying. Parallelising this would defeat the purpose.
     await new Promise((resolve) => setTimeout(resolve, 1000)); // NOSONAR: await-in-loop is deliberate here.
   }
 
+  throw new Error(
+    buildPollTimeoutMessage(
+      tableName,
+      criteria,
+      indexName,
+      options,
+      timeoutSeconds,
+      allAttemptsErrored,
+      lastError
+    )
+  );
+}
+
+async function queryForMatch(
+  tableName: string,
+  criteria: MatchCriteria,
+  indexName: string | undefined,
+  itemPredicate: PollOptions["itemPredicate"]
+): Promise<Record<string, unknown> | undefined> {
+  const response = await documentClient.send(
+    new QueryCommand({
+      TableName: tableName,
+      IndexName: indexName,
+      KeyConditionExpression: criteria.keyConditionExpression,
+      ...(Object.keys(criteria.expressionAttributeNames).length > 0 && {
+        ExpressionAttributeNames: criteria.expressionAttributeNames,
+      }),
+      ExpressionAttributeValues: criteria.expressionAttributeValues,
+    })
+  );
+  const items = response.Items ?? [];
+  const match = itemPredicate ? items.find(itemPredicate) : items[0];
+  return match as Record<string, unknown> | undefined;
+}
+
+function buildPollTimeoutMessage(
+  tableName: string,
+  criteria: MatchCriteria,
+  indexName: string | undefined,
+  options: PollOptions | undefined,
+  timeoutSeconds: number,
+  allAttemptsErrored: boolean,
+  lastError: unknown
+): string {
   const indexClause = indexName !== undefined ? ` (index "${indexName}")` : "";
   const descriptionClause =
     options?.description !== undefined ? ` for ${options.description}` : "";
@@ -160,10 +191,9 @@ export async function pollForItem(
   const errorsClause = allAttemptsErrored
     ? ` Every query attempt returned a DynamoDB error during polling. Last error: ${String(lastError)}`
     : "";
-
-  throw new Error(
+  return (
     `No item was found in table "${tableName}"${indexClause}${descriptionClause} ` +
-      `matching criteria ${criteriaDescription} within ${timeoutSeconds}s.${errorsClause}`
+    `matching criteria ${criteriaDescription} within ${timeoutSeconds}s.${errorsClause}`
   );
 }
 

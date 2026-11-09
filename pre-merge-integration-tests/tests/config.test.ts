@@ -6,11 +6,14 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import {
   AWS_REGION,
+  getAuditQueueUrl,
   getNotifySecretArn,
   getPublicApiBaseUrl,
   getQueueUrl,
+  getStubOutputsTableName,
   MissingConfigError,
   notifyTestsConfigured,
+  STUB_OUTPUTS_ALL_ITEMS_INDEX,
   TABLES,
 } from "../config.js";
 
@@ -18,6 +21,8 @@ const ENV_KEYS = [
   "SQS_QUEUE_ARN",
   "PUBLIC_API_BASE_URL",
   "NOTIFY_DELIVERY_RECEIPTS_SECRET_ARN",
+  "STACK_NAME",
+  "AUDIT_QUEUE_URL",
 ] as const;
 
 describe("config", () => {
@@ -51,6 +56,39 @@ describe("config", () => {
         USER_SERVICES: "user_services",
         INACTIVE_ACCOUNT_TRACKER: "inactive_account_tracker_store",
       });
+    });
+
+    it("exposes the stub outputs index name", () => {
+      expect(STUB_OUTPUTS_ALL_ITEMS_INDEX).toBe("AllItemsIndex");
+    });
+  });
+
+  describe("getStubOutputsTableName", () => {
+    it("defaults to home-backend when STACK_NAME is unset", () => {
+      expect(getStubOutputsTableName()).toBe(
+        "home-backend-IntegrationTestStubApiOutputs"
+      );
+    });
+
+    it("uses STACK_NAME when set", () => {
+      process.env.STACK_NAME = "my-stack";
+      expect(getStubOutputsTableName()).toBe(
+        "my-stack-IntegrationTestStubApiOutputs"
+      );
+    });
+  });
+
+  describe("getAuditQueueUrl", () => {
+    it("returns undefined when AUDIT_QUEUE_URL is unset", () => {
+      expect(getAuditQueueUrl()).toBeUndefined();
+    });
+
+    it("returns the raw value when AUDIT_QUEUE_URL is set", () => {
+      process.env.AUDIT_QUEUE_URL =
+        "https://sqs.eu-west-2.amazonaws.com/123/audit-queue";
+      expect(getAuditQueueUrl()).toBe(
+        "https://sqs.eu-west-2.amazonaws.com/123/audit-queue"
+      );
     });
   });
 

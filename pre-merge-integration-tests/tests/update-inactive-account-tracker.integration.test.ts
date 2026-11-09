@@ -329,7 +329,6 @@ describe("update-inactive-account-tracker", () => {
 
       const existingDate = new Date();
       existingDate.setFullYear(existingDate.getFullYear() - 5);
-      existingDate.setDate(existingDate.getDate() + 1);
       const userLastActive = existingDate.toISOString();
       const dateForDeletion = tomorrowIsoDate();
 
@@ -383,6 +382,49 @@ describe("update-inactive-account-tracker", () => {
         `${userId}@example.com`,
         `RP notification for ${userId}`
       );
+    }
+  );
+
+  it.concurrent(
+    "retains existing userLastActiveSource and dateForDeletion when incoming event is older than existing record",
+    async () => {
+      const userId = generateUserId("iat-older-event");
+
+      // Seed a record with userLastActive = now
+      const recentDate = new Date();
+      const userLastActive = recentDate.toISOString();
+      const dateForDeletion = new Date();
+      dateForDeletion.setFullYear(dateForDeletion.getFullYear() + 5);
+      const dateForDeletionStr = dateForDeletion.toISOString().split("T")[0];
+
+      await seedTrackerItem(userId, dateForDeletionStr, userLastActive);
+
+      // Send an event older than the seeded userLastActive
+      await sendMessage({
+        event_name: "AUTH_TOKEN_SENT_TO_ORCHESTRATION",
+        event_id: generateEventId(),
+        timestamp: PAST_TIMESTAMP_S,
+        client_id: RP_CLIENT_ID,
+        user: { user_id: userId, public_subject_id: `pub-${userId}` },
+      });
+
+      // Wait for the lambda to have processed the event before asserting
+      // nothing was overwritten — same pattern as other negative-assertion tests.
+      await new Promise((resolve) => setTimeout(resolve, 15_000)); // NOSONAR
+
+      const response = await documentClient.send(
+        new QueryCommand({
+          TableName: TABLES.INACTIVE_ACCOUNT_TRACKER,
+          IndexName: "CommonSubjectIdIndex",
+          KeyConditionExpression: "commonSubjectId = :id",
+          ExpressionAttributeValues: { ":id": userId },
+        })
+      );
+
+      expect(response.Items ?? []).toHaveLength(1);
+      const item = (response.Items ?? [])[0];
+      expect(item.userLastActiveSource).toBe("AUTH_CODE_VERIFIED"); // seeded value retained
+      expect(item.dateForDeletion).toBe(dateForDeletionStr); // not overwritten by older event
     }
   );
 
@@ -464,7 +506,6 @@ describe("update-inactive-account-tracker", () => {
 
       const existingDate = new Date();
       existingDate.setFullYear(existingDate.getFullYear() - 5);
-      existingDate.setDate(existingDate.getDate() + 1);
       const userLastActive = existingDate.toISOString();
       const dateForDeletion = tomorrowIsoDate();
 
@@ -529,7 +570,6 @@ describe("update-inactive-account-tracker", () => {
 
       const existingDate = new Date();
       existingDate.setFullYear(existingDate.getFullYear() - 5);
-      existingDate.setDate(existingDate.getDate() + 1);
       const userLastActive = existingDate.toISOString();
       const dateForDeletion = tomorrowIsoDate();
 

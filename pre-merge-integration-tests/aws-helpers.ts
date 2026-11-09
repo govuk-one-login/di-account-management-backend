@@ -118,7 +118,9 @@ export async function pollForItem(
           TableName: tableName,
           IndexName: indexName,
           KeyConditionExpression: criteria.keyConditionExpression,
-          ExpressionAttributeNames: criteria.expressionAttributeNames,
+          ...(Object.keys(criteria.expressionAttributeNames).length > 0 && {
+            ExpressionAttributeNames: criteria.expressionAttributeNames,
+          }),
           ExpressionAttributeValues: criteria.expressionAttributeValues,
         })
       );
@@ -194,7 +196,9 @@ export async function assertNoItem(
         TableName: tableName,
         IndexName: indexName,
         KeyConditionExpression: criteria.keyConditionExpression,
-        ExpressionAttributeNames: criteria.expressionAttributeNames,
+        ...(Object.keys(criteria.expressionAttributeNames).length > 0 && {
+          ExpressionAttributeNames: criteria.expressionAttributeNames,
+        }),
         ExpressionAttributeValues: criteria.expressionAttributeValues,
       }),
       { abortSignal: controller.signal }

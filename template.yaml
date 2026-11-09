@@ -511,7 +511,7 @@ Mappings:
       zendeskTicketFormIdSecretArn: arn:aws:secretsmanager:eu-west-2:026991849909:secret:/account-mgmt-backend/zendesk-ticket-form-id-key-cAmu3i
       notifyApiKeySecretArn: arn:aws:secretsmanager:eu-west-2:026991849909:secret:/account-mgmt-backend/notify-api-key-Ve4Yk1
       publishingApiKeyArn: arn:aws:secretsmanager:eu-west-2:026991849909:secret:/account-mgmt-frontend/Config/Publishing/API/Key-3ZxzC4
-      publishingApiKeyVersionId: "a95cff2e-397a-4103-a032-864e0727e618"
+      publishingApiKeyVersionId: "9020800d-69fd-4de4-9590-f02e09d01d1c"
       accountInterventionsServiceApiUrl: https://ruz07ekh4b.execute-api.eu-west-2.amazonaws.com/v1
       notifyDontSendEmailsTo: "^(perftest.+?@digital.cabinet-office.gov.uk)|(testuser@test.null.local)$"
       sendInactiveAccountDeletionEmails: "1"

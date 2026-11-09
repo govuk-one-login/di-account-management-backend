@@ -39,6 +39,26 @@ function tomorrowIsoDate(): string {
   return d.toISOString().split("T")[0];
 }
 
+// Returns the expected dateForDeletion ISO string (YYYY-MM-DD) for an event
+// sent at `eventTimestampS` unix seconds, which is ~5 years later. Allows ±2
+// days to account for clock skew and test execution time.
+function expectedDeletionDateRange(eventTimestampS: number): {
+  min: string;
+  max: string;
+} {
+  const base = new Date(eventTimestampS * 1000);
+  const min = new Date(base);
+  min.setFullYear(min.getFullYear() + 5);
+  min.setDate(min.getDate() - 2);
+  const max = new Date(base);
+  max.setFullYear(max.getFullYear() + 5);
+  max.setDate(max.getDate() + 2);
+  return {
+    min: min.toISOString().split("T")[0],
+    max: max.toISOString().split("T")[0],
+  };
+}
+
 function trackerCriteria(userId: string) {
   return {
     keyConditionExpression: "commonSubjectId = :id",
@@ -105,7 +125,9 @@ describe("update-inactive-account-tracker", () => {
       expect(item.userLastActiveSource).toBe(
         "AUTH_TOKEN_SENT_TO_ORCHESTRATION"
       );
-      expect(item.dateForDeletion).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      const range1 = expectedDeletionDateRange(PAST_TIMESTAMP_S);
+      expect(item.dateForDeletion >= range1.min).toBe(true);
+      expect(item.dateForDeletion <= range1.max).toBe(true);
     }
   );
 
@@ -141,7 +163,9 @@ describe("update-inactive-account-tracker", () => {
       expect(item.commonSubjectId).toBe(userId);
       expect(item.status).toBe("pending");
       expect(item.userLastActiveSource).toBe("AUTH_CODE_VERIFIED");
-      expect(item.dateForDeletion).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      const range2 = expectedDeletionDateRange(PAST_TIMESTAMP_S);
+      expect(item.dateForDeletion >= range2.min).toBe(true);
+      expect(item.dateForDeletion <= range2.max).toBe(true);
     }
   );
 
@@ -179,7 +203,9 @@ describe("update-inactive-account-tracker", () => {
       expect(item.userLastActiveSource).toBe(
         "AUTH_PASSKEY_VERIFICATION_SUCCESSFUL"
       );
-      expect(item.dateForDeletion).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      const range3 = expectedDeletionDateRange(PAST_TIMESTAMP_S);
+      expect(item.dateForDeletion >= range3.min).toBe(true);
+      expect(item.dateForDeletion <= range3.max).toBe(true);
     }
   );
 
@@ -214,7 +240,9 @@ describe("update-inactive-account-tracker", () => {
       expect(item.commonSubjectId).toBe(userId);
       expect(item.status).toBe("pending");
       expect(item.userLastActiveSource).toBe("STS_REFRESH_TOKEN_ISSUED");
-      expect(item.dateForDeletion).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      const range4 = expectedDeletionDateRange(PAST_TIMESTAMP_S);
+      expect(item.dateForDeletion >= range4.min).toBe(true);
+      expect(item.dateForDeletion <= range4.max).toBe(true);
     }
   );
 
@@ -253,24 +281,6 @@ describe("update-inactive-account-tracker", () => {
       expect(response.Items ?? []).toHaveLength(0);
     }
   );
-
-  it.concurrent("ignores AUTH_CODE_VERIFIED with missing user_id", async () => {
-    const eventId = generateEventId();
-    const sessionId = `session-no-uid-${generateEventId()}`;
-
-    await sendMessage({
-      event_name: "AUTH_CODE_VERIFIED",
-      event_id: eventId,
-      timestamp: PAST_TIMESTAMP_S,
-      client_id: RP_CLIENT_ID,
-      user: { session_id: sessionId },
-    });
-
-    // No user_id to query by, so assert via a fixed wait that the pipeline
-    // did not crash (which would surface as a DLQ message, not a test failure).
-    // A 15s wait is sufficient for the lambda to have processed and settled.
-    await new Promise((resolve) => setTimeout(resolve, 15_000)); // NOSONAR
-  });
 
   it.concurrent(
     "sends HOME_ACCOUNT_TRACKER_ACCOUNT_REACTIVATED audit event and INACTIVE_ACCOUNT_SAVED_RP notification when deletion is within 30 days and client is an RP",
@@ -313,9 +323,10 @@ describe("update-inactive-account-tracker", () => {
       expect(updatedItem.commonSubjectId).toBe(userId);
       expect(updatedItem.status).toBe("pending");
       expect(updatedItem.userLastActiveSource).toBe("AUTH_CODE_VERIFIED");
-      // dateForDeletion should be pushed out to ~5 years from now, not tomorrow
-      expect(updatedItem.dateForDeletion).not.toBe(dateForDeletion);
-      expect(updatedItem.dateForDeletion > tomorrowIsoDate()).toBe(true);
+      const nowS = Math.floor(Date.now() / 1000);
+      const rpRange = expectedDeletionDateRange(nowS);
+      expect(updatedItem.dateForDeletion >= rpRange.min).toBe(true);
+      expect(updatedItem.dateForDeletion <= rpRange.max).toBe(true);
 
       const auditQueueUrl = getAuditQueueUrl();
       if (auditQueueUrl === undefined || auditQueueUrl.length === 0) {
@@ -331,7 +342,9 @@ describe("update-inactive-account-tracker", () => {
 
       await pollForStubOutput(
         testStartEpochS,
-        (parsed) => parsed.email_address === `${userId}@example.com`,
+        (parsed) =>
+          parsed.email_address === `${userId}@example.com` &&
+          parsed.template_id === "cb230404-a787-4199-ad4a-7d638838d3e8",
         `RP notification for ${userId}`
       );
     }
@@ -413,7 +426,9 @@ describe("update-inactive-account-tracker", () => {
       expect(item.commonSubjectId).toBe(userId);
       expect(item.status).toBe("pending");
       expect(item.userLastActiveSource).toBe("AUTH_CODE_VERIFIED");
-      expect(item.dateForDeletion).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      const noNotifyRange = expectedDeletionDateRange(PAST_TIMESTAMP_S);
+      expect(item.dateForDeletion >= noNotifyRange.min).toBe(true);
+      expect(item.dateForDeletion <= noNotifyRange.max).toBe(true);
 
       // Wait for async processing to settle then confirm no notification was sent
       await new Promise((resolve) => setTimeout(resolve, 15_000)); // NOSONAR
@@ -490,8 +505,10 @@ describe("update-inactive-account-tracker", () => {
       expect(updatedItem.commonSubjectId).toBe(userId);
       expect(updatedItem.status).toBe("pending");
       expect(updatedItem.userLastActiveSource).toBe("AUTH_CODE_VERIFIED");
-      expect(updatedItem.dateForDeletion).not.toBe(dateForDeletion);
-      expect(updatedItem.dateForDeletion > tomorrowIsoDate()).toBe(true);
+      const olhNowS = Math.floor(Date.now() / 1000);
+      const olhRange = expectedDeletionDateRange(olhNowS);
+      expect(updatedItem.dateForDeletion >= olhRange.min).toBe(true);
+      expect(updatedItem.dateForDeletion <= olhRange.max).toBe(true);
 
       const auditQueueUrl = getAuditQueueUrl();
       if (auditQueueUrl === undefined || auditQueueUrl.length === 0) {
@@ -507,7 +524,9 @@ describe("update-inactive-account-tracker", () => {
 
       await pollForStubOutput(
         testStartEpochS,
-        (parsed) => parsed.email_address === `${userId}@example.com`,
+        (parsed) =>
+          parsed.email_address === `${userId}@example.com` &&
+          parsed.template_id === "bbde3b58-62ea-4ccd-8a41-ebd421745af8",
         `OLH notification for ${userId}`
       );
     }
@@ -554,8 +573,10 @@ describe("update-inactive-account-tracker", () => {
       expect(updatedItem.commonSubjectId).toBe(userId);
       expect(updatedItem.status).toBe("pending");
       expect(updatedItem.userLastActiveSource).toBe("STS_REFRESH_TOKEN_ISSUED");
-      expect(updatedItem.dateForDeletion).not.toBe(dateForDeletion);
-      expect(updatedItem.dateForDeletion > tomorrowIsoDate()).toBe(true);
+      const appNowS = Math.floor(Date.now() / 1000);
+      const appRange = expectedDeletionDateRange(appNowS);
+      expect(updatedItem.dateForDeletion >= appRange.min).toBe(true);
+      expect(updatedItem.dateForDeletion <= appRange.max).toBe(true);
 
       const auditQueueUrl = getAuditQueueUrl();
       if (auditQueueUrl === undefined || auditQueueUrl.length === 0) {
@@ -571,7 +592,9 @@ describe("update-inactive-account-tracker", () => {
 
       await pollForStubOutput(
         testStartEpochS,
-        (parsed) => parsed.email_address === `${userId}@example.com`,
+        (parsed) =>
+          parsed.email_address === `${userId}@example.com` &&
+          parsed.template_id === "7591b854-2c10-4209-97bf-0facbf2c2588",
         `App notification for ${userId}`
       );
     }

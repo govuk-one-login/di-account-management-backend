@@ -32,9 +32,6 @@ const RP_CLIENT_ID = "someRpClientId";
 // days, so no notification is triggered for a first-write scenario.
 const PAST_TIMESTAMP_S = 1_000_000_000; // 2001-09-09 — dateForDeletion ~2006
 
-// A timestamp that produces a dateForDeletion within the next 30 days when
-// used as the *existing* record's activity date. We achieve this by seeding
-// the tracker directly with a dateForDeletion that is tomorrow.
 function tomorrowIsoDate(): string {
   const d = new Date();
   d.setDate(d.getDate() + 1);
@@ -54,6 +51,7 @@ function trackerCriteria(userId: string) {
 async function pollForStubOutput(
   afterEpochSeconds: number,
   notificationType: string,
+  emailAddress: string,
   description: string
 ): Promise<Record<string, unknown>> {
   const tableName = getStubOutputsTableName();
@@ -77,7 +75,10 @@ async function pollForStubOutput(
         string | undefined;
       try {
         const parsed = JSON.parse(body ?? "") as Record<string, unknown>;
-        return parsed.notificationType === notificationType;
+        return (
+          parsed.notificationType === notificationType &&
+          parsed.emailAddress === emailAddress
+        );
       } catch {
         return false;
       }
@@ -90,7 +91,35 @@ async function pollForStubOutput(
   }
 
   throw new Error(
-    `No stub output with notificationType "${notificationType}" found within 30s for ${description}`
+    `No stub output with notificationType "${notificationType}" for ${emailAddress} found within 30s for ${description}`
+  );
+}
+
+function seedTrackerItem(
+  userId: string,
+  dateForDeletion: string,
+  userLastActive: string
+) {
+  return documentClient.send(
+    new PutCommand({
+      TableName: TABLES.INACTIVE_ACCOUNT_TRACKER,
+      Item: {
+        commonSubjectId: userId,
+        publicSubjectId: `pub-${userId}`,
+        dateForDeletion,
+        userLastActive,
+        userLastActiveSource: "AUTH_CODE_VERIFIED",
+        userLastActiveSourceId: generateEventId(),
+        userLastActiveUpdated: userLastActive,
+        status: "pending",
+        statusLastUpdated: userLastActive,
+        emailAddress: `${userId}@example.com`,
+        emailAddressSource: "AUTH_CODE_VERIFIED",
+        emailAddressSourceId: generateEventId(),
+        emailAddressLastUpdated: userLastActive,
+        hasSetupMfa: true,
+      },
+    })
   );
 }
 
@@ -121,10 +150,10 @@ describe("update-inactive-account-tracker", () => {
 
       expect(item.commonSubjectId).toBe(userId);
       expect(item.status).toBe("pending");
-      expect(typeof item.dateForDeletion).toBe("string");
       expect(item.userLastActiveSource).toBe(
         "AUTH_TOKEN_SENT_TO_ORCHESTRATION"
       );
+      expect(item.dateForDeletion).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     }
   );
 
@@ -160,6 +189,7 @@ describe("update-inactive-account-tracker", () => {
       expect(item.commonSubjectId).toBe(userId);
       expect(item.status).toBe("pending");
       expect(item.userLastActiveSource).toBe("AUTH_CODE_VERIFIED");
+      expect(item.dateForDeletion).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     }
   );
 
@@ -197,6 +227,7 @@ describe("update-inactive-account-tracker", () => {
       expect(item.userLastActiveSource).toBe(
         "AUTH_PASSKEY_VERIFICATION_SUCCESSFUL"
       );
+      expect(item.dateForDeletion).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     }
   );
 
@@ -229,7 +260,9 @@ describe("update-inactive-account-tracker", () => {
       );
 
       expect(item.commonSubjectId).toBe(userId);
+      expect(item.status).toBe("pending");
       expect(item.userLastActiveSource).toBe("STS_REFRESH_TOKEN_ISSUED");
+      expect(item.dateForDeletion).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     }
   );
 
@@ -271,7 +304,6 @@ describe("update-inactive-account-tracker", () => {
 
   it.concurrent("ignores AUTH_CODE_VERIFIED with missing user_id", async () => {
     const eventId = generateEventId();
-    // Use a unique session_id as a proxy identifier since there's no user_id
     const sessionId = `session-no-uid-${generateEventId()}`;
 
     await sendMessage({
@@ -282,50 +314,27 @@ describe("update-inactive-account-tracker", () => {
       user: { session_id: sessionId },
     });
 
-    // Nothing to assert in DynamoDB (no user_id to query by); the test
-    // verifies the message is accepted without error by the pipeline.
-    // A 15s wait confirms no crash/DLQ scenario occurs.
+    // No user_id to query by, so assert via a fixed wait that the pipeline
+    // did not crash (which would surface as a DLQ message, not a test failure).
+    // A 15s wait is sufficient for the lambda to have processed and settled.
     await new Promise((resolve) => setTimeout(resolve, 15_000)); // NOSONAR
   });
 
   it.concurrent(
-    "sends HOME_ACCOUNT_TRACKER_ACCOUNT_REACTIVATED audit event and notification when deletion is within 30 days",
+    "sends HOME_ACCOUNT_TRACKER_ACCOUNT_REACTIVATED audit event and INACTIVE_ACCOUNT_SAVED_RP notification when deletion is within 30 days and client is an RP",
     async () => {
       const userId = generateUserId("iat-reactivation");
       const eventId = generateEventId();
       const testStartEpochS = Math.floor(Date.now() / 1000);
 
-      // Seed a tracker record with a dateForDeletion that is tomorrow (within 30 days)
-      // so the next event triggers the reactivation path.
       const existingDate = new Date();
       existingDate.setFullYear(existingDate.getFullYear() - 5);
-      existingDate.setDate(existingDate.getDate() + 1); // userLastActive ~5 years ago → deletion tomorrow
+      existingDate.setDate(existingDate.getDate() + 1);
       const userLastActive = existingDate.toISOString();
       const dateForDeletion = tomorrowIsoDate();
 
-      await documentClient.send(
-        new PutCommand({
-          TableName: TABLES.INACTIVE_ACCOUNT_TRACKER,
-          Item: {
-            commonSubjectId: userId,
-            publicSubjectId: `pub-${userId}`,
-            dateForDeletion,
-            userLastActive,
-            userLastActiveSource: "AUTH_CODE_VERIFIED",
-            userLastActiveSourceId: generateEventId(),
-            userLastActiveUpdated: userLastActive,
-            status: "pending",
-            statusLastUpdated: userLastActive,
-            emailAddress: `${userId}@example.com`,
-            emailAddressSource: "AUTH_CODE_VERIFIED",
-            emailAddressSourceId: generateEventId(),
-            emailAddressLastUpdated: userLastActive,
-            hasSetupMfa: true,
-          },
-        })
-      );
+      await seedTrackerItem(userId, dateForDeletion, userLastActive);
 
-      // Send a new login event — this should trigger reactivation
       await sendMessage({
         event_name: "AUTH_CODE_VERIFIED",
         event_id: eventId,
@@ -339,7 +348,6 @@ describe("update-inactive-account-tracker", () => {
         },
       });
 
-      // Assert the tracker record's dateForDeletion has been pushed out
       const updatedItem = await pollForItem(
         TABLES.INACTIVE_ACCOUNT_TRACKER,
         trackerCriteria(userId),
@@ -351,10 +359,12 @@ describe("update-inactive-account-tracker", () => {
       );
 
       expect(updatedItem.commonSubjectId).toBe(userId);
-      // The new dateForDeletion should be ~5 years from now, not tomorrow
+      expect(updatedItem.status).toBe("pending");
+      expect(updatedItem.userLastActiveSource).toBe("AUTH_CODE_VERIFIED");
+      // dateForDeletion should be pushed out to ~5 years from now, not tomorrow
       expect(updatedItem.dateForDeletion).not.toBe(dateForDeletion);
+      expect(updatedItem.dateForDeletion > tomorrowIsoDate()).toBe(true);
 
-      // Assert the audit event was sent to the TXMA audit queue
       const auditQueueUrl = getAuditQueueUrl();
       if (auditQueueUrl === undefined || auditQueueUrl.length === 0) {
         throw new Error("AUDIT_QUEUE_URL is not set");
@@ -367,14 +377,12 @@ describe("update-inactive-account-tracker", () => {
         { description: `reactivation audit event for ${userId}` }
       );
 
-      // Assert the notification email request was sent (notification queue →
-      // notification-service → stub API in demo)
-      const notifyOutput = await pollForStubOutput(
+      await pollForStubOutput(
         testStartEpochS,
         "INACTIVE_ACCOUNT_SAVED_RP",
-        `notification for ${userId}`
+        `${userId}@example.com`,
+        `RP notification for ${userId}`
       );
-      expect(notifyOutput).toBeDefined();
     }
   );
 
@@ -398,8 +406,7 @@ describe("update-inactive-account-tracker", () => {
         },
       });
 
-      // Confirm the tracker row was written
-      await pollForItem(
+      const item = await pollForItem(
         TABLES.INACTIVE_ACCOUNT_TRACKER,
         trackerCriteria(userId),
         {
@@ -409,8 +416,12 @@ describe("update-inactive-account-tracker", () => {
         }
       );
 
-      // Wait for any async processing to settle, then confirm no stub output
-      // was written for this user's notification path.
+      expect(item.commonSubjectId).toBe(userId);
+      expect(item.status).toBe("pending");
+      expect(item.userLastActiveSource).toBe("AUTH_CODE_VERIFIED");
+      expect(item.dateForDeletion).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+
+      // Wait for async processing to settle then confirm no notification was sent
       await new Promise((resolve) => setTimeout(resolve, 15_000)); // NOSONAR
 
       const response = await documentClient.send(
@@ -445,7 +456,7 @@ describe("update-inactive-account-tracker", () => {
   );
 
   it.concurrent(
-    "uses INACTIVE_ACCOUNT_SAVED_HOME notification type when client is OLH",
+    "sends INACTIVE_ACCOUNT_SAVED_HOME notification when client is OLH and deletion is within 30 days",
     async () => {
       const userId = generateUserId("iat-olh");
       const eventId = generateEventId();
@@ -457,27 +468,7 @@ describe("update-inactive-account-tracker", () => {
       const userLastActive = existingDate.toISOString();
       const dateForDeletion = tomorrowIsoDate();
 
-      await documentClient.send(
-        new PutCommand({
-          TableName: TABLES.INACTIVE_ACCOUNT_TRACKER,
-          Item: {
-            commonSubjectId: userId,
-            publicSubjectId: `pub-${userId}`,
-            dateForDeletion,
-            userLastActive,
-            userLastActiveSource: "AUTH_CODE_VERIFIED",
-            userLastActiveSourceId: generateEventId(),
-            userLastActiveUpdated: userLastActive,
-            status: "pending",
-            statusLastUpdated: userLastActive,
-            emailAddress: `${userId}@example.com`,
-            emailAddressSource: "AUTH_CODE_VERIFIED",
-            emailAddressSourceId: generateEventId(),
-            emailAddressLastUpdated: userLastActive,
-            hasSetupMfa: true,
-          },
-        })
-      );
+      await seedTrackerItem(userId, dateForDeletion, userLastActive);
 
       await sendMessage({
         event_name: "AUTH_CODE_VERIFIED",
@@ -492,17 +483,45 @@ describe("update-inactive-account-tracker", () => {
         },
       });
 
-      const notifyOutput = await pollForStubOutput(
+      const updatedItem = await pollForItem(
+        TABLES.INACTIVE_ACCOUNT_TRACKER,
+        trackerCriteria(userId),
+        {
+          indexName: "CommonSubjectIdIndex",
+          timeoutSeconds: 30,
+          description: `updated tracker record for ${userId}`,
+        }
+      );
+
+      expect(updatedItem.commonSubjectId).toBe(userId);
+      expect(updatedItem.status).toBe("pending");
+      expect(updatedItem.userLastActiveSource).toBe("AUTH_CODE_VERIFIED");
+      expect(updatedItem.dateForDeletion).not.toBe(dateForDeletion);
+      expect(updatedItem.dateForDeletion > tomorrowIsoDate()).toBe(true);
+
+      const auditQueueUrl = getAuditQueueUrl();
+      if (auditQueueUrl === undefined || auditQueueUrl.length === 0) {
+        throw new Error("AUDIT_QUEUE_URL is not set");
+      }
+      await pollAuditQueue(
+        auditQueueUrl,
+        (body) =>
+          body.event_name === "HOME_ACCOUNT_TRACKER_ACCOUNT_REACTIVATED" &&
+          (body.user as Record<string, unknown>)?.user_id === userId,
+        { description: `reactivation audit event for ${userId}` }
+      );
+
+      await pollForStubOutput(
         testStartEpochS,
         "INACTIVE_ACCOUNT_SAVED_HOME",
+        `${userId}@example.com`,
         `OLH notification for ${userId}`
       );
-      expect(notifyOutput).toBeDefined();
     }
   );
 
   it.concurrent(
-    "uses INACTIVE_ACCOUNT_SAVED_APP notification type when client is govukApp (STS_REFRESH_TOKEN_ISSUED with no client_id)",
+    "sends INACTIVE_ACCOUNT_SAVED_APP notification when client is govukApp (STS_REFRESH_TOKEN_ISSUED with no client_id) and deletion is within 30 days",
     async () => {
       const userId = generateUserId("iat-app");
       const eventId = generateEventId();
@@ -514,27 +533,7 @@ describe("update-inactive-account-tracker", () => {
       const userLastActive = existingDate.toISOString();
       const dateForDeletion = tomorrowIsoDate();
 
-      await documentClient.send(
-        new PutCommand({
-          TableName: TABLES.INACTIVE_ACCOUNT_TRACKER,
-          Item: {
-            commonSubjectId: userId,
-            publicSubjectId: `pub-${userId}`,
-            dateForDeletion,
-            userLastActive,
-            userLastActiveSource: "AUTH_CODE_VERIFIED",
-            userLastActiveSourceId: generateEventId(),
-            userLastActiveUpdated: userLastActive,
-            status: "pending",
-            statusLastUpdated: userLastActive,
-            emailAddress: `${userId}@example.com`,
-            emailAddressSource: "AUTH_CODE_VERIFIED",
-            emailAddressSourceId: generateEventId(),
-            emailAddressLastUpdated: userLastActive,
-            hasSetupMfa: true,
-          },
-        })
-      );
+      await seedTrackerItem(userId, dateForDeletion, userLastActive);
 
       // STS with no client_id → treated as govukApp
       await sendMessage({
@@ -549,12 +548,40 @@ describe("update-inactive-account-tracker", () => {
         },
       });
 
-      const notifyOutput = await pollForStubOutput(
+      const updatedItem = await pollForItem(
+        TABLES.INACTIVE_ACCOUNT_TRACKER,
+        trackerCriteria(userId),
+        {
+          indexName: "CommonSubjectIdIndex",
+          timeoutSeconds: 30,
+          description: `updated tracker record for ${userId}`,
+        }
+      );
+
+      expect(updatedItem.commonSubjectId).toBe(userId);
+      expect(updatedItem.status).toBe("pending");
+      expect(updatedItem.userLastActiveSource).toBe("STS_REFRESH_TOKEN_ISSUED");
+      expect(updatedItem.dateForDeletion).not.toBe(dateForDeletion);
+      expect(updatedItem.dateForDeletion > tomorrowIsoDate()).toBe(true);
+
+      const auditQueueUrl = getAuditQueueUrl();
+      if (auditQueueUrl === undefined || auditQueueUrl.length === 0) {
+        throw new Error("AUDIT_QUEUE_URL is not set");
+      }
+      await pollAuditQueue(
+        auditQueueUrl,
+        (body) =>
+          body.event_name === "HOME_ACCOUNT_TRACKER_ACCOUNT_REACTIVATED" &&
+          (body.user as Record<string, unknown>)?.user_id === userId,
+        { description: `reactivation audit event for ${userId}` }
+      );
+
+      await pollForStubOutput(
         testStartEpochS,
         "INACTIVE_ACCOUNT_SAVED_APP",
+        `${userId}@example.com`,
         `App notification for ${userId}`
       );
-      expect(notifyOutput).toBeDefined();
     }
   );
 });

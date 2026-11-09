@@ -109,6 +109,7 @@ export async function pollForItem(
 
   const deadline = Date.now() + timeoutSeconds * 1000;
   let allAttemptsErrored = true;
+  let lastError: unknown;
 
   for (;;) {
     try {
@@ -128,8 +129,8 @@ export async function pollForItem(
       if (items !== undefined && items.length > 0) {
         return items[0] as Record<string, unknown>;
       }
-    } catch {
-      // Swallow per-attempt query errors and keep polling.
+    } catch (err) {
+      lastError = err;
     }
 
     // The 1s delay must not push us past the deadline.
@@ -151,7 +152,7 @@ export async function pollForItem(
     expressionAttributeValues: criteria.expressionAttributeValues,
   });
   const errorsClause = allAttemptsErrored
-    ? " Every query attempt returned a DynamoDB error during polling."
+    ? ` Every query attempt returned a DynamoDB error during polling. Last error: ${String(lastError)}`
     : "";
 
   throw new Error(

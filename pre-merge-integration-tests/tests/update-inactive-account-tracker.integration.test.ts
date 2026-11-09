@@ -71,10 +71,13 @@ async function pollForStubOutput(
     );
 
     const match = (response.Items ?? []).find((item) => {
-      const body = (item.event as Record<string, unknown>)?.body as
-        string | undefined;
       try {
-        const parsed = JSON.parse(body ?? "") as Record<string, unknown>;
+        const event =
+          typeof item.event === "string"
+            ? (JSON.parse(item.event) as Record<string, unknown>)
+            : (item.event as Record<string, unknown>);
+        const bodyValue = (event?.body as Record<string, unknown>)?.S ?? event?.body;
+        const parsed = JSON.parse(bodyValue as string) as Record<string, unknown>;
         return (
           parsed.notificationType === notificationType &&
           parsed.emailAddress === emailAddress

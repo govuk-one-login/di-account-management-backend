@@ -754,8 +754,6 @@ Resources:
           AttributeType: S
         - AttributeName: emailAddress
           AttributeType: S
-        - AttributeName: publicSubjectId
-          AttributeType: S
       GlobalSecondaryIndexes:
         - IndexName: CommonSubjectIdIndex
           KeySchema:
@@ -766,12 +764,6 @@ Resources:
         - IndexName: EmailAddressIndex
           KeySchema:
             - AttributeName: emailAddress
-              KeyType: HASH
-          Projection:
-            ProjectionType: ALL
-        - IndexName: PublicSubjectIdIndex
-          KeySchema:
-            - AttributeName: publicSubjectId
               KeyType: HASH
           Projection:
             ProjectionType: ALL

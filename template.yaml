@@ -133,6 +133,7 @@ Conditions:
 
   IsProduction: !Equals [!Ref Environment, production]
   IsDemo: !Equals [!Ref Environment, demo]
+  IsNotDemo: !Not [!Equals [!Ref Environment, demo]]
 
   BackupEnabled: !Or
     - !Equals [!Ref Environment, staging]
@@ -1067,6 +1068,7 @@ Resources:
 
   AuditOutputQueueOldestMessageAgeAlarm:
     Type: AWS::CloudWatch::Alarm
+    Condition: IsNotDemo
     Properties:
       AlarmName:
         !Join [

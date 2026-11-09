@@ -5,6 +5,7 @@ import { getSecret } from "@aws-lambda-powertools/parameters/secrets";
 import { getEnvironmentVariable } from "./common/utils.js";
 import { MetricUnit } from "@aws-lambda-powertools/metrics";
 import { initMetrics } from "./common/metrics.js";
+import { randomUUID } from "node:crypto";
 
 const logger = new Logger();
 const metrics = initMetrics("notification-service");
@@ -48,9 +49,13 @@ export const setUpNotifyClient = async (
       return;
     }
     notifyClient = new NotifyClient(
-      process.env["INTEGRATION_TEST_STUB_API_URL"]
-        ? `${process.env["INTEGRATION_TEST_STUB_API_URL"]}/notify`
-        : notifyApiKey
+      // @ts-expect-error A spread argument must either have a tuple type or be passed to a rest parameter.
+      ...(process.env["INTEGRATION_TEST_STUB_API_URL"]
+        ? [
+            `${process.env["INTEGRATION_TEST_STUB_API_URL"]}/notify`,
+            randomUUID(),
+          ]
+        : [notifyApiKey])
     );
   }
   return notifyClient;

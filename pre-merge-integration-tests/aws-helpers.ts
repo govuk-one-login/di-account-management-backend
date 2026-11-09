@@ -2,7 +2,11 @@
 // deployed AWS infrastructure when run via the integration config; the unit
 // tests mock the clients instead.
 
-import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
+import {
+  SQSClient,
+  SendMessageCommand,
+  ReceiveMessageCommand,
+} from "@aws-sdk/client-sqs";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import {
   DynamoDBDocumentClient,
@@ -222,6 +226,47 @@ export async function assertNoItem(
 }
 
 export type PrimaryKey = Record<string, unknown>;
+
+// Polls the SQS queue at `queueUrl` until a message is found whose parsed body
+// satisfies `predicate`, or the timeout (default 30s) elapses. Uses a short
+// visibility timeout (5s) so messages reappear quickly for other concurrent
+// tests. Does NOT delete messages. Throws on timeout.
+export async function pollAuditQueue(
+  queueUrl: string,
+  predicate: (body: Record<string, unknown>) => boolean,
+  options?: { timeoutSeconds?: number; description?: string }
+): Promise<Record<string, unknown>> {
+  const timeoutSeconds = options?.timeoutSeconds ?? 30;
+  const deadline = Date.now() + timeoutSeconds * 1000;
+
+  for (;;) {
+    const response = await sqsClient.send(
+      new ReceiveMessageCommand({
+        QueueUrl: queueUrl,
+        MaxNumberOfMessages: 10,
+        VisibilityTimeout: 5,
+        WaitTimeSeconds: 1,
+      })
+    );
+
+    for (const message of response.Messages ?? []) {
+      try {
+        const body = JSON.parse(message.Body ?? "") as Record<string, unknown>;
+        if (predicate(body)) return body;
+      } catch {
+        // Unparseable message — skip.
+      }
+    }
+
+    if (Date.now() >= deadline) break;
+  }
+
+  const descriptionClause =
+    options?.description !== undefined ? ` for ${options.description}` : "";
+  throw new Error(
+    `No matching audit event found in queue${descriptionClause} within ${timeoutSeconds}s.`
+  );
+}
 
 // Deletes the item identified by `key` within 30s. On any error (including the
 // timeout) logs a warning and returns without throwing, so cleanup never fails

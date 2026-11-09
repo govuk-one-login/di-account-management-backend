@@ -116,6 +116,7 @@ Resources:
             Effect: Allow
             Action:
               - sqs:SendMessage
+              - sqs:ReceiveMessage
               - dynamodb:Query
               - dynamodb:GetItem
               - dynamodb:DeleteItem
@@ -129,6 +130,12 @@ Resources:
               - !Sub "arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/*"
               - !Sub "arn:${AWS::Partition}:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/*"
               - !Sub "arn:${AWS::Partition}:kms:${AWS::Region}:${AWS::AccountId}:key/*"
+          - Sid: "TestStackSSM"
+            Effect: Allow
+            Action:
+              - ssm:GetParameter
+            Resource:
+              - !Sub "arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/*"
           - Sid: "NotifyDeliveryReceiptsSecret"
             Effect: Allow
             Action:

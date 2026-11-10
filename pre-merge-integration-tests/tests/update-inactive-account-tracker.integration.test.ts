@@ -43,7 +43,7 @@ function tomorrowIsoDate(): string {
 // sent at `eventTimestampS` unix seconds, which is 5 years later.
 function expectedDeletionDate(eventTimestampS: number): string {
   const d = new Date(eventTimestampS * 1000);
-  d.setFullYear(d.getFullYear() + 4);
+  d.setFullYear(d.getFullYear() + 5);
   return d.toISOString().split("T")[0];
 }
 

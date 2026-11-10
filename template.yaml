@@ -1095,6 +1095,7 @@ Resources:
 
   AuditDeadLetterQueueOldestMessageAgeAlarm:
     Type: AWS::CloudWatch::Alarm
+    Condition: IsNotDemo
     Properties:
       AlarmName:
         !Join [
@@ -1121,6 +1122,7 @@ Resources:
 
   AuditDeadLetterQueueAlarm:
     Type: AWS::CloudWatch::Alarm
+    Condition: IsNotDemo
     Properties:
       AlarmName:
         !Join [

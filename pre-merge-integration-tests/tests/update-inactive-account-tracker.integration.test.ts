@@ -120,6 +120,16 @@ describe("update-inactive-account-tracker", () => {
         }
       );
 
+      const countResponse1 = await documentClient.send(
+        new QueryCommand({
+          TableName: TABLES.INACTIVE_ACCOUNT_TRACKER,
+          IndexName: "CommonSubjectIdIndex",
+          KeyConditionExpression: "commonSubjectId = :id",
+          ExpressionAttributeValues: { ":id": userId },
+        })
+      );
+      expect(countResponse1.Items ?? []).toHaveLength(1);
+
       expect(item.commonSubjectId).toBe(userId);
       expect(item.status).toBe("pending");
       expect(item.userLastActiveSource).toBe(
@@ -160,6 +170,16 @@ describe("update-inactive-account-tracker", () => {
         }
       );
 
+      const countResponse2 = await documentClient.send(
+        new QueryCommand({
+          TableName: TABLES.INACTIVE_ACCOUNT_TRACKER,
+          IndexName: "CommonSubjectIdIndex",
+          KeyConditionExpression: "commonSubjectId = :id",
+          ExpressionAttributeValues: { ":id": userId },
+        })
+      );
+      expect(countResponse2.Items ?? []).toHaveLength(1);
+
       expect(item.commonSubjectId).toBe(userId);
       expect(item.status).toBe("pending");
       expect(item.userLastActiveSource).toBe("AUTH_CODE_VERIFIED");
@@ -197,6 +217,16 @@ describe("update-inactive-account-tracker", () => {
           description: `tracker record for ${userId}`,
         }
       );
+
+      const countResponse3 = await documentClient.send(
+        new QueryCommand({
+          TableName: TABLES.INACTIVE_ACCOUNT_TRACKER,
+          IndexName: "CommonSubjectIdIndex",
+          KeyConditionExpression: "commonSubjectId = :id",
+          ExpressionAttributeValues: { ":id": userId },
+        })
+      );
+      expect(countResponse3.Items ?? []).toHaveLength(1);
 
       expect(item.commonSubjectId).toBe(userId);
       expect(item.status).toBe("pending");
@@ -236,6 +266,16 @@ describe("update-inactive-account-tracker", () => {
           description: `tracker record for ${userId}`,
         }
       );
+
+      const countResponse4 = await documentClient.send(
+        new QueryCommand({
+          TableName: TABLES.INACTIVE_ACCOUNT_TRACKER,
+          IndexName: "CommonSubjectIdIndex",
+          KeyConditionExpression: "commonSubjectId = :id",
+          ExpressionAttributeValues: { ":id": userId },
+        })
+      );
+      expect(countResponse4.Items ?? []).toHaveLength(1);
 
       expect(item.commonSubjectId).toBe(userId);
       expect(item.status).toBe("pending");
@@ -319,6 +359,16 @@ describe("update-inactive-account-tracker", () => {
           itemPredicate: (item) => item.dateForDeletion !== dateForDeletion,
         }
       );
+
+      const rpCountResponse = await documentClient.send(
+        new QueryCommand({
+          TableName: TABLES.INACTIVE_ACCOUNT_TRACKER,
+          IndexName: "CommonSubjectIdIndex",
+          KeyConditionExpression: "commonSubjectId = :id",
+          ExpressionAttributeValues: { ":id": userId },
+        })
+      );
+      expect(rpCountResponse.Items ?? []).toHaveLength(1);
 
       expect(updatedItem.commonSubjectId).toBe(userId);
       expect(updatedItem.status).toBe("pending");
@@ -423,6 +473,16 @@ describe("update-inactive-account-tracker", () => {
         }
       );
 
+      const noNotifyCountResponse = await documentClient.send(
+        new QueryCommand({
+          TableName: TABLES.INACTIVE_ACCOUNT_TRACKER,
+          IndexName: "CommonSubjectIdIndex",
+          KeyConditionExpression: "commonSubjectId = :id",
+          ExpressionAttributeValues: { ":id": userId },
+        })
+      );
+      expect(noNotifyCountResponse.Items ?? []).toHaveLength(1);
+
       expect(item.commonSubjectId).toBe(userId);
       expect(item.status).toBe("pending");
       expect(item.userLastActiveSource).toBe("AUTH_CODE_VERIFIED");
@@ -502,6 +562,16 @@ describe("update-inactive-account-tracker", () => {
         }
       );
 
+      const olhCountResponse = await documentClient.send(
+        new QueryCommand({
+          TableName: TABLES.INACTIVE_ACCOUNT_TRACKER,
+          IndexName: "CommonSubjectIdIndex",
+          KeyConditionExpression: "commonSubjectId = :id",
+          ExpressionAttributeValues: { ":id": userId },
+        })
+      );
+      expect(olhCountResponse.Items ?? []).toHaveLength(1);
+
       expect(updatedItem.commonSubjectId).toBe(userId);
       expect(updatedItem.status).toBe("pending");
       expect(updatedItem.userLastActiveSource).toBe("AUTH_CODE_VERIFIED");
@@ -569,6 +639,16 @@ describe("update-inactive-account-tracker", () => {
           itemPredicate: (item) => item.dateForDeletion !== dateForDeletion,
         }
       );
+
+      const appCountResponse = await documentClient.send(
+        new QueryCommand({
+          TableName: TABLES.INACTIVE_ACCOUNT_TRACKER,
+          IndexName: "CommonSubjectIdIndex",
+          KeyConditionExpression: "commonSubjectId = :id",
+          ExpressionAttributeValues: { ":id": userId },
+        })
+      );
+      expect(appCountResponse.Items ?? []).toHaveLength(1);
 
       expect(updatedItem.commonSubjectId).toBe(userId);
       expect(updatedItem.status).toBe("pending");

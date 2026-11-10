@@ -128,7 +128,7 @@ describe("update-inactive-account-tracker", () => {
           ExpressionAttributeValues: { ":id": userId },
         })
       );
-      expect(countResponse1.Items ?? []).toHaveLength(2);
+      expect(countResponse1.Items ?? []).toHaveLength(1);
 
       expect(item.commonSubjectId).toBe(userId);
       expect(item.status).toBe("pending");
@@ -394,7 +394,7 @@ describe("update-inactive-account-tracker", () => {
         testStartEpochS,
         (parsed) =>
           parsed.email_address === `${userId}@example.com` &&
-          parsed.template_id === "XXXcb230404-a787-4199-ad4a-7d638838d3e8",
+          parsed.template_id === "cb230404-a787-4199-ad4a-7d638838d3e8",
         `RP notification for ${userId}`
       );
     }

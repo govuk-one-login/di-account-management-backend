@@ -1,14 +1,6 @@
 # AMB deployment pipeline — devplatform secure-pipelines (sam-deploy-pipeline).
 # See https://govukverify.atlassian.net/wiki/spaces/PLAT/pages/3059908609/How+to+deploy+a+SAM+application+with+secure+pipelines
-#
-# Option A (pipeline-only): the VPC / build-notifications / test-image stacks are
-# NOT managed by this root. Their values are captured as literals/variables from
-# the live stack. There is intentionally no `depends_on` on sibling resources.
-#
-# Fidelity over cleanliness: every parameter below must reproduce the live stack's
-# value exactly so the first `terraform plan` after import is a no-op (R4.2).
-# Values come from variables.tf defaults (identical across envs) or env/{env}.tfvars
-# (per-env), populated from the Task 0 capture.
+
 
 resource "aws_cloudformation_stack" "amb_pipeline_stack" {
   name         = var.pipeline_stack_name

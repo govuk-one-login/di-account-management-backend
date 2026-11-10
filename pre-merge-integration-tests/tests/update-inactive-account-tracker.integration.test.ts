@@ -40,23 +40,11 @@ function tomorrowIsoDate(): string {
 }
 
 // Returns the expected dateForDeletion ISO string (YYYY-MM-DD) for an event
-// sent at `eventTimestampS` unix seconds, which is ~5 years later. Allows ±2
-// days to account for clock skew and test execution time.
-function expectedDeletionDateRange(eventTimestampS: number): {
-  min: string;
-  max: string;
-} {
-  const base = new Date(eventTimestampS * 1000);
-  const min = new Date(base);
-  min.setFullYear(min.getFullYear() + 5);
-  min.setDate(min.getDate() - 2);
-  const max = new Date(base);
-  max.setFullYear(max.getFullYear() + 5);
-  max.setDate(max.getDate() + 2);
-  return {
-    min: min.toISOString().split("T")[0],
-    max: max.toISOString().split("T")[0],
-  };
+// sent at `eventTimestampS` unix seconds, which is 5 years later.
+function expectedDeletionDate(eventTimestampS: number): string {
+  const d = new Date(eventTimestampS * 1000);
+  d.setFullYear(d.getFullYear() + 5);
+  return d.toISOString().split("T")[0];
 }
 
 function trackerCriteria(userId: string) {
@@ -135,9 +123,7 @@ describe("update-inactive-account-tracker", () => {
       expect(item.userLastActiveSource).toBe(
         "AUTH_TOKEN_SENT_TO_ORCHESTRATION"
       );
-      const range1 = expectedDeletionDateRange(PAST_TIMESTAMP_S);
-      expect(item.dateForDeletion >= range1.min).toBe(true);
-      expect(item.dateForDeletion <= range1.max).toBe(true);
+      expect(item.dateForDeletion).toBe(expectedDeletionDate(PAST_TIMESTAMP_S));
     }
   );
 
@@ -183,9 +169,7 @@ describe("update-inactive-account-tracker", () => {
       expect(item.commonSubjectId).toBe(userId);
       expect(item.status).toBe("pending");
       expect(item.userLastActiveSource).toBe("AUTH_CODE_VERIFIED");
-      const range2 = expectedDeletionDateRange(PAST_TIMESTAMP_S);
-      expect(item.dateForDeletion >= range2.min).toBe(true);
-      expect(item.dateForDeletion <= range2.max).toBe(true);
+      expect(item.dateForDeletion).toBe(expectedDeletionDate(PAST_TIMESTAMP_S));
     }
   );
 
@@ -233,9 +217,7 @@ describe("update-inactive-account-tracker", () => {
       expect(item.userLastActiveSource).toBe(
         "AUTH_PASSKEY_VERIFICATION_SUCCESSFUL"
       );
-      const range3 = expectedDeletionDateRange(PAST_TIMESTAMP_S);
-      expect(item.dateForDeletion >= range3.min).toBe(true);
-      expect(item.dateForDeletion <= range3.max).toBe(true);
+      expect(item.dateForDeletion).toBe(expectedDeletionDate(PAST_TIMESTAMP_S));
     }
   );
 
@@ -280,9 +262,7 @@ describe("update-inactive-account-tracker", () => {
       expect(item.commonSubjectId).toBe(userId);
       expect(item.status).toBe("pending");
       expect(item.userLastActiveSource).toBe("STS_REFRESH_TOKEN_ISSUED");
-      const range4 = expectedDeletionDateRange(PAST_TIMESTAMP_S);
-      expect(item.dateForDeletion >= range4.min).toBe(true);
-      expect(item.dateForDeletion <= range4.max).toBe(true);
+      expect(item.dateForDeletion).toBe(expectedDeletionDate(PAST_TIMESTAMP_S));
     }
   );
 
@@ -373,10 +353,9 @@ describe("update-inactive-account-tracker", () => {
       expect(updatedItem.commonSubjectId).toBe(userId);
       expect(updatedItem.status).toBe("pending");
       expect(updatedItem.userLastActiveSource).toBe("AUTH_CODE_VERIFIED");
-      const nowS = Math.floor(Date.now() / 1000);
-      const rpRange = expectedDeletionDateRange(nowS);
-      expect(updatedItem.dateForDeletion >= rpRange.min).toBe(true);
-      expect(updatedItem.dateForDeletion <= rpRange.max).toBe(true);
+      expect(updatedItem.dateForDeletion).toBe(
+        expectedDeletionDate(Math.floor(Date.now() / 1000))
+      );
 
       const auditQueueUrl = getAuditQueueUrl();
       if (auditQueueUrl === undefined || auditQueueUrl.length === 0) {
@@ -486,9 +465,7 @@ describe("update-inactive-account-tracker", () => {
       expect(item.commonSubjectId).toBe(userId);
       expect(item.status).toBe("pending");
       expect(item.userLastActiveSource).toBe("AUTH_CODE_VERIFIED");
-      const noNotifyRange = expectedDeletionDateRange(PAST_TIMESTAMP_S);
-      expect(item.dateForDeletion >= noNotifyRange.min).toBe(true);
-      expect(item.dateForDeletion <= noNotifyRange.max).toBe(true);
+      expect(item.dateForDeletion).toBe(expectedDeletionDate(PAST_TIMESTAMP_S));
 
       // Wait for async processing to settle then confirm no notification was sent
       await new Promise((resolve) => setTimeout(resolve, 15_000)); // NOSONAR
@@ -575,10 +552,9 @@ describe("update-inactive-account-tracker", () => {
       expect(updatedItem.commonSubjectId).toBe(userId);
       expect(updatedItem.status).toBe("pending");
       expect(updatedItem.userLastActiveSource).toBe("AUTH_CODE_VERIFIED");
-      const olhNowS = Math.floor(Date.now() / 1000);
-      const olhRange = expectedDeletionDateRange(olhNowS);
-      expect(updatedItem.dateForDeletion >= olhRange.min).toBe(true);
-      expect(updatedItem.dateForDeletion <= olhRange.max).toBe(true);
+      expect(updatedItem.dateForDeletion).toBe(
+        expectedDeletionDate(Math.floor(Date.now() / 1000))
+      );
 
       const auditQueueUrl = getAuditQueueUrl();
       if (auditQueueUrl === undefined || auditQueueUrl.length === 0) {
@@ -653,10 +629,9 @@ describe("update-inactive-account-tracker", () => {
       expect(updatedItem.commonSubjectId).toBe(userId);
       expect(updatedItem.status).toBe("pending");
       expect(updatedItem.userLastActiveSource).toBe("STS_REFRESH_TOKEN_ISSUED");
-      const appNowS = Math.floor(Date.now() / 1000);
-      const appRange = expectedDeletionDateRange(appNowS);
-      expect(updatedItem.dateForDeletion >= appRange.min).toBe(true);
-      expect(updatedItem.dateForDeletion <= appRange.max).toBe(true);
+      expect(updatedItem.dateForDeletion).toBe(
+        expectedDeletionDate(Math.floor(Date.now() / 1000))
+      );
 
       const auditQueueUrl = getAuditQueueUrl();
       if (auditQueueUrl === undefined || auditQueueUrl.length === 0) {

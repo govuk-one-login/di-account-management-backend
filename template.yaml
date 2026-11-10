@@ -133,6 +133,7 @@ Conditions:
 
   IsProduction: !Equals [!Ref Environment, production]
   IsDemo: !Equals [!Ref Environment, demo]
+  IsNotDemo: !Not [!Equals [!Ref Environment, demo]]
 
   BackupEnabled: !Or
     - !Equals [!Ref Environment, staging]
@@ -985,6 +986,15 @@ Resources:
               - sqs:GetQueueAttributes
               - sqs:ReceiveMessage
             Resource: !GetAtt AuditOutputQueue.Arn
+          - !If
+            - IsDemo
+            - Effect: Allow
+              Principal:
+                AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+              Action:
+                - sqs:ReceiveMessage
+              Resource: !GetAtt AuditOutputQueue.Arn
+            - !Ref AWS::NoValue
 
   AuditDeadLetterQueue:
     Type: AWS::SQS::Queue
@@ -1050,6 +1060,7 @@ Resources:
 
   AuditOutputQueueOldestMessageAgeAlarm:
     Type: AWS::CloudWatch::Alarm
+    Condition: IsNotDemo
     Properties:
       AlarmName:
         !Join [
@@ -1076,6 +1087,7 @@ Resources:
 
   AuditDeadLetterQueueOldestMessageAgeAlarm:
     Type: AWS::CloudWatch::Alarm
+    Condition: IsNotDemo
     Properties:
       AlarmName:
         !Join [
@@ -1102,6 +1114,7 @@ Resources:
 
   AuditDeadLetterQueueAlarm:
     Type: AWS::CloudWatch::Alarm
+    Condition: IsNotDemo
     Properties:
       AlarmName:
         !Join [

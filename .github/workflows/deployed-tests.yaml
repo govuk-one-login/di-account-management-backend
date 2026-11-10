@@ -186,4 +186,5 @@ jobs:
           SQS_QUEUE_ARN: ${{ secrets.RawEventsQueue }}
           PUBLIC_API_BASE_URL: ${{ secrets.TEST_PUBLIC_API_BASE_URL }}
           NOTIFY_DELIVERY_RECEIPTS_SECRET_ARN: ${{ secrets.TEST_NOTIFY_DELIVERY_RECEIPTS_SECRET_ARN }}
+          AUDIT_QUEUE_URL: ${{ secrets.TEST_AUDIT_QUEUE_URL }}
         run: npm run test:integration

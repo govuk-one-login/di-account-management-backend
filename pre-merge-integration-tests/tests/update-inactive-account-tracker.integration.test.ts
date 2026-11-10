@@ -222,34 +222,30 @@ describe("update-inactive-account-tracker", () => {
   );
 
   it.concurrent(
-    "creates a new tracker record for STS_REFRESH_TOKEN_ISSUED",
+    "does not create a tracker record for STS_REFRESH_TOKEN_ISSUED when no record exists",
     async () => {
-      const userId = generateUserId("iat-sts");
+      const userId = generateUserId("iat-sts-skip");
       const eventId = generateEventId();
 
-      // STS events may omit client_id; the lambda treats them as govukApp
+      // STS events can be sent after an account has been deleted. With no
+      // existing tracker record the lambda skips creation
+      // (STS_EVENT_SKIPPED_NO_EXISTING_RECORD) rather than re-creating one.
       await sendMessage({
         event_name: "STS_REFRESH_TOKEN_ISSUED",
         event_id: eventId,
         timestamp: PAST_TIMESTAMP_S,
         user: {
           user_id: userId,
-          session_id: "session-sts",
+          session_id: "session-sts-skip",
           public_subject_id: `pub-${userId}`,
         },
       });
 
-      const item = await pollForItem(
-        TABLES.INACTIVE_ACCOUNT_TRACKER,
-        trackerCriteria(userId),
-        {
-          indexName: "CommonSubjectIdIndex",
-          timeoutSeconds: 30,
-          description: `tracker record for ${userId}`,
-        }
-      );
+      // Wait long enough for the pipeline to have processed the event if it
+      // were going to, then assert nothing was written.
+      await new Promise((resolve) => setTimeout(resolve, 15_000)); // NOSONAR
 
-      const countResponse4 = await documentClient.send(
+      const response = await documentClient.send(
         new QueryCommand({
           TableName: TABLES.INACTIVE_ACCOUNT_TRACKER,
           IndexName: "CommonSubjectIdIndex",
@@ -257,12 +253,8 @@ describe("update-inactive-account-tracker", () => {
           ExpressionAttributeValues: { ":id": userId },
         })
       );
-      expect(countResponse4.Items ?? []).toHaveLength(1);
 
-      expect(item.commonSubjectId).toBe(userId);
-      expect(item.status).toBe("pending");
-      expect(item.userLastActiveSource).toBe("STS_REFRESH_TOKEN_ISSUED");
-      expect(item.dateForDeletion).toBe(expectedDeletionDate(PAST_TIMESTAMP_S));
+      expect(response.Items ?? []).toHaveLength(0);
     }
   );
 

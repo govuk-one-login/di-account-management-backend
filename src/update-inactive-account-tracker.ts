@@ -364,6 +364,9 @@ const getEffectiveClientId = (
   return txmaEvent.client_id;
 };
 
+const isStsEvent = (txmaEvent: TxmaEvent): boolean =>
+  txmaEvent.event_name === "STS_REFRESH_TOKEN_ISSUED";
+
 const sleep = (ms: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -456,6 +459,12 @@ const processRecord = async (
     !previousTrackerRecord
   ) {
     logger.info("BACKFILL_EVENT_SKIPPED_NO_EXISTING_RECORD");
+    return;
+  }
+
+  // STS events can be sent after a delete event, so in that case, we skip the creation of a new record.
+  if (isStsEvent(txmaEvent) && !previousTrackerRecord) {
+    logger.info("STS_EVENT_SKIPPED_NO_EXISTING_RECORD");
     return;
   }
 

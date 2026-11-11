@@ -2192,6 +2192,66 @@ describe("UpdateInactiveAccountTracker handler", () => {
     });
   });
 
+  describe("STS events", () => {
+    test("skips STS event when no existing record", async () => {
+      dynamoMock.on(QueryCommand).resolves({ Items: [] });
+      const event: DynamoDBStreamEvent = {
+        Records: [
+          generateDynamoStreamRecord(
+            undefined,
+            "STS_REFRESH_TOKEN_ISSUED",
+            true
+          ),
+        ],
+      };
+      await handler(event, {} as Context);
+      expect(dynamoMock).not.toHaveReceivedCommand(TransactWriteCommand);
+      expect(loggerInfoMock).toHaveBeenCalledWith(
+        "STS_EVENT_SKIPPED_NO_EXISTING_RECORD"
+      );
+    });
+
+    test("updates existing record for STS event", async () => {
+      dynamoMock.on(QueryCommand).resolves({
+        Items: [
+          {
+            commonSubjectId: "qwerty",
+            dateForDeletion: "1978-11-29",
+            userLastActive: "1970-01-01T00:00:00.000Z",
+            status: "pending",
+            emailAddress: "x",
+            statusLastUpdated: "",
+          },
+        ],
+      });
+      dynamoMock.on(TransactWriteCommand).resolves({});
+      const event: DynamoDBStreamEvent = {
+        Records: [
+          generateDynamoStreamRecord(
+            undefined,
+            "STS_REFRESH_TOKEN_ISSUED",
+            true
+          ),
+        ],
+      };
+      await handler(event, {} as Context);
+      expect(dynamoMock).toHaveReceivedCommand(TransactWriteCommand);
+      expect(loggerInfoMock).not.toHaveBeenCalledWith(
+        "STS_EVENT_SKIPPED_NO_EXISTING_RECORD"
+      );
+    });
+
+    test("creates new record for non-STS event when no existing record", async () => {
+      dynamoMock.on(QueryCommand).resolves({ Items: [] });
+      dynamoMock.on(TransactWriteCommand).resolves({});
+      const event: DynamoDBStreamEvent = {
+        Records: [generateDynamoStreamRecord("test-client")],
+      };
+      await handler(event, {} as Context);
+      expect(dynamoMock).toHaveReceivedCommand(TransactWriteCommand);
+    });
+  });
+
   test("puts record in batchItemFailures when user_id is missing on a non-AUTH_CODE_VERIFIED event", async () => {
     const record = {
       dynamodb: {

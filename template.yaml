@@ -3690,7 +3690,6 @@ Resources:
       Environment:
         Variables:
           NODE_OPTIONS: --enable-source-maps
-          ACCOUNT_SAVED_NOTIFICATION_QUEUE_URL: !Ref AccountSavedNotificationQueue
           INACTIVE_ACCOUNT_TRACKER_TABLE_NAME: !Ref InactiveAccountTrackerStoreTableName
           USER_NOTIFICATIONS_TABLE_NAME: !Ref UserNotificationsTableName
           OLH_CLIENT_ID:

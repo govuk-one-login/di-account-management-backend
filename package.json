@@ -61,6 +61,7 @@
     "@aws-sdk/client-sfn": "^3.1156.0",
     "@aws-sdk/client-sns": "^3.1156.0",
     "@aws-sdk/client-sqs": "^3.1156.0",
+    "@aws-sdk/client-ssm": "^3.1166.0",
     "@aws-sdk/lib-dynamodb": "^3.1156.0",
     "@aws-sdk/util-dynamodb": "^3.985.0",
     "axios": "^1.20.0",

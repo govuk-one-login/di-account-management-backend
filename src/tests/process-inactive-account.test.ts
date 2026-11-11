@@ -784,6 +784,94 @@ describe("process-inactive-account handler", () => {
     expect(mockMetrics.publishStoredMetrics).toHaveBeenCalledTimes(1);
   });
 
+  test("only updates an existing record when setting status to deleting", async () => {
+    process.env.ACCOUNT_DELETION_QUEUE_URL =
+      "https://sqs.eu-west-2.amazonaws.com/123456789012/AccountDeletionQueue";
+
+    const event = buildSqsEvent([
+      {
+        commonSubjectId: "user-123",
+        publicSubjectId: "public-123",
+        emailAddress: "test@example.com",
+        dateForDeletion: "2026-08-15",
+        processName: "DeleteAccount",
+        status: "pending",
+      },
+    ]);
+
+    await handler(event, {} as Context);
+
+    expect(dynamoMock).toHaveReceivedCommandWith(UpdateCommand, {
+      TableName: "test-inactive-tracker-table",
+      Key: {
+        dateForDeletion: "2026-08-15",
+        commonSubjectId: "user-123",
+      },
+      UpdateExpression: "SET #status = :status, statusLastUpdated = :timestamp",
+      ExpressionAttributeNames: { "#status": "status" },
+      ExpressionAttributeValues: {
+        ":status": "deleting",
+        ":timestamp": expect.any(String),
+      },
+      ConditionExpression: "attribute_exists(commonSubjectId)",
+    });
+  });
+
+  test("logs a warning and does not throw when no tracker record exists for a deleting status update", async () => {
+    process.env.ACCOUNT_DELETION_QUEUE_URL =
+      "https://sqs.eu-west-2.amazonaws.com/123456789012/AccountDeletionQueue";
+
+    const warnSpy = vi.spyOn(Logger.prototype, "warn");
+    const conditionalCheckError = new Error("conditional check failed");
+    conditionalCheckError.name = "ConditionalCheckFailedException";
+    dynamoMock.on(UpdateCommand).rejects(conditionalCheckError);
+
+    const event = buildSqsEvent([
+      {
+        commonSubjectId: "user-123",
+        publicSubjectId: "public-123",
+        emailAddress: "test@example.com",
+        dateForDeletion: "2026-08-15",
+        processName: "DeleteAccount",
+        status: "pending",
+      },
+    ]);
+
+    const result = await handler(event, {} as Context);
+
+    expect(result.batchItemFailures).toEqual([]);
+    expect(warnSpy).toHaveBeenCalledWith(
+      "TRACKER_RECORD_NOT_FOUND_SKIPPING_STATUS_UPDATE",
+      {
+        processName: "DeleteAccount",
+        targetStatus: "deleting",
+      }
+    );
+
+    warnSpy.mockRestore();
+  });
+
+  test("does not use a conditional update for warning status transitions", async () => {
+    const event = buildSqsEvent([
+      {
+        commonSubjectId: "user-123",
+        publicSubjectId: "public-123",
+        emailAddress: "test@example.com",
+        dateForDeletion: "2026-08-15",
+        processName: "Warning30Day",
+        status: "pending",
+      },
+    ]);
+
+    await handler(event, {} as Context);
+
+    const updateCall = dynamoMock.commandCalls(UpdateCommand)[0];
+    expect(updateCall.args[0].input.ExpressionAttributeValues).toMatchObject({
+      ":status": "30DayWarningSent",
+    });
+    expect(updateCall.args[0].input.ConditionExpression).toBeUndefined();
+  });
+
   test("does not send to target queue when targetQueueUrlEnvVar is not configured", async () => {
     const event = buildSqsEvent([
       {

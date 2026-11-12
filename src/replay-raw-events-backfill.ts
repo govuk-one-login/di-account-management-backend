@@ -138,8 +138,13 @@ const processSegment = async (
       Segment: segment,
       TotalSegments: totalSegments,
       ExclusiveStartKey: cursor ?? undefined,
-      FilterExpression:
-        "event.event_name IN (:e1, :e2, :e3, :e4) AND event.timestamp >= :t1 AND event.timestamp <= :t2",
+      FilterExpression: [
+        "event.event_name IN (:e1, :e2, :e3, :e4)",
+        event.from !== undefined ? "event.#ts >= :t1" : undefined,
+        event.to !== undefined ? "event.#ts <= :t2" : undefined,
+      ]
+        .filter((exp) => exp !== undefined)
+        .join(" AND "),
       ExpressionAttributeValues: {
         ":e1": { S: "AUTH_TOKEN_SENT_TO_ORCHESTRATION" },
         ":e2": { S: "AUTH_CODE_VERIFIED" },
@@ -150,8 +155,8 @@ const processSegment = async (
           : {}),
         ...(event.to !== undefined ? { ":t2": { N: String(event.to) } } : {}),
       },
-      ProjectionExpression: "id, #evt",
-      ExpressionAttributeNames: { "#evt": "event" },
+      ProjectionExpression: "id, event",
+      ExpressionAttributeNames: { "#ts": "timestamp" },
     })
   );
 

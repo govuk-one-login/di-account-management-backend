@@ -63,7 +63,7 @@ const EVENTS_WITHOUT_CLIENT_ID = new Set([
   "AUTH_CODE_VERIFIED",
 ]);
 
-const getEventId = (): string => {
+const getRecordId = (): string => {
   return crypto.randomUUID();
 };
 
@@ -140,19 +140,27 @@ export const validateTxmaEventBody = (txmaEvent: TxmaEvent): void => {
 
 export const writeRawTxmaEvent = async (
   txmaEvent: TxmaEvent
-): Promise<PutCommandOutput> => {
+): Promise<{
+  recordId: string;
+  timestamp: number;
+  output: PutCommandOutput;
+}> => {
   const TABLE_NAME = getEnvironmentVariable("TABLE_NAME");
+  const recordId = getRecordId();
+  const timestamp = Date.now();
   const command = new PutCommand({
     TableName: TABLE_NAME,
     Item: {
-      id: getEventId(),
-      timestamp: Date.now(),
+      id: recordId,
+      timestamp,
       event: txmaEvent,
       remove_at: getTTLDate(),
     },
   });
 
-  return dynamoDocClient.send(command);
+  const output = await dynamoDocClient.send(command);
+
+  return { recordId, timestamp, output };
 };
 
 export const handler = async (
@@ -167,23 +175,44 @@ export const handler = async (
   );
 
   await Promise.all(
-    event.Records.map(async (record) => {
+    event.Records.map(async (record, index) => {
+      let stage = "parsing the record body";
+      let eventId: string | undefined;
+
       try {
         const txmaEvent: TxmaEvent = JSON.parse(record.body);
+        eventId = txmaEvent?.event_id;
 
-        if (!ALLOWED_EVENT_NAMES.has(txmaEvent.event_name as string)) {
+        logger.info("Received raw event", {
+          index,
+          eventId,
+          eventTimestamp: txmaEvent?.timestamp,
+        });
+
+        if (!ALLOWED_EVENT_NAMES.has(txmaEvent?.event_name as string)) {
           logger.info(
-            `Ignoring ${txmaEvent.event_name} event - not in allowlist`
+            `Ignoring ${txmaEvent?.event_name} event - not in allowlist`,
+            { index, eventId, eventName: txmaEvent?.event_name }
           );
           return;
         }
 
+        stage = "validating the event";
         validateTxmaEventBody(txmaEvent);
-        await writeRawTxmaEvent(txmaEvent);
+
+        stage = "writing to the table";
+        const { recordId, timestamp } = await writeRawTxmaEvent(txmaEvent);
+
+        logger.info("Wrote raw event to table", {
+          index,
+          recordId,
+          timestamp,
+          eventId,
+        });
       } catch (error) {
         logger.error(
           `Unable to save raw events for message with ID: ${record.messageId}`,
-          { error }
+          { index, eventId, stage, error }
         );
         batchItemFailures.push({ itemIdentifier: record.messageId });
       }

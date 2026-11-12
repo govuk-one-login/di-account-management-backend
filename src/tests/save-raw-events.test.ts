@@ -655,7 +655,11 @@ describe("handler only saves allowlisted events", () => {
     await handler(ignoredEvent, {} as Context);
     expect(dynamoMock.commandCalls(PutCommand).length).toEqual(0);
     expect(mockLogger.info).toHaveBeenCalledWith(
-      "Ignoring AUTH_OTHER_RANDOM_EVENT event - not in allowlist"
+      "Ignoring AUTH_OTHER_RANDOM_EVENT event - not in allowlist",
+      expect.objectContaining({
+        index: 0,
+        eventName: "AUTH_OTHER_RANDOM_EVENT",
+      })
     );
   });
 
@@ -674,7 +678,8 @@ describe("handler only saves allowlisted events", () => {
     await handler(ignoredEvent, {} as Context);
     expect(dynamoMock.commandCalls(PutCommand).length).toEqual(0);
     expect(mockLogger.info).toHaveBeenCalledWith(
-      "Ignoring undefined event - not in allowlist"
+      "Ignoring undefined event - not in allowlist",
+      expect.objectContaining({ index: 0 })
     );
   });
 
@@ -701,7 +706,7 @@ describe("handler only saves allowlisted events", () => {
     };
     await handler(mixedEvent, {} as Context);
     expect(dynamoMock.commandCalls(PutCommand).length).toEqual(1);
-    expect(mockLogger.info).toHaveBeenCalledTimes(3);
+    expect(mockLogger.info).toHaveBeenCalledTimes(6);
   });
 });
 
@@ -730,5 +735,248 @@ describe("handler error handling", () => {
         { itemIdentifier: "19dd0b57-b21e-4ac1-bd88-01bbb068cb78" },
       ],
     });
+  });
+});
+
+describe("handler logs the event ID and timestamp on receipt", () => {
+  beforeEach(() => {
+    dynamoMock.reset();
+    sqsMock.reset();
+    process.env.TABLE_NAME = "TABLE_NAME";
+    process.env.AWS_REGION = "AWS_REGION";
+    sqsMock.on(SendMessageCommand).resolves({ MessageId: "MessageId" });
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  const handleBodies = async (...bodies: unknown[]) =>
+    handler(
+      {
+        Records: bodies.map((body) => ({
+          ...TEST_SQS_RECORD,
+          body: JSON.stringify(body),
+        })),
+      },
+      {} as Context
+    );
+
+  test("logs the batch index and both fields for a valid event", async () => {
+    await handleBodies(makeTxmaEvent());
+    expect(mockLogger.info).toHaveBeenCalledWith("Received raw event", {
+      index: 0,
+      eventId,
+      eventTimestamp: date.valueOf(),
+    });
+  });
+
+  test("logs the index of each event in the batch", async () => {
+    await handleBodies(makeTxmaEvent(), makeTxmaEvent(), makeTxmaEvent());
+    [0, 1, 2].forEach((index) =>
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        "Received raw event",
+        expect.objectContaining({ index })
+      )
+    );
+  });
+
+  test("logs undefined fields, identifying the event by its index", async () => {
+    await handleBodies({ event_name: eventName, user });
+    expect(mockLogger.info).toHaveBeenCalledWith("Received raw event", {
+      index: 0,
+      eventId: undefined,
+      eventTimestamp: undefined,
+    });
+  });
+
+  test("logs null fields, identifying the event by its index", async () => {
+    await handleBodies({
+      ...makeTxmaEvent(),
+      event_id: null,
+      timestamp: null,
+    });
+    expect(mockLogger.info).toHaveBeenCalledWith("Received raw event", {
+      index: 0,
+      eventId: null,
+      eventTimestamp: null,
+    });
+  });
+
+  test("identifies which event in a batch is missing its fields", async () => {
+    await handleBodies(makeTxmaEvent(), { event_name: eventName, user });
+    expect(mockLogger.info).toHaveBeenCalledWith("Received raw event", {
+      index: 1,
+      eventId: undefined,
+      eventTimestamp: undefined,
+    });
+  });
+
+  test("logs before the allowlist check, so dropped events are still traced", async () => {
+    await handleBodies({
+      ...makeTxmaEvent(),
+      event_name: "AUTH_OTHER_RANDOM_EVENT",
+    });
+    expect(mockLogger.info).toHaveBeenCalledWith("Received raw event", {
+      index: 0,
+      eventId,
+      eventTimestamp: date.valueOf(),
+    });
+    expect(dynamoMock.commandCalls(PutCommand).length).toEqual(0);
+  });
+
+  test("logs before validation, so events that fail validation are still traced", async () => {
+    await handleBodies({
+      event_id: eventId,
+      timestamp: date.valueOf(),
+      event_name: eventName,
+      client_id: clientId,
+      user: { ...user, user_id: undefined, session_id: undefined },
+    });
+    expect(mockLogger.info).toHaveBeenCalledWith("Received raw event", {
+      index: 0,
+      eventId,
+      eventTimestamp: date.valueOf(),
+    });
+    expect(dynamoMock.commandCalls(PutCommand).length).toEqual(0);
+  });
+});
+
+describe("handler logs the row it wrote", () => {
+  beforeEach(() => {
+    dynamoMock.reset();
+    sqsMock.reset();
+    process.env.TABLE_NAME = "TABLE_NAME";
+    process.env.AWS_REGION = "AWS_REGION";
+    sqsMock.on(SendMessageCommand).resolves({ MessageId: "MessageId" });
+    vi.spyOn(Date, "now").mockImplementation(() => TIMESTAMP);
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-expect-error
+    vi.spyOn(crypto, "randomUUID").mockImplementation(() => UUID);
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+    vi.spyOn(Date, "now").mockRestore();
+    vi.spyOn(crypto, "randomUUID").mockRestore();
+  });
+
+  test("logs the table key, so the written row can be looked up", async () => {
+    await handler(TEST_SQS_EVENT, {} as Context);
+    expect(mockLogger.info).toHaveBeenCalledWith("Wrote raw event to table", {
+      index: 0,
+      recordId: UUID,
+      timestamp: TIMESTAMP,
+      eventId,
+    });
+  });
+
+  test("logs the key that was actually written to DynamoDB", async () => {
+    await handler(TEST_SQS_EVENT, {} as Context);
+    expect(dynamoMock).toHaveReceivedCommandWith(PutCommand, {
+      TableName: "TABLE_NAME",
+      Item: expect.objectContaining({ id: UUID, timestamp: TIMESTAMP }),
+    });
+  });
+
+  test("does not log a write when the event was dropped by the allowlist", async () => {
+    await handler(
+      {
+        Records: [
+          {
+            ...TEST_SQS_RECORD,
+            body: JSON.stringify({
+              ...makeTxmaEvent(),
+              event_name: "AUTH_OTHER_RANDOM_EVENT",
+            }),
+          },
+        ],
+      },
+      {} as Context
+    );
+    expect(mockLogger.info).not.toHaveBeenCalledWith(
+      "Wrote raw event to table",
+      expect.anything()
+    );
+  });
+});
+
+describe("handler logs why a record was not written", () => {
+  beforeEach(() => {
+    dynamoMock.reset();
+    sqsMock.reset();
+    process.env.TABLE_NAME = "TABLE_NAME";
+    process.env.AWS_REGION = "AWS_REGION";
+    sqsMock.on(SendMessageCommand).resolves({ MessageId: "MessageId" });
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  const failureLog = () =>
+    mockLogger.error.mock.calls.find(([message]) =>
+      String(message).startsWith("Unable to save raw events")
+    );
+
+  test("reports the parsing stage for an unparseable body", async () => {
+    await handler(
+      { Records: [{ ...TEST_SQS_RECORD, body: "not json" }] },
+      {} as Context
+    );
+    expect(failureLog()?.[1]).toEqual(
+      expect.objectContaining({ index: 0, stage: "parsing the record body" })
+    );
+  });
+
+  test("reports the validation stage and the event ID when validation fails", async () => {
+    await handler(
+      {
+        Records: [
+          {
+            ...TEST_SQS_RECORD,
+            body: JSON.stringify({
+              ...makeTxmaEvent(),
+              user: { ...user, session_id: undefined },
+            }),
+          },
+        ],
+      },
+      {} as Context
+    );
+    expect(failureLog()?.[1]).toEqual(
+      expect.objectContaining({
+        index: 0,
+        eventId,
+        stage: "validating the event",
+      })
+    );
+  });
+
+  test("reports the writing stage when DynamoDB rejects the put", async () => {
+    dynamoMock.rejectsOnce("mock error");
+    await handler(TEST_SQS_EVENT, {} as Context);
+    expect(failureLog()?.[1]).toEqual(
+      expect.objectContaining({
+        index: 0,
+        eventId,
+        stage: "writing to the table",
+      })
+    );
+  });
+
+  test("identifies which record in a batch failed", async () => {
+    await handler(
+      {
+        Records: [
+          { ...TEST_SQS_RECORD, body: JSON.stringify(makeTxmaEvent()) },
+          { ...TEST_SQS_RECORD, body: "not json" },
+        ],
+      },
+      {} as Context
+    );
+    expect(failureLog()?.[1]).toEqual(
+      expect.objectContaining({ index: 1, stage: "parsing the record body" })
+    );
   });
 });

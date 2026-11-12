@@ -405,21 +405,33 @@ describe("completion", () => {
 });
 
 describe("scan parameters", () => {
-  test("scans with correct filter expression for all 4 event names", async () => {
+  test("scans with correct filter expression for all 4 event names when no from/to provided", async () => {
     setupSinglePageScan("AUTH_CODE_VERIFIED");
 
     await handler({}, makeContext());
 
     expect(dynamoMock).toHaveReceivedCommandWith(ScanCommand, {
       TableName: BACKFILL_TABLE_NAME,
-      FilterExpression:
-        "event.event_name IN (:e1, :e2, :e3, :e4) AND event.timestamp >= :t1 AND event.timestamp <= :t2",
+      FilterExpression: "event.event_name IN (:e1, :e2, :e3, :e4)",
       ExpressionAttributeValues: {
         ":e1": { S: "AUTH_TOKEN_SENT_TO_ORCHESTRATION" },
         ":e2": { S: "AUTH_CODE_VERIFIED" },
         ":e3": { S: "AUTH_PASSKEY_VERIFICATION_SUCCESSFUL" },
         ":e4": { S: "STS_REFRESH_TOKEN_ISSUED" },
       },
+    });
+  });
+
+  test("scans with timestamp clauses in filter expression when from and to are provided", async () => {
+    setupSinglePageScan("AUTH_CODE_VERIFIED");
+
+    await handler({ from: 1700000000, to: 1800000000 }, makeContext());
+
+    expect(dynamoMock).toHaveReceivedCommandWith(ScanCommand, {
+      TableName: BACKFILL_TABLE_NAME,
+      FilterExpression:
+        "event.event_name IN (:e1, :e2, :e3, :e4) AND event.#ts >= :t1 AND event.#ts <= :t2",
+      ExpressionAttributeNames: { "#ts": "timestamp" },
     });
   });
 
@@ -480,8 +492,8 @@ describe("scan parameters", () => {
     await handler({}, makeContext());
 
     expect(dynamoMock).toHaveReceivedCommandWith(ScanCommand, {
-      ProjectionExpression: "id, #evt",
-      ExpressionAttributeNames: { "#evt": "event" },
+      ProjectionExpression: "id, event",
+      ExpressionAttributeNames: { "#ts": "timestamp" },
     });
   });
 });

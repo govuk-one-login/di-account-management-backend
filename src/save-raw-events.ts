@@ -126,7 +126,7 @@ export const validateTxmaEventBody = (txmaEvent: TxmaEvent): void => {
     if (!txmaEvent.user)
       missingFields.push(`txmaEvent.user is ${txmaEvent.user}`);
     logger.info("Could not validate TxmaEvent context", {
-      timestamp: txmaEvent.timestamp,
+      eventTimestamp: txmaEvent.timestamp,
       eventName: txmaEvent.event_name,
       eventId: txmaEvent.event_id,
       typeofClientId: typeof txmaEvent.client_id,
@@ -206,7 +206,7 @@ export const handler = async (
         logger.info("Wrote raw event to table", {
           index,
           recordId,
-          timestamp,
+          recordTimestamp: timestamp,
           eventId,
         });
       } catch (error) {

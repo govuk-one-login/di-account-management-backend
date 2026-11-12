@@ -866,7 +866,7 @@ describe("handler logs the row it wrote", () => {
     expect(mockLogger.info).toHaveBeenCalledWith("Wrote raw event to table", {
       index: 0,
       recordId: UUID,
-      timestamp: TIMESTAMP,
+      recordTimestamp: TIMESTAMP,
       eventId,
     });
   });

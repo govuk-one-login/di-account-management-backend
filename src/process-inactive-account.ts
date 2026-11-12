@@ -247,21 +247,42 @@ async function updateTrackerStatus(
   body: ProcessableInactiveAccountMessage,
   inactiveAccountTrackerTableName: string
 ): Promise<void> {
-  await dynamoDocClient.send(
-    new UpdateCommand({
-      TableName: inactiveAccountTrackerTableName,
-      Key: {
-        dateForDeletion: body.dateForDeletion,
-        commonSubjectId: body.commonSubjectId,
-      },
-      UpdateExpression: "SET #status = :status, statusLastUpdated = :timestamp",
-      ExpressionAttributeNames: { "#status": "status" },
-      ExpressionAttributeValues: {
-        ":status": process.targetStatus,
-        ":timestamp": new Date().toISOString(),
-      },
-    })
-  );
+  const onlyUpdateExistingRecord = process.targetStatus === "deleting";
+
+  try {
+    await dynamoDocClient.send(
+      new UpdateCommand({
+        TableName: inactiveAccountTrackerTableName,
+        Key: {
+          dateForDeletion: body.dateForDeletion,
+          commonSubjectId: body.commonSubjectId,
+        },
+        UpdateExpression:
+          "SET #status = :status, statusLastUpdated = :timestamp",
+        ExpressionAttributeNames: { "#status": "status" },
+        ExpressionAttributeValues: {
+          ":status": process.targetStatus,
+          ":timestamp": new Date().toISOString(),
+        },
+        ...(onlyUpdateExistingRecord && {
+          ConditionExpression: "attribute_exists(commonSubjectId)",
+        }),
+      })
+    );
+  } catch (error) {
+    const err = error as Error;
+    if (
+      onlyUpdateExistingRecord &&
+      err.name === "ConditionalCheckFailedException"
+    ) {
+      logger.warn("TRACKER_RECORD_NOT_FOUND_SKIPPING_STATUS_UPDATE", {
+        processName: body.processName,
+        targetStatus: process.targetStatus,
+      });
+      return;
+    }
+    throw err;
+  }
 }
 
 async function emitAuditEvent(

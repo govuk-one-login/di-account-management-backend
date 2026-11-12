@@ -1,3 +1,3 @@
-bucket = "di-account-prod-tfstate"
+bucket = "di-account-production-tfstate"
 key    = "account-mgmt-backend.tfstate"
 region = "eu-west-2"

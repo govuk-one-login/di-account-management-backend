@@ -4,6 +4,8 @@ import {
   Context,
   DynamoDBStreamEvent,
   DynamoDBBatchResponse,
+  SQSEvent,
+  SQSBatchResponse,
 } from "aws-lambda";
 import { Logger } from "@aws-lambda-powertools/logger";
 import { mockClient } from "aws-sdk-client-mock";
@@ -2411,6 +2413,98 @@ describe("UpdateInactiveAccountTracker handler", () => {
         batchItemFailures: [{ itemIdentifier: "seq-3" }],
       });
       expect(dynamoMock).toHaveReceivedCommandTimes(TransactWriteCommand, 1);
+    });
+  });
+
+  describe("SQS event source", () => {
+    test("processes records wrapped in an SQS event", async () => {
+      dynamoMock.on(QueryCommand).resolves({ Items: [] });
+      dynamoMock.on(TransactWriteCommand).resolves({});
+
+      const dynamoStreamEvent: DynamoDBStreamEvent = {
+        Records: [generateDynamoStreamRecord("test-client")],
+      };
+      const sqsEvent: SQSEvent = {
+        Records: [
+          {
+            messageId: "sqs-msg-1",
+            body: JSON.stringify(dynamoStreamEvent),
+            receiptHandle: "",
+            attributes: {} as never,
+            messageAttributes: {},
+            md5OfBody: "",
+            eventSource: "aws:sqs",
+            eventSourceARN: "",
+            awsRegion: "eu-west-2",
+          },
+        ],
+      };
+
+      const result = await handler(sqsEvent, {} as Context);
+      expect(result).toEqual<SQSBatchResponse>({ batchItemFailures: [] });
+      expect(dynamoMock).toHaveReceivedCommand(TransactWriteCommand);
+    });
+
+    test("uses SQS messageId as failureId when a wrapped record fails", async () => {
+      dynamoMock.on(QueryCommand).resolves({ Items: [] });
+      dynamoMock
+        .on(TransactWriteCommand)
+        .rejects(new Error("TransactionCanceledException"));
+
+      const dynamoStreamEvent: DynamoDBStreamEvent = {
+        Records: [generateDynamoStreamRecord("test-client")],
+      };
+      const sqsEvent: SQSEvent = {
+        Records: [
+          {
+            messageId: "sqs-msg-fail",
+            body: JSON.stringify(dynamoStreamEvent),
+            receiptHandle: "",
+            attributes: {} as never,
+            messageAttributes: {},
+            md5OfBody: "",
+            eventSource: "aws:sqs",
+            eventSourceARN: "",
+            awsRegion: "eu-west-2",
+          },
+        ],
+      };
+
+      const result = await handler(sqsEvent, {} as Context);
+      expect(result).toEqual<SQSBatchResponse>({
+        batchItemFailures: [{ itemIdentifier: "sqs-msg-fail" }],
+      });
+    });
+
+    test("processes multiple DynamoDB records from a single SQS message", async () => {
+      dynamoMock.on(QueryCommand).resolves({ Items: [] });
+      dynamoMock.on(TransactWriteCommand).resolves({});
+
+      const dynamoStreamEvent: DynamoDBStreamEvent = {
+        Records: [
+          generateDynamoStreamRecord("test-client"),
+          generateDynamoStreamRecord("test-client"),
+        ],
+      };
+      const sqsEvent: SQSEvent = {
+        Records: [
+          {
+            messageId: "sqs-msg-multi",
+            body: JSON.stringify(dynamoStreamEvent),
+            receiptHandle: "",
+            attributes: {} as never,
+            messageAttributes: {},
+            md5OfBody: "",
+            eventSource: "aws:sqs",
+            eventSourceARN: "",
+            awsRegion: "eu-west-2",
+          },
+        ],
+      };
+
+      const result = await handler(sqsEvent, {} as Context);
+      expect(result).toEqual<SQSBatchResponse>({ batchItemFailures: [] });
+      expect(dynamoMock).toHaveReceivedCommandTimes(TransactWriteCommand, 2);
     });
   });
 

@@ -13,8 +13,8 @@ variable "environment" {
   type        = string
   description = "The environment name (maps to the Environment pipeline parameter)."
   validation {
-    condition     = contains(["dev", "build", "staging", "integration", "production"], var.environment)
-    error_message = "Valid values for var: environment are (dev, build, staging, integration, production)."
+    condition     = contains(["dev", "build", "staging", "integration", "production", "demo"], var.environment)
+    error_message = "Valid values for var: environment are (dev, build, staging, integration, production, demo)."
   }
 }
 
@@ -156,25 +156,25 @@ variable "artifact_write_time_logging_lambda_arn" {
 variable "access_cross_account_sns" {
   type        = string
   description = "AccessCrossAccountSNS pipeline parameter."
-  default     = ""
+  default     = null
 }
 
 variable "access_cross_account_sqs" {
   type        = string
   description = "AccessCrossAccountSQS pipeline parameter."
-  default     = ""
+  default     = null
 }
 
 variable "access_dynamo_db_accounts" {
   type        = string
   description = "AccessDynamoDBAccounts pipeline parameter."
-  default     = ""
+  default     = null
 }
 
 variable "allow_cross_account_assume_role_target_accounts" {
   type        = string
   description = "AllowCrossAccountAssumeRoleTargetAccounts pipeline parameter."
-  default     = ""
+  default     = null
 }
 
 variable "allow_cross_account_s3_write_access" {
@@ -192,7 +192,7 @@ variable "invokable_lambda_accounts" {
 variable "lambda_layers_accounts" {
   type        = string
   description = "LambdaLayersAccounts pipeline parameter."
-  default     = ""
+  default     = null
 }
 
 variable "aws_organization_id" {
@@ -204,7 +204,7 @@ variable "aws_organization_id" {
 variable "sar_account_id" {
   type        = string
   description = "SARAccountId pipeline parameter."
-  default     = ""
+  default     = null
 }
 
 # --- Test container -------------------------------------------------------------
@@ -212,7 +212,7 @@ variable "sar_account_id" {
 variable "test_image_repository_names" {
   type        = string
   description = "ECR repo names for the test runner image (TestImageRepositoryNames)."
-  default     = ""
+  default     = null
 }
 
 variable "test_image_repository_uri" {
@@ -324,7 +324,7 @@ variable "run_parallel_test_container_in_vpc" {
 variable "one_login_test_image_repository_names" {
   type        = string
   description = "OneLoginTestImageRepositoryNames pipeline parameter."
-  default     = ""
+  default     = null
 }
 
 variable "traffic_test_image_repository_uri" {

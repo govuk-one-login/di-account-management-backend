@@ -12,14 +12,14 @@ environment         = "dev"
 pipeline_stack_name = "account-mgmt-backend-pipeline"
 
 # Per-env parameters.
-allowed_accounts           = ""
+allowed_accounts           = null
 include_promotion          = "No"
 lambda_canary_deployment   = "AllAtOnce"
 artifact_source_bucket_arn = "none"
 
 # Dev-specific overrides of shared defaults (verbatim from the live dev stack).
 github_repository_name    = "di-account-management-backend"
-invokable_lambda_accounts = ""
+invokable_lambda_accounts = null
 slack_notification_type   = "All"
 
 # Dev-account code signing (differs from the shared build-account signer).

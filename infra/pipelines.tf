@@ -6,6 +6,12 @@
 # defaulted in variables.tf; the five per-env values come from env/{env}.tfvars.
 
 resource "aws_cloudformation_stack" "amb_pipeline_stack" {
+  # checkov:skip=CKV_AWS_124: The live pipeline stacks (Task 0 capture) do not set
+  # CloudFormation NotificationARNs. This resource models existing state for a
+  # clean, no-op `terraform import`; adding stack event notifications would drift
+  # from live. Wiring an SNS topic is deliberately out of scope here and tracked
+  # as a separate change. Build/deploy notifications are already handled by the
+  # pipeline's own BuildNotificationStackName / SlackNotificationType parameters.
   name         = var.pipeline_stack_name
   template_url = var.pipeline_template_url
 

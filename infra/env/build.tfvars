@@ -23,6 +23,6 @@ github_repository_name = "di-account-management-backend"
 
 # Build is where the test container actually runs.
 test_report_format          = "CUCUMBERJSON"
-test_coverage_report_format  = "SIMPLECOV"
+test_coverage_report_format = "SIMPLECOV"
 test_image_repository_uri   = "301577035144.dkr.ecr.eu-west-2.amazonaws.com/account-mgmt-backend-test-image-repo-testrunnerimagerepository-4dth9sr21cvl"
 test_stack_name             = "build-account-mgmt-backend"

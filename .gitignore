@@ -6,3 +6,16 @@ build.toml
 node_modules/
 coverage/
 .tmp-hash-iad-query-logic.mjs
+
+# Terraform (infra/) — local working directories and state. Never commit state.
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+
+# Plan output files
+*.tfplan
+
+# Keep the provider lock file committed for reproducible provider versions.
+!.terraform.lock.hcl

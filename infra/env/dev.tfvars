@@ -1,12 +1,12 @@
 # Dev (account 985326104449) — pipeline stack account-mgmt-backend-pipeline.
 #
 # Captured 2026-11-12 via di-account-dev-fulladmin (AdministratorAccess) with
-# `aws cloudformation describe-stacks`. NOTE: the dev stack is on devplatform
-# sam-deploy-pipeline template v2.105.1 (NOT v2.106.0 like the staging /
-# integration / production group), but the parameter KEY set is identical, so
-# the shared variables schema applies. Values below are verbatim from the live
-# dev stack; dev differs from the shared group in several fields (repo name,
-# signer account, Slack type, InvokableLambdaAccounts).
+# `aws cloudformation describe-stacks`. The dev stack was captured on devplatform
+# sam-deploy-pipeline template v2.105.1; this config bumps it to v2.106.0 to
+# align with the staging / integration / production group (the parameter KEY set
+# is identical between the two, so the shared variables schema applies). Values
+# below are verbatim from the live dev stack; dev differs from the shared group
+# in several fields (repo name, signer account, Slack type, InvokableLambdaAccounts).
 
 environment         = "dev"
 pipeline_stack_name = "account-mgmt-backend-pipeline"
@@ -26,5 +26,5 @@ slack_notification_type   = "All"
 signing_profile_arn         = "arn:aws:signer:eu-west-2:985326104449:/signing-profiles/SigningProfile_vpuDZuASeOD0"
 signing_profile_version_arn = "arn:aws:signer:eu-west-2:985326104449:/signing-profiles/SigningProfile_vpuDZuASeOD0/KCAqQdGK8H"
 
-# Dev template is v2.105.1, not the group's v2.106.0.
-pipeline_template_url = "https://template-storage-templatebucket-1upzyw6v9cs42.s3.amazonaws.com/sam-deploy-pipeline/template-v2.105.1.yaml"
+# Dev template is now aligned to the group's v2.106.0 (bumped from v2.105.1).
+pipeline_template_url = "https://template-storage-templatebucket-1upzyw6v9cs42.s3.amazonaws.com/sam-deploy-pipeline/template-v2.106.0.yaml"

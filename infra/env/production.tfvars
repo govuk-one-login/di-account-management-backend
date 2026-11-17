@@ -1,6 +1,5 @@
 # Production (account 026991849909) — pipeline stack account-mgmt-backend-pipeline.
-# Values captured verbatim from the live v2.106.0 stack in Task 0
-# (.kiro/specs/OLH-5367_amb-pipeline-iac/task0-pipeline-capture.md).
+# Values captured verbatim from the live stack.
 # Only the five per-env parameters differ from the defaults in variables.tf.
 
 environment         = "production"

@@ -1,13 +1,11 @@
-# AMB deployment pipeline — Terraform
+# Infrastructure — Terraform
 
-This Terraform manages the [devplatform secure-pipelines](https://govukverify.atlassian.net/wiki/spaces/PLAT/pages/3059908609/How+to+deploy+a+SAM+application+with+secure+pipelines)
-`sam-deploy-pipeline` stack (template `v2.106.0`) for the account management
-backend.
+Terraform for the account management backend's infrastructure. It currently
+manages the [devplatform secure-pipelines](https://govukverify.atlassian.net/wiki/spaces/PLAT/pages/3059908609/How+to+deploy+a+SAM+application+with+secure+pipelines)
+`sam-deploy-pipeline` stack (see `pipelines.tf`).
 
-The parameter set mirrors the live stacks captured in Task 0
-(`.kiro/specs/OLH-5367_amb-pipeline-iac/task0-pipeline-capture.md`). Values that
-are identical across environments are defaulted in `variables.tf`; the few that
-differ per environment are supplied from `env/{env}.tfvars`.
+Values that are identical across environments are defaulted in `variables.tf`;
+the few that differ per environment are supplied from `env/{env}.tfvars`.
 
 ## Layout
 
@@ -26,34 +24,49 @@ Supported environments: `dev`, `build`, `staging`, `integration`, `production`,
 
 - [`tfenv`](https://github.com/tfutils/tfenv) to manage the Terraform version
   (pinned in `.terraform-version`).
-- AWS credentials for the target account (via `gds aws <profile>` or `aws sso login`).
+- AWS admin access to the target account. Use TEAM to get permissions for all
+  environments other than `dev`. You'll need to request the admin role, not
+  power user.
+
+You can add a section like the following to your `~/.aws/config` file to use
+the admin role as a CLI profile (note the `-admin` suffix). Replace the account
+ID with that of the environment you are deploying to:
+
+```
+[profile di-account-build-admin]
+sso_session = one-login
+sso_account_id = <ACCOUNT_ID>
+sso_role_name = ApprovedAdmin
+region = eu-west-2
+sso_region = eu-west-2
+sso_start_url = https://uk-digital-identity.awsapps.com/start
+```
 
 ## Deploying
 
 The Terraform uses a separate backend configuration and variables file per
-environment. To deploy into e.g. `build`:
+environment. To deploy into e.g. `build`, run:
 
 ```sh
-cd infra
-
-# Install and select the pinned Terraform version.
 tfenv install && tfenv use
-
-# Authenticate against the target account.
-gds aws di-account-build-admin
-# or: aws sso login --profile di-account-build-admin
-
-# Initialise with the environment's backend, then plan and apply.
+cd infra
+export AWS_PROFILE=di-account-build-admin
+aws sso login
 terraform init -backend-config=env/deploy/build.tfbackend
-terraform plan  -var-file=env/build.tfvars
+terraform plan -var-file=env/build.tfvars
 terraform apply -var-file=env/build.tfvars
 ```
 
 Swap `build` for `dev`, `staging`, `integration`, `production`, or `demo` to
 target a different environment. Always review the `plan` output before applying —
-for an already-deployed pipeline the plan should be a no-op (or contain only the
+for already-deployed infrastructure the plan should be a no-op (or contain only the
 expected drift).
 
-> **Note:** `terraform init` reconfigures the backend per environment. When
-> switching environments in the same working directory, re-run
-> `terraform init -reconfigure -backend-config=env/deploy/{env}.tfbackend`.
+> [!NOTE]
+> You'll get a warning about an existing backend when running `terraform init`
+> if you've already initialised a backend for a different environment.
+>
+> You should re-run your command with the `-reconfigure` flag as we don't want
+> to migrate state between environments:
+>
+> `terraform init -backend-config=env/deploy/dev.tfbackend -reconfigure`

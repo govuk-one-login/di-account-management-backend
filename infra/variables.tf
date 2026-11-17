@@ -1,8 +1,7 @@
 # Variables for the AMB deployment pipeline (devplatform sam-deploy-pipeline v2.106.0).
 #
 # Values that are identical across staging / integration / production carry a
-# `default` here, captured verbatim from the live stacks in Task 0
-# (.kiro/specs/OLH-5367_amb-pipeline-iac/task0-pipeline-capture.md).
+# `default` here, captured verbatim from the live stacks.
 #
 # Values that differ per environment are left WITHOUT a default and supplied from
 # `env/{env}.tfvars`. There are exactly five of these:
@@ -431,7 +430,7 @@ variable "allowed_services" {
   type        = map(string)
   description = <<-EOT
     The AllowedServiceOne..Seven pipeline parameters, keyed by their parameter
-    name. Captured verbatim from the live v2.106.0 stacks in Task 0 (all "none").
+    name. Captured verbatim from the live stacks (all "none").
   EOT
   default = {
     AllowedServiceOne   = "none"
@@ -468,7 +467,7 @@ variable "additional_tags" {
   type        = map(string)
   description = <<-EOT
     Extra resource tags that are present on some environments only, captured
-    verbatim from the live stacks in Task 0. The common tags (Environment,
+    verbatim from the live stacks. The common tags (Environment,
     Owner, Product, System) are set from their own variables in pipelines.tf;
     this map carries any per-env extras (e.g. staging's `repository` tag).
   EOT

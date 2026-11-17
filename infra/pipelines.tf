@@ -1,12 +1,8 @@
-# AMB deployment pipeline — devplatform secure-pipelines (sam-deploy-pipeline v2.106.0).
+# AMB deployment pipeline — devplatform secure-pipelines sam-deploy-pipeline.
 # See https://govukverify.atlassian.net/wiki/spaces/PLAT/pages/3059908609/How+to+deploy+a+SAM+application+with+secure+pipelines
-#
-# The parameter set below mirrors the live v2.106.0 template exactly (70 params),
-# captured in Task 0. Values identical across staging/integration/production are
-# defaulted in variables.tf; the five per-env values come from env/{env}.tfvars.
 
 resource "aws_cloudformation_stack" "amb_pipeline_stack" {
-  # checkov:skip=CKV_AWS_124: The live pipeline stacks (Task 0 capture) do not set
+  # checkov:skip=CKV_AWS_124: The live pipeline stacks do not set
   # CloudFormation NotificationARNs. This resource models existing state for a
   # clean, no-op `terraform import`; adding stack event notifications would drift
   # from live. Wiring an SNS topic is deliberately out of scope here and tracked
@@ -16,8 +12,7 @@ resource "aws_cloudformation_stack" "amb_pipeline_stack" {
   template_url = var.pipeline_template_url
 
   # Parameters whose value is null are omitted entirely so the stack shows them
-  # as "no value" (a hyphen in the console) rather than an empty string. See
-  # review comment on variables.tf: unset params must be null, not "".
+  # as "no value" (a hyphen in the console) rather than an empty string.
   parameters = {
     for key, value in merge(
       {

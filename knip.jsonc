@@ -13,7 +13,6 @@
         "src/format-activity-log.ts",
         "src/delete-activity-log.ts",
         "src/mark-activity-reported.ts",
-        "src/send-suspicious-activity.ts",
         "src/send-conf-email.ts",
         "src/create-support-ticket.ts",
         "src/trigger-rsa-step.ts",

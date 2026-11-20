@@ -270,6 +270,88 @@ export async function assertNoItem(
   );
 }
 
+// Polls (1s interval, default 30s) until a query matches zero items, for flows
+// where an item is expected to be deleted asynchronously. Returns as soon as
+// the table is empty for the criteria; throws naming the remaining match count
+// on timeout. Query errors propagate.
+export async function pollForNoItem(
+  tableName: string,
+  criteria: MatchCriteria,
+  options?: Pick<PollOptions, "indexName" | "timeoutSeconds" | "description">
+): Promise<void> {
+  const timeoutSeconds = options?.timeoutSeconds ?? 30;
+  const indexName = options?.indexName;
+  const deadline = Date.now() + timeoutSeconds * 1000;
+  let remaining: number;
+
+  for (;;) {
+    const response = await documentClient.send(
+      new QueryCommand({
+        TableName: tableName,
+        IndexName: indexName,
+        KeyConditionExpression: criteria.keyConditionExpression,
+        ...(Object.keys(criteria.expressionAttributeNames).length > 0 && {
+          ExpressionAttributeNames: criteria.expressionAttributeNames,
+        }),
+        ExpressionAttributeValues: criteria.expressionAttributeValues,
+      })
+    );
+    remaining = (response.Items ?? []).length;
+    if (remaining === 0) return;
+
+    if (Date.now() + 1000 >= deadline) break;
+    await new Promise((resolve) => setTimeout(resolve, 1000)); // NOSONAR: await-in-loop is deliberate here.
+  }
+
+  const indexClause = indexName !== undefined ? ` (index "${indexName}")` : "";
+  const descriptionClause =
+    options?.description !== undefined ? ` for ${options.description}` : "";
+  throw new Error(
+    `Expected no item in table "${tableName}"${indexClause}${descriptionClause} ` +
+      `within ${timeoutSeconds}s, but ${remaining} matching item${remaining === 1 ? " was" : "s were"} still present.`
+  );
+}
+
+// Polls the IntegrationTestStubApiOutputsTable for a recorded request (written
+// after `afterEpochSeconds`) whose HTTP method and path satisfy the arguments.
+// Unlike pollForStubOutput this does not parse the body, so it works for
+// body-less requests such as DELETE. Throws after 30s with no match.
+export async function pollForStubRequest(
+  afterEpochSeconds: number,
+  httpMethod: string,
+  path: string,
+  description: string
+): Promise<Record<string, unknown>> {
+  const tableName = getStubOutputsTableName();
+  const deadline = Date.now() + 30_000;
+
+  for (;;) {
+    const response = await documentClient.send(
+      new QueryCommand({
+        TableName: tableName,
+        IndexName: STUB_OUTPUTS_ALL_ITEMS_INDEX,
+        KeyConditionExpression: "allItemsId = :a AND createdAt > :t",
+        ExpressionAttributeValues: {
+          ":a": "an_item",
+          ":t": afterEpochSeconds,
+        },
+      })
+    );
+
+    const match = (response.Items ?? []).find((item) => {
+      const event = item.event as Record<string, unknown> | undefined;
+      return event?.httpMethod === httpMethod && event?.path === path;
+    });
+
+    if (match !== undefined) return match as Record<string, unknown>;
+
+    if (Date.now() + 1_000 >= deadline) break;
+    await new Promise((resolve) => setTimeout(resolve, 1_000)); // NOSONAR
+  }
+
+  throw new Error(`No stub request found within 30s for ${description}`);
+}
+
 export type PrimaryKey = Record<string, unknown>;
 
 // Polls the SQS queue at `queueUrl` until a message is found whose parsed body

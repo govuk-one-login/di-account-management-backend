@@ -138,7 +138,7 @@ jobs:
           persist-credentials: false
 
       - name: Poll for deployment finished
-        uses: govuk-one-login/github-actions/sam/check-stack-updated@b00f9eeccebbc72083d8ffca4f0a2448fb14bda5
+        uses: govuk-one-login/github-actions/sam/check-stack-updated@4c560d29a8ccfa0d1eb60ab02964ad1dd9dcd960
         with:
           stack-name: home-backend
           gh-polling-role: ${{ secrets.DEMO_TESTING_ROLE_ARN }}

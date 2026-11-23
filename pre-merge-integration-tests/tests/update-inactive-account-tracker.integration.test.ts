@@ -237,7 +237,7 @@ describe("update-inactive-account-tracker", () => {
         user: {
           user_id: userId,
           session_id: "session-sts-skip",
-          public_subject_id: `pub-${userId}`,
+          public_subject_id: "",
         },
       });
 

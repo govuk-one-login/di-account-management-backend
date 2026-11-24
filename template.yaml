@@ -3754,7 +3754,7 @@ Resources:
             UpdateInactiveAccountTrackerDeadLetterQueueAlarm,
           ],
         ]
-      AlarmDescription: More than 1 inactive account tracker update failed in the last 5 minutes.
+      AlarmDescription: "More than 1 inactive account tracker update failed in the last 5 minutes. Runbook: https://govukverify.atlassian.net/wiki/x/FYB2pgE"
       Namespace: "AWS/SQS"
       MetricName: "ApproximateNumberOfMessagesVisible"
       Dimensions:
@@ -4148,6 +4148,7 @@ Resources:
             UpdateInactiveAccountTrackerFunctionSuccessRate,
           ],
         ]
+      AlarmDescription: "Triggers when the success rate of the inactive account tracker function drops below the threshold. Runbook: https://govukverify.atlassian.net/wiki/x/FYB2pgE"
       Metrics:
         - Id: errors
           MetricStat:
@@ -4180,6 +4181,26 @@ Resources:
       EvaluationPeriods: 1
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+
+  UpdateInactiveAccountTrackerMaxIteratorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Join ["-", [!Ref AWS::StackName, !Ref Environment, UpdateInactiveAccountTrackerMaxIteratorAlarm]]
+      AlarmDescription: "Triggers when the Lambda function's iterator age exceeds the threshold. Runbook: https://govukverify.atlassian.net/wiki/x/FYB2pgE"
+      Namespace: AWS/Lambda
+      MetricName: IteratorAge
+      Statistic: Maximum
+      Period: 300
+      Threshold: 60
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 1
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref UpdateInactiveAccountTrackerFunction
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      TreatMissingData: notBreaching
+      ActionsEnabled: true
 
   #########################################
   # Update User Email
@@ -4316,7 +4337,7 @@ Resources:
           "-",
           [!Ref AWS::StackName, !Ref Environment, UpdateUserEmailDLQAlarm],
         ]
-      AlarmDescription: More than 1 update user email event has failed in the last 5 minutes.
+      AlarmDescription: "More than 1 update user email event has failed in the last 5 minutes. Runbook: https://govukverify.atlassian.net/wiki/x/FYB2pgE"
       Namespace: "AWS/SQS"
       MetricName: "ApproximateNumberOfMessagesVisible"
       Dimensions:
@@ -4344,6 +4365,7 @@ Resources:
             UpdateUserEmailFunctionSuccessRate,
           ],
         ]
+      AlarmDescription: "Triggers when the UpdateUserEmailFunction's success rate drops below threshold. Runbook: https://govukverify.atlassian.net/wiki/x/FYB2pgE"
       Metrics:
         - Id: errors
           MetricStat:
@@ -4376,6 +4398,26 @@ Resources:
       EvaluationPeriods: 1
       AlarmActions:
         - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+
+  UpdateUserEmailFunctionMaxIteratorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Join ["-", [!Ref AWS::StackName, !Ref Environment, UpdateUserEmailFunctionMaxIteratorAlarm]]
+      AlarmDescription: "Triggers when the Lambda function's iterator age exceeds the threshold. Runbook: https://govukverify.atlassian.net/wiki/x/FYB2pgE"
+      Namespace: AWS/Lambda
+      MetricName: IteratorAge
+      Statistic: Maximum
+      Period: 300
+      Threshold: 60
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 1
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref UpdateUserEmailFunction
+      AlarmActions:
+        - !Sub "{{resolve:ssm:/${AlertingStackName}/SNS/LowAlertNotificationTopic/ARN}}"
+      TreatMissingData: notBreaching
+      ActionsEnabled: true
 
   #########################################
   # Publish Account Deletion to SNS Topic

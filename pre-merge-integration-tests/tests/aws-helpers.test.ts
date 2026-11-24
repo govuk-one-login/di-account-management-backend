@@ -25,7 +25,9 @@ import {
   getSecret,
   pollAuditQueue,
   pollForItem,
+  pollForNoItem,
   pollForStubOutput,
+  pollForStubRequest,
   sendMessage,
   type MatchCriteria,
 } from "../aws-helpers.js";
@@ -273,6 +275,147 @@ describe("assertNoItem", () => {
 
     const call = docMock.commandCalls(QueryCommand)[0];
     expect(call.args[0].input.ExpressionAttributeNames).toBeUndefined();
+  });
+});
+
+describe("pollForNoItem", () => {
+  it("resolves immediately when no items match", async () => {
+    docMock.on(QueryCommand).resolves({ Items: [] });
+
+    await expect(
+      pollForNoItem("activity_log", CRITERIA)
+    ).resolves.toBeUndefined();
+    expect(docMock.commandCalls(QueryCommand)).toHaveLength(1);
+  });
+
+  it("resolves when the response has no Items property", async () => {
+    docMock.on(QueryCommand).resolves({});
+
+    await expect(
+      pollForNoItem("activity_log", CRITERIA)
+    ).resolves.toBeUndefined();
+  });
+
+  it("keeps polling while items remain and resolves once they are gone", async () => {
+    vi.useFakeTimers();
+    docMock
+      .on(QueryCommand)
+      .resolvesOnce({ Items: [{ id: "a" }] })
+      .resolvesOnce({ Items: [] });
+
+    const promise = pollForNoItem("activity_log", CRITERIA, {
+      timeoutSeconds: 10,
+    });
+    await vi.runAllTimersAsync();
+    await expect(promise).resolves.toBeUndefined();
+    expect(docMock.commandCalls(QueryCommand)).toHaveLength(2);
+  });
+
+  it("passes the index name and omits empty attribute names", async () => {
+    docMock.on(QueryCommand).resolves({ Items: [] });
+
+    await pollForNoItem("activity_log", CRITERIA_NO_NAMES, {
+      indexName: "gsi-1",
+    });
+
+    const input = docMock.commandCalls(QueryCommand)[0].args[0].input;
+    expect(input.IndexName).toBe("gsi-1");
+    expect(input.ExpressionAttributeNames).toBeUndefined();
+  });
+
+  it("throws reporting the remaining count when items persist past the timeout", async () => {
+    vi.useFakeTimers();
+    docMock.on(QueryCommand).resolves({ Items: [{ id: "a" }, { id: "b" }] });
+
+    const promise = pollForNoItem("activity_log", CRITERIA, {
+      timeoutSeconds: 0,
+      indexName: "gsi-1",
+      description: "deleted user",
+    });
+    const assertion = expect(promise).rejects.toThrow(
+      /Expected no item in table "activity_log" \(index "gsi-1"\) for deleted user within 0s, but 2 matching items were still present\./
+    );
+    await vi.runAllTimersAsync();
+    await assertion;
+  });
+
+  it("uses singular wording for a single remaining item", async () => {
+    vi.useFakeTimers();
+    docMock.on(QueryCommand).resolves({ Items: [{ id: "a" }] });
+
+    const promise = pollForNoItem("activity_log", CRITERIA, {
+      timeoutSeconds: 0,
+    });
+    const assertion = expect(promise).rejects.toThrow(
+      /but 1 matching item was still present\./
+    );
+    await vi.runAllTimersAsync();
+    await assertion;
+  });
+
+  it("propagates query errors", async () => {
+    docMock.on(QueryCommand).rejects(new Error("query failed"));
+
+    await expect(pollForNoItem("activity_log", CRITERIA)).rejects.toThrow(
+      "query failed"
+    );
+  });
+});
+
+describe("pollForStubRequest", () => {
+  const stubItem = (httpMethod: string, path: string) => ({
+    id: "1",
+    event: { httpMethod, path },
+  });
+
+  it("returns the item whose method and path match", async () => {
+    docMock.on(QueryCommand).resolves({
+      Items: [
+        stubItem("POST", "/govuk/api/oidc-users/pub-1"),
+        stubItem("DELETE", "/govuk/api/oidc-users/pub-2"),
+        stubItem("DELETE", "/govuk/api/oidc-users/pub-1"),
+      ],
+    });
+
+    const item = await pollForStubRequest(
+      100,
+      "DELETE",
+      "/govuk/api/oidc-users/pub-1",
+      "pub-1"
+    );
+
+    expect(item).toStrictEqual(
+      stubItem("DELETE", "/govuk/api/oidc-users/pub-1")
+    );
+    const input = docMock.commandCalls(QueryCommand)[0].args[0].input;
+    expect(input.ExpressionAttributeValues).toStrictEqual({
+      ":a": "an_item",
+      ":t": 100,
+    });
+  });
+
+  it("keeps polling until a matching request appears", async () => {
+    vi.useFakeTimers();
+    docMock
+      .on(QueryCommand)
+      .resolvesOnce({ Items: [] })
+      .resolvesOnce({ Items: [stubItem("DELETE", "/p")] });
+
+    const promise = pollForStubRequest(0, "DELETE", "/p", "p");
+    await vi.runAllTimersAsync();
+    await expect(promise).resolves.toStrictEqual(stubItem("DELETE", "/p"));
+  });
+
+  it("ignores items with no event attribute", async () => {
+    vi.useFakeTimers();
+    docMock.on(QueryCommand).resolves({ Items: [{ id: "x" }] });
+
+    const promise = pollForStubRequest(0, "DELETE", "/p", "missing request");
+    const assertion = expect(promise).rejects.toThrow(
+      "No stub request found within 30s for missing request"
+    );
+    await vi.runAllTimersAsync();
+    await assertion;
   });
 });
 

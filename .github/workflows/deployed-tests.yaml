@@ -119,7 +119,10 @@ jobs:
 
   check-stack-ready:
     if: ${{ needs.check-if-skipping-pre-merge.outputs.skip_found == 'false' }}
-    runs-on: ubuntu-latest
+    # Pinned: the check-stack-updated action installs Python 3.9, which is not
+    # available on the ubuntu-latest (26.04) image. Remove once the action is
+    # updated to a supported Python version.
+    runs-on: ubuntu-24.04
     defaults:
       run:
         shell: bash

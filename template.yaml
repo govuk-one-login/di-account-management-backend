@@ -306,7 +306,7 @@ Mappings:
       GOVACCOUNTSPUBLISHINGAPIURL: "https://account-api.integration.publishing.service.gov.uk"
       REPORTSUSPISCIOUSACTIVITYTEMPLATEID: "2b3170b5-159e-457f-a282-f30f6006dc32"
       AUTHBACKFILLCOMPLETEDATETIME: ""
-      FEATUREDELETEEMAILSUBSCRIPTIONS: "false"
+      FEATUREDELETEEMAILSUBSCRIPTIONS: "true"
       NOTIFYTEMPLATEIDS: |
         {
           "GLOBAL_LOGOUT": "a92761ef-213b-4fb6-a53c-5912a931c159",
@@ -2738,26 +2738,34 @@ Resources:
         TargetArn: !GetAtt DeleteEmailSubscriptionsDeadLetterQueue.Arn
       Environment:
         Variables:
-          GOV_ACCOUNTS_PUBLISHING_API_TOKEN: !Sub
-            - "{{resolve:secretsmanager:${SecretArn}:SecretString:::${SecretId}}}"
-            - SecretArn:
-                !FindInMap [
-                  EnvironmentConfiguration,
-                  !Ref Environment,
-                  publishingApiKeyArn,
-                ]
-              SecretId:
-                !FindInMap [
-                  EnvironmentConfiguration,
-                  !Ref Environment,
-                  publishingApiKeyVersionId,
-                ]
-          GOV_ACCOUNTS_PUBLISHING_API_URL:
-            !FindInMap [
-              EnvironmentVariables,
-              !Ref Environment,
-              GOVACCOUNTSPUBLISHINGAPIURL,
-            ]
+          # In demo (pre-merge tests) requests go to the integration test stub
+          # API, which persists request headers, so a placeholder token is used
+          # instead of the real secret.
+          GOV_ACCOUNTS_PUBLISHING_API_TOKEN: !If
+            - IsDemo
+            - integration-test-stub-token # pragma: allowlist secret
+            - !Sub
+              - "{{resolve:secretsmanager:${SecretArn}:SecretString:::${SecretId}}}"
+              - SecretArn:
+                  !FindInMap [
+                    EnvironmentConfiguration,
+                    !Ref Environment,
+                    publishingApiKeyArn,
+                  ]
+                SecretId:
+                  !FindInMap [
+                    EnvironmentConfiguration,
+                    !Ref Environment,
+                    publishingApiKeyVersionId,
+                  ]
+          GOV_ACCOUNTS_PUBLISHING_API_URL: !If
+            - IsDemo
+            - !Sub "https://${IntegrationTestStubApiGateway}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/govuk"
+            - !FindInMap [
+                EnvironmentVariables,
+                !Ref Environment,
+                GOVACCOUNTSPUBLISHINGAPIURL,
+              ]
           FEATURE_DELETE_EMAIL_SUBSCRIPTIONS:
             !FindInMap [
               EnvironmentVariables,

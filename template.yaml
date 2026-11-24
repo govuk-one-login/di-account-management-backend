@@ -4191,7 +4191,7 @@ Resources:
       MetricName: IteratorAge
       Statistic: Maximum
       Period: 300
-      Threshold: 60
+      Threshold: 60000
       ComparisonOperator: GreaterThanThreshold
       EvaluationPeriods: 1
       Dimensions:
@@ -4408,7 +4408,7 @@ Resources:
       MetricName: IteratorAge
       Statistic: Maximum
       Period: 300
-      Threshold: 60
+      Threshold: 60000
       ComparisonOperator: GreaterThanThreshold
       EvaluationPeriods: 1
       Dimensions:

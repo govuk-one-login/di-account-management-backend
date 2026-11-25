@@ -1,0 +1,17 @@
+{
+  "Records": [
+    {
+      "body": {
+        "user_id": "local-verify-user-1",
+        "services": [
+          {
+            "client_id": "vehicleOperatorLicense",
+            "count_successful_logins": 1,
+            "last_accessed": 1730800548523,
+            "last_accessed_pretty": "5 November 2024"
+          }
+        ]
+      }
+    }
+  ]
+}

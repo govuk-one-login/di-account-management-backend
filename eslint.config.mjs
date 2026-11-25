@@ -12,7 +12,7 @@ export default [
   ...tsEslint.configs.recommended,
   ...tsEslint.configs.stylistic,
   {
-    ignores: [".aws-sam/"],
+    ignores: [".aws-sam/", "dev/local/.build/"],
   },
   {
     rules: {

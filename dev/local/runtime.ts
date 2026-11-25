@@ -113,8 +113,10 @@ export const lambdaRuntimeEnv = (
   AWS_EXECUTION_ENV: "AWS_Lambda_nodejs24.x",
 });
 
-const functionName = (fn: LocalFunction): string =>
-  `local-${STACK_NAME}-${fn.name}`;
+export const FUNCTION_NAME_PREFIX = `local-${STACK_NAME}-`;
+
+export const functionName = (fn: LocalFunction): string =>
+  `${FUNCTION_NAME_PREFIX}${fn.name}`;
 
 export const buildContext = (
   fn: LocalFunction,
@@ -216,6 +218,7 @@ export const loadEvent = (
 
 export interface ParsedArgs {
   list: boolean;
+  noLogs: boolean;
   functionName?: string;
   eventSource?: string;
 }
@@ -224,6 +227,7 @@ export const parseArgs = (argv: string[]): ParsedArgs => {
   const positional = argv.filter((arg) => !arg.startsWith("--"));
   return {
     list: argv.includes("--list"),
+    noLogs: argv.includes("--no-logs"),
     functionName: positional[0],
     eventSource: positional[1],
   };

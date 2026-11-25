@@ -27,6 +27,7 @@
     "local:bootstrap": "bash dev/local/with-emulator.sh node --disable-warning=ExperimentalWarning dev/local/bootstrap.ts",
     "local:invoke": "bash dev/local/with-emulator.sh node --disable-warning=ExperimentalWarning dev/local/invoke.ts",
     "local:send-event": "bash dev/local/with-emulator.sh node --disable-warning=ExperimentalWarning dev/local/send-event.ts",
+    "local:logs": "bash dev/local/with-emulator.sh node --disable-warning=ExperimentalWarning dev/local/logs.ts",
     "local:verify": "bash dev/local/with-emulator.sh node --disable-warning=ExperimentalWarning dev/local/verify.ts",
     "local:list": "node --disable-warning=ExperimentalWarning dev/local/invoke.ts --list"
   },

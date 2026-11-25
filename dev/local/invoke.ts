@@ -4,9 +4,16 @@
 //   npm run local:list
 //
 // With no event argument it uses dev/local/events/<function>.json. "-" reads
-// the event from stdin. See docs/local-development.md.
+// the event from stdin. The handler's logs are also sent to the emulator's
+// CloudWatch Logs unless --no-logs (or LOCAL_LOGS=off) is given. See docs/local-development.md.
 
 import { FUNCTIONS, findFunction, type LocalFunction } from "./functions.ts";
+import {
+  buildLogEvents,
+  captureOutput,
+  logGroupName,
+  publishLogs,
+} from "./cloudwatch.ts";
 import {
   assertEmulatorEnvironment,
   buildContext,
@@ -36,7 +43,8 @@ const failedBatchItems = (result: unknown): unknown[] => {
 
 const run = async (
   fn: LocalFunction,
-  eventSource?: string
+  eventSource: string | undefined,
+  sendLogs: boolean
 ): Promise<number> => {
   assertEmulatorEnvironment();
 
@@ -52,7 +60,44 @@ const run = async (
   }
 
   const handler = await loadHandler(fn);
-  const result = await handler(event, buildContext(fn));
+  const context = buildContext(fn);
+
+  // Keep a copy of what the handler logs so it can be sent to CloudWatch Logs.
+  const capture = captureOutput();
+  const startedAt = Date.now();
+  let result: unknown;
+  let error: Error | undefined;
+  try {
+    result = await handler(event, context);
+  } catch (caught) {
+    error = caught instanceof Error ? caught : new Error(String(caught));
+  }
+  const endedAt = Date.now();
+  const output = capture.stop();
+
+  if (sendLogs) {
+    const published = publishLogs(
+      fn,
+      buildLogEvents({
+        requestId: context.awsRequestId,
+        startedAt,
+        endedAt,
+        memorySizeMb: Number(context.memoryLimitInMB),
+        maxMemoryUsedMb: Math.round(process.memoryUsage().rss / 1024 / 1024),
+        output,
+        error,
+      })
+    );
+    if (published.published) {
+      console.error(`[local] logs: npm run local:logs -- ${fn.name}`);
+    } else {
+      console.error(
+        `[local] could not send logs to CloudWatch Logs (${logGroupName(fn)}): ${published.reason}`
+      );
+    }
+  }
+
+  if (error) throw error;
 
   console.log("--- result ---");
   console.log(JSON.stringify(result ?? null, null, 2));
@@ -82,7 +127,11 @@ const main = async (): Promise<number> => {
     console.error("Run `npm run local:list` to see the functions.");
     return 2;
   }
-  return run(fn, args.eventSource);
+  return run(
+    fn,
+    args.eventSource,
+    !args.noLogs && process.env.LOCAL_LOGS !== "off"
+  );
 };
 
 main()

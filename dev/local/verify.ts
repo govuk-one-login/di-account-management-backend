@@ -178,7 +178,11 @@ const invoke = (name: string): { ok: boolean; output: string } => {
       join(REPO_ROOT, "dev/local/invoke.ts"),
       name,
     ],
-    { env: process.env, encoding: "utf8", cwd: REPO_ROOT }
+    {
+      env: { ...process.env, LOCAL_LOGS: "off" },
+      encoding: "utf8",
+      cwd: REPO_ROOT,
+    }
   );
   return {
     ok: result.status === 0,

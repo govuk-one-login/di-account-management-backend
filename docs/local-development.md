@@ -13,8 +13,9 @@ stream. See [Limits](#limits).
 - Docker, running. (AWS Emulator only runs natively on Linux, so on macOS it
   runs in a container built from its Linux package.)
 - `npm ci`
-- Optional: the AWS CLI, which `local:up` uses to check it is talking to the
-  emulator.
+- Optional but recommended: the AWS CLI. `local:up` uses it to check it is
+  talking to the emulator, and `local:invoke` uses it to send logs to CloudWatch
+  Logs (without it, logs only appear in your terminal).
 
 ## Quick start
 
@@ -58,6 +59,30 @@ bash dev/local/with-emulator.sh aws dynamodb scan --table-name activity_log
 
 `with-emulator.sh` runs any command with the emulator environment, without
 changing your shell.
+
+## Logs
+
+A handler's logs are printed in your terminal when you run it. They are also
+sent to the emulator's CloudWatch Logs, like the Lambda service does, with the
+same `START` / `END` / `REPORT` lines:
+
+```sh
+npm run local:logs                          # list log groups
+npm run local:logs -- write-activity-log    # show that function's logs
+npm run local:logs -- write-activity-log --follow --since 1h
+```
+
+Anything after the function name is passed to `aws logs tail`. Log groups are
+named `/aws/lambda/local-home-backend-<function>` and each run adds a new log
+stream. They disappear when the emulator stops.
+
+Sending logs is best-effort. If the AWS CLI is missing or the emulator build
+does not support CloudWatch Logs, `local:invoke` prints a warning and carries
+on. Run `npm run local:smoke` to see which CloudWatch Logs operations work.
+Pass `--no-logs` (or set `LOCAL_LOGS=off`) to skip sending them.
+
+The emulator's own logs (requests it received, errors) are separate:
+`docker logs -f aws-emulator`.
 
 ## Sending TxMA events
 
@@ -172,6 +197,7 @@ updating.
 | `AWS_ENDPOINT_URL is not set`                                                          | You ran the script directly. Use the npm scripts, or `bash dev/local/with-emulator.sh <command>`.                                                                                                                                      |
 | `...resources.json not found`                                                          | Run `npm run local:bootstrap` (the emulator forgot its state).                                                                                                                                                                         |
 | `unable to verify the first certificate` / `self-signed certificate`                   | The CA is new on every start. Run through the npm scripts so `NODE_EXTRA_CA_CERTS` is set before Node starts.                                                                                                                          |
+| `could not send logs to CloudWatch Logs`                                               | The AWS CLI is missing, or this emulator build does not support that CloudWatch Logs operation (the message says which). The handler still ran.                                                                                        |
 | `NotImplemented` (HTTP 501)                                                            | That operation is not supported by this emulator build. Run `npm run local:smoke`.                                                                                                                                                     |
 | `Environment variable "X" is not set`                                                  | A new env var in `template.yaml`. Add it to the function in `dev/local/functions.ts`.                                                                                                                                                  |
 | `AccessDenied` / `SignatureDoesNotMatch`                                               | The request was not signed with the emulator's credentials. Check no real AWS variables are exported.                                                                                                                                  |

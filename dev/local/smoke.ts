@@ -51,7 +51,6 @@ import {
   SecretsManagerClient,
 } from "@aws-sdk/client-secrets-manager";
 import { ACCOUNT_ID } from "./config.ts";
-import { runAwsCli } from "./cloudwatch.ts";
 import { assertEmulatorEnvironment } from "./runtime.ts";
 
 interface Result {
@@ -361,76 +360,6 @@ const smokeSecrets = async (): Promise<void> => {
     .catch(() => undefined);
 };
 
-// CloudWatch Logs goes through the AWS CLI, which is what local:invoke and
-// local:logs use (no SDK client for it is a dependency of this repo).
-const smokeLogs = async (): Promise<void> => {
-  const group = "cloudwatch logs";
-  const logGroup = `/${run}`;
-  const stream = "stream";
-  const message = `hello-${run}`;
-
-  if (runAwsCli(["--version"]).status !== 0) {
-    results.push({
-      group,
-      check: "AWS CLI",
-      ok: true,
-      skipped: true,
-      detail: "not installed, so local:invoke cannot send logs",
-    });
-    return;
-  }
-
-  const aws = (...args: string[]): string => {
-    const result = runAwsCli(args);
-    if (result.status !== 0) {
-      throw new Error(result.stderr.trim().split("\n").pop() || "failed");
-    }
-    return result.stdout;
-  };
-
-  await check(
-    group,
-    "CreateLogGroup / CreateLogStream / PutLogEvents",
-    async () => {
-      aws("logs", "create-log-group", "--log-group-name", logGroup);
-      aws(
-        "logs",
-        "create-log-stream",
-        "--log-group-name",
-        logGroup,
-        "--log-stream-name",
-        stream
-      );
-      aws(
-        "logs",
-        "put-log-events",
-        "--log-group-name",
-        logGroup,
-        "--log-stream-name",
-        stream,
-        "--log-events",
-        `timestamp=${Date.now()},message=${message}`
-      );
-    }
-  );
-  await check(group, "GetLogEvents", async () => {
-    const output = aws(
-      "logs",
-      "get-log-events",
-      "--log-group-name",
-      logGroup,
-      "--log-stream-name",
-      stream
-    );
-    expect(output.includes(message), "the logged message was not returned");
-  });
-  await check(group, "aws logs tail (used by local:logs)", async () => {
-    const output = aws("logs", "tail", logGroup, "--since", "5m");
-    expect(output.includes(message), "the logged message was not shown");
-  });
-  runAwsCli(["logs", "delete-log-group", "--log-group-name", logGroup]);
-};
-
 const printResults = (): void => {
   const width = Math.max(...results.map((r) => r.check.length));
   let group = "";
@@ -456,7 +385,6 @@ const main = async (): Promise<number> => {
   await smokeSns();
   await smokeKms();
   await smokeSecrets();
-  await smokeLogs();
   printResults();
   return results.some((r) => !r.ok) ? 1 : 0;
 };

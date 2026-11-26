@@ -35,3 +35,10 @@ export interface LocalResources {
   queueUrls: Record<string, string>;
   keyArns: { generator: string; wrapper: string; backupWrapper: string };
 }
+
+// How far each stream-triggered function has read. Written by stream.ts and
+// deleted by down.sh together with the emulator state it refers to.
+export const STREAM_CHECKPOINTS_FILE = join(
+  emulatorHome,
+  `${EMULATOR_PORT}.stream-checkpoints.json`
+);

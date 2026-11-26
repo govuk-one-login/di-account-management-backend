@@ -5,8 +5,10 @@ You can run any Lambda handler from `src/` on your machine against
 emulator of AWS service APIs (DynamoDB, SQS, KMS...). Nothing touches real AWS.
 
 This runs **one handler at a time with an event you provide**. There is no SAM or
-CloudFormation support, and nothing triggers a Lambda from a queue or a table
-stream. See [Limits](#limits).
+CloudFormation support, and nothing triggers a Lambda by itself. DynamoDB
+stream records can be delivered on demand, see
+[Running stream-triggered Lambdas](#running-stream-triggered-lambdas).
+See [Limits](#limits).
 
 ## Prerequisites
 
@@ -14,8 +16,7 @@ stream. See [Limits](#limits).
   runs in a container built from its Linux package.)
 - `npm ci`
 - Optional but recommended: the AWS CLI. `local:up` uses it to check it is
-  talking to the emulator, and `local:invoke` uses it to send logs to CloudWatch
-  Logs (without it, logs only appear in your terminal).
+  talking to the emulator, and it is handy for inspecting what a handler wrote.
 
 ## Quick start
 
@@ -48,7 +49,7 @@ throws or returns `batchItemFailures`.
 
 Event files can be shortened for SQS: a record's `body` may be a JSON object
 (it is stringified for you) and `receiptHandle`, `attributes` etc. are filled in.
-DynamoDB stream and other events are passed through as written. See
+DynamoDB stream and other events are passed through as written (or use `local:run-streams`, below). See
 `dev/local/events/` for examples.
 
 After a run, look at what was written:
@@ -62,24 +63,12 @@ changing your shell.
 
 ## Logs
 
-A handler's logs are printed in your terminal when you run it. They are also
-sent to the emulator's CloudWatch Logs, like the Lambda service does, with the
-same `START` / `END` / `REPORT` lines:
+A handler's logs are printed in your terminal when you run it. To keep them,
+redirect the output:
 
 ```sh
-npm run local:logs                          # list log groups
-npm run local:logs -- write-activity-log    # show that function's logs
-npm run local:logs -- write-activity-log --follow --since 1h
+npm run local:invoke -- write-activity-log 2>&1 | tee run.log
 ```
-
-Anything after the function name is passed to `aws logs tail`. Log groups are
-named `/aws/lambda/local-home-backend-<function>` and each run adds a new log
-stream. They disappear when the emulator stops.
-
-Sending logs is best-effort. If the AWS CLI is missing or the emulator build
-does not support CloudWatch Logs, `local:invoke` prints a warning and carries
-on. Run `npm run local:smoke` to see which CloudWatch Logs operations work.
-Pass `--no-logs` (or set `LOCAL_LOGS=off`) to skip sending them.
 
 The emulator's own logs (requests it received, errors) are separate:
 `docker logs -f aws-emulator`.
@@ -104,16 +93,45 @@ offers to:
   invokes the Lambda with them (as the SQS event source mapping would in AWS)
   and removes the ones that succeeded. Failures stay on the queue.
 
-The result is written to the `raw_events` table. Lambdas that normally react to
-that table's stream (for example `update-inactive-account-tracker`) are not run
-for you: build a stream event and use `local:invoke`.
+- **Run the stream-triggered Lambdas**: see the next section.
+
+The result is written to the `raw_events` table.
+
+## Running stream-triggered Lambdas
+
+`local:bootstrap` enables the stream on every table that has a
+`StreamSpecification` in `template.yaml` (for example `raw_events`), also on
+tables a previous bootstrap created without one. To do what the DynamoDB event
+source mappings do in AWS, run:
+
+```sh
+npm run local:run-streams                          # every stream-triggered function
+npm run local:run-streams -- update-inactive-account-tracker
+npm run local:run-streams -- --replay              # deliver everything again
+```
+
+It reads the stream, keeps the records that match each mapping's
+`FilterCriteria`, and invokes the Lambda in batches of the mapping's
+`BatchSize`, with the same event shape as AWS. The batch size, filters and
+`ReportBatchItemFailures` setting come from `template.yaml`.
+
+- Nothing runs in the background: run it after writing to the table.
+- Each function remembers how far it has read (`~/.aws/emulator/9297.stream-checkpoints.json`,
+  removed by `local:down`), so a record is delivered once. The first run
+  delivers everything in the stream, where AWS starts at `LATEST`.
+- If a batch fails (the Lambda throws, or returns `batchItemFailures` for a
+  mapping that reports them), delivery stops there and the failed record is
+  delivered again on the next run.
+- Only the filter forms used in the template are supported (nested objects and
+  lists of literal values). Anything else is rejected with an error.
+- The interactive `local:send-event` has the same action in its menu.
 
 ## What is created
 
 `local:bootstrap` reads `template.yaml`, so it follows the template:
 
 - every `AWS::DynamoDB::Table` with a resolvable name (keys, global secondary
-  indexes, TTL attribute). Streams, encryption and backups are not created.
+  indexes, TTL attribute, stream). Encryption and backups are not created.
 - every `AWS::SQS::Queue`, named after its logical id (for example
   `NotificationQueue`). Redrive policies and encryption are not created.
 - three KMS keys (generator, wrapping, backup wrapping) for envelope encryption.
@@ -163,9 +181,10 @@ updating.
 
 ## Limits
 
-- **No event sources.** SAM event source mappings, SNS subscriptions, schedules
-  and Step Functions are not run. You supply the event and run the handler
-  yourself. (A local queue-to-handler "pump" and running
+- **No automatic event sources.** SQS and SNS subscriptions, schedules and
+  Step Functions are not run. You supply the event and run the handler
+  yourself. Only DynamoDB streams can be delivered, on demand, with
+  `npm run local:run-streams`. (A local queue-to-handler "pump" and running
   `npm run test:integration` locally are not done yet.)
 - **State is in memory only**, and there is one account (`000000000000`).
 - **One Region.** Everything runs as `eu-west-2`. The emulator does not keep
@@ -197,7 +216,6 @@ updating.
 | `AWS_ENDPOINT_URL is not set`                                                          | You ran the script directly. Use the npm scripts, or `bash dev/local/with-emulator.sh <command>`.                                                                                                                                      |
 | `...resources.json not found`                                                          | Run `npm run local:bootstrap` (the emulator forgot its state).                                                                                                                                                                         |
 | `unable to verify the first certificate` / `self-signed certificate`                   | The CA is new on every start. Run through the npm scripts so `NODE_EXTRA_CA_CERTS` is set before Node starts.                                                                                                                          |
-| `could not send logs to CloudWatch Logs`                                               | The AWS CLI is missing, or this emulator build does not support that CloudWatch Logs operation (the message says which). The handler still ran.                                                                                        |
 | `NotImplemented` (HTTP 501)                                                            | That operation is not supported by this emulator build. Run `npm run local:smoke`.                                                                                                                                                     |
 | `Environment variable "X" is not set`                                                  | A new env var in `template.yaml`. Add it to the function in `dev/local/functions.ts`.                                                                                                                                                  |
 | `AccessDenied` / `SignatureDoesNotMatch`                                               | The request was not signed with the emulator's credentials. Check no real AWS variables are exported.                                                                                                                                  |

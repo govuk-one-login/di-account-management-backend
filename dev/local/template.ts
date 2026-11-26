@@ -14,6 +14,15 @@ import { STACK_NAME, TEMPLATE_PATH } from "./config.ts";
 type Json = unknown;
 type JsonMap = Record<string, Json>;
 
+export interface StreamTrigger {
+  /** Logical id of the table whose stream triggers the function. */
+  tableLogicalId: string;
+  batchSize: number;
+  /** FilterCriteria patterns (JSON). A record matches if any pattern does. */
+  filterPatterns: string[];
+  reportBatchItemFailures: boolean;
+}
+
 interface TemplateFunction {
   logicalId: string;
   /** Handler without the trailing ".handler" e.g. "analyse-activity-log/handler" */
@@ -22,6 +31,8 @@ interface TemplateFunction {
   handlerExport: string;
   /** Names of the env vars set on the function itself (not via Globals). */
   envKeys: string[];
+  /** DynamoDB stream event sources. */
+  streamTriggers: StreamTrigger[];
 }
 
 export interface TemplateTable {
@@ -34,6 +45,8 @@ export interface TemplateTable {
     keySchema: { AttributeName: string; KeyType: string }[];
   }[];
   ttlAttribute?: string;
+  /** Set when the table has a StreamSpecification. */
+  streamViewType?: string;
 }
 
 export interface ParsedTemplate {
@@ -88,6 +101,7 @@ const readTable = (
   if (tableName === undefined) return undefined;
 
   const ttl = asMap(properties.TimeToLiveSpecification);
+  const streamSpecification = asMap(properties.StreamSpecification);
 
   return {
     logicalId,
@@ -114,8 +128,39 @@ const readTable = (
     ...(typeof ttl.AttributeName === "string" && {
       ttlAttribute: ttl.AttributeName,
     }),
+    ...(typeof streamSpecification.StreamViewType === "string" && {
+      streamViewType: streamSpecification.StreamViewType,
+    }),
   };
 };
+
+/**
+ * `Stream: !GetAtt RawEventsStore.StreamArn` is read as the string
+ * "RawEventsStore.StreamArn".
+ */
+const readStreamTriggers = (properties: JsonMap): StreamTrigger[] =>
+  Object.values(asMap(properties.Events)).flatMap((event) => {
+    const { Type, Properties } = asMap(event);
+    if (Type !== "DynamoDB") return [];
+    const source = asMap(Properties);
+    const stream = typeof source.Stream === "string" ? source.Stream : "";
+    return [
+      {
+        tableLogicalId: stream.split(".")[0],
+        batchSize:
+          typeof source.BatchSize === "number" ? source.BatchSize : 100,
+        filterPatterns: asArray(asMap(source.FilterCriteria).Filters).flatMap(
+          (filter) => {
+            const { Pattern } = asMap(filter);
+            return typeof Pattern === "string" ? [Pattern] : [];
+          }
+        ),
+        reportBatchItemFailures: asArray(source.FunctionResponseTypes).includes(
+          "ReportBatchItemFailures"
+        ),
+      },
+    ];
+  });
 
 export const parseTemplate = (source: string): ParsedTemplate => {
   // `logLevel: "error"` stops the parser warning about every !Ref/!Sub tag.
@@ -140,6 +185,7 @@ export const parseTemplate = (source: string): ParsedTemplate => {
         handlerFile: handler.slice(0, split),
         handlerExport: handler.slice(split + 1),
         envKeys: Object.keys(asMap(asMap(properties.Environment).Variables)),
+        streamTriggers: readStreamTriggers(properties),
       });
     } else if (Type === "AWS::DynamoDB::Table") {
       const table = readTable(logicalId, properties, parameters);

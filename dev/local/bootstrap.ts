@@ -11,8 +11,11 @@ import {
   DescribeTableCommand,
   DynamoDBClient,
   ResourceInUseException,
+  UpdateTableCommand,
   UpdateTimeToLiveCommand,
   type CreateTableCommandInput,
+  type StreamViewType,
+  type TableDescription,
 } from "@aws-sdk/client-dynamodb";
 import { CreateQueueCommand, SQSClient } from "@aws-sdk/client-sqs";
 import {
@@ -41,6 +44,12 @@ export const tableInput = (table: TemplateTable): CreateTableCommandInput => ({
     AttributeName: key.AttributeName,
     KeyType: key.KeyType as "HASH" | "RANGE",
   })),
+  ...(table.streamViewType && {
+    StreamSpecification: {
+      StreamEnabled: true,
+      StreamViewType: table.streamViewType as StreamViewType,
+    },
+  }),
   ...(table.globalSecondaryIndexes.length > 0 && {
     GlobalSecondaryIndexes: table.globalSecondaryIndexes.map((index) => ({
       IndexName: index.indexName,
@@ -53,13 +62,15 @@ export const tableInput = (table: TemplateTable): CreateTableCommandInput => ({
   }),
 });
 
-const waitUntilActive = async (tableName: string): Promise<void> => {
+const waitUntilActive = async (
+  tableName: string
+): Promise<TableDescription> => {
   // Same as AWS: a table is usable once DescribeTable says ACTIVE.
   for (let attempt = 0; attempt < 30; attempt++) {
     const { Table } = await dynamo.send(
       new DescribeTableCommand({ TableName: tableName })
     );
-    if (Table?.TableStatus === "ACTIVE") return;
+    if (Table?.TableStatus === "ACTIVE") return Table;
     await sleep(500);
   }
   throw new Error(`Table ${tableName} did not become ACTIVE`);
@@ -73,7 +84,21 @@ const createTable = async (table: TemplateTable): Promise<void> => {
     if (!(error instanceof ResourceInUseException)) throw error;
     created = false;
   }
-  await waitUntilActive(table.tableName);
+  const description = await waitUntilActive(table.tableName);
+
+  // A table created by an earlier bootstrap may predate stream support.
+  if (!created && table.streamViewType && !description.LatestStreamArn) {
+    await dynamo.send(
+      new UpdateTableCommand({
+        TableName: table.tableName,
+        StreamSpecification: {
+          StreamEnabled: true,
+          StreamViewType: table.streamViewType as StreamViewType,
+        },
+      })
+    );
+    await waitUntilActive(table.tableName);
+  }
 
   if (created && table.ttlAttribute) {
     try {

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Stops AWS Emulator. All emulator state is lost, so the resources file written
-# by bootstrap is removed too.
+# Stops AWS Emulator. All emulator state is lost, so the files written by
+# bootstrap and by the stream runner are removed too.
 set -euo pipefail
 
 PORT=9297
@@ -12,4 +12,4 @@ if docker ps --format '{{.Names}}' | grep -qx "$NAME"; then
 else
   echo "$NAME is not running."
 fi
-rm -f "$HOME/.aws/emulator/$PORT.resources.json"
+rm -f "$HOME/.aws/emulator/$PORT.resources.json" "$HOME/.aws/emulator/$PORT.stream-checkpoints.json"

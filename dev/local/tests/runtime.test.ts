@@ -174,15 +174,10 @@ describe("parseArgs", () => {
   it("separates flags from the function and event", () => {
     expect(parseArgs(["write-activity-log", "event.json"])).toEqual({
       list: false,
-      noLogs: false,
       functionName: "write-activity-log",
       eventSource: "event.json",
     });
     expect(parseArgs(["--list"]).list).toBe(true);
-    expect(parseArgs(["fn", "--no-logs"])).toMatchObject({
-      noLogs: true,
-      functionName: "fn",
-    });
   });
 });
 

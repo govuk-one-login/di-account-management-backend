@@ -22,7 +22,7 @@
         "dev/local/smoke.ts",
         "dev/local/verify.ts",
         "dev/local/send-event.ts",
-        "dev/local/logs.ts",
+        "dev/local/run-streams.ts",
       ],
       "ignore": [
         "src/get-access-check-value.ts",

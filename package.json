@@ -27,7 +27,7 @@
     "local:bootstrap": "bash dev/local/with-emulator.sh node --disable-warning=ExperimentalWarning dev/local/bootstrap.ts",
     "local:invoke": "bash dev/local/with-emulator.sh node --disable-warning=ExperimentalWarning dev/local/invoke.ts",
     "local:send-event": "bash dev/local/with-emulator.sh node --disable-warning=ExperimentalWarning dev/local/send-event.ts",
-    "local:logs": "bash dev/local/with-emulator.sh node --disable-warning=ExperimentalWarning dev/local/logs.ts",
+    "local:run-streams": "bash dev/local/with-emulator.sh node --disable-warning=ExperimentalWarning dev/local/run-streams.ts",
     "local:verify": "bash dev/local/with-emulator.sh node --disable-warning=ExperimentalWarning dev/local/verify.ts",
     "local:list": "node --disable-warning=ExperimentalWarning dev/local/invoke.ts --list"
   },
@@ -39,6 +39,7 @@
     "url": "https://github.com/alphagov/di-account-management-backend.git"
   },
   "devDependencies": {
+    "@aws-sdk/client-dynamodb-streams": "3.1101.0",
     "@aws-sdk/client-kms": "3.1101.0",
     "@eslint/js": "^10.0.1",
     "@types/aws-lambda": "^8.10.164",

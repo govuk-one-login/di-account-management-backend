@@ -179,7 +179,7 @@ const invoke = (name: string): { ok: boolean; output: string } => {
       name,
     ],
     {
-      env: { ...process.env, LOCAL_LOGS: "off" },
+      env: process.env,
       encoding: "utf8",
       cwd: REPO_ROOT,
     }

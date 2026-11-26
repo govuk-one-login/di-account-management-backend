@@ -5,11 +5,10 @@
 //
 // Nothing consumes the queues locally, so "run the Lambda" below does what the
 // SQS event source mapping would do in AWS: receive the messages, invoke
-// save-raw-events with them, and delete the ones that succeeded.
+// save-raw-events with them, and delete the ones that succeeded. The stream
+// action does the same for the raw_events stream (see stream.ts).
 
-import { spawnSync } from "node:child_process";
 import { createInterface } from "node:readline/promises";
-import { join } from "node:path";
 import {
   DeleteMessageBatchCommand,
   GetQueueAttributesCommand,
@@ -18,8 +17,9 @@ import {
   SQSClient,
   type Message,
 } from "@aws-sdk/client-sqs";
-import { REPO_ROOT } from "./config.ts";
 import { assertEmulatorEnvironment, loadResources } from "./runtime.ts";
+import { invokeInChild } from "./spawn.ts";
+import { runStreams } from "./stream.ts";
 import {
   buildEvent,
   EVENTS,
@@ -192,53 +192,6 @@ const receiveAll = async (url: string): Promise<Message[]> => {
   return messages;
 };
 
-/** Runs invoke.ts with the event on stdin, like `local:invoke -- <fn> -`. */
-const invokeSaveRawEvents = (
-  messages: Message[]
-): { failedIds: Set<string>; ok: boolean; output: string } => {
-  const event = {
-    Records: messages.map((message) => ({
-      messageId: message.MessageId,
-      receiptHandle: message.ReceiptHandle,
-      body: message.Body,
-    })),
-  };
-  const result = spawnSync(
-    process.execPath,
-    [
-      "--disable-warning=ExperimentalWarning",
-      join(REPO_ROOT, "dev/local/invoke.ts"),
-      "save-raw-events",
-      "-",
-    ],
-    {
-      env: process.env,
-      cwd: REPO_ROOT,
-      input: JSON.stringify(event),
-      encoding: "utf8",
-    }
-  );
-
-  const output = `${result.stdout}${result.stderr}`;
-  const failedIds = new Set<string>();
-  const marker = result.stdout.split("--- result ---")[1];
-  let ok = false;
-  if (marker) {
-    try {
-      const parsed = JSON.parse(marker.split("\n[local]")[0]) as {
-        batchItemFailures?: { itemIdentifier: string }[];
-      };
-      for (const failure of parsed.batchItemFailures ?? []) {
-        failedIds.add(failure.itemIdentifier);
-      }
-      ok = true;
-    } catch {
-      // Treated as a crash below.
-    }
-  }
-  return { failedIds, ok, output };
-};
-
 const runLambda = async (queueName: string): Promise<void> => {
   const url = queueUrl(queueName);
   const messages = await receiveAll(url);
@@ -247,10 +200,20 @@ const runLambda = async (queueName: string): Promise<void> => {
     return;
   }
   console.log(`Running save-raw-events on ${messages.length} message(s)...\n`);
-  const { failedIds, ok, output } = invokeSaveRawEvents(messages);
+  const event = {
+    Records: messages.map((message) => ({
+      messageId: message.MessageId,
+      receiptHandle: message.ReceiptHandle,
+      body: message.Body,
+    })),
+  };
+  const { failedIds, crashed, output } = invokeInChild(
+    "save-raw-events",
+    event
+  );
   console.log(output.trim());
 
-  if (!ok) {
+  if (crashed) {
     console.log(
       "\nThe Lambda crashed, so nothing was deleted. The messages return to the queue shortly."
     );
@@ -285,6 +248,11 @@ const main = async (): Promise<void> => {
     const action = await choose(`What next? (${queueName})`, [
       { label: "Add an event", value: "add" },
       { label: "Run save-raw-events on the queued events", value: "run" },
+      {
+        label:
+          "Run the stream-triggered Lambdas on new raw_events records (e.g. update-inactive-account-tracker)",
+        value: "streams",
+      },
       { label: "Show how many messages are queued", value: "depth" },
       { label: "Quit", value: "quit" },
     ]);
@@ -292,6 +260,7 @@ const main = async (): Promise<void> => {
     try {
       if (action === "add") await addEvent(queueName);
       else if (action === "run") await runLambda(queueName);
+      else if (action === "streams") await runStreams();
       else console.log(`Queued: ${await queueDepth(queueUrl(queueName))}`);
     } catch (error) {
       console.log(`Error: ${(error as Error).message}`);

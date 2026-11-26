@@ -51,6 +51,7 @@ Resources:
         handlerFile: "dir/file",
         handlerExport: "handler",
         envKeys: ["A", "B"],
+        streamTriggers: [],
       },
     ]);
     expect(parsed.tables.map((t) => t.tableName)).toEqual([
@@ -95,6 +96,18 @@ describe("tableInput", () => {
         expect(declared.has(key.AttributeName!), table.tableName).toBe(true);
       }
     }
+  });
+
+  it("enables the stream on tables that have one in the template", () => {
+    const rawEvents = loadTemplate().tables.find(
+      (t) => t.logicalId === "RawEventsStore"
+    )!;
+    expect(tableInput(rawEvents).StreamSpecification).toEqual({
+      StreamEnabled: true,
+      StreamViewType: "NEW_IMAGE",
+    });
+    const noStream = loadTemplate().tables.find((t) => !t.streamViewType)!;
+    expect(tableInput(noStream).StreamSpecification).toBeUndefined();
   });
 
   it("includes the tracker table's indexes used by the handlers", () => {

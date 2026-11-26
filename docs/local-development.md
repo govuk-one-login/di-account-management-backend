@@ -22,7 +22,6 @@ See [Limits](#limits).
 
 ```sh
 npm run local:up         # build and start the emulator, write ~/.aws/emulator/9297.env
-npm run local:smoke      # optional: which AWS operations does this emulator build support?
 npm run local:bootstrap  # create the tables, queues and KMS keys
 npm run local:invoke -- write-activity-log   # run a Lambda with its sample event
 npm run local:verify     # run the verified Lambdas and check what they wrote
@@ -162,22 +161,6 @@ groups:
 - **SNS Publish, Step Functions** (`publish-account-deletion`, `trigger-rsa-step`):
   the emulator's coverage of these was not confirmed by the compatibility check.
 - **Everything else**: should work if the DynamoDB/SQS operations it uses do.
-  Run `npm run local:smoke` to see which operations your emulator build
-  supports.
-
-## Checking what the emulator supports
-
-`npm run local:smoke` creates throw-away resources (prefix `smoke-`) and tries
-the operations this repo uses: table creation with a GSI and TTL, GSI queries,
-conditional `UpdateItem`, `TransactWriteItems`, SQS send/receive, SNS publish,
-KMS data keys, and Secrets Manager. It prints PASS/FAIL per operation and exits
-non-zero if any fail. A `NotImplemented` error from the emulator means that
-operation is not supported by the build you are running: it is not a
-configuration problem.
-
-The emulator is rebuilt from the latest release every time you run
-`local:up`. Coverage grows between releases, so re-run the smoke test after
-updating.
 
 ## Limits
 
@@ -216,6 +199,6 @@ updating.
 | `AWS_ENDPOINT_URL is not set`                                                          | You ran the script directly. Use the npm scripts, or `bash dev/local/with-emulator.sh <command>`.                                                                                                                                      |
 | `...resources.json not found`                                                          | Run `npm run local:bootstrap` (the emulator forgot its state).                                                                                                                                                                         |
 | `unable to verify the first certificate` / `self-signed certificate`                   | The CA is new on every start. Run through the npm scripts so `NODE_EXTRA_CA_CERTS` is set before Node starts.                                                                                                                          |
-| `NotImplemented` (HTTP 501)                                                            | That operation is not supported by this emulator build. Run `npm run local:smoke`.                                                                                                                                                     |
+| `NotImplemented` (HTTP 501)                                                            | That operation is not supported by this emulator build.                                                                                                                                                                                |
 | `Environment variable "X" is not set`                                                  | A new env var in `template.yaml`. Add it to the function in `dev/local/functions.ts`.                                                                                                                                                  |
 | `AccessDenied` / `SignatureDoesNotMatch`                                               | The request was not signed with the emulator's credentials. Check no real AWS variables are exported.                                                                                                                                  |

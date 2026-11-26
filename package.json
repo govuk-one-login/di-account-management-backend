@@ -23,7 +23,6 @@
     "install-git-hooks": "pre-commit install --install-hooks --overwrite",
     "local:up": "bash dev/local/up.sh",
     "local:down": "bash dev/local/down.sh",
-    "local:smoke": "bash dev/local/with-emulator.sh node --disable-warning=ExperimentalWarning dev/local/smoke.ts",
     "local:bootstrap": "bash dev/local/with-emulator.sh node --disable-warning=ExperimentalWarning dev/local/bootstrap.ts",
     "local:invoke": "bash dev/local/with-emulator.sh node --disable-warning=ExperimentalWarning dev/local/invoke.ts",
     "local:send-event": "bash dev/local/with-emulator.sh node --disable-warning=ExperimentalWarning dev/local/send-event.ts",

@@ -19,7 +19,6 @@
         "src/trigger-rsa-step.ts",
         "src/notification-service.ts",
         "dev/local/bootstrap.ts",
-        "dev/local/smoke.ts",
         "dev/local/verify.ts",
         "dev/local/send-event.ts",
         "dev/local/run-streams.ts",

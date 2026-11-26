@@ -1,0 +1,41 @@
+{
+  "Records": [
+    {
+      "eventID": "local-verify-stream-1",
+      "eventName": "INSERT",
+      "eventVersion": "1.1",
+      "eventSource": "aws:dynamodb",
+      "awsRegion": "eu-west-2",
+      "dynamodb": {
+        "ApproximateCreationDateTime": 1730800548,
+        "Keys": {
+          "id": { "S": "local-verify-raw-record-1" },
+          "timestamp": { "N": "1730800548523" }
+        },
+        "NewImage": {
+          "id": { "S": "local-verify-raw-record-1" },
+          "timestamp": { "N": "1730800548523" },
+          "event": {
+            "M": {
+              "event_name": { "S": "AUTH_TOKEN_SENT_TO_ORCHESTRATION" },
+              "event_id": { "S": "local-verify-tracker-event-1" },
+              "timestamp": { "N": "1730800548" },
+              "client_id": { "S": "orchestrationAuth" },
+              "user": {
+                "M": {
+                  "user_id": { "S": "local-verify-tracker-user-1" },
+                  "email": { "S": "local-verify@example.com" },
+                  "public_subject_id": { "S": "local-verify-public-subject-1" }
+                }
+              }
+            }
+          }
+        },
+        "SequenceNumber": "100000000000000000001",
+        "SizeBytes": 400,
+        "StreamViewType": "NEW_IMAGE"
+      },
+      "eventSourceARN": "arn:aws:dynamodb:eu-west-2:000000000000:table/raw_events/stream/local"
+    }
+  ]
+}

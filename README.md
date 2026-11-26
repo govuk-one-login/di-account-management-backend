@@ -88,6 +88,22 @@ docker run -t \
   test
 ```
 
+## Running Lambdas locally
+
+You can run individual Lambdas on your machine against AWS Emulator, without
+deploying. See [docs/local-development.md](docs/local-development.md).
+
+If your network re-signs HTTPS traffic (for example a Zscaler proxy),
+`npm run local:up` fails while building with
+`curl: (60) SSL certificate ... unable to get local issuer certificate`.
+Export your organisation's CA certificates (root and intermediate) into
+`dev/local/certs/` and run it again. The certificates are git-ignored:
+
+```sh
+security find-certificate -a -p -c "Zscaler" /Library/Keychains/System.keychain \
+  > dev/local/certs/zscaler.pem
+```
+
 ## Deploying the application
 
 Deploy the application to the `dev` AWS account by running

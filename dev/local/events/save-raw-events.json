@@ -1,0 +1,16 @@
+{
+  "Records": [
+    {
+      "body": {
+        "event_name": "AUTH_AUTH_CODE_ISSUED",
+        "event_id": "local-verify-raw-event-1",
+        "timestamp": 1730800548,
+        "client_id": "vehicleOperatorLicense",
+        "user": {
+          "user_id": "local-verify-user-1",
+          "session_id": "local-verify-session-1"
+        }
+      }
+    }
+  ]
+}

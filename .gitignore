@@ -7,6 +7,12 @@ node_modules/
 coverage/
 .tmp-hash-iad-query-logic.mjs
 
+# Local AWS Emulator tooling (dev/local): handlers bundled for local runs.
+dev/local/.build/
+# Corporate CA certificates for the emulator image build (dev/local/certs/README.md).
+dev/local/certs/*.pem
+dev/local/certs/*.crt
+
 # Terraform (infra/) — local working directories and state. Never commit state.
 .terraform/
 *.tfstate
